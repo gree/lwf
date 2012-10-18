@@ -1,0 +1,14 @@
+Index: src/com/google/javascript/jscomp/NameGenerator.java
+===================================================================
+--- src/com/google/javascript/jscomp/NameGenerator.java	(revision 2260)
++++ src/com/google/javascript/jscomp/NameGenerator.java	(working copy)
+@@ -59,7 +59,8 @@
+   NameGenerator(Set<String> reservedNames, String prefix,
+       @Nullable char[] reservedCharacters) {
+     this.reservedNames = reservedNames;
+-    this.prefix = prefix;
++    //this.prefix = prefix;
++    this.prefix = "z$" + prefix;
+ 
+     // build the character arrays to use
+     this.firstChars = reserveCharacters(FIRST_CHAR, reservedCharacters);

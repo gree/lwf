@@ -1,0 +1,55 @@
+-----
+Code in:
+coffee/supports/tween.js
+
+Javascript tweening engine
+URL: https://github.com/sole/tween.js/
+License: MIT license
+
+-----
+Code in:
+tools/closure
+
+Closure Compiler
+URL: http://code.google.com/p/closure-compiler/
+License: Apache License 2.0
+
+-----
+Code in:
+tools/swf2lwf/lib/htmlparser.rb
+
+HTML parser from scrapi
+URL: https://github.com/assaf/scrapi
+License: Ruby license
+
+-----
+Code in:
+tools/swf2lwf/lib/json.rb tools/swf2lwf/lib/json
+
+JSON implementation for Ruby
+URL: http://flori.github.com/json/
+License: Ruby license
+
+-----
+Code in:
+tools/swf2lwf/lib/zip
+
+rubyzip
+URL: https://github.com/aussiegeek/rubyzip
+License: Ruby license
+
+-----
+Code in:
+tools/swf2lwf/lib/chunky_png.rb tools/swf2lwf/lib/chunky_png
+
+Chunky PNG
+URL: https://github.com/wvanbergen/chunky_png
+License: MIT license
+
+-----
+Code in:
+tools/swf2lwf/lib/rkelly.rb tools/swf2lwf/lib/rkelly
+
+Pure ruby javascript parser and interpreter
+URL: https://github.com/tenderlove/rkelly
+License: MIT license

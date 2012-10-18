@@ -1,0 +1,218 @@
+#
+# Copyright (C) 2012 GREE, Inc.
+# 
+# This software is provided 'as-is', without any express or implied
+# warranty.  In no event will the authors be held liable for any damages
+# arising from the use of this software.
+# 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+# 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be
+#    misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+#
+
+require 'fileutils'
+require 'find'
+
+JS = {}
+JSRELEASE = {}
+PRELUDEJS = {}
+ADDJS = {}
+EXTERNS = {}
+COMPILEROPTIONS = {}
+
+CORE = %w|
+  core/lwf_type
+  core/lwf_format
+  core/lwf_animation
+  core/lwf_data
+  core/lwf_loader
+  core/lwf_utility
+  core/lwf_renderer
+  core/lwf_object
+  core/lwf_graphic
+  core/lwf_bitmap
+  core/lwf_bitmapex
+  core/lwf_text
+  core/lwf_particle
+  core/lwf_programobj
+  core/lwf_iobject
+  core/lwf_button
+  core/lwf_lwfcontainer
+  core/lwf_property
+  core/lwf_movie
+  core/lwf_core
+  core/lwf_expose
+|
+
+PRELUDEJSCORE = %w|
+  core/lwf_prelude.js
+|
+
+ADDJSCORE = %w|
+  supports/tween.js/src/Tween.js
+|
+
+JS["lwf"] = CORE + %w|
+  webkitcss/lwf_webkitcss_factory
+  webkitcss/lwf_webkitcss_bitmap
+  webkitcss/lwf_webkitcss_text
+  webkitcss/lwf_webkitcss_domelement
+  webkitcss/lwf_webkitcss_resourcecache
+  webkitcss/lwf_webkitcss_expose
+  webkitcss/lwf_webkitcss_worker
+  canvas/lwf_canvas_factory
+  canvas/lwf_canvas_bitmap
+  canvas/lwf_canvas_text
+  canvas/lwf_canvas_resourcecache
+  canvas/lwf_canvas_expose
+|
+PRELUDEJS["lwf"] = PRELUDEJSCORE
+ADDJS["lwf"] = ADDJSCORE
+EXTERNS["lwf"] = %w|
+  core/lwf_extern
+|
+COMPILEROPTIONS["lwf"] = "--compilation_level ADVANCED_OPTIMIZATIONS"
+
+JS["lwf_webgl"] = CORE + %w|
+  webkitcss/lwf_webkitcss_factory
+  webkitcss/lwf_webkitcss_domelement
+  webkitcss/lwf_webkitcss_resourcecache
+  webkitcss/lwf_webkitcss_worker
+  webgl/lwf_webgl_factory
+  webgl/lwf_webgl_bitmap
+  webgl/lwf_webgl_resourcecache
+  webgl/lwf_webgl_text
+  webgl/lwf_webgl_expose
+|
+PRELUDEJS["lwf_webgl"] = PRELUDEJSCORE
+ADDJS["lwf_webgl"] = ADDJSCORE
+EXTERNS["lwf_webgl"] = EXTERNS["lwf"]
+COMPILEROPTIONS["lwf_webgl"] = "--compilation_level ADVANCED_OPTIMIZATIONS"
+
+JS["lwf_cocos2d"] = CORE + %w|
+  webkitcss/lwf_webkitcss_domelement
+  webkitcss/lwf_webkitcss_resourcecache
+  webkitcss/lwf_webkitcss_worker
+  cocos2d/lwf_cocos2d_factory
+  cocos2d/lwf_cocos2d_bitmap
+  cocos2d/lwf_cocos2d_text
+  cocos2d/lwf_cocos2d_particle
+  cocos2d/lwf_cocos2d_resourcecache
+  cocos2d/lwf_cocos2d_expose
+  cocos2d/lwf_cocos2d_node
+|
+PRELUDEJS["lwf_cocos2d"] = ["cocos2d/lwf_cocos2d_prelude.js"]
+ADDJS["lwf_cocos2d"] = ADDJSCORE
+EXTERNS["lwf_cocos2d"] = EXTERNS["lwf"]
+COMPILEROPTIONS["lwf_cocos2d"] = "--compilation_level SIMPLE_OPTIMIZATIONS"
+
+JS["test"] = %W|
+  test/test
+|
+
+TARGETS = []
+RELEASE_TARGETS = []
+DEPENDS = {}
+JS.each do |k,v|
+  target = "js_debug/#{k}.js"
+  TARGETS.push target
+  DEPENDS[target] = v.map{|s| "#{s}.coffee"}
+  next if k =~ /^test/
+  rtarget = "js/#{k}.js"
+  RELEASE_TARGETS.push rtarget
+  DEPENDS[rtarget] = target
+end
+
+task :default => ["build"]
+
+desc "build"
+task :build => TARGETS
+
+desc "release"
+task :release => RELEASE_TARGETS
+
+rule ".js" => lambda{|o| DEPENDS[o]} do |t|
+  puts t.name + ":"
+  basename = File.basename(t.name, '.*')
+  outdir = File.dirname(t.name)
+  FileUtils.mkdir_p outdir
+  tmp = t.name + ".tmp"
+  if t.source =~ /\.js$/
+    tmp0 = t.name + ".tmp.0"
+    tmp1 = t.name + ".tmp.1"
+    externs = ""
+    es = EXTERNS[basename]
+    unless es.nil?
+      es.each do |e|
+        externs += "--externs #{e}.js "
+      end
+    end
+    jsrelease = ""
+    jr = JSRELEASE[basename]
+    unless jr.nil?
+      jr.each do |js|
+        jsrelease += js + ".js "
+      end
+    end
+    option = COMPILEROPTIONS[basename] || ""
+    system "grep -v \"^ *[A-Z][^ ]*\\.name = '[A-Z][^ ]*';\" #{t.source} > #{tmp0}"
+    system "java -jar ../tools/closure/compiler.jar #{option} --js #{tmp0} #{jsrelease} --js_output_file #{tmp1} #{externs}"
+    system "uglifyjs -mt -nc --unsafe -o #{t.name} #{tmp1}"
+    FileUtils.rm_f [tmp0, tmp1]
+  else
+    system "coffee -j #{t.name} -c #{t.sources.join(' ')}"
+    if t.name =~ /lwf/
+      FileUtils.mv t.name, tmp
+      system "sed -e \"s/^\\((function() {\\)/\\1 var __FILE__ = '#{File.basename(t.name)}';/\" #{tmp} > #{t.name}"
+    end
+    if !PRELUDEJS[basename].nil? or !ADDJS[basename].nil?
+      FileUtils.mv t.name, tmp
+      prelude = PRELUDEJS[basename].join(' ')
+      addjs = ADDJS[basename].join(' ')
+      system "cat #{prelude} #{tmp} #{addjs} > #{t.name}"
+    end
+  end
+  FileUtils.mv t.name, tmp
+  f = File.open(tmp, "rb")
+  js = f.read
+  f.close
+  f = File.open(t.name, "wb")
+  f.puts "// https://raw.github.com/gree/lwf/master/LICENSE"
+  f.puts "// https://raw.github.com/gree/lwf/master/coffee/supports/tween.js/LICENSE"
+  f.write js
+  f.close
+  FileUtils.rm_f tmp
+end
+
+desc "check"
+task :check do
+  srcs = {}
+  DEPENDS.values.each do |d|
+    d.each do |src|
+      next unless src =~ /\.coffee$/
+      srcs[src] = true
+    end
+  end
+  srcs.keys.each do |src|
+    system "coffee -o /tmp -c #{src}"
+  end
+end
+
+desc "commit"
+task :commit do
+  rev = open("|git show HEAD|head -1|awk '{print $2}'").read
+  system "git commit -m \"#{rev}\" #{TARGETS.join(' ')} #{RELEASE_TARGETS.join(' ')}"
+end
+
+desc "clean"
+task :clean do
+  FileUtils.rm_rf ["js_debug", "js"]
+end

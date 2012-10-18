@@ -1,0 +1,84 @@
+#
+# Copyright (C) 2012 GREE, Inc.
+#
+# This software is provided 'as-is', without any express or implied
+# warranty.  In no event will the authors be held liable for any damages
+# arising from the use of this software.
+#
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be
+#    misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+#
+
+require 'fileutils'
+
+LIBS="-r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEngine.dll"
+EDITOR_LIBS="#{LIBS} -r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEditor.dll -r:lwf.dll"
+CORE="../../core"
+UNITY=".."
+RENDERER="#{UNITY}/renderer"
+
+SRCS= %W|
+  #{CORE}/lwf_animation.cs
+  #{CORE}/lwf_bitmap.cs
+  #{CORE}/lwf_bitmapex.cs
+  #{CORE}/lwf_button.cs
+  #{CORE}/lwf_core.cs
+  #{CORE}/lwf_data.cs
+  #{CORE}/lwf_format.cs
+  #{CORE}/lwf_graphic.cs
+  #{CORE}/lwf_input.cs
+  #{CORE}/lwf_iobject.cs
+  #{CORE}/lwf_loader.cs
+  #{CORE}/lwf_lwfcontainer.cs
+  #{CORE}/lwf_movie.cs
+  #{CORE}/lwf_object.cs
+  #{CORE}/lwf_particle.cs
+  #{CORE}/lwf_programobj.cs
+  #{CORE}/lwf_property.cs
+  #{CORE}/lwf_renderer.cs
+  #{CORE}/lwf_text.cs
+  #{CORE}/lwf_type.cs
+  #{CORE}/lwf_utility.cs
+  #{RENDERER}/combinedmesh/lwf_combinedmesh_bitmap.cs
+  #{RENDERER}/combinedmesh/lwf_combinedmesh_factory.cs
+  #{RENDERER}/common/lwf_unity_factory.cs
+  #{RENDERER}/common/lwf_unity_resourcecache.cs
+  #{RENDERER}/common/lwf_unity_systemfontrenderer.cs
+  #{RENDERER}/common/lwf_unity_text.cs
+  #{RENDERER}/drawmesh/lwf_drawmesh_bitmap.cs
+  #{RENDERER}/drawmesh/lwf_drawmesh_factory.cs
+  #{RENDERER}/bitmapfont/bitmapfont_loader.cs
+  #{RENDERER}/bitmapfont/bitmapfont_renderer.cs
+  #{RENDERER}/bitmapfont/bitmapfont_resourcecache.cs
+  #{UNITY}/wrapper/LWFObject.cs
+  #{UNITY}/wrapper/LWFPlayer.cs
+|
+
+EDITOR_SRCS= %W|
+  #{UNITY}/editor/LWFObjectInspector.cs
+|
+
+task :default => ["build"]
+
+desc "build"
+task :build do
+  puts "lwf.dll:"
+  system "gmcs #{LIBS} -target:library -debug -out:lwf.dll #{SRCS.join(' ')}"
+  puts "lwf_editor.dll:"
+  system "gmcs #{EDITOR_LIBS} -target:library -debug -out:lwf_editor.dll #{EDITOR_SRCS.join(' ')}"
+end
+
+desc "clean"
+task :clean do
+  FileUtils.rm_rf [
+    "lwf.dll", "lwf.dll.mdb", "lwf_editor.dll", "lwf_editor.dll.mdb"]
+end

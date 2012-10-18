@@ -1,0 +1,99 @@
+== ScrAPI toolkit for Ruby
+
+A framework for writing scrapers using CSS selectors and simple
+select => extract => store processing rules.
+
+Here’s an example that scrapes auctions from eBay:
+
+  ebay_auction = Scraper.define do
+    process "h3.ens>a", :description=>:text,
+                        :url=>"@href"
+    process "td.ebcPr>span", :price=>:text
+    process "div.ebPicture >a>img", :image=>"@src"
+
+    result :description, :url, :price, :image
+  end
+
+  ebay = Scraper.define do
+    array :auctions
+
+    process "table.ebItemlist tr.single",
+            :auctions => ebay_auction
+
+    result :auctions
+  end
+
+And using the scraper:
+
+  auctions = ebay.scrape(html)
+
+  # No. of auctions found
+  puts auctions.size
+
+  # First auction:
+  auction = auctions[0]
+  puts auction.description
+  puts auction.url
+
+
+To get the latest source code with regular updates:
+
+svn co http://labnotes.org/svn/public/ruby/scrapi
+
+== Version of Ruby
+
+ScrAPI 1.2.x tested with Ruby 1.8.6 and 1.8.7, but will not work on Ruby 1.9.x.
+
+ScrAPI 2.0.x switches to TidyFFI to runs on Ruby 1.9.2 and newer.
+
+Due to a bug in Ruby's visibility context handling (see changelog #29578 and bug
+#3406 on the official Ruby page), you need to declare all result attributes
+explicitly, using result method or attr_reader/_accessor.
+
+== Using TIDY
+
+By default scrAPI uses Tidy (actually Tidy-FFI) to cleanup the HTML.
+
+You need to install the Tidy Gem for Ruby:
+  gem install tidy_ffi
+
+And the Tidy binary libraries, available here:
+
+  http://tidy.sourceforge.net/
+
+By default scrAPI looks for the Tidy DLL (Windows) or shared library (Linux) in the directory lib/tidy. That's one place to place the Tidy library.
+
+Alternatively, just point Tidy to the library with:
+
+  TidyFFI.library_path = "...."
+
+On Linux this would probably be:
+
+  TidyFFI.library_path = "/usr/local/lib/libtidy.so"
+
+On OS/X this would probably be:
+
+  TidyFFI.library_path = “/usr/lib/libtidy.dylib”
+
+For testing purposes, you can also use the built in HTML parser. It's useful for testing and getting up to grabs with scrAPI, but it doesn't deal well with broken HTML. So for testing only:
+
+  Scraper::Base.parser :html_parser
+
+
+== License
+
+Copyright (c) 2006 Assaf Arkin, under Creative Commons Attribution and/or MIT License
+
+Developed for http://co.mments.com
+
+Code and documention: http://labnotes.org
+
+HTML cleanup and good hygene by Tidy, Copyright (c) 1998-2003 World Wide Web Consortium.
+License at http://tidy.sourceforge.net/license.html
+
+HTML DOM extracted from Rails, Copyright (c) 2004 David Heinemeier Hansson. Under MIT license.
+
+HTML parser by Takahiro Maebashi and Katsuyuki Komatsu, Ruby license.
+http://www.jin.gr.jp/~nahi/Ruby/html-parser/README.html
+
+Porting to Ruby 1.9.x by Christoph Lupprich, http://lupprich.info
