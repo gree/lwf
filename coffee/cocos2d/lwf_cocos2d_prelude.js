@@ -1,4 +1,4 @@
-if (typeof window !== "undefined") {
+if (typeof global === "undefined" && typeof window !== "undefined") {
 	/* Browsers */
 	global = window;
 } else if (typeof cc !== "undefined") {

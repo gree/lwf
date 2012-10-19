@@ -1,6 +1,6 @@
 // https://raw.github.com/gree/lwf/master/LICENSE
 // https://raw.github.com/gree/lwf/master/coffee/supports/tween.js/LICENSE
-if (typeof window !== "undefined") {
+if (typeof global === "undefined" && typeof window !== "undefined") {
 	/* Browsers */
 	global = window;
 }
@@ -2653,6 +2653,8 @@ if (typeof window !== "undefined") {
       this.playing = true;
       this.jumped = false;
       this.overriding = false;
+      this.attachMovieExeced = false;
+      this.attachMoviePostExeced = false;
       this.property = new Property(lwf);
       if (typeof this.__defineGetter__ !== "undefined") {
         this.__defineGetter__("x", function() {
@@ -2943,6 +2945,12 @@ if (typeof window !== "undefined") {
         movie.setHandlers(handler);
       } else {
         movie = new Movie(this.lwf, this, movieId, -1, 0, 0, true, handlers);
+        if (this.attachMovieExeced) {
+          movie.exec();
+        }
+        if (this.attachMoviePostExeced) {
+          movie.postExec(true);
+        }
       }
       movie.attachName = attachName;
       movie.depth = depth != null ? depth : this.attachedMovieList.length;
@@ -3276,6 +3284,18 @@ if (typeof window !== "undefined") {
       this.lwf.isPropertyDirty = true;
     };
 
+    Movie.prototype.exec = function(matrixId, colorTransformId) {
+      if (matrixId == null) {
+        matrixId = 0;
+      }
+      if (colorTransformId == null) {
+        colorTransformId = 0;
+      }
+      this.attachMovieExeced = false;
+      this.attachMoviePostExeced = false;
+      Movie.__super__.exec.call(this, matrixId, colorTransformId);
+    };
+
     Movie.prototype.postExec = function(progressing) {
       var animationPlayed, attachName, control, controlAnimationOffset, ctrl, data, depth, frame, i, instance, movie, obj, p, v, _i, _j, _k, _l, _len, _len1, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
       this.hasButton = false;
@@ -3339,6 +3359,7 @@ if (typeof window !== "undefined") {
             }
           }
         }
+        this.attachMovieExeced = true;
         if (this.attachedMovies != null) {
           _ref2 = this.attachedMovieList;
           for (_k = 0, _len = _ref2.length; _k < _len; _k++) {
@@ -3359,6 +3380,7 @@ if (typeof window !== "undefined") {
           }
           instance = instance.linkInstance;
         }
+        this.attachMoviePostExeced = true;
         if (this.attachedMovies != null) {
           _ref3 = this.detachedMovies;
           for (attachName in _ref3) {
@@ -5389,7 +5411,7 @@ if (typeof window !== "undefined") {
       _ref1 = this.cache;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         node = _ref1[_i];
-        this.context.factory.stage.removeChild(node);
+        this.factory.stage.removeChild(node);
       }
     };
 
@@ -5924,6 +5946,7 @@ if (typeof window !== "undefined") {
               worker.onmessage = function(e) {
                 var data;
                 data = new Data(e.data);
+                worker = worker.onmessage = worker.onerror = null;
                 return _this.onloaddata(settings, data, url);
               };
               worker.onerror = function(e) {
@@ -5931,6 +5954,7 @@ if (typeof window !== "undefined") {
                   url: workerJS,
                   reason: "error"
                 });
+                worker = worker.onmessage = worker.onerror = null;
                 return settings["onload"].call(settings, null);
               };
               if (useWorkerWithArrayBuffer) {
@@ -6261,11 +6285,12 @@ if (typeof window !== "undefined") {
       var data;
       if (typeof self.webkitPostMessage !== "undefined") {
         data = (new LWFLoaderWithArrayBuffer).load(event.data);
-        return self.webkitPostMessage(data);
+        self.webkitPostMessage(data);
       } else {
         data = (new LWFLoader).load(event.data);
-        return self.postMessage(data);
+        self.postMessage(data);
       }
+      return self.close();
     };
   }
 

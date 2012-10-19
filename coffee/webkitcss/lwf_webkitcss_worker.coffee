@@ -26,4 +26,5 @@ if self?
     else
       data = (new LWFLoader).load(event.data)
       self.postMessage(data)
+    self.close()
 

@@ -165,7 +165,8 @@ rule ".js" => lambda{|o| DEPENDS[o]} do |t|
     option = COMPILEROPTIONS[basename] || ""
     system "grep -v \"^ *[A-Z][^ ]*\\.name = '[A-Z][^ ]*';\" #{t.source} > #{tmp0}"
     system "java -jar ../tools/closure/compiler.jar #{option} --js #{tmp0} #{jsrelease} --js_output_file #{tmp1} #{externs}"
-    system "uglifyjs -mt -nc --unsafe -o #{t.name} #{tmp1}"
+    system "echo '(function(){' > #{tmp0}; cat #{tmp1} >> #{tmp0}; echo '}).call(this);' >> #{tmp0}"
+    system "uglifyjs -mt -nc --unsafe -o #{t.name} #{tmp0}"
     FileUtils.rm_f [tmp0, tmp1]
   else
     system "coffee -j #{t.name} -c #{t.sources.join(' ')}"

@@ -164,9 +164,11 @@ class WebkitCSSResourceCache
             worker = new Worker(workerJS)
             worker.onmessage = (e) =>
               data = new Data(e.data)
+              worker = worker.onmessage = worker.onerror = null
               @onloaddata(settings, data, url)
             worker.onerror = (e) =>
               settings.error.push({url:workerJS, reason:"error"})
+              worker = worker.onmessage = worker.onerror = null
               settings["onload"].call(settings, null)
             if useWorkerWithArrayBuffer
               worker.webkitPostMessage(xhr.response)

@@ -40,6 +40,8 @@ class Movie extends IObject
     @playing = true
     @jumped = false
     @overriding = false
+    @attachMovieExeced = false
+    @attachMoviePostExeced = false
 
     @property = new Property(lwf)
 
@@ -226,6 +228,8 @@ class Movie extends IObject
       movie.setHandlers(handler)
     else
       movie = new Movie(@lwf, @, movieId, -1, 0, 0, true, handlers)
+      movie.exec() if @attachMovieExeced
+      movie.postExec(true) if @attachMoviePostExeced
     movie.attachName = attachName
     movie.depth = depth ? @attachedMovieList.length
     movie.name = attachName
@@ -456,6 +460,12 @@ class Movie extends IObject
     @lwf.isPropertyDirty = true
     return
 
+  exec:(matrixId = 0, colorTransformId = 0) ->
+    @attachMovieExeced = false
+    @attachMoviePostExeced = false
+    super(matrixId, colorTransformId)
+    return
+
   postExec:(progressing) ->
     @hasButton = false
     return unless @active
@@ -513,6 +523,7 @@ class Movie extends IObject
             obj.destroy()
             @displayList[depth] = null
 
+      @attachMovieExeced = true
       if @attachedMovies?
         for movie in @attachedMovieList
           movie.exec() if movie?
@@ -526,6 +537,7 @@ class Movie extends IObject
             @hasButton = true
         instance = instance.linkInstance
 
+      @attachMoviePostExeced = true
       if @attachedMovies?
         for attachName, v of @detachedMovies
           movie = @attachedMovies[attachName]
