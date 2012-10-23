@@ -24,12 +24,12 @@
 - https://github.com/gree/lwf/wiki
 
 ## Discussion
-- Underconstruction
+- Under construction
 
 ## Road Map
-- Underconstruction
+- Under construction
 
-## GREE's Open Source policcy
+## GREE's Open Source policy
  GREE has very positive attitude about open sourcing in-house technologies to contribute open source community. We want many people to use these open sourced technologies and make technology world better.
 - Other GREE technologies that has been open sourced
   - WebView plug-in for Unity  https://github.com/gree/unity-webview
