@@ -1,7 +1,7 @@
 # LWF - Lightweight SWF
 ![LWF - Lightweight SWF ](http://gree.github.com/lwf-demo/images/LWF-logo.png)
 
- LWF is a technology to let you have animated 2D character animations and 2D user interfaces easily.
+ **LWF is a technology to let you have animated 2D character animations and 2D user interfaces easily.**
 
  Generally speaking, making rich 2D character animations and user interfaces are expensive area. You can use Adobe FLASH(TM) as powerful authoring tool with talented Flash artist. As a result, you can have rich content within short time.
 
@@ -19,9 +19,13 @@
  - ![Animal Days](http://product.gree.net/us/images/game-assets/animal-days/bnr-294x166-01.jpg)
 
 ## Demos
-- Unity http://gree.github.com/lwf-demo/unity/basic/basic_web/basic.html
-- HTML5 http://gree.github.com/lwf-demo/html5/basic/movie_play_stop.html
-- More DEMOs are available here! http://gree.github.com/lwf-demo/
+- Unity 
+ - http://gree.github.com/lwf-demo/unity/basic/basic_web/basic.html
+- HTML5 
+ - http://gree.github.com/lwf-demo/html5/basic/movie_play_stop.html
+- More DEMOs are available here! 
+ - http://gree.github.com/lwf-demo/
+
 ## Documentations
 - https://github.com/gree/lwf/wiki
 
