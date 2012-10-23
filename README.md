@@ -14,8 +14,8 @@
 
 ## LWF in production
 - "Animal Days" and "Alien Family" are using LWF technology. GREE will continue to release further titles by using LWF.
-  - Animal Days http://product.gree.net/us/en/apps/46390/
-  - Alien Family http://product.gree.net/us/en/apps/28266/
+- Animal Days http://product.gree.net/us/en/apps/46390/
+ - ![Animal Days](http://product.gree.net/us/images/game-assets/animal-days/bnr-294x166-01.jpg)
 
 ## Demos
 - DEMOs! http://gree.github.com/lwf-demo/
