@@ -21,6 +21,7 @@
 require 'fileutils'
 
 LIBS="-r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEngine.dll"
+MONO_BIN="/Applications/Unity/MonoDevelop.app/Contents/Frameworks/Mono.framework/Versions/Current/bin"
 EDITOR_LIBS="#{LIBS} -r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEditor.dll -r:lwf.dll"
 CORE="../../core"
 UNITY=".."
@@ -72,9 +73,9 @@ task :default => ["build"]
 desc "build"
 task :build do
   puts "lwf.dll:"
-  system "gmcs #{LIBS} -target:library -debug -out:lwf.dll #{SRCS.join(' ')}"
+  system "#{MONO_BIN}/gmcs #{LIBS} -target:library -debug -out:lwf.dll #{SRCS.join(' ')}"
   puts "lwf_editor.dll:"
-  system "gmcs #{EDITOR_LIBS} -target:library -debug -out:lwf_editor.dll #{EDITOR_SRCS.join(' ')}"
+  system "#{MONO_BIN}/gmcs #{EDITOR_LIBS} -target:library -debug -out:lwf_editor.dll #{EDITOR_SRCS.join(' ')}"
 end
 
 desc "clean"
