@@ -3554,7 +3554,7 @@ def swf2lwf_optparse(args)
   @fla = nil
 
   OptionParser.new do |opt|
-    opt.banner += ' SWF [TEXATLAS]...'
+    opt.banner += ' SWF [TexturePackerJSONFiles]'
     opt.on('-c CONF', desc = 'specify a CONF file.') do |conf|
       use_conf = true
       conf_path = conf
@@ -3565,7 +3565,7 @@ def swf2lwf_optparse(args)
     opt.on('-f FLA', desc = 'specify an FLA file corresponding to the SWF file.') do |fla|
       @fla = fla
     end
-    opt.parse!(args)
+    opt.parse!(args.empty? ? ['--help'] : args)
   end
 
   @font_table = Hash.new
