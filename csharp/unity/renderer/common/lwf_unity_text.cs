@@ -342,7 +342,7 @@ public class TextRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
 #endif
-		if (m_context.systemFontRenderer != null) {
+		if (m_context != null && m_context.systemFontRenderer != null) {
 			ISystemFontRenderer.Parameter p =
 				context.systemFontRendererParameter;
 			float scale = lwf.scaleByStage;

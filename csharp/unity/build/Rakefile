@@ -22,6 +22,7 @@ require 'fileutils'
 
 LIBS="-r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEngine.dll"
 MONO_BIN="/Applications/Unity/MonoDevelop.app/Contents/Frameworks/Mono.framework/Versions/Current/bin"
+MONO_OPTS="-target:library -debug"
 EDITOR_LIBS="#{LIBS} -r:/Applications/Unity/Unity.app/Contents/Frameworks/Managed/UnityEditor.dll -r:lwf.dll"
 CORE="../../core"
 UNITY=".."
@@ -73,9 +74,31 @@ task :default => ["build"]
 desc "build"
 task :build do
   puts "lwf.dll:"
-  system "#{MONO_BIN}/gmcs #{LIBS} -target:library -debug -out:lwf.dll #{SRCS.join(' ')}"
+  system "#{MONO_BIN}/gmcs #{LIBS} #{MONO_OPTS} -out:lwf.dll #{SRCS.join(' ')}"
   puts "lwf_editor.dll:"
-  system "#{MONO_BIN}/gmcs #{EDITOR_LIBS} -target:library -debug -out:lwf_editor.dll #{EDITOR_SRCS.join(' ')}"
+  system "#{MONO_BIN}/gmcs #{EDITOR_LIBS} #{MONO_OPTS} -out:lwf_editor.dll #{EDITOR_SRCS.join(' ')}"
+end
+
+desc "pack"
+task :pack do
+  FileUtils.mkdir_p "Packager/Assets/Plugins/lwf"
+  FileUtils.mkdir_p "Packager/Assets/Resources/LWFShaders"
+  system "rsync -av ../../core Packager/Assets/Plugins/lwf"
+  system "rsync -av ../renderer Packager/Assets/Plugins/lwf"
+  system "rsync -av ../wrapper Packager/Assets/Plugins/lwf"
+  system "rsync -av ../editor Packager/Assets/Editor/lwf"
+  system "rsync -av ../shaders/*.shader Packager/Assets/Resources/LWFShaders"
+  system "/Applications/Unity/Unity.app/Contents/MacOS/Unity -projectPath `pwd`/Packager -batchmode -quit -executeMethod Packager.Export"
+  FileUtils.mv "Packager/lwf.unitypackage", "../dist"
+  FileUtils.rm_rf "Packager/Assets/Editor/lwf"
+  FileUtils.rm_rf "Packager/Assets/Plugins"
+  FileUtils.rm_rf "Packager/Assets/Resources"
+end
+
+desc "commit"
+task :commit do
+  rev = open("|git show HEAD|head -1|awk '{print $2}'").read
+  system "git commit -m \"#{rev}\" ../dist/lwf.unitypackage"
 end
 
 desc "clean"

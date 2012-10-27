@@ -1,0 +1,9 @@
+Assets/Editor/LWFObjectInspector.cs
+Assets/Plugins
+Assets/Resources
+Temp
+Library
+*.userprefs
+.DS_Store
+*.pidb
+*.csproj
