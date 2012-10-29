@@ -37,8 +37,8 @@
 ## Discussion
 - Under construction
 
-## Road Map
-- Under construction
+## Blog
+- [Blog #1](https://github.com/gree/lwf/wiki/Blog-%231)
 
 ## GREE's Open Source policy
  GREE has very positive attitude about open sourcing in-house technologies to contribute open source community. We want many people to use these open sourced technologies and make technology world better.
