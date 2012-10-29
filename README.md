@@ -26,6 +26,11 @@
 - More DEMOs are available here! 
  - http://gree.github.com/lwf-demo/
 
+## Requirement
+- LWF requires Ruby to convert from swf into lwf file formart.
+ - Ruby 1.8, 1.9 or JRuby should be installed properly.
+
+
 ## Documentations
 - https://github.com/gree/lwf/wiki
 
