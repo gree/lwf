@@ -444,7 +444,7 @@ public class LWFObject : MonoBehaviour
 		MovieEventHandler update = null, MovieEventHandler render = null)
 	{
 		AddLoadCallback((o) => {lwf.SetMovieEventHandler(
-			instanceName, load, unload, enterFrame, update, render);});
+			instanceName, load, postload, unload, enterFrame, update, render);});
 	}
 
 	public void SetButtonEventHandler(string instanceName,
