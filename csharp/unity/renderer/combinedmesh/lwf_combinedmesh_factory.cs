@@ -76,6 +76,9 @@ public partial class Factory : UnityRenderer.Factory
 	{
 		data = d;
 		mesh = new Mesh();
+#if !UNITY_3_5
+		mesh.MarkDynamic();
+#endif
 
 		meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.sharedMesh = mesh;

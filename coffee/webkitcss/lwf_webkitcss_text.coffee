@@ -103,10 +103,10 @@ class WebkitCSSTextRenderer
     else
       @visible = visible
       if visible is false
-        @node.style.visible = "hidden"
+        @node.style.visibility = "hidden"
         return
       else
-        @node.style.visible = "visible"
+        @node.style.visibility = "visible"
 
     strChanged = false
     str = @textObject.parent[@context.name]
@@ -147,8 +147,8 @@ class WebkitCSSTextRenderer
       return
 
     if lines.length is @textNodes.length
-        for i in [0...lines.length]
-          @textNodes[i].textContent = lines[i]
+      for i in [0...lines.length]
+        @textNodes[i].textContent = lines[i]
     else
       @clearTextNodes()
       if lines.length > 1

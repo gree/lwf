@@ -32,9 +32,15 @@ if typeof global isnt "undefined"
   # global["LWF"]["Script"] for per data JavaScript
 
 LWF.prototype["addAllowButton"] = LWF.prototype.addAllowButton
+LWF.prototype["addButtonEventHandler"] = LWF.prototype.addButtonEventHandler
 LWF.prototype["addDenyButton"] = LWF.prototype.addDenyButton
+LWF.prototype["addEventHandler"] = LWF.prototype.addEventHandler
+LWF.prototype["addMovieEventHandler"] = LWF.prototype.addMovieEventHandler
 LWF.prototype["clearAllowButton"] = LWF.prototype.clearAllowButton
+LWF.prototype["clearButtonEventHandler"] = LWF.prototype.clearButtonEventHandler
 LWF.prototype["clearDenyButton"] = LWF.prototype.clearDenyButton
+LWF.prototype["clearEventHandler"] = LWF.prototype.clearEventHandler
+LWF.prototype["clearMovieEventHandler"] = LWF.prototype.clearMovieEventHandler
 LWF.prototype["denyAllButtons"] = LWF.prototype.denyAllButtons
 LWF.prototype["destroy"] = LWF.prototype.destroy
 LWF.prototype["exec"] = LWF.prototype.exec
@@ -50,7 +56,11 @@ LWF.prototype["inputPress"] = LWF.prototype.inputPress
 LWF.prototype["inputRelease"] = LWF.prototype.inputRelease
 LWF.prototype["inspect"] = LWF.prototype.inspect
 LWF.prototype["removeAllowButton"] = LWF.prototype.removeAllowButton
+LWF.prototype["removeButtonEventHandler"] =
+  LWF.prototype.removeButtonEventHandler
 LWF.prototype["removeDenyButton"] = LWF.prototype.removeDenyButton
+LWF.prototype["removeEventHandler"] = LWF.prototype.removeEventHandler
+LWF.prototype["removeMovieEventHandler"] = LWF.prototype.removeMovieEventHandler
 LWF.prototype["render"] = LWF.prototype.render
 LWF.prototype["scaleForHeight"] = LWF.prototype.scaleForHeight
 LWF.prototype["scaleForWidth"] = LWF.prototype.scaleForWidth

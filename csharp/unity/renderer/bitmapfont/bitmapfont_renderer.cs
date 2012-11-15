@@ -96,7 +96,26 @@ public class Renderer
 	public Mesh mesh {get {return mMesh;}}
 	public Material material {get {return mMaterial;}}
 
+	public Renderer() {}
+
 	public Renderer(string fontName,
+		float size = 0,
+		float width = 0,
+		float height = 0,
+		Align align = Align.LEFT,
+		VerticalAlign verticalAlign = VerticalAlign.TOP,
+		float spaceAdvance = 0.25f,
+		float lineSpacing = 1.0f,
+		float letterSpacing = 0.0f,
+		float tabSpacing = 4.0f,
+		float leftMargin = 0.0f,
+		float rightMargin = 0.0f)
+	{
+		Init(fontName, size, width, height, align, verticalAlign, spaceAdvance,
+			lineSpacing, letterSpacing, tabSpacing, leftMargin, rightMargin);
+	}
+
+	public void Init(string fontName,
 		float size = 0,
 		float width = 0,
 		float height = 0,

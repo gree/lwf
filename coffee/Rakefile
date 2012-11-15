@@ -48,6 +48,9 @@ CORE = %w|
   core/lwf_lwfcontainer
   core/lwf_property
   core/lwf_movie
+  core/lwf_event
+  core/lwf_eventmovie
+  core/lwf_eventbutton
   core/lwf_core
   core/lwf_expose
 |
@@ -203,6 +206,7 @@ task :check do
     end
   end
   srcs.keys.each do |src|
+    system "coffeelint #{src}"
     system "coffee -o /tmp -c #{src}"
   end
 end

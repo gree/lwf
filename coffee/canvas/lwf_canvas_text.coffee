@@ -70,7 +70,7 @@ class CanvasTextRenderer
   destruct: ->
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
-    return unless visible
+    return if !visible or c.multi.alpha is 0
 
     m = Utility.scaleMatrix(@matrixForScale, m, 1 / @lwf.scaleByStage, 0, 0)
     unless @context.factory.textInSubpixel

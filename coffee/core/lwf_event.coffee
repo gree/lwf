@@ -18,13 +18,41 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-if !window? and self?
-  self.onmessage = (event) ->
-    if typeof self.webkitPostMessage isnt "undefined"
-      data = (new LWFLoaderWithArrayBuffer).load(event.data)
-      self.webkitPostMessage(data)
+class EventHandlers
+  constructor: ->
+    @clear()
+
+  clear:(type = null) ->
+    if type?
+      @[type] = [] if @[type]?
     else
-      data = (new LWFLoader).load(event.data)
-      self.postMessage(data)
-    self.close()
+      @[type] = [] for type in @types
+    return
+
+  add:(handlers) ->
+    for type in @types
+      handler = handlers[type]
+      @[type].push(handler) if handler?
+    return
+
+  removeHandler:(array, handler) ->
+    i = 0
+    while i < array.length
+      if array[i] is handler
+        array.splice(i, 1)
+      else
+        ++i
+    return
+
+  remove:(handlers) ->
+    for type in TYPES
+      handler = handlers[type]
+      @removeHandler(@[type], handler) if handler?
+    return
+
+  call:(type, target) ->
+    handlers = @[type]
+    if handlers?
+      handler.call(target) for handler in handlers
+    return
 

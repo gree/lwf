@@ -28,14 +28,13 @@ using TextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFDataCallback = System.Func<LWF.Data, bool>;
 using BitmapFontDataLoader = System.Func<string, byte[]>;
 using BitmapFontTextureLoader = System.Func<string, UnityEngine.Texture2D>;
-using LWFLoadCallback = System.Action<LWFObject>;
-using LWFLoadCallbacks =
-	System.Collections.Generic.List<System.Action<LWFObject>>;
+using LWFCallback = System.Action<LWFObject>;
+using LWFCallbacks = System.Collections.Generic.List<System.Action<LWFObject>>;
 
 using EventHandler = System.Action<LWF.Movie, LWF.Button>;
 using MovieEventHandler = System.Action<LWF.Movie>;
-using ButtonEventHandler = System.Func<LWF.Button, bool>;
-using ButtonKeyPressHandler = System.Func<LWF.Button, int, bool>;
+using ButtonEventHandler = System.Action<LWF.Button>;
+using ButtonKeyPressHandler = System.Action<LWF.Button, int>;
 using MovieCommand = System.Action<LWF.Movie>;
 using ProgramObjectConstructor =
 	System.Func<LWF.ProgramObject, int, int, int, LWF.Renderer>;
@@ -82,7 +81,8 @@ public class LWFObject : MonoBehaviour
 	protected RendererFactoryConstructor rendererFactoryConstructor;
 	protected bool callUpdate;
 	protected bool useCombinedMeshRenderer;
-	protected LWFLoadCallbacks lwfLoadCallbacks;
+	protected LWFCallbacks lwfLoadCallbacks;
+	protected LWFCallbacks lwfDestroyCallbacks;
 	protected int activateCount = 1;
 	protected int resumeCount = 1;
 
@@ -90,12 +90,16 @@ public class LWFObject : MonoBehaviour
 	{
 		useCombinedMeshRenderer = true;
 		isAlive = true;
-		lwfLoadCallbacks = new LWFLoadCallbacks();
+		lwfLoadCallbacks = new LWFCallbacks();
+		lwfDestroyCallbacks = new LWFCallbacks();
 	}
 
 	public virtual void OnDestroy()
 	{
 		isAlive = false;
+
+		lwfDestroyCallbacks.ForEach(c => c(this));
+		lwfDestroyCallbacks = null;
 
 		if (lwfName == null)
 			return;
@@ -138,7 +142,8 @@ public class LWFObject : MonoBehaviour
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
 		Camera camera = null, bool autoUpdate = true,
 		LWFDataCallback lwfDataCallback = null,
-		LWFLoadCallback lwfLoadCallback = null,
+		LWFCallback lwfLoadCallback = null,
+		LWFCallback lwfDestroyCallback = null,
 		LWFDataLoader lwfDataLoader = null,
 		TextureLoader textureLoader = null,
 		TextureUnloader textureUnloader = null)
@@ -150,6 +155,8 @@ public class LWFObject : MonoBehaviour
 
 		if (lwfLoadCallback != null)
 			lwfLoadCallbacks.Add(lwfLoadCallback);
+		if (lwfDestroyCallback != null)
+			lwfDestroyCallbacks.Add(lwfDestroyCallback);
 
 		LWF.Data data =
 			ResourceCache.SharedInstance().LoadLWFData(lwfName, lwfDataLoader);
@@ -181,7 +188,7 @@ public class LWFObject : MonoBehaviour
 		return true;
 	}
 
-	public void AddLoadCallback(LWFLoadCallback lwfLoadCallback)
+	public void AddLoadCallback(LWFCallback lwfLoadCallback)
 	{
 		if (lwf != null)
 			lwfLoadCallback(this);
@@ -189,10 +196,15 @@ public class LWFObject : MonoBehaviour
 			lwfLoadCallbacks.Add(lwfLoadCallback);
 	}
 
+	public void AddDestroyCallback(LWFCallback lwfDestroyCallback)
+	{
+		lwfDestroyCallbacks.Add(lwfDestroyCallback);
+	}
+
 	public virtual void OnLoad()
 	{
-		foreach (LWFLoadCallback lwfLoadCallback in lwfLoadCallbacks)
-			lwfLoadCallback(this);
+		lwfLoadCallbacks.ForEach(c => c(this));
+		lwfLoadCallbacks = null;
 	}
 
 	public string GetRendererName()
@@ -250,7 +262,7 @@ public class LWFObject : MonoBehaviour
 		lwf.Render();
 	}
 
-	void Update()
+	public virtual void Update()
 	{
 		if (!callUpdate || lwf == null)
 			return;
@@ -390,7 +402,11 @@ public class LWFObject : MonoBehaviour
 				lwf.SetAttachVisible(true);
 				lwf.Render();
 				lwf.SetAttachVisible(attachVisible);
+#if UNITY_3_5
 				gameObject.active = true;
+#else
+				gameObject.SetActive(true);
+#endif
 			}
 		});
 	}
@@ -404,7 +420,11 @@ public class LWFObject : MonoBehaviour
 				lwf.SetAttachVisible(false);
 				lwf.Render();
 				lwf.SetAttachVisible(attachVisible);
+#if UNITY_3_5
 				gameObject.active = false;
+#else
+				gameObject.SetActive(false);
+#endif
 			}
 		});
 	}
@@ -426,6 +446,22 @@ public class LWFObject : MonoBehaviour
 		cache.SetLoader(dataLoader, textureLoader);
 	}
 
+	public void AddEventHandler(string eventName, EventHandler eventHandler)
+	{
+		AddLoadCallback((o) => {lwf.AddEventHandler(eventName, eventHandler);});
+	}
+
+	public void RemoveEventHandler(string eventName, EventHandler eventHandler)
+	{
+		AddLoadCallback(
+			(o) => {lwf.RemoveEventHandler(eventName, eventHandler);});
+	}
+
+	public void ClearEventHandler(string eventName)
+	{
+		AddLoadCallback((o) => {lwf.ClearEventHandler(eventName);});
+	}
+
 	public void SetEventHandler(string eventName, EventHandler eventHandler)
 	{
 		AddLoadCallback((o) => {lwf.SetEventHandler(eventName, eventHandler);});
@@ -438,25 +474,99 @@ public class LWFObject : MonoBehaviour
 			programObjectName, programObjectConstructor);});
 	}
 
+	public void AddMovieEventHandler(string instanceName,
+		MovieEventHandler load = null, MovieEventHandler postLoad = null,
+		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
+		MovieEventHandler update = null, MovieEventHandler render = null)
+	{
+		AddLoadCallback((o) => {lwf.AddMovieEventHandler(instanceName,
+			load, postLoad, unload, enterFrame, update, render);});
+	}
+
+	public void RemoveMovieEventHandler(string instanceName,
+		MovieEventHandler load = null, MovieEventHandler postLoad = null,
+		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
+		MovieEventHandler update = null, MovieEventHandler render = null)
+	{
+		AddLoadCallback((o) => {lwf.RemoveMovieEventHandler(instanceName,
+			load, postLoad, unload, enterFrame, update, render);});
+	}
+
+	public void ClearMovieEventHandler(string instanceName)
+	{
+		AddLoadCallback((o) => {lwf.ClearMovieEventHandler(instanceName);});
+	}
+
+	public void ClearMovieEventHandler(string instanceName,
+		LWF.MovieEventHandlers.Type type)
+	{
+		AddLoadCallback(
+			(o) => {lwf.ClearMovieEventHandler(instanceName, type);});
+	}
+
 	public void SetMovieEventHandler(string instanceName,
 		MovieEventHandler load = null, MovieEventHandler postLoad = null,
 		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
 		MovieEventHandler update = null, MovieEventHandler render = null)
 	{
-		AddLoadCallback((o) => {lwf.SetMovieEventHandler(
-			instanceName, load, unload, enterFrame, update, render);});
+		AddLoadCallback((o) => {lwf.SetMovieEventHandler(instanceName,
+			load, postLoad, unload, enterFrame, update, render);});
+	}
+
+	public void AddButtonEventHandler(string instanceName,
+		ButtonEventHandler load = null, ButtonEventHandler unload = null,
+		ButtonEventHandler enterFrame = null, ButtonEventHandler update = null,
+		ButtonEventHandler render = null, ButtonEventHandler press = null,
+		ButtonEventHandler release = null, ButtonEventHandler rollOver = null,
+		ButtonEventHandler rollOut = null,
+		ButtonKeyPressHandler keyPress = null)
+	{
+		AddLoadCallback((o) => {lwf.AddButtonEventHandler(
+			instanceName, load, unload, enterFrame, update, render,
+				press, release, rollOver, rollOut, keyPress);});
+	}
+
+	public void RemoveButtonEventHandler(string instanceName,
+		ButtonEventHandler load = null, ButtonEventHandler unload = null,
+		ButtonEventHandler enterFrame = null, ButtonEventHandler update = null,
+		ButtonEventHandler render = null, ButtonEventHandler press = null,
+		ButtonEventHandler release = null, ButtonEventHandler rollOver = null,
+		ButtonEventHandler rollOut = null,
+		ButtonKeyPressHandler keyPress = null)
+	{
+		AddLoadCallback((o) => {lwf.RemoveButtonEventHandler(
+			instanceName, load, unload, enterFrame, update, render,
+				press, release, rollOver, rollOut, keyPress);});
+	}
+
+	public void ClearButtonEventHandler(string instanceName)
+	{
+		AddLoadCallback((o) => {lwf.ClearButtonEventHandler(instanceName);});
+	}
+
+	public void ClearButtonEventHandler(string instanceName,
+		LWF.ButtonEventHandlers.Type type)
+	{
+		AddLoadCallback(
+			(o) => {lwf.ClearButtonEventHandler(instanceName, type);});
 	}
 
 	public void SetButtonEventHandler(string instanceName,
-		ButtonEventHandler press = null, ButtonEventHandler release = null,
-		ButtonEventHandler rollOver = null, ButtonEventHandler rollOut = null,
-		ButtonKeyPressHandler keyPress = null, ButtonEventHandler load = null,
-		ButtonEventHandler unload = null, ButtonEventHandler enterFrame = null,
-		ButtonEventHandler update = null, ButtonEventHandler render = null)
+		ButtonEventHandler load = null, ButtonEventHandler unload = null,
+		ButtonEventHandler enterFrame = null, ButtonEventHandler update = null,
+		ButtonEventHandler render = null, ButtonEventHandler press = null,
+		ButtonEventHandler release = null, ButtonEventHandler rollOver = null,
+		ButtonEventHandler rollOut = null,
+		ButtonKeyPressHandler keyPress = null)
 	{
 		AddLoadCallback((o) => {lwf.SetButtonEventHandler(
-			instanceName, press, release, rollOver, rollOut,
-				keyPress, load, unload, enterFrame, update, render);});
+			instanceName, load, unload, enterFrame, update, render,
+				press, release, rollOver, rollOut, keyPress);});
+	}
+
+	public void Init()
+	{
+		AddLoadCallback((o) => {lwf.Init();});
 	}
 
 	public void SetMovieCommand(string[] instanceNames, MovieCommand cmd)
@@ -479,14 +589,14 @@ public class LWFObject : MonoBehaviour
 		AddLoadCallback((o) => {lwf.property.MoveTo(x, y);});
 	}
 
-	public void Rotate(float radian)
+	public void Rotate(float degree)
 	{
-		AddLoadCallback((o) => {lwf.property.Rotate(radian);});
+		AddLoadCallback((o) => {lwf.property.Rotate(degree);});
 	}
 
-	public void RotateTo(float radian)
+	public void RotateTo(float degree)
 	{
-		AddLoadCallback((o) => {lwf.property.RotateTo(radian);});
+		AddLoadCallback((o) => {lwf.property.RotateTo(degree);});
 	}
 
 	public void Scale(float x, float y)
@@ -512,5 +622,115 @@ public class LWFObject : MonoBehaviour
 	public void SetColorTransform(LWF.ColorTransform c)
 	{
 		AddLoadCallback((o) => {lwf.property.SetColorTransform(c);});
+	}
+
+	public void AddMovieLoadHandler(
+		string instanceName, MovieEventHandler handler)
+	{
+		AddLoadCallback((o) => {
+			lwf.AddMovieEventHandler(instanceName, load:handler);
+			LWF.Movie movie = lwf[instanceName];
+			if (movie != null)
+				handler(movie);
+		});
+	}
+
+	public void PlayMovie(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.Play();});
+	}
+
+	public void StopMovie(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.Stop();});
+	}
+
+	public void GotoNextFrameMovie(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoNextFrame();});
+	}
+
+	public void GotoPrevFrameMovie(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoPrevFrame();});
+	}
+
+	public void SetVisibleMovie(string instanceName, bool visible)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.SetVisible(visible);});
+	}
+
+	public void GotoAndStopMovie(string instanceName, string label)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndStop(label);});
+	}
+
+	public void GotoAndStopMovie(string instanceName, int frameNo)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndStop(frameNo);});
+	}
+
+	public void GotoAndPlayMovie(string instanceName, string label)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndPlay(label);});
+	}
+
+	public void GotoAndPlayMovie(string instanceName, int frameNo)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndPlay(frameNo);});
+	}
+
+	public void MoveMovie(string instanceName, float vx, float vy)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.Move(vx, vy);});
+	}
+
+	public void MoveToMovie(string instanceName, float vx, float vy)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.MoveTo(vx, vy);});
+	}
+
+	public void RotateMovie(string instanceName, float degree)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.Rotate(degree);});
+	}
+
+	public void RotateToMovie(string instanceName, float degree)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.RotateTo(degree);});
+	}
+
+	public void ScaleMovie(string instanceName, float vx, float vy)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.Scale(vx, vy);});
+	}
+
+	public void ScaleToMovie(string instanceName, float vx, float vy)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.ScaleTo(vx, vy);});
+	}
+
+	public void SetMatrixMovie(string instanceName,
+		LWF.Matrix matrix, float sx = 1, float sy = 1, float r = 0)
+	{
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.SetMatrix(matrix, sx, sy, r);});
+	}
+
+	public void SetAlphaMovie(string instanceName, float v)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.SetAlpha(v);});
+	}
+
+	public void SetColorTransformMovie(
+		string instanceName, LWF.ColorTransform c)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {m.SetColorTransform(c);});
+	}
+
+	public void SetRenderingOffsetMovie(string instanceName, int rOffset)
+	{
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.SetRenderingOffset(rOffset);});
 	}
 }

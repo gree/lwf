@@ -119,7 +119,7 @@ public partial class LWF
 				{
 					int eventId = animations[i++];
 					if (m_eventHandlers[eventId] != null)
-						m_eventHandlers[eventId](movie, button);
+						m_eventHandlers[eventId].ForEach(h => h(movie, button));
 				}
 				break;
 

@@ -22,6 +22,7 @@ using System;
 
 namespace LWF {
 
+using EventType = ButtonEventHandlers.Type;
 using Condition = Format.ButtonCondition.Condition;
 
 public partial class Button : IObject
@@ -58,38 +59,43 @@ public partial class Button : IObject
 		}
 
 		m_handler = lwf.GetButtonEventHandlers(this);
-		if (m_handler != null && m_handler.load != null)
-			m_handler.load(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.LOAD, this);
+	}
+
+	public void SetHandlers(ButtonEventHandlers handler)
+	{
+		m_handler = handler;
 	}
 
 	public override void Exec(int matrixId = 0, int colorTransformId = 0)
 	{
 		base.Exec(matrixId, colorTransformId);
 
-		if (m_handler != null && m_handler.enterFrame != null)
-			m_handler.enterFrame(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.ENTERFRAME, this);
 	}
 
 	public override void Update(Matrix m, ColorTransform c)
 	{
 		base.Update(m, c);
 
-		if (m_handler != null && m_handler.update != null)
-			m_handler.update(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.UPDATE, this);
 	}
 
 	public override void Render(bool v, int rOffset)
 	{
-		if (v && m_handler != null && m_handler.render != null)
-			m_handler.render(this);
+		if (v && m_handler != null)
+			m_handler.Call(EventType.RENDER, this);
 	}
 
 	public override void Destroy()
 	{
 		m_lwf.ClearFocus(this);
 
-		if (m_handler != null && m_handler.unload != null)
-			m_handler.unload(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.UNLOAD, this);
 
 		base.Destroy();
 	}
@@ -118,45 +124,40 @@ public partial class Button : IObject
 
 	public virtual void RollOver()
 	{
-		if (m_handler != null &&
-				m_handler.rollOver != null && !m_handler.rollOver(this))
-			return;
+		if (m_handler != null)
+			m_handler.Call(EventType.ROLLOVER, this);
 
 		PlayAnimation(Condition.ROLLOVER);
 	}
 
 	public virtual void RollOut()
 	{
-		if (m_handler != null &&
-				m_handler.rollOut != null && !m_handler.rollOut(this))
-			return;
+		if (m_handler != null)
+			m_handler.Call(EventType.ROLLOUT, this);
 
 		PlayAnimation(Condition.ROLLOUT);
 	}
 
 	public virtual void Press()
 	{
-		if (m_handler != null &&
-				m_handler.press != null && !m_handler.press(this))
-			return;
+		if (m_handler != null)
+			m_handler.Call(EventType.PRESS, this);
 
 		PlayAnimation(Condition.PRESS);
 	}
 
 	public virtual void Release()
 	{
-		if (m_handler != null &&
-				m_handler.release != null && !m_handler.release(this))
-			return;
+		if (m_handler != null)
+			m_handler.Call(EventType.RELEASE, this);
 
 		PlayAnimation(Condition.RELEASE);
 	}
 
 	public virtual void KeyPress(int code)
 	{
-		if (m_handler != null &&
-				m_handler.keyPress != null && !m_handler.keyPress(this, code))
-			return;
+		if (m_handler != null)
+			m_handler.CallKEYPRESS(this, code);
 
 		PlayAnimation(Condition.KEYPRESS, code);
 	}

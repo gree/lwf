@@ -45,7 +45,7 @@ TWEENLWF.Tween = function ( movie ) {
 
 		};
 
-		this.lwf.setMovieEventHandler( "_root", {
+		this.lwf.addMovieEventHandler( "_root", {
 
 			"enterFrame": function () {
 

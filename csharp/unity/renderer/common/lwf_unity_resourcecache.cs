@@ -219,7 +219,8 @@ public class ResourceCache
 		if (m_textureCache.TryGetValue(cacheName, out item)) {
 			if (item.Unref() <= 0) {
 				TextureContext context = item.Entity();
-				context.unloader((Texture2D)context.material.mainTexture);
+				if (context.material.mainTexture != null)
+					context.unloader((Texture2D)context.material.mainTexture);
 				m_textureCache.Remove(cacheName);
 			}
 		}

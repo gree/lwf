@@ -43,3 +43,4 @@ class CanvasResourceCache extends WebkitCSSResourceCache
       imageCache[texture.filename] = canvas
 
     super
+    return

@@ -49,15 +49,43 @@ class WebkitCSSResourceCache
     settings._rgbMap = {}
     settings._textures = []
 
+    re = new RegExp("_atlas_(.*)_info_" +
+      "([0-9])_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)", "i")
+
     for texture in data.textures
       m = texture.filename.match(/^(.*)_rgb_([0-9a-f]{6})(.*)$/i)
       if m?
-        orig = m[1] + m[3]
+        ma = texture.filename.match(re)
+        if ma?
+          orig = ma[1]
+          rotated = if ma[2] is "1" then true else false
+          u = parseInt(ma[3], 10)
+          v = parseInt(ma[4], 10)
+          w = parseInt(ma[5], 10)
+          h = parseInt(ma[6], 10)
+          x = parseInt(ma[7], 10)
+          y = parseInt(ma[8], 10)
+        else
+          orig = m[1] + m[3]
+          rotated = false
+          u = 0
+          v = 0
+          w = null
+          h = null
+          x = 0
+          y = 0
         rgb = m[2]
         settings._rgbMap[orig] ?= []
         settings._rgbMap[orig].push(
           filename: texture.filename
           rgb: rgb
+          rotated:rotated
+          u:u
+          v:v
+          w:w
+          h:h
+          x:x
+          y:y
         )
         continue
 
@@ -73,6 +101,7 @@ class WebkitCSSResourceCache
         settings._textures.push(t)
         settings._alphaMap[texture.filename] = [texture, t]
         settings._alphaMap[t.filename] = [texture, t]
+    return
 
   onloaddata:(settings, data, url) ->
     unless data? and data.check()
@@ -95,6 +124,7 @@ class WebkitCSSResourceCache
       @loadJS(settings, data)
     else
       @loadImages(settings, data)
+    return
 
   loadLWF:(settings) ->
     lwfUrl = settings["lwf"]
@@ -114,6 +144,7 @@ class WebkitCSSResourceCache
         return
 
     @loadLWFData(settings, url)
+    return
 
   loadLWFData:(settings, url) ->
     onload = settings["onload"]
@@ -197,6 +228,7 @@ class WebkitCSSResourceCache
 
     script = document.createElement("script")
     script.type = "text/javascript"
+    script.charset = "UTF-8"
     script.onabort = =>
       delete @cache[lwfUrl]
       settings.error.push({url:url, reason:"abort"})
@@ -228,38 +260,44 @@ class WebkitCSSResourceCache
       delete settings._textures
       if settings.error.length > 0
         delete @cache[settings["lwf"]]
-        onload.call(settings, null)
+        settings["onload"].call(settings, null)
       else
         @newLWF(settings, imageCache, data)
+    return
 
   generateImages:(settings, imageCache, texture, image) ->
     d = settings._rgbMap[texture.filename]
     if d?
       for o in d
+        w = o.w ? image.width
+        h = o.h ? image.height
         if @.constructor is WebkitCSSResourceCache
           name = "canvas_" + o.filename.replace(/[\.-]/g, "_")
           ctx = document.getCSSCanvasContext(
-            "2d", name, image.width, image.height)
+            "2d", name, w, h)
           canvas = ctx.canvas
           canvas.name = name
         else
           canvas = document.createElement('canvas')
-          canvas.width = image.width
-          canvas.height = image.height
+          canvas.width = w
+          canvas.height = h
           ctx = canvas.getContext('2d')
         ctx.fillStyle = "##{o.rgb}"
-        ctx.fillRect(0, 0, image.width, image.height)
+        ctx.fillRect(0, 0, w, h)
         ctx.globalCompositeOperation = 'destination-in'
-        ctx.drawImage(image, 0, 0, image.width, image.height)
-        imageData = ctx.getImageData(0, 0, image.width, image.height)
-        pixels = imageData.data
-        i = 3
-        n = pixels.length
-        while i < n
-          i += 4
-          pixels[i] = 255 if pixels[i] > 0
-        ctx.putImageData(imageData, 0, 0)
+        if o.rotated
+          m = new Matrix()
+          Utility.rotateMatrix(m, new Matrix(), 1, o.x, o.y + h)
+          ctx.setTransform(
+            m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+        else if o.x isnt 0 or o.y isnt 0
+          m = new Matrix()
+          Utility.scaleMatrix(m, new Matrix(), 1, o.x, o.yy)
+          ctx.setTransform(
+            m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+        ctx.drawImage(image, o.u, o.v, w, h, 0, 0, w, h)
         imageCache[o.filename] = canvas
+    return
 
   loadImages:(settings, data) ->
     imageCache = {}
@@ -320,7 +358,8 @@ class WebkitCSSResourceCache
 
   newFactory:(settings, cache, data) ->
     return new WebkitCSSRendererFactory(data,
-      @, cache, settings["stage"], settings["textInSubpixel"] ? false, true)
+      @, cache, settings["stage"], settings["textInSubpixel"] ? false,
+         settings["use3D"] ? true)
 
   onloadLWF:(settings, lwf) ->
     factory = lwf.rendererFactory
@@ -341,6 +380,12 @@ class WebkitCSSResourceCache
     embeddedScript = global["LWF"]?["Script"]?[data.name()] if data.useScript
     lwf = new LWF(data, factory, embeddedScript, settings["privateData"])
     lwf.url = settings["lwf"]
+    if settings["preferredFrameRate"]?
+      if settings["execLimit"]?
+        lwf.setPreferredFrameRate(
+          settings["preferredFrameRate"], settings["execLimit"])
+      else
+        lwf.setPreferredFrameRate(settings["preferredFrameRate"])
     @onloadLWF(settings, lwf)
     return
 
@@ -360,7 +405,7 @@ class WebkitCSSResourceCache
           onload(lwf) if onload?
           if settings.error.length > 0
             errors ?= []
-            errors.apply(settings.error)
+            errors = errors.concat(settings.error)
           ++loadedCount
           onloadall(errors) if loadTotal is loadedCount
       @loadLWF(settings)
@@ -370,6 +415,8 @@ class WebkitCSSResourceCache
 
   setParticleConstructor:(ctor) ->
     @particleConstructor = ctor
+    return
 
   setDOMElementConstructor:(ctor) ->
     @domElementConstructor = ctor
+    return

@@ -30,9 +30,14 @@ require 'find'
 require 'htmlparser'
 require 'chunky_png'
 require 'json'
-require 'rexml/document'
 require 'rkelly'
 require 'zip/zip'
+begin
+  require 'rubygems'
+  require 'libxml'
+rescue LoadError
+  require 'rexml/document'
+end
 
 LWF_HEADER_SIZE = 324
 
@@ -812,6 +817,9 @@ class Color
     @green = 0.0
     @blue = 0.0
     @alpha = 1.0
+  end
+  def dump
+    "(#{red},#{green},#{blue},#{alpha})"
   end
 end
 
@@ -2026,7 +2034,14 @@ def parse_define_edit_text
     shadow_color, shadow_offset_x, shadow_offset_y, shadow_blur,
     color, name, text)
   graphic.add_graphic_object(gobj)
-  info "  text #{obj_id} name=#{name}"
+  info "  text #{obj_id} name=#{name} align=#{align}"
+  unless stroke_color.nil?
+    info "    stroke:color=#{stroke_color.dump} w=#{stroke_width} "
+  end
+  unless shadow_color.nil?
+    info "    shadow:color=#{shadow_color.dump} x=#{shadow_offset_x} " +
+      "y=#{shadow_offset_y} b=#{shadow_blur}"
+  end
   @string_map[name] = true
   warn("Text('#{name}') is already defined.") unless @text_name_map[name].nil?
   @text_name_map[name] = true
@@ -2320,7 +2335,9 @@ end
 
 def parse(filename)
   @filename = filename
-  @swf = File.open(@filename, 'rb').read
+  f = File.open(@filename, 'rb')
+  @swf = f.read
+  f.close
   @swf.force_encoding("ASCII-8BIT") if RUBY_VERSION >= "1.9.0"
 
   magic, @version, length = @swf.unpack('a3cV')
@@ -2537,8 +2554,18 @@ def create_instance_name(x, y)
 end
 
 def parse_xflxml(xml, isRootMovie = false)
-  doc = REXML::Document.new(xml)
-  entries = REXML::XPath.match(doc, "//script")
+  return unless xml =~ /\/\*\s*js/
+  if defined?(LibXML)
+    doc = LibXML::XML::Document.string(xml)
+    entries = doc.find('//xfl:script', 'xfl'=>'http://ns.adobe.com/xfl/2008/')
+    elementsMsg = 'children'
+    textMsg = 'content'
+  else
+    doc = REXML::Document.new(xml)
+    entries = REXML::XPath.match(doc, "//script")
+    elementsMsg = 'elements'
+    textMsg = 'text'
+  end
   entries.each do |e|
     case e.parent.parent.name
     when "DOMFrame"
@@ -2555,7 +2582,10 @@ def parse_xflxml(xml, isRootMovie = false)
       end
   
       name = isRootMovie ? "_root" : linkageName
-      depth = layers.elements.index(layer) # 1 origin
+      layerElements = layers.send(elementsMsg)
+      layerElements = [nil] +
+        layerElements.delete_if{|l| l.name != "DOMLayer"} if defined?(LibXML)
+      depth = layerElements.index(layer) # 1 origin
       index = frame.attributes["index"].to_i
   
       scripts = {}
@@ -2563,8 +2593,9 @@ def parse_xflxml(xml, isRootMovie = false)
       script_nest = 0
       i = 0
       nest = 0
-      while i < e.text.length
-        s = e.text[i, e.text.length - i].gsub(/\n/, ' ')
+      text = e.send(textMsg)
+      while i < text.length
+        s = text[i, text.length - i].gsub(/\n/, ' ')
         case s
         when /^\/\*/
           if script_index.nil?
@@ -2622,7 +2653,7 @@ def parse_xflxml(xml, isRootMovie = false)
           if !script_index.nil? and nest == script_nest
             scripts[type] ||= ""
             scripts[type] +=
-              e.text[script_index, i - script_index].sub(/\s*$/, '')
+              text[script_index, i - script_index].sub(/\s*$/, '')
             script_index = nil
           end
         end
@@ -2654,12 +2685,20 @@ def parse_xflxml(xml, isRootMovie = false)
       instance_linkage_name = symbol_instance.attributes["libraryItemName"]
       instance_name = symbol_instance.attributes["name"]
       if instance_name.nil? or instance_name.empty?
-        m = symbol_instance.elements["matrix"].elements["Matrix"]
-        instance_name =
-          create_instance_name(m.attributes["tx"], m.attributes["ty"])
+        em = symbol_instance.send(elementsMsg).find(){|e| e.name == "matrix"}
+        if em.nil?
+          instance_name = create_instance_name(0, 0)
+        else
+          m = em.send(elementsMsg).find(){|e| e.name == "Matrix"}
+          instance_name =
+            create_instance_name(m.attributes["tx"], m.attributes["ty"])
+        end
       end
       name = isRootMovie ? "_root" : timeline.attributes["name"]
-      depth = layers.elements.index(layer) # 1 origin
+      layerElements = layers.send(elementsMsg)
+      layerElements = [nil] +
+        layerElements.delete_if{|l| l.name != "DOMLayer"} if defined?(LibXML)
+      depth = layerElements.index(layer) # 1 origin
       index = frame.attributes["index"].to_i
 
       event = nil
@@ -2669,8 +2708,9 @@ def parse_xflxml(xml, isRootMovie = false)
       script_nest = 0
       i = 0
       nest = 0
-      while i < e.text.length
-        s = e.text[i, e.text.length - i].gsub(/\n/, ' ')
+      text = e.send(textMsg)
+      while i < text.length
+        s = text[i, text.length - i].gsub(/\n/, ' ')
         case s
         when /^(on|onClipEvent)\s*\(\s*([a-zA-Z]+)\s*\)/
           event = $2 if event_nest == 0
@@ -2711,7 +2751,7 @@ def parse_xflxml(xml, isRootMovie = false)
         when /^\*\//
           nest -= 1
           if !script_index.nil? and nest == script_nest
-            script += e.text[script_index, i - script_index].sub(/\s*$/, '')
+            script += text[script_index, i - script_index].sub(/\s*$/, '')
             script_index = nil
           end
         end
@@ -2723,22 +2763,28 @@ end
 
 def parse_fla(lwfbasedir)
   if File.file?(@fla)
+    root_xmls = []
+    other_xmls = []
 
     Zip::ZipFile.foreach(@fla) do |entry|
-      if entry.file? and entry.name == 'DOMDocument.xml'
-        entry.get_input_stream do |io|
-          parse_xflxml(io.read, true)
+      if entry.file?
+        if entry.name == 'DOMDocument.xml'
+          entry.get_input_stream do |io|
+            root_xmls.push(io.read)
+          end
+        elsif entry.name =~ /^LIBRARY\/.*\.xml$/
+          entry.get_input_stream do |io|
+            other_xmls.push(io.read)
+          end
         end
       end
     end
 
-    Zip::ZipFile.foreach(@fla) do |entry|
-      if entry.file? and entry.name =~ /^LIBRARY\/.*\.xml$/
-        entry.get_input_stream do |io|
-          parse_xflxml(io.read)
-        end
-      end
-
+    root_xmls.each do |xml|
+      parse_xflxml(xml, true)
+    end
+    other_xmls.each do |xml|
+      parse_xflxml(xml)
     end
   else
     xfldir = @fla
@@ -2843,6 +2889,26 @@ def swf2lwf(*args)
       texture.need_to_export = true
     end
     texture.name = File.basename(texture.filename)
+    if texture.name =~ /(.*)_rgb_[0-9a-f]{6}(.*)/
+      origName = $1 + $2
+      tinfo = nil
+      @textureatlasdicts.each do |textureatlasdict|
+        tinfo = textureatlasdict["frames"][origName]
+        if tinfo
+          r = tinfo["rotated"]
+          u = tinfo["frame"]["x"].to_i
+          v = tinfo["frame"]["y"].to_i
+          w = tinfo["frame"]["w"].to_i
+          h = tinfo["frame"]["h"].to_i
+          x = tinfo["spriteSourceSize"]["x"].to_i
+          y = tinfo["spriteSourceSize"]["y"].to_i
+          filename = textureatlasdict["meta"]["texture"].filename
+          texture.name += "_atlas_#{filename}" +
+            "_info_#{r ? 1 : 0}_#{u}_#{v}_#{w}_#{h}_#{x}_#{y}"
+          break
+        end
+      end
+    end
     @texture_filename_map[texture.name] = true
   end
 
@@ -3314,8 +3380,6 @@ def swf2lwf(*args)
         end
 
         texture.clear_reference
-        tw = textureatlas.width.to_i
-        th = textureatlas.height.to_i
         u = tinfo["frame"]["x"].to_i
         v = tinfo["frame"]["y"].to_i
         w = tinfo["frame"]["w"].to_i
@@ -3540,7 +3604,7 @@ global.LWF.Script["#{lwfname}"] = function() {
     @textures.map{|texture| texture.export_png(@swf)}
   end
 
-  @logfile
+  @logfile.close
 end
 
 def swf2lwf_optparse(args)

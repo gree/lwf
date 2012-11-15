@@ -24,79 +24,17 @@ using System.IO;
 
 namespace LWF {
 
-using EventHandler = Action<Movie, Button>;
-using MovieEventHandler = Action<Movie>;
-using ButtonEventHandler = Func<Button, bool>;
-using ButtonKeyPressHandler = Func<Button, int, bool>;
 using MovieCommand = System.Action<Movie>;
 using MovieCommands = Dictionary<List<string>, System.Action<Movie>>;
 using ProgramObjectConstructor = Func<ProgramObject, int, int, int, Renderer>;
 using Condition = Format.ButtonCondition.Condition;
-using MovieEventHandlersDictionary = Dictionary<string, MovieEventHandlers>;
-using ButtonEventHandlersDictionary = Dictionary<string, ButtonEventHandlers>;
 using DetachHandler = Action<LWF>;
 using Inspector = System.Action<Object, int, int, int>;
 using AllowButtonList = Dictionary<int, bool>;
 using DenyButtonList = Dictionary<int, bool>;
 
-public class MovieEventHandlers
-{
-	public MovieEventHandler load;
-	public MovieEventHandler postLoad;
-	public MovieEventHandler unload;
-	public MovieEventHandler enterFrame;
-	public MovieEventHandler update;
-	public MovieEventHandler render;
-
-	public MovieEventHandlers() {}
-	public MovieEventHandlers(MovieEventHandler l,
-		MovieEventHandler p, MovieEventHandler u,
-		MovieEventHandler e, MovieEventHandler up, MovieEventHandler r)
-	{
-		load = l;
-		postLoad = p;
-		unload = u;
-		enterFrame = e;
-		update = up;
-		render = r;
-	}
-}
-
-public class ButtonEventHandlers
-{
-	public ButtonEventHandler load;
-	public ButtonEventHandler unload;
-	public ButtonEventHandler enterFrame;
-	public ButtonEventHandler update;
-	public ButtonEventHandler render;
-	public ButtonEventHandler rollOver;
-	public ButtonEventHandler rollOut;
-	public ButtonEventHandler press;
-	public ButtonEventHandler release;
-	public ButtonKeyPressHandler keyPress;
-
-	public ButtonEventHandlers() {}
-	public ButtonEventHandlers(ButtonEventHandler l, ButtonEventHandler u,
-		ButtonEventHandler e, ButtonEventHandler up, ButtonEventHandler r,
-		ButtonEventHandler rOver, ButtonEventHandler rOut, ButtonEventHandler p,
-		ButtonEventHandler rl, ButtonKeyPressHandler k)
-	{
-		load = l;
-		unload = u;
-		enterFrame = e;
-		update = up;
-		render = r;
-		rollOver = rOver;
-		rollOut = rOut;
-		press = p;
-		release = rl;
-		keyPress = k;
-	}
-}
-
 public partial class LWF
 {
-	private static int EXEC_LIMIT = 10;
 	private static float ROUND_OFF_TICK_RATE = 0.05f;
 
 	private Data m_data;
@@ -107,16 +45,13 @@ public partial class LWF
 	private IObject[] m_instances;
 	private Button m_focus;
 	private Button m_buttonHead;
-	private EventHandler[] m_eventHandlers;
-	private MovieEventHandlers[] m_movieEventHandlers;
-	private ButtonEventHandlers[] m_buttonEventHandlers;
 	private MovieCommands m_movieCommands;
 	private ProgramObjectConstructor[] m_programObjectConstructors;
-	private MovieEventHandlersDictionary m_movieEventHandlersByFullName;
-	private ButtonEventHandlersDictionary m_buttonEventHandlersByFullName;
 	private DetachHandler m_detachHandler;
 	private AllowButtonList m_allowButtonList;
 	private DenyButtonList m_denyButtonList;
+	private int m_frameRate;
+	private int m_execLimit;
 	private int m_renderingIndex;
 	private int m_renderingIndexOffsetted;
 	private int m_renderingCount;
@@ -162,6 +97,7 @@ public partial class LWF
 	public float pointX {get {return m_pointX;}}
 	public float pointY {get {return m_pointY;}}
 	public bool pressing {get {return m_pressing;}}
+	public int frameRate {get {return m_frameRate;}}
 	public int renderingIndex {get {return m_renderingIndex;}}
 	public int renderingIndexOffsetted {get {return m_renderingIndexOffsetted;}}
 	public int renderingCount {get {return m_renderingCount;}}
@@ -200,7 +136,9 @@ public partial class LWF
 		m_data = lwfData;
 
 		interactive = lwfData.buttonConditions.Length > 0;
-		m_tick = 1.0f / m_data.header.frameRate;
+		m_frameRate = @data.header.frameRate;
+		m_execLimit = 3;
+		m_tick = 1.0f / m_frameRate;
 		m_roundOffTick = m_tick * ROUND_OFF_TICK_RATE;
 		m_attachVisible = true;
 		m_interceptByNotAllowOrDenyButtons = true;
@@ -215,9 +153,7 @@ public partial class LWF
 
 		m_property = new Property(this);
 		m_instances = new IObject[m_data.instanceNames.Length];
-		m_eventHandlers = new EventHandler[m_data.events.Length];
-		m_movieEventHandlers = new MovieEventHandlers[m_instances.Length];
-		m_buttonEventHandlers = new ButtonEventHandlers[m_instances.Length];
+		InitEvent();
 		m_movieCommands = new MovieCommands();
 		m_programObjectConstructors =
 			new ProgramObjectConstructor[m_data.programObjects.Length];
@@ -238,11 +174,20 @@ public partial class LWF
 		m_rendererFactory.Init(this);
 	}
 
-	public void SetFrameRate(int frameRate)
+	public void SetFrameRate(int f)
 	{
-		if (frameRate == 0)
+		if (f == 0)
 			return;
-		m_tick = 1.0f / frameRate;
+		m_frameRate = f;
+		m_tick = 1.0f / m_frameRate;
+	}
+
+	public void SetPreferredFrameRate(int f, int execLimit = 2)
+	{
+		if (f == 0)
+			return;
+		m_execLimit = (int)Math.Ceiling(
+			(double)m_frameRate / (double)f) + execLimit;
 	}
 
 	public void FitForHeight(int stageHeight)
@@ -381,7 +326,7 @@ public partial class LWF
 				}
 			}
 
-			int execLimit = EXEC_LIMIT;
+			int execLimit = m_execLimit;
 			while (m_progress >= m_tick - m_roundOffTick) {
 				if (--execLimit < 0) {
 					m_progress = 0;
@@ -484,80 +429,6 @@ public partial class LWF
 		m_rootMovie.Destroy();
 	}
 
-	public int GetInstanceNameStringId(int instId)
-	{
-		if (instId < 0 || instId >= m_data.instanceNames.Length)
-			return -1;
-		return m_data.instanceNames[instId].stringId;
-	}
-
-	public int GetStringId(string str)
-	{
-		int i;
-		if (m_data.stringMap.TryGetValue(str, out i))
-			return i;
-		else
-			return -1;
-	}
-
-	public int SearchInstanceId(int stringId)
-	{
-		if (stringId < 0 || stringId >= m_data.strings.Length)
-			return -1;
-
-		int i;
-		if (m_data.instanceNameMap.TryGetValue(stringId, out i))
-			return i;
-		else
-			return -1;
-	}
-
-	public int SearchFrame(Movie movie, string label)
-	{
-		return SearchFrame(movie, GetStringId(label));
-	}
-
-	public int SearchFrame(Movie movie, int stringId)
-	{
-		if (stringId < 0 || stringId >= m_data.strings.Length)
-			return -1;
-
-		int frameNo;
-		Dictionary<int, int> labelMap = m_data.labelMap[movie.objectId];
-		if (labelMap.TryGetValue(stringId, out frameNo))
-			return frameNo + 1;
-		else
-			return -1;
-	}
-
-	public Dictionary<int, int> GetMovieLabels(Movie movie)
-	{
-		if (movie == null)
-			return null;
-		return m_data.labelMap[movie.objectId];
-	}
-
-	public int SearchMovieLinkage(int stringId)
-	{
-		if (stringId < 0 || stringId >= m_data.strings.Length)
-			return -1;
-
-		int i;
-		if (m_data.movieLinkageMap.TryGetValue(stringId, out i))
-			return m_data.movieLinkages[i].movieId;
-		else
-			return -1;
-	}
-
-	public string GetMovieLinkageName(int movieId)
-	{
-		int i;
-		if (m_data.movieLinkageNameMap.TryGetValue(movieId, out i))
-			return m_data.strings[i];
-		else
-			return null;
-	}
-
 	public Movie SearchMovieInstance(int stringId)
 	{
 		return SearchMovieInstanceByInstanceId(SearchInstanceId(stringId));
@@ -601,38 +472,46 @@ public partial class LWF
 		return null;
 	}
 
-	public int SearchEventId(string eventName)
+	public Button SearchButtonInstance(int stringId)
 	{
-		return SearchEventId(GetStringId(eventName));
+		return SearchButtonInstanceByInstanceId(SearchInstanceId(stringId));
 	}
 
-	public int SearchEventId(int stringId)
+	public Button SearchButtonInstance(string instanceName)
 	{
-		if (stringId < 0 || stringId >= m_data.strings.Length)
-			return -1;
+		if (instanceName.Contains(".")) {
+			string[] names = instanceName.Split(new Char[]{'.'});
+			if (names[0] != m_data.strings[m_rootMovieStringId])
+				return null;
 
-		int i;
-		if (m_data.eventMap.TryGetValue(stringId, out i))
-			return i;
-		else
-			return -1;
+			Movie m = m_rootMovie;
+			for (int i = 1; i < names.Length; ++i) {
+				if (i == names.Length - 1) {
+					return m.SearchButtonInstance(names[i], false);
+				} else {
+					m = m.SearchMovieInstance(names[i], false);
+					if (m == null)
+						return null;
+				}
+			}
+
+			return null;
+		}
+
+		return SearchButtonInstance(GetStringId(instanceName));
 	}
 
-	public int SearchProgramObjectId(string programObjectName)
+	public Button SearchButtonInstanceByInstanceId(int instId)
 	{
-		return SearchProgramObjectId(GetStringId(programObjectName));
-	}
-
-	public int SearchProgramObjectId(int stringId)
-	{
-		if (stringId < 0 || stringId >= m_data.strings.Length)
-			return -1;
-
-		int i;
-		if (m_data.programObjectMap.TryGetValue(stringId, out i))
-			return i;
-		else
-			return -1;
+		if (instId < 0 || instId >= m_instances.Length)
+			return null;
+		IObject obj = m_instances[instId];
+		while (obj != null) {
+			if (obj.IsButton())
+				return (Button)obj;
+			obj = obj.nextInstance;
+		}
+		return null;
 	}
 
 	public IObject GetInstance(int instId)
@@ -643,18 +522,6 @@ public partial class LWF
 	public void SetInstance(int instId, IObject instance)
 	{
 		m_instances[instId] = instance;
-	}
-
-	public void SetEventHandler(string eventName, EventHandler eventHandler)
-	{
-		SetEventHandler(SearchEventId(eventName), eventHandler);
-	}
-
-	public void SetEventHandler(int eventId, EventHandler eventHandler)
-	{
-		if (eventId < 0 || eventId >= m_data.events.Length)
-			return;
-		m_eventHandlers[eventId] = eventHandler;
 	}
 
 	public ProgramObjectConstructor GetProgramObjectConstructor(
@@ -687,150 +554,6 @@ public partial class LWF
 				programObjectId >= m_data.programObjects.Length)
 			return;
 		m_programObjectConstructors[programObjectId] = programObjectConstructor;
-	}
-
-	public MovieEventHandlers GetMovieEventHandlers(Movie m)
-	{
-		if (m_movieEventHandlersByFullName != null) {
-			string fullName = m.GetFullName();
-			if (fullName != null) {
-				MovieEventHandlers handlers;
-				if (m_movieEventHandlersByFullName.TryGetValue(
-						fullName, out handlers)) {
-					return handlers;
-				}
-			}
-		}
-
-		int instId = m.instanceId;
-		if (instId < 0 || instId >= m_instances.Length)
-			return null;
-		return m_movieEventHandlers[instId];
-	}
-
-	public void SetMovieEventHandler(string instanceName,
-		MovieEventHandler load = null, MovieEventHandler postLoad = null,
-		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
-		MovieEventHandler update = null, MovieEventHandler render = null)
-	{
-		int instId = SearchInstanceId(GetStringId(instanceName));
-		if (instId >= 0) {
-			SetMovieEventHandler(
-				instId, load, postLoad, unload, enterFrame, update, render);
-			return;
-		}
-
-		if (!instanceName.Contains("."))
-			return;
-
-		if (m_movieEventHandlersByFullName == null)
-			m_movieEventHandlersByFullName = new MovieEventHandlersDictionary();
-
-		if (load != null || postLoad != null || unload != null ||
-				enterFrame != null || update != null || render != null) {
-			m_movieEventHandlersByFullName[instanceName] =
-				new MovieEventHandlers(
-					load, postLoad, unload, enterFrame, update, render);
-		} else {
-			m_movieEventHandlersByFullName.Remove(instanceName);
-		}
-	}
-
-	public void SetMovieEventHandler(int instId,
-		MovieEventHandler load = null, MovieEventHandler postLoad = null,
-		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
-		MovieEventHandler update = null, MovieEventHandler render = null)
-	{
-		if (instId < 0 || instId >= m_instances.Length)
-			return;
-
-		MovieEventHandlers handlers;
-		if (load != null || postLoad != null || unload != null ||
-				enterFrame != null || update != null || render != null) {
-			handlers = new MovieEventHandlers(
-				load, postLoad, unload, enterFrame, update, render);
-		} else {
-			handlers = null;
-		}
-		m_movieEventHandlers[instId] = handlers;
-
-		if (instId == m_rootMovie.instanceId)
-			m_rootMovie.SetHandlers(handlers);
-	}
-
-	public ButtonEventHandlers GetButtonEventHandlers(Button b)
-	{
-		if (m_buttonEventHandlersByFullName != null) {
-			string fullName = b.GetFullName();
-			if (fullName != null) {
-				ButtonEventHandlers handlers;
-				if (m_buttonEventHandlersByFullName.TryGetValue(
-						fullName, out handlers)) {
-					return handlers;
-				}
-			}
-		}
-
-		int instId = b.instanceId;
-		if (instId < 0 || instId >= m_instances.Length)
-			return null;
-		return m_buttonEventHandlers[instId];
-	}
-
-	public void SetButtonEventHandler(string instanceName,
-		ButtonEventHandler press = null, ButtonEventHandler release = null,
-		ButtonEventHandler rollOver = null, ButtonEventHandler rollOut = null,
-		ButtonKeyPressHandler keyPress = null, ButtonEventHandler load = null,
-		ButtonEventHandler unload = null, ButtonEventHandler enterFrame = null,
-		ButtonEventHandler update = null, ButtonEventHandler render = null)
-	{
-		int instId = SearchInstanceId(GetStringId(instanceName));
-		if (instId >= 0) {
-			SetButtonEventHandler(instId, press, release, rollOver, rollOut,
-				keyPress, load, unload, enterFrame, update, render);
-			return;
-		}
-
-		if (!instanceName.Contains("."))
-			return;
-
-		if (m_buttonEventHandlersByFullName == null)
-			m_buttonEventHandlersByFullName =
-				new ButtonEventHandlersDictionary();
-
-		if (load != null ||
-				unload != null || enterFrame != null || update != null ||
-				render != null || rollOver != null || rollOut != null ||
-				press != null || release != null || keyPress != null) {
-			m_buttonEventHandlersByFullName[instanceName] =
-				new ButtonEventHandlers(load, unload, enterFrame, update,
-					render, rollOver, rollOut, press, release, keyPress);
-		} else {
-			m_buttonEventHandlersByFullName.Remove(instanceName);
-		}
-	}
-
-	public void SetButtonEventHandler(int instId,
-		ButtonEventHandler press = null, ButtonEventHandler release = null,
-		ButtonEventHandler rollOver = null, ButtonEventHandler rollOut = null,
-		ButtonKeyPressHandler keyPress = null, ButtonEventHandler load = null,
-		ButtonEventHandler unload = null, ButtonEventHandler enterFrame = null,
-		ButtonEventHandler update = null, ButtonEventHandler render = null)
-	{
-		if (instId < 0 || instId >= m_instances.Length)
-			return;
-
-		ButtonEventHandlers handlers;
-		if (load != null || unload != null || enterFrame != null ||
-				update != null || render != null || rollOver != null ||
-				rollOut != null || press != null || release != null ||
-				keyPress != null) {
-			handlers = new ButtonEventHandlers(load, unload, enterFrame, update,
-				render, rollOver, rollOut, press, release, keyPress);
-		} else {
-			handlers = null;
-		}
-		m_buttonEventHandlers[instId] = handlers;
 	}
 
 	public void ExecMovieCommand()

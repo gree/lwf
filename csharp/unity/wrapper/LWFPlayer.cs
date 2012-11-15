@@ -28,9 +28,8 @@ using LWFDataLoader = System.Func<string, byte[]>;
 using TextureLoader = System.Func<string, UnityEngine.Texture2D>;
 using TextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFDataCallback = System.Func<LWF.Data, bool>;
-using LWFLoadCallback = System.Action<LWFPlayer>;
-using LWFLoadCallbacks =
-	System.Collections.Generic.List<System.Action<LWFPlayer>>;
+using LWFCallback = System.Action<LWFPlayer>;
+using LWFCallbacks = System.Collections.Generic.List<System.Action<LWFPlayer>>;
 
 public class LWFPlayer : MonoBehaviour
 {
@@ -41,14 +40,16 @@ public class LWFPlayer : MonoBehaviour
 	public int frameNo;
 	public bool isAlive;
 	protected WaitForSeconds waitForSeconds;
-	protected LWFLoadCallbacks lwfLoadCallbacks;
+	protected LWFCallbacks lwfLoadCallbacks;
+	protected LWFCallbacks lwfDestroyCallbacks;
 	protected int activateCount = 1;
 	protected int resumeCount = 0;
 
 	public LWFPlayer()
 	{
 		isAlive = true;
-		lwfLoadCallbacks = new LWFLoadCallbacks();
+		lwfLoadCallbacks = new LWFCallbacks();
+		lwfDestroyCallbacks = new LWFCallbacks();
 	}
 
 	public virtual void OnDestroy()
@@ -57,6 +58,9 @@ public class LWFPlayer : MonoBehaviour
 
 		if (lwfName == null)
 			return;
+
+		lwfDestroyCallbacks.ForEach(c => c(this));
+		lwfDestroyCallbacks = null;
 
 		if (lwf != null) {
 			lwf.Destroy();
@@ -81,7 +85,8 @@ public class LWFPlayer : MonoBehaviour
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
 		int cachingFrames = 0, Camera camera = null, bool autoPlay = true,
 		LWFDataCallback lwfDataCallback = null,
-		LWFLoadCallback lwfLoadCallback = null,
+		LWFCallback lwfLoadCallback = null,
+		LWFCallback lwfDestroyCallback = null,
 		LWFDataLoader lwfDataLoader = null,
 		TextureLoader textureLoader = null,
 		TextureUnloader textureUnloader = null)
@@ -92,6 +97,8 @@ public class LWFPlayer : MonoBehaviour
 
 		if (lwfLoadCallback != null)
 			lwfLoadCallbacks.Add(lwfLoadCallback);
+		if (lwfDestroyCallback != null)
+			lwfDestroyCallbacks.Add(lwfDestroyCallback);
 
 		LWF.Data data =
 			ResourceCache.SharedInstance().LoadLWFData(lwfName, lwfDataLoader);
@@ -128,7 +135,7 @@ public class LWFPlayer : MonoBehaviour
 		return true;
 	}
 
-	public void AddLoadCallback(LWFLoadCallback lwfLoadCallback)
+	public void AddLoadCallback(LWFCallback lwfLoadCallback)
 	{
 		if (lwf != null)
 			lwfLoadCallback(this);
@@ -136,10 +143,15 @@ public class LWFPlayer : MonoBehaviour
 			lwfLoadCallbacks.Add(lwfLoadCallback);
 	}
 
+	public void AddDestroyCallback(LWFCallback lwfDestroyCallback)
+	{
+		lwfDestroyCallbacks.Add(lwfDestroyCallback);
+	}
+
 	public virtual void OnLoad()
 	{
-		foreach (LWFLoadCallback lwfLoadCallback in lwfLoadCallbacks)
-			lwfLoadCallback(this);
+		lwfLoadCallbacks.ForEach(c => c(this));
+		lwfLoadCallbacks = null;
 	}
 
 	public virtual void FitForHeight(int stageHeight)
@@ -182,14 +194,22 @@ public class LWFPlayer : MonoBehaviour
 	{
 		++activateCount;
 		if (activateCount == 1)
+#if UNITY_3_5
 			gameObject.active = true;
+#else
+			gameObject.SetActive(true);
+#endif
 	}
 
 	public virtual void Deactivate()
 	{
 		--activateCount;
 		if (activateCount == 0)
+#if UNITY_3_5
 			gameObject.active = false;
+#else
+			gameObject.SetActive(false);
+#endif
 	}
 
 	protected virtual IEnumerator UpdateLWF()

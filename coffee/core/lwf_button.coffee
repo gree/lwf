@@ -36,25 +36,29 @@ class Button extends IObject
       @height = 0
 
     @handler = lwf.getButtonEventHandlers(@)
-    @handler.load(@) if @handler?.load?
+    @handler.call("load", @) if @handler?
+
+  setHandlers:(handler) ->
+    @handler = handler
+    return
 
   exec:(matrixId = 0, colorTransformId = 0) ->
     super(matrixId, colorTransformId)
-    @handler.enterFrame(@) if @handler?.enterFrame?
+    @handler.call("enterFrame", @) if @handler?
     return
 
   update:(m, c) ->
     super(m, c)
-    @handler.update(@) if @handler?.update?
+    @handler.call("update", @) if @handler?
     return
 
   render:(v, rOffset) ->
-    @handler.render(@) if v and @handler?.render?
+    @handler.call("render", @) if @handler?
     return
 
   destroy: ->
     @lwf.clearFocus(this)
-    @handler.unload(@) if @handler?.unload?
+    @handler.call("unload", @) if @handler?
     super
     return
 
@@ -76,32 +80,27 @@ class Button extends IObject
       return false
 
   rollOver: ->
-    if @handler?.rollOver?
-      return unless @handler.rollOver(@)
+    @handler.call("rollOver", @) if @handler?
     @playAnimation(Condition.ROLLOVER)
     return
 
   rollOut: ->
-    if @handler?.rollOut?
-      return unless @handler.rollOut(@)
+    @handler.call("rollOut", @) if @handler?
     @playAnimation(Condition.ROLLOUT)
     return
 
   press: ->
-    if @handler?.press?
-      return unless @handler.press(@)
+    @handler.call("press", @) if @handler?
     @playAnimation(Condition.PRESS)
     return
 
   release: ->
-    if @handler?.release?
-      return unless @handler.release(@)
+    @handler.call("release", @) if @handler?
     @playAnimation(Condition.RELEASE)
     return
 
   keyPress: ->
-    if @handler?.keyPress?
-      return unless @handler.keyPress(@)
+    @handler.call("keyPress", @) if @handler?
     @playAnimation(Condition.KEYPRESS, code)
     return
 

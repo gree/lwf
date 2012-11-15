@@ -18,13 +18,11 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-if !window? and self?
-  self.onmessage = (event) ->
-    if typeof self.webkitPostMessage isnt "undefined"
-      data = (new LWFLoaderWithArrayBuffer).load(event.data)
-      self.webkitPostMessage(data)
-    else
-      data = (new LWFLoader).load(event.data)
-      self.postMessage(data)
-    self.close()
+class ButtonEventHandlers extends EventHandlers
+  TYPES = ["load", "unload", "enterFrame", "update", "render",
+    "press", "release", "rollOver", "rollOut", "keyPress"]
+
+  constructor: ->
+    @types = TYPES
+    super
 

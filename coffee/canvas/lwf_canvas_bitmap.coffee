@@ -82,7 +82,7 @@ class CanvasBitmapRenderer
   destruct: ->
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
-    return unless visible
+    return if !visible or c.multi.alpha is 0
 
     if @matrix.setWithComparing(m)
       m = @matrix

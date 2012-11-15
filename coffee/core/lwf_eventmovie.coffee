@@ -18,13 +18,10 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-if !window? and self?
-  self.onmessage = (event) ->
-    if typeof self.webkitPostMessage isnt "undefined"
-      data = (new LWFLoaderWithArrayBuffer).load(event.data)
-      self.webkitPostMessage(data)
-    else
-      data = (new LWFLoader).load(event.data)
-      self.postMessage(data)
-    self.close()
+class MovieEventHandlers extends EventHandlers
+  TYPES = ["load", "postLoad", "unload", "enterFrame", "update", "render"]
+
+  constructor: ->
+    @types = TYPES
+    super
 

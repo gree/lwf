@@ -18,15 +18,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-class MovieEventHandlers
-  constructor:(@load, @postLoad, @unload, @enterFrame, @update, @render) ->
-
-class ButtonEventHandlers
-  constructor:(@load, @unload, @enterFrame, @update, @render, \
-    @rollOver, @rollOut, @press, @release, @keyPress) ->
-
 class LWF
-  EXEC_LIMIT = 10
   ROUND_OFF_TICK_RATE = 0.05
 
   constructor:(lwfData, \
@@ -40,6 +32,7 @@ class LWF
     @interactive = @data.buttonConditions.length > 0
     @url = null
     @frameRate = @data.header.frameRate
+    @execLimit = 3
     @tick = 1.0 / @frameRate
     @roundOffTick = @tick * ROUND_OFF_TICK_RATE
     @time = 0
@@ -88,6 +81,11 @@ class LWF
     return if frameRate is 0
     @frameRate = frameRate
     @tick = 1.0 / @frameRate
+    return
+
+  setPreferredFrameRate:(preferredFrameRate, execLimit = 2) ->
+    return if frameRate is 0
+    @execLimit = Math.ceil(@frameRate / preferredFrameRate) + execLimit
     return
 
   fitForHeight:(stageWidth, stageHeight) ->
@@ -197,7 +195,7 @@ class LWF
           @time += tick
           @progress += tick
 
-      execLimit = EXEC_LIMIT
+      execLimit = @execLimit
       while @progress >= @tick - @roundOffTick
         if --execLimit < 0
           @progress = 0
@@ -337,6 +335,7 @@ class LWF
         for name in names
           m = m.searchMovieInstance(name, false)
           return null unless m?
+        return m
       stringId = @getStringId(stringId)
     return @searchMovieInstanceByInstanceId(@searchInstanceId(stringId))
 
@@ -347,6 +346,33 @@ class LWF
     obj = @instances[instId]
     while obj?
       return obj if obj.isMovie()
+      obj = obj.nextInstance
+    return null
+
+  searchButtonInstance:(stringId) ->
+    if typeof stringId is "string"
+      instanceName = stringId
+      if instanceName.indexOf(".") isnt -1
+        names = instanceName.split(".")
+        return null if names[0] isnt @data.strings[@rootMovieStringId]
+        m = @rootMovie
+        for i in [1...names.length]
+          if i is names.length - 1
+            return m.searchButtonInstance(names[i], false)
+          else
+            m = m.searchButtonInstance(names[i], false)
+            return null unless m?
+        return null
+      stringId = @getStringId(stringId)
+    return @searchButtonInstanceByInstanceId(@searchInstanceId(stringId))
+
+  searchButtonInstanceByInstanceId:(instId) ->
+    if typeof instId is "string"
+      instId = @searchInstanceId(@getStringId(instId))
+    return null if instId < 0 or instId >= @data.instanceNames.length
+    obj = @instances[instId]
+    while obj?
+      return obj if obj.isButton()
       obj = obj.nextInstance
     return null
 
@@ -369,10 +395,35 @@ class LWF
     @instances[instId] = instance
     return
 
-  setEventHandler:(eventId, eventHandler) ->
+  addEventHandler:(eventId, eventHandler) ->
     eventId = @searchEventId(eventId) if typeof eventId is "string"
     return if eventId < 0 or eventId >= @data.events.length
-    @eventHandlers[eventId] = eventHandler
+    @eventHandlers[eventId] ?= []
+    @eventHandlers[eventId].push(eventHandler)
+    return
+
+  removeEventHandler:(eventId, eventHandler) ->
+    eventId = @searchEventId(eventId) if typeof eventId is "string"
+    return if eventId < 0 or eventId >= @data.events.length
+    handlers = @eventHandlers[eventId]
+    return unless handlers?
+    i = 0
+    while i < handlers.length
+      if handlers[i] is eventHandler
+        handlers.splice(i, 1)
+      else
+        ++i
+    return
+
+  clearEventHandler:(eventId) ->
+    eventId = @searchEventId(eventId) if typeof eventId is "string"
+    return if eventId < 0 or eventId >= @data.events.length
+    @eventHandlers[eventId] = null
+    return
+
+  setEventHandler:(eventId, eventHandler) ->
+    @clearEventHandler(eventId)
+    @addEventHandler(eventId, eventHandler)
     return
 
   getProgramObjectConstructor:(programObjectId) ->
@@ -391,6 +442,15 @@ class LWF
     return
 
   getMovieEventHandlers:(m) ->
+    if typeof m is "string"
+      instanceName = m
+      instId = @searchInstanceId(@getStringId(instanceName))
+      if instId >= 0 and instId < @data.instanceNames.length
+        return @movieEventHandlers[instId]
+      else
+        return null unless @movieEventHandlersByFullName?
+        return @movieEventHandlersByFullName[instanceName]
+
     if @movieEventHandlersByFullName?
       fullName = m.getFullName()
       if fullName?
@@ -398,37 +458,52 @@ class LWF
         return handlers if handlers?
     return @movieEventHandlers[m.instanceId]
 
-  setMovieEventHandler:(instanceName, handlers) ->
-    load = handlers["load"]
-    postLoad = handlers["postLoad"]
-    unload = handlers["unload"]
-    enterFrame = handlers["enterFrame"]
-    update = handlers["update"]
-    render = handlers["render"]
-
+  addMovieEventHandler:(instanceName, handlers) ->
     instId = @searchInstanceId(@getStringId(instanceName))
     if instId >= 0 and instId < @data.instanceNames.length
-      if load? or postLoad? or unload? or enterFrame? or update? or render?
-        handlers = new MovieEventHandlers(
-          load, postLoad, unload, enterFrame, update, render)
-      else
-        handlers = null
-      @movieEventHandlers[instId] = handlers
-      @rootMovie.handler = handlers if instId is @rootMovie.instanceId
-
-    return if instanceName.indexOf(".") is -1
-
-    @movieEventHandlersByFullName ?= []
-
-    if load? or postLoad? or unload? or enterFrame? or update? or render?
-      @movieEventHandlersByFullName[instanceName] =
-        new MovieEventHandlers(
-          load, postLoad, unload, enterFrame, update, render)
+      h = @movieEventHandlers[instId]
+      unless h?
+        h = new MovieEventHandlers()
+        @movieEventHandlers[instId] = h
+      movie = @searchMovieInstanceByInstanceId(instId)
+      movie.setHandlers(h) if movie?
     else
-      delete @movieEventHandlersByFullName[instanceName]
+      return if instanceName.indexOf(".") is -1
+      @movieEventHandlersByFullName ?= []
+      h = @movieEventHandlersByFullName[instanceName]
+      unless h?
+        h = new MovieEventHandlers()
+        @movieEventHandlersByFullName[instanceName] = h
+      movie = @searchMovieInstance(instanceName)
+      movie.setHandlers(h) if movie?
+    h.add(handlers)
+    return
+
+  removeMovieEventHandler:(instanceName, handlers) ->
+    h = @getMovieEventHandlers(instanceName)
+    h.remove(handlers) if h?
+    return
+
+  clearMovieEventHandler:(instanceName, type = null) ->
+    h = @getMovieEventHandlers(instanceName)
+    h.clear(type) if h?
+    return
+
+  setMovieEventHandler:(instanceName, handlers) ->
+    @clearMovieEventHandler(instanceName)
+    @addMovieEventHandler(instanceName, handlers)
     return
 
   getButtonEventHandlers:(m) ->
+    if typeof m is "string"
+      instanceName = m
+      instId = @searchInstanceId(@getStringId(instanceName))
+      if instId >= 0 and instId < @data.instanceNames.length
+        return @buttonEventHandlers[instId]
+      else
+        return null unless @buttonEventHandlersByFullName?
+        return @buttonEventHandlersByFullName[instanceName]
+
     if @buttonEventHandlersByFullName?
       fullName = m.getFullName()
       if fullName?
@@ -436,39 +511,40 @@ class LWF
         return handlers if handlers?
     return @buttonEventHandlers[m.instanceId]
 
-  setButtonEventHandler:(instanceName, handlers) ->
-    press = handlers["press"]
-    release = handlers["release"]
-    rollOver = handlers["rollOver"]
-    rollOut = handlers["rollOut"]
-    keyPress = handlers["keyPress"]
-    load = handlers["load"]
-    unload = handlers["unload"]
-    enterFrame = handlers["enterFrame"]
-    update = handlers["update"]
-    render = handlers["render"]
-
+  addButtonEventHandler:(instanceName, handlers) ->
     instId = @searchInstanceId(@getStringId(instanceName))
     if instId >= 0 and instId < @data.instanceNames.length
-      if load? or unload? or enterFrame? or update? or render? or
-          rollOver? or rollOut? or press? or release? or keyPress?
-        handlers = new ButtonEventHandlers(load, unload, enterFrame, update,
-          render, rollOver, rollOut, press, release, keyPress)
-      else
-        handlers = null
-      @buttonEventHandlers[instId] = handlers
-
-    return if instanceName.indexOf(".") is -1
-
-    @buttonEventHandlersByFullName ?= []
-
-    if load? or unload? or enterFrame? or update? or render? or
-        rollOver? or rollOut? or press? or release? or keyPress?
-      @buttonEventHandlersByFullName[instanceName] =
-        new ButtonEventHandlers(load, unload, enterFrame, update, render,
-          rollOver, rollOut, press, release, keyPress)
+      h = @buttonEventHandlers[instId]
+      unless h?
+        h = new ButtonEventHandlers()
+        @buttonEventHandlers[instId] = h
+      button = @searchButtonInstanceByInstanceId(instId)
+      button.setHandlers(h) if button?
     else
-      delete @buttonEventHandlersByFullName[instanceName]
+      return if instanceName.indexOf(".") is -1
+      @buttonEventHandlersByFullName ?= []
+      h = @buttonEventHandlersByFullName[instanceName]
+      unless h?
+        h = new ButtonEventHandlers()
+        @buttonEventHandlersByFullName[instanceName] = h
+      button = @searchButtonInstance(instanceName)
+      button.setHandlers(h) if movie?
+    h.add(handlers)
+    return
+
+  removeButtonEventHandler:(instanceName, handlers) ->
+    h = @getButtonEventHandlers(instanceName)
+    h.remove(handlers) if h?
+    return
+
+  clearButtonEventHandler:(instanceName, type = null) ->
+    h = @getButtonEventHandlers(instanceName)
+    h.clear(type) if h?
+    return
+
+  setButtonEventHandler:(instanceName, handlers) ->
+    @clearButtonEventHandler(instanceName)
+    @addButtonEventHandler(instanceName, handlers)
     return
 
   execMovieCommand: ->
@@ -623,7 +699,8 @@ class LWF
   
         when Animation.EVENT
           eventId = animations[i++]
-          @eventHandlers[eventId](movie, button) if @eventHandlers[eventId]?
+          handlers = @eventHandlers[eventId]
+          handler(movie, button) for handler in handlers if handlers?
 
         when Animation.CALL
           stringId = animations[i++]

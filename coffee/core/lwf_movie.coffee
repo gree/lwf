@@ -101,7 +101,7 @@ class Movie extends IObject
     @playAnimation(ClipEvent.LOAD)
 
     @handler = if handler? then handler else lwf.getMovieEventHandlers(@)
-    @handler.load.call(@) if @handler?.load?
+    @handler.call("load", @) if @handler?
     lwf.execMovieCommand()
 
   getMovieFunctions: ->
@@ -552,7 +552,7 @@ class Movie extends IObject
       unless @postLoaded
         @postLoaded = true
         @postLoadFunc.call(@) if @postLoadFunc?
-        @handler.postLoad.call(@) if @handler?.postLoad?
+        @handler.call("postLoad", @) if @handler?
 
       if controlAnimationOffset isnt -1 and
           @execedFrame is @currentFrameInternal
@@ -568,7 +568,7 @@ class Movie extends IObject
 
     @enterFrameFunc.call(@) if @enterFrameFunc?
     @playAnimation(ClipEvent.ENTERFRAME)
-    @handler.enterFrame.call(@) if @handler?.enterFrame?
+    @handler.call("enterFrame", @) if @handler?
     return
 
   update:(m, c) ->
@@ -578,7 +578,7 @@ class Movie extends IObject
       Utility.copyMatrix(@matrix, m)
       Utility.copyColorTransform(@colorTransform, c)
 
-    @handler.update.call(@) if @handler?.update?
+    @handler.call("update", @) if @handler?
 
     for depth in [0...@data.depths]
       obj = @displayList[depth]
@@ -669,7 +669,7 @@ class Movie extends IObject
   render:(v, rOffset) ->
     v = false if !@visible or !@active
 
-    @handler.render.call(@) if @handler?.render?
+    @handler.call("render", @) if @handler?
 
     if @property.hasRenderingOffset
       @lwf.renderOffset()
@@ -740,7 +740,7 @@ class Movie extends IObject
     @unloadFunc.call(@) if @unloadFunc?
     @playAnimation(ClipEvent.UNLOAD)
 
-    @handler.unload.call(@) if @handler?.unload?
+    @handler.call("unload", @) if @handler?
 
     @instanceHead = null
     @instanceTail = null
@@ -800,6 +800,31 @@ class Movie extends IObject
     instance = @instanceHead
     while instance?
       if instance.isMovie() and instance.instanceId == instId
+        return instance
+      else if recursive and instance.isMovie()
+        i = instance.searchMovieInstanceByInstanceId(instId, recursive)
+        return i if i?
+      instance = instance.linkInstance
+    return null
+
+  searchButtonInstance:(stringId, recursive = true) ->
+    stringId = @lwf.getStringId(stringId) if typeof stringId is "string"
+    instance = @instanceHead
+    while instance?
+      if instance.isButton() and
+          @lwf.getInstanceNameStringId(instance.instanceId) == stringId
+        return instance
+      else if recursive and instance.isMovie()
+        i = instance.searchButtonInstance(stringId, recursive)
+        return i if i?
+      instance = instance.linkInstance
+
+    return null
+
+  searchButtonInstanceByInstanceId:(instId, recursive) ->
+    instance = @instanceHead
+    while instance?
+      if instance.isButton() and instance.instanceId == instId
         return instance
       else if recursive and instance.isMovie()
         i = instance.searchMovieInstanceByInstanceId(instId, recursive)

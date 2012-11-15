@@ -24,14 +24,13 @@ using System.Collections.Generic;
 namespace LWF {
 
 using Type = Format.Object.Type;
+using EventType = MovieEventHandlers.Type;
 using ClipEvent = Format.MovieClipEvent.ClipEvent;
-using MovieEventHandler = Action<Movie>;
 using AttachedMovies = Dictionary<string, Movie>;
 using AttachedMovieList = List<Movie>;
 using AttachedLWFs = Dictionary<string, LWFContainer>;
 using AttachedLWFList = List<LWFContainer>;
 using DetachDict = Dictionary<string, bool>;
-using DetachHandler = Action<LWF>;
 using Inspector = System.Action<Object, int, int, int>;
 
 public partial class Movie : IObject
@@ -103,8 +102,9 @@ public partial class Movie : IObject
 
 		m_handler = (handler != null ?
 			handler : lwf.GetMovieEventHandlers(this));
-		if (m_handler != null && m_handler.load != null)
-			m_handler.load(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.LOAD, this);
+
 		lwf.ExecMovieCommand();
 	}
 
@@ -127,47 +127,6 @@ public partial class Movie : IObject
 		m_handler = handler;
 	}
 
-	public void Play()
-	{
-		m_playing = true;
-	}
-
-	public void Stop()
-	{
-		m_playing = false;
-	}
-
-	public void GotoNextFrame()
-	{
-		m_jumped = true;
-		Stop();
-		++m_currentFrameInternal;
-	}
-
-	public void GotoPrevFrame()
-	{
-		m_jumped = true;
-		Stop();
-		--m_currentFrameInternal;
-	}
-
-	public void GotoFrame(int frameNo)
-	{
-		GotoFrameInternal(frameNo - 1);
-	}
-
-	public void GotoFrameInternal(int frameNo)
-	{
-		m_jumped = true;
-		Stop();
-		m_currentFrameInternal = frameNo;
-	}
-
-	public void SetVisible(bool visible)
-	{
-		m_visible = visible;
-	}
-
 	public Point GlobalToLocal(Point point)
 	{
 		float px;
@@ -184,388 +143,6 @@ public partial class Movie : IObject
 		float py;
 		Utility.CalcMatrixToPoint(out px, out py, point.x, point.y, m_matrix);
 		return new Point(px, py);
-	}
-
-	private void ShrinkAttachedMovieList()
-	{
-		for (int i = m_attachedMovieList.Count - 1; i >= 0; --i) {
-			if (m_attachedMovieList[i] != null) {
-				if (i != m_attachedMovieList.Count - 1)
-					m_attachedMovieList.RemoveRange(i,
-						m_attachedMovieList.Count - i);
-				return;
-			}
-		}
-		m_attachedMovieList.Clear();
-	}
-
-	private void ReorderAttachedMovieList(bool reorder, int index, Movie movie)
-	{
-		if (!reorder || index >= m_attachedMovieList.Count) {
-			for (int i = m_attachedMovieList.Count; i < index; ++i)
-				m_attachedMovieList.Add(null);
-			m_attachedMovieList.Add(movie);
-		} else {
-			m_attachedMovieList.Insert(index, movie);
-			if (reorder) {
-				m_attachedMovieList.Remove(null);
-				for (int i = 0; i < m_attachedMovieList.Count; ++i)
-					m_attachedMovieList[i].depth = i;
-			}
-		}
-	}
-
-	private void DeleteAttachedMovie(Movie parent, Movie movie,
-		bool destroy = true, bool deleteFromDetachedMovies = true)
-	{
-		string attachName = movie.attachName;
-		int attachDepth = movie.depth;
-		parent.m_attachedMovies.Remove(attachName);
-		parent.m_attachedMovieList[attachDepth] = null;
-		if (deleteFromDetachedMovies)
-			parent.m_detachedMovies.Remove(attachName);
-		parent.ShrinkAttachedMovieList();
-		if (destroy)
-			movie.Destroy();
-	}
-
-	public Movie AttachMovieInternal(Movie movie, string attachName,
-		int attachDepth = -1, bool reorder = false)
-	{
-		if (m_attachedMovies == null) {
-			m_attachedMovies = new AttachedMovies();
-			m_detachedMovies = new DetachDict();
-			m_attachedMovieList = new AttachedMovieList();
-		}
-
-		Movie attachedMovie;
-		if (m_attachedMovies.TryGetValue(attachName, out attachedMovie))
-			DeleteAttachedMovie(this, attachedMovie);
-
-		if (!reorder && attachDepth >= 0 &&
-				attachDepth <= m_attachedMovieList.Count - 1) {
-			attachedMovie = m_attachedMovieList[attachDepth];
-			if (attachedMovie != null)
-				DeleteAttachedMovie(this, attachedMovie);
-		}
-
-		movie.m_attachName = attachName;
-		movie.depth = attachDepth >= 0 ?
-			attachDepth : m_attachedMovieList.Count;
-		movie.m_name = attachName;
-		m_attachedMovies[attachName] = movie;
-		ReorderAttachedMovieList(reorder, movie.depth, movie);
-
-		return movie;
-	}
-
-	public Movie AttachMovie(string linkageName, string attachName,
-		int attachDepth = -1, bool reorder = false,
-		MovieEventHandler load = null, MovieEventHandler postLoad = null,
-		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
-		MovieEventHandler update = null, MovieEventHandler render = null)
-	{
-		int movieId = m_lwf.SearchMovieLinkage(m_lwf.GetStringId(linkageName));
-		if (movieId == -1)
-			return null;
-
-		MovieEventHandlers handlers = new MovieEventHandlers(
-			load, postLoad, unload, enterFrame, update, render);
-		Movie movie = new Movie(m_lwf, this, movieId, -1, 0, 0, true, handlers);
-
-		return AttachMovieInternal(movie, attachName, attachDepth, reorder);
-	}
-
-	public Movie AttachMovie(Movie movie, string attachName,
-		int attachDepth = -1, bool reorder = false,
-		MovieEventHandler load = null, MovieEventHandler postLoad = null,
-		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
-		MovieEventHandler update = null, MovieEventHandler render = null)
-	{
-		DeleteAttachedMovie(movie.parent, movie, false);
-
-		MovieEventHandlers handlers = new MovieEventHandlers(
-			load, postLoad, unload, enterFrame, update, render);
-		movie.SetHandlers(handlers);
-
-		return AttachMovieInternal(movie, attachName, attachDepth, reorder);
-	}
-
-	public void SwapAttachedMovieDepth(int depth0, int depth1)
-	{
-		if (m_attachedMovies == null)
-			return;
-
-		int d = depth0;
-		if (depth1 > d)
-			d = depth1;
-		for (int i = m_attachedMovieList.Count; i <= d; ++i)
-			m_attachedMovieList.Add(null);
-
-		Movie attachedMovie0 = m_attachedMovieList[depth0];
-		Movie attachedMovie1 = m_attachedMovieList[depth1];
-		if (attachedMovie0 != null)
-			attachedMovie0.depth = depth1;
-		if (attachedMovie1 != null)
-			attachedMovie1.depth = depth0;
-		m_attachedMovieList[depth0] = attachedMovie1;
-		m_attachedMovieList[depth1] = attachedMovie0;
-	}
-
-	public Movie GetAttachedMovie(string attachName)
-	{
-		if (m_attachedMovies != null) {
-			Movie movie;
-			if (m_attachedMovies.TryGetValue(attachName, out movie))
-				return movie;
-		}
-		return null;
-	}
-
-	public Movie GetAttachedMovie(int attachDepth)
-	{
-		if (m_attachedMovies != null) {
-			if (attachDepth < 0 || attachDepth >= m_attachedMovieList.Count)
-				return null;
-			return m_attachedMovieList[attachDepth];
-		}
-		return null;
-	}
-
-	public Movie SearchAttachedMovie(string attachName, bool recursive = true)
-	{
-		Movie movie = GetAttachedMovie(attachName);
-		if (movie != null)
-			return movie;
-
-		if (!recursive)
-			return null;
-
-		for (IObject instance = m_instanceHead; instance != null;
-				instance = instance.linkInstance) {
-			if (instance.IsMovie()) {
-				Movie i = ((Movie)instance).SearchAttachedMovie(
-					attachName, recursive);
-				if (i != null)
-					return i;
-			}
-		}
-		return null;
-	}
-
-	public void DetachMovie(string attachName)
-	{
-		if (m_detachedMovies != null)
-			m_detachedMovies[attachName] = true;
-	}
-
-	public void DetachMovie(int attachDepth)
-	{
-		if (m_detachedMovies != null &&
-				attachDepth >= 0 && attachDepth < m_attachedMovieList.Count &&
-				m_attachedMovieList[attachDepth] != null)
-			m_detachedMovies[
-				m_attachedMovieList[attachDepth].attachName] = true;
-	}
-
-	public void DetachMovie(Movie movie)
-	{
-		if (m_detachedMovies != null &&
-				movie != null && movie.attachName != null)
-			m_detachedMovies[movie.attachName] = true;
-	}
-
-	public void DetachFromParent()
-	{
-		if (m_type != Type.ATTACHEDMOVIE)
-			return;
-
-		m_active = false;
-		if (m_parent != null)
-			m_parent.DetachMovie(this);
-	}
-
-	private void ShrinkAttachedLWFList()
-	{
-		for (int i = m_attachedLWFList.Count - 1; i >= 0; --i) {
-			if (m_attachedLWFList[i] != null) {
-				if (i != m_attachedLWFList.Count - 1)
-					m_attachedLWFList.RemoveRange(i,
-						m_attachedLWFList.Count - i);
-				return;
-			}
-		}
-		m_attachedLWFList.Clear();
-	}
-
-	private void ReorderAttachedLWFList(
-		bool reorder, int index, LWFContainer lwfContainer)
-	{
-		if (!reorder || index >= m_attachedLWFList.Count) {
-			for (int i = m_attachedLWFList.Count; i < index; ++i)
-				m_attachedLWFList.Add(null);
-			m_attachedLWFList.Add(lwfContainer);
-		} else {
-			m_attachedLWFList.Insert(index, lwfContainer);
-			if (reorder) {
-				m_attachedLWFList.Remove(null);
-				for (int i = 0; i < m_attachedLWFList.Count; ++i)
-					m_attachedLWFList[i].child.depth = i;
-			}
-		}
-	}
-
-	private void DeleteAttachedLWF(Movie parent, LWFContainer lwfContainer,
-		bool destroy = true, bool deleteFromDetachedLWFs = true)
-	{
-		string attachName = lwfContainer.child.attachName;
-		int attachDepth = lwfContainer.child.depth;
-		parent.m_attachedLWFs.Remove(attachName);
-		parent.m_attachedLWFList[attachDepth] = null;
-		if (deleteFromDetachedLWFs)
-			parent.m_detachedLWFs.Remove(attachName);
-		parent.ShrinkAttachedLWFList();
-		if (destroy && lwfContainer.child.detachHandler != null) {
-			lwfContainer.child.detachHandler(lwfContainer.child);
-			lwfContainer.child.parent = null;
-			lwfContainer.child.detachHandler = null;
-			lwfContainer.child.attachName = null;
-			lwfContainer.child.depth = -1;
-		}
-	}
-
-	public void AttachLWF(LWF attachLWF, string attachName,
-		int attachDepth = -1, bool reorder = false,
-		DetachHandler detachHandler = null)
-	{
-		if (m_attachedLWFs == null) {
-			m_attachedLWFs = new AttachedLWFs();
-			m_detachedLWFs = new DetachDict();
-			m_attachedLWFList = new AttachedLWFList();
-		}
-
-		LWFContainer lwfContainer;
-		if (attachLWF.parent != null) {
-			attachLWF.parent.m_attachedLWFs.TryGetValue(
-				attachLWF.attachName, out lwfContainer);
-			DeleteAttachedLWF(attachLWF.parent, lwfContainer, false);
-		} else {
-			if (m_attachedLWFs.TryGetValue(attachName, out lwfContainer))
-				DeleteAttachedLWF(this, lwfContainer);
-		}
-
-		if (!reorder && attachDepth >= 0 &&
-				attachDepth <= m_attachedLWFList.Count - 1) {
-			lwfContainer = m_attachedLWFList[attachDepth];
-			if (lwfContainer != null)
-				DeleteAttachedLWF(this, lwfContainer);
-		}
-
-		lwfContainer = new LWFContainer(this, attachLWF);
-
-		if (attachLWF.interactive == true)
-			m_lwf.interactive = true;
-		attachLWF.parent = this;
-		attachLWF.detachHandler = detachHandler;
-		attachLWF.attachName = attachName;
-		attachLWF.depth = attachDepth >= 0 ?
-			attachDepth : m_attachedLWFList.Count;
-		m_attachedLWFs[attachName] = lwfContainer;
-		ReorderAttachedLWFList(reorder, attachLWF.depth, lwfContainer);
-
-		m_lwf.isLWFAttached = true;
-	}
-
-	public void SwapAttachedLWFDepth(int depth0, int depth1)
-	{
-		if (m_attachedLWFs == null)
-			return;
-
-		int d = depth0;
-		if (depth1 > d)
-			d = depth1;
-		for (int i = m_attachedLWFList.Count; i <= d; ++i)
-			m_attachedLWFList.Add(null);
-
-		LWFContainer attachedLWF0 = m_attachedLWFList[depth0];
-		LWFContainer attachedLWF1 = m_attachedLWFList[depth1];
-		if (attachedLWF0 != null)
-			attachedLWF0.child.depth = depth1;
-		if (attachedLWF1 != null)
-			attachedLWF1.child.depth = depth0;
-		m_attachedLWFList[depth0] = attachedLWF1;
-		m_attachedLWFList[depth1] = attachedLWF0;
-	}
-
-	public LWF GetAttachedLWF(string attachName)
-	{
-		if (m_attachedLWFs != null) {
-			LWFContainer lwfContainer;
-			if (m_attachedLWFs.TryGetValue(attachName, out lwfContainer))
-				return lwfContainer.child;
-		}
-		return null;
-	}
-
-	public LWF GetAttachedLWF(int attachDepth)
-	{
-		if (m_attachedLWFs != null) {
-			if (attachDepth < 0 || attachDepth >= m_attachedLWFList.Count)
-				return null;
-			LWFContainer lwfContainer = m_attachedLWFList[attachDepth];
-			return lwfContainer == null ? null : lwfContainer.child;
-		}
-		return null;
-	}
-
-	public LWF SearchAttachedLWF(string attachName, bool recursive = true)
-	{
-		LWF attachedLWF = GetAttachedLWF(attachName);
-		if (attachedLWF != null)
-			return attachedLWF;
-
-		if (!recursive)
-			return null;
-
-		for (IObject instance = m_instanceHead; instance != null;
-				instance = instance.linkInstance) {
-			if (instance.IsMovie()) {
-				LWF i = ((Movie)instance).SearchAttachedLWF(
-					attachName, recursive);
-				if (i != null)
-					return i;
-			}
-		}
-		return null;
-	}
-
-	public void DetachLWF(string attachName)
-	{
-		if (m_detachedLWFs != null)
-			m_detachedLWFs[attachName] = true;
-	}
-
-	public void DetachLWF(int attachDepth)
-	{
-		if (m_detachedLWFs != null &&
-				attachDepth >= 0 && attachDepth < m_attachedLWFList.Count &&
-				m_attachedLWFList[attachDepth] != null)
-			m_detachedLWFs[
-				m_attachedLWFList[attachDepth].child.attachName] = true;
-	}
-
-	public void DetachLWF(LWF detachLWF)
-	{
-		if (m_detachedLWFs != null &&
-				detachLWF != null && detachLWF.attachName != null)
-			m_detachedLWFs[detachLWF.attachName] = true;
-	}
-
-	public void DetachAllLWFs()
-	{
-		if (m_detachedLWFs != null)
-			foreach (LWFContainer lwfContainer in m_attachedLWFs.Values)
-				m_detachedLWFs[lwfContainer.child.attachName] = true;
 	}
 
 	private void ExecObject(int dlDepth, int objId,
@@ -771,8 +348,8 @@ public partial class Movie : IObject
 
 			if (!m_postLoaded) {
 				m_postLoaded = true;
-				if (m_handler != null && m_handler.postLoad != null)
-					m_handler.postLoad(this);
+				if (m_handler != null)
+					m_handler.Call(EventType.POSTLOAD, this);
 			}
 
 			if (controlAnimationOffset != -1 &&
@@ -795,8 +372,8 @@ public partial class Movie : IObject
 		}
 
 		PlayAnimation(ClipEvent.ENTERFRAME);
-		if (m_handler != null && m_handler.enterFrame != null)
-			m_handler.enterFrame(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.ENTERFRAME, this);
 	}
 
 	public override void Update(Matrix m, ColorTransform c)
@@ -813,8 +390,8 @@ public partial class Movie : IObject
 			Utility.CopyColorTransform(m_colorTransform, c);
 		}
 
-		if (m_handler != null && m_handler.update != null)
-			m_handler.update(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.UPDATE, this);
 
 		for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
 			Object obj = m_displayList[dlDepth];
@@ -937,8 +514,8 @@ public partial class Movie : IObject
 		if (!m_visible || !m_active)
 			v = false;
 
-		if (v && m_handler != null && m_handler.render != null)
-			m_handler.render(this);
+		if (v && m_handler != null)
+			m_handler.Call(EventType.RENDER, this);
 
 		if (m_property.hasRenderingOffset) {
 			m_lwf.RenderOffset();
@@ -1036,8 +613,8 @@ public partial class Movie : IObject
 
 		PlayAnimation(ClipEvent.UNLOAD);
 
-		if (m_handler != null && m_handler.unload != null)
-			m_handler.unload(this);
+		if (m_handler != null)
+			m_handler.Call(EventType.UNLOAD, this);
 
 		m_displayList = null;
 		m_property = null;
@@ -1063,40 +640,6 @@ public partial class Movie : IObject
 	public int SearchFrame(int stringId)
 	{
 		return m_lwf.SearchFrame(this, stringId);
-	}
-
-	public void GotoLabel(string label)
-	{
-		GotoLabel(m_lwf.GetStringId(label));
-	}
-
-	public void GotoLabel(int stringId)
-	{
-		GotoFrame(m_lwf.SearchFrame(this, stringId));
-	}
-
-	public void GotoAndStop(string label)
-	{
-		GotoFrame(m_lwf.SearchFrame(this, m_lwf.GetStringId(label)));
-		Stop();
-	}
-
-	public void GotoAndStop(int frameNo)
-	{
-		GotoFrame(frameNo);
-		Stop();
-	}
-
-	public void GotoAndPlay(string label)
-	{
-		GotoFrame(m_lwf.SearchFrame(this, m_lwf.GetStringId(label)));
-		Play();
-	}
-
-	public void GotoAndPlay(int frameNo)
-	{
-		GotoFrame(frameNo);
-		Play();
 	}
 
 	public Movie SearchMovieInstance(int stringId, bool recursive = true)
@@ -1142,156 +685,43 @@ public partial class Movie : IObject
 		return null;
 	}
 
-	public Movie Move(float vx, float vy)
+	public Button SearchButtonInstance(int stringId, bool recursive = true)
 	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.Move(vx, vy);
-		return this;
+		for (IObject instance = m_instanceHead; instance != null;
+				instance = instance.linkInstance) {
+			if (instance.IsButton() && m_lwf.GetInstanceNameStringId(
+					instance.instanceId) == stringId) {
+				return (Button)instance;
+			} else if (recursive && instance.IsMovie()) {
+				Button i = ((Movie)instance).SearchButtonInstance(
+					stringId, recursive);
+				if (i != null)
+					return i;
+			}
+		}
+		return null;
 	}
 
-	public Movie MoveTo(float vx, float vy)
+	public Button SearchButtonInstance(
+		string instanceName, bool recursive = true)
 	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.MoveTo(vx, vy);
-		return this;
+		return SearchButtonInstance(m_lwf.GetStringId(instanceName), recursive);
 	}
 
-	public Movie Rotate(float degree)
+	public Button SearchButtonInstanceByInstanceId(int instId, bool recursive)
 	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.Rotate(degree);
-		return this;
-	}
-
-	public Movie RotateTo(float degree)
-	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.RotateTo(degree);
-		return this;
-	}
-
-	public Movie Scale(float vx, float vy)
-	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.Scale(vx, vy);
-		return this;
-	}
-
-	public Movie ScaleTo(float vx, float vy)
-	{
-		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
-		m_property.ScaleTo(vx, vy);
-		return this;
-	}
-
-	public Movie SetMatrix(Matrix m, float sx = 1, float sy = 1, float r = 0)
-	{
-		m_property.SetMatrix(m, sx, sy, r);
-		return this;
-	}
-
-	public Movie SetAlpha(float v)
-	{
-		if (!m_property.hasColorTransform)
-			Utility.GetColorTransform(this);
-		m_property.SetAlpha(v);
-		return this;
-	}
-
-	public Movie SetColorTransform(ColorTransform c)
-	{
-		m_property.SetColorTransform(c);
-		return this;
-	}
-
-	public Movie SetRenderingOffset(int rOffset)
-	{
-		m_property.SetRenderingOffset(rOffset);
-		return this;
-	}
-
-	public float x {
-		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.matrix.translateX;
+		for (IObject instance = m_instanceHead; instance != null;
+				instance = instance.linkInstance) {
+			if (instance.IsButton() && instance.instanceId == instId) {
+				return (Button)instance;
+			} else if (recursive && instance.IsMovie()) {
+				Button i = ((Movie)instance).SearchButtonInstanceByInstanceId(
+					instId, recursive);
+				if (i != null)
+					return i;
+			}
 		}
-		set {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			m_property.MoveTo(value, m_property.matrix.translateY);
-		}
-	}
-
-	public float y {
-		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.matrix.translateY;
-		}
-		set {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			m_property.MoveTo(m_property.matrix.translateX, value);
-		}
-	}
-
-	public float scaleX {
-		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_scaleX;
-		}
-		set {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			m_property.ScaleTo(value, m_property.m_scaleY);
-		}
-	}
-
-	public float scaleY {
-		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_scaleY;
-		}
-		set {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			m_property.ScaleTo(m_property.m_scaleX, value);
-		}
-	}
-
-	public float rotation {
-		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_rotation;
-		}
-		set {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			m_property.RotateTo(value);
-		}
-	}
-
-	public float alpha {
-		get {
-			if (!m_property.hasColorTransform)
-				Utility.GetColorTransform(this);
-			return m_property.colorTransform.multi.alpha;
-		}
-		set {
-			if (!m_property.hasColorTransform)
-				Utility.GetColorTransform(this);
-			m_property.SetAlpha(value);
-		}
+		return null;
 	}
 }
 
