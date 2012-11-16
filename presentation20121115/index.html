@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="ja-JP">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1024" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title></title>
+    <link href="css/impress.css" rel="stylesheet" />
+    <link rel="shortcut icon" href="favicon.png" />
+    <script src="src/prettify.js" type="text/javascript"></script>
+    <link href="src/prettify.css" rel="stylesheet" type="text/css"/>
+	<script src="js/lwf.js"></script>
+	<script src="js/impress.lwf.js"></script>
+</head>
+<body class="impress-not-supported" onload="prettyPrint()">
+<div class="fallback-message">
+    <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+    <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+</div>
+<div id="impress">
+
+<div id="title" class="step" data-y="0" data-x="0">
+<h1><center><img src="img/logo.png" alt="LWF - Lightweight SWF"></center></h1>
+
+</div>
+<div class="step" data-y="0" data-x="1200">
+<h2>LWF</h2>
+
+<p>an <strong>open-source</strong> developer tool for <strong>Unity</strong> and <strong>HTML5</strong> smartphone apps</p>
+
+<p style="margin-top:30px"></p>
+
+<p><center><a href="https://github.com/gree/lwf">https://github.com/gree/lwf</a></center></p>
+
+</div>
+<div class="step" data-y="0" data-x="2400">
+<h2>LWF</h2>
+
+<p>a framework for <strong>2D User Interface</strong> and <strong>2D Animation</strong></p>
+
+</div>
+<div class="step" data-y="0" data-x="3600">
+<h2>LWF</h2>
+
+<p>Lightweight <strong>SWF</strong></p>
+
+</div>
+<div data-z="-500" data-scale="0.01" class="step" data-y="0" data-x="3600">
+<h2>Lightweight <strong>SWF</strong></h2>
+
+<p><!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-500" -->
+<!-- data-scale="0.01" -->
+based on an animation data converted from a <strong>Flash SWF</strong> file.</p>
+
+</div>
+<div class="step" data-y="0" data-x="4800">
+<h2>The purpose of LWF</h2>
+
+<p><s>Yet another Flash Player implementation</s></p>
+
+</div>
+<div class="step" data-y="800" data-x="0">
+<h2>The purpose of LWF</h2>
+
+<p>Make Game Development <strong>HAPPY!</strong></p>
+
+</div>
+<div class="step" data-y="800" data-x="1200">
+<h2>Happy game developing!</h2>
+
+<ul>
+<li>Reduce the cost of developing games</li>
+<li>Divide the work among programmers and animators</li>
+</ul>
+
+</div>
+<div class="step" data-y="800" data-x="2400">
+<h2>A common problem</h2>
+
+<p>Animators make good animations
+<center><img src="img/problem1.png"></center></p>
+
+</div>
+<div class="step" data-y="800" data-x="3600">
+<h2>A common problem</h2>
+
+<p>Programmers implement animations as good as they can do
+<center><img src="img/problem2.png"></center></p>
+
+</div>
+<div class="step" data-y="800" data-x="4800">
+<h2><span></span></h2>
+
+<h1>LWF fixes the problem</h1>
+
+<p><center><figure style="display:inline-block;margin-right:50px"><legend></legend><img src="img/problem1.png" height="300px"></figure><figure style="display:inline-block"><legend></legend><img src="img/problem2.png" height="300px"></figure></center></p>
+
+</div>
+<div class="step" data-y="1600" data-x="0">
+<h2>LWF Way</h2>
+
+<ul>
+<li>Animators make good animations using <strong>Adobe Flash</strong></li>
+<li>Programmers convert it and play it as is
+<center><figure style="display:inline-block;margin-right:50px"><legend></legend><img src="img/problem1.png" height="300px"></figure><figure style="display:inline-block"><legend></legend><img src="img/problem1.png" height="300px"></figure></center></li>
+</ul>
+
+</div>
+<div class="step" data-y="1600" data-x="1200">
+<h2>LWF Way: Adobe Flash</h2>
+
+<p><strong>Adobe Flash</strong> is one of the most powerful and useful tool for authoring 2D animation</p>
+
+</div>
+<div class="step" data-y="1600" data-x="2400">
+<h2>Con</h2>
+
+<p>Animators can make too many animations, <strong>Do not forget adapting Performance and Memory Usage</strong>
+<center><figure style="display:inline-block;margin-right:50px"><legend>Too much</legend><img src="img/problem1.png" height="300px"></figure><figure style="display:inline-block"><legend>Reasonable</legend><img src="img/problem3.png" height="300px"></figure></center></p>
+
+</div>
+<div class="step" data-y="1600" data-x="3600">
+<h2>Supported Flash Elements</h2>
+
+<ul>
+<li>Bitmap</li>
+<li>Motion Tween</li>
+<li>Text</li>
+<li>Graphic</li>
+<li>Button</li>
+<li>Movie Clip</li>
+<li>Action (Flash Version 3)</li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<p><a href="http://gree.github.com/lwf-demo/pdf/FLASHforLWFproductionguideline.pdf">FLASH for LWF production guideline</a></p>
+
+</div>
+<div class="step" data-y="1600" data-x="4800">
+<h2><strong>NOT SUPPORTED</strong> Flash Elements</h2>
+
+<ul>
+<li>Shape</li>
+<li>Shape Tween</li>
+<li>Mask</li>
+<li>Sound</li>
+<li>ActionScript 1/2/3</li>
+</ul>
+
+<p><center style="font-size:50%">It's so complicated...</center></p>
+
+</div>
+<div data-z="-500" data-scale="0.01" class="step" data-y="1600" data-x="4800">
+<h2>Shape: so don't worry about it</h2>
+
+<p><!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-500" -->
+<!-- data-scale="0.01" -->
+You can get easily "<strong>Bitmap</strong>" from "Shape"</p>
+
+<p style="margin-top:30px"></p>
+
+<p><a href="http://help.adobe.com/en_US/flash/cs/using/WSb03e830bd6f770ee1f9eac2b12da610f99a-7fff.html">Flash Professional / Converting art between vector and bitmap formats (CS5.5 or later)</a></p>
+
+<p style="margin-top:30px"></p>
+
+<p>You can also use JSFL for converting shapes into bitmaps.</p>
+
+</div>
+<div class="step" data-y="2400" data-x="0">
+<h2>Example: Authoring Animation in Flash</h2>
+
+<p><center><img src="img/flash.png"></center></p>
+
+</div>
+<div class="step" data-y="2400" data-x="1200">
+<h2>Example: Publish SWF</h2>
+
+<pre><code class="prettyprint">    logo.swf
+</code></pre>
+
+</div>
+<div class="step" data-y="2400" data-x="2400">
+<h2>Example: Convert SWF into LWF</h2>
+
+<pre><code class="prettyprint">    $ ruby swf2lwf.rb logo.swf
+
+    Generates logo.lwf
+</code></pre>
+
+</div>
+<div class="step" data-y="2400" data-x="3600">
+<h2>Example: And then ...</h2>
+
+</div>
+<div class="step" data-y="2400" data-x="4800">
+<h2>Example: Play it :)</h2>
+
+<p><center><canvas width=480 height=329 lwf="lwf/logo/logo.lwf"></canvas></center>
+<center><p style="margin-top:30px;font-size:50%">Yes! It is embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="3200" data-x="0">
+<h2><span></span></h2>
+
+<p><center>Aren't you just <strong>bored</strong> with this LWF example?</center></p>
+
+</div>
+<div class="step" data-y="3200" data-x="1200">
+<h2><span></span></h2>
+
+<p><center>Let's see a real example</center></p>
+
+</div>
+<div class="step" data-y="3200" data-x="2400">
+<h2><strong>REAL</strong> Example:</h2>
+
+<p><center><canvas width=320 height=420 lwf="lwf/sample1_max_optimized/sample1_max_optimized.lwf"></canvas></center>
+<center><p style="margin-top:30px;font-size:50%">Embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="3200" data-x="3600">
+<h2>The implementation of LWF</h2>
+
+</div>
+<div class="step" data-y="3200" data-x="4800">
+<h2>LWF Converter</h2>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/blob/master/tools/swf2lwf/swf2lwf.rb">swf2lwf.rb</a></li>
+<li>Pure Ruby</li>
+<li>Works with 1.8, 1.9, JRuby and MacRuby</li>
+<li>Reference: <a href="http://www.adobe.com/content/dam/Adobe/en/devnet/swf/pdf/swf_file_format_spec_v10.pdf">SWF File Format Specification Version 10</a></li>
+</ul>
+
+</div>
+<div class="step" data-y="4000" data-x="0">
+<h2>LWF Binary Format (.lwf file)</h2>
+
+<ul>
+<li>SIMPLE</li>
+<li>Random-access friendly (not sequential-access as SWF)</li>
+<li>For images, includes only the meta-data of the images</li>
+<li><a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_format.cs">lwf_format.cs</a></li>
+</ul>
+
+</div>
+<div class="step" data-y="4000" data-x="1200">
+<h2>LWF Runtime For Unity</h2>
+
+</div>
+<div class="step" data-y="4000" data-x="2400">
+<h2>LWF Runtime For Unity</h2>
+
+<ul>
+<li>C#</li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>Unity-Independent part: <a href="https://github.com/gree/lwf/tree/master/csharp/core">core</a></li>
+<li>Unity-Dependent part: <a href="https://github.com/gree/lwf/tree/master/csharp/unity">unity</a></li>
+</ul>
+
+<p style="margin-top:30px;font-size:50%">It means you can port LWF for XNA and PlayStation Mobile SDK!</p>
+
+</div>
+<div class="step" data-y="4000" data-x="3600">
+<h2>core</h2>
+
+<ul>
+<li>Loader: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_loader.cs">lwf_loader.cs</a>
+<ul>
+<li>Load LWF binary data from the file system into the memory (Data)</li>
+</ul></li>
+<li>Data: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_data.cs">lwf_data.cs</a>
+<ul>
+<li>The representation of LWF binary on the memory, instantiated by Loader</li>
+</ul></li>
+<li>LWF: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_core.cs">lwf_core.cs</a>
+<ul>
+<li>an instance for playing the LWF binary, instantiated with Data</li>
+<li>You can instantiate multiple LWF instances from only one Data at the same time</li>
+</ul></li>
+</ul>
+
+</div>
+<div data-z="-500" data-scale="0.01" class="step" data-y="4000" data-x="3600">
+<h2>Pitfalls with Unity</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-500" -->
+<!-- data-scale="0.01" -->
+
+<ul>
+<li>The filename extension of LWF binary data should be <strong>".bytes"</strong> not ".lwf" in "<strong>Resources</strong>"
+<ul>
+<li>BAD: <s>"foo.lwf"</s></li>
+<li>GOOD: "foo.bytes"</li>
+</ul></li>
+<li>The file basename should be unique in "<strong>Resources</strong>"
+<ul>
+<li>BAD: <s>"foo.bytes"</s>, <s>"foo.png"</s></li>
+<li>GOOD: "foo.bytes", "bar.png"</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="4000" data-x="4800">
+<h2>core (Unity-independent part)</h2>
+
+<p>It just works as Flash Player</p>
+
+<ul>
+<li>Movie: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_movie.cs">lwf_movie.cs</a></li>
+<li>Button: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_button.cs">lwf_button.cs</a></li>
+<li>Graphic: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_graphic.cs">lwf_graphic.cs</a></li>
+<li>Bitmap: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_bitmap.cs">lwf_bitmap.cs</a></li>
+<li>Text: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_text.cs">lwf_text.cs</a></li>
+</ul>
+
+</div>
+<div class="step" data-y="4800" data-x="0">
+<h2>core: Events</h2>
+
+<ul>
+<li><p><a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_event.cs">lwf_event.cs</a></p></li>
+<li><p>AddEventHandler API</p>
+
+<pre><code class="prettyprint">/* In Flash action panel */
+fscommand("event", "eventName");
+
+
+/* In C# */
+AddEventHandler("eventName", (movie,button) =&gt; {
+    Debug.Log("[EVENT] eventName");
+    /* movie: Movie instance where the event was occurred at */
+    /* button: Button instance where the event was occurred at */
+});
+</code></pre></li>
+<li><p>It makes possible to handle the end of animation, user interaction and so forth</p></li>
+</ul>
+
+</div>
+<div class="step" data-y="4800" data-x="1200">
+<h2>core: Events</h2>
+
+<ul>
+<li><p>AddMovieEventHandler API</p>
+
+<pre><code class="prettyprint">AddMovieEventHandler("instanceName", load:(movie) =&gt; {
+    Debug.Log("instanceName has been loaded");
+});
+
+
+AddMovieEventHandler("instanceName",
+    enterFrame:(movie) =&gt; {
+        /* enterFrame */
+    },
+    unload:(movie) =&gt; {
+        /* unload */
+    }
+);
+</code></pre></li>
+<li><p>It can handle the Movie events like load, enterFrame, unload and so on as well as Flash ActionScript</p></li>
+</ul>
+
+</div>
+<div data-z="-500" data-scale="0.01" class="step" data-y="4800" data-x="1200">
+<h2>Named Arguments and Lambda</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-500" -->
+<!-- data-scale="0.01" -->
+
+<ul>
+<li><a href="http://msdn.microsoft.com/en-us/library/dd264739.aspx">Named and Optional Arguments (C# Programming Guide)</a></li>
+<li><a href="http://msdn.microsoft.com/en-us/library/bb397687.aspx">Lambda Expressions (C# Programming Guide)</a></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    enterFrame:(movie) =&gt; {
+        /* handle the event */
+    },
+</code></pre>
+
+<p style="margin-top:30px"></p>
+
+<p>It's so meaningful, isn't it?</p>
+
+</div>
+<div class="step" data-y="4800" data-x="2400">
+<h2>core: Events</h2>
+
+<ul>
+<li><p>AddButtonEventHandler API</p>
+
+<pre><code class="prettyprint">AddButtonEventHandler("instanceName", press:(button) =&gt; {
+    Debug.Log("instanceName has been pressed");
+});
+</code></pre></li>
+<li><p>It can handle the Button events like press, release, rollOver, rollOut and so on as well as Flash ActionScript</p></li>
+</ul>
+
+</div>
+<div class="step" data-y="4800" data-x="3600">
+<h2>core: Extras</h2>
+
+<ul>
+<li>Particle: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_particle.cs">lwf_particle.cs</a></li>
+<li>ProgramObject: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_programobj.cs">lwf_programobj.cs</a></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>Renderer Interface: <a href="https://github.com/gree/lwf/blob/master/csharp/core/lwf_renderer.cs">lwf_renderer.cs</a></li>
+</ul>
+
+<p style="margin-top:30px;font-size:50%">You can implement the renderers of these using the renderer interface what you want to do with the geometry, color and size information</p>
+
+<p style="margin-top:30px;font-size:50%">
+See also <a href="http://gree.github.com/lwf-demo/pdf/FLASHforLWFproductionguideline.pdf">FLASH for LWF production guideline</a></p>
+
+</div>
+<div class="step" data-y="4800" data-x="4800">
+<h2>unity (Unity dependent part)</h2>
+
+<ul>
+<li>Wrapper: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/wrapper">wrapper</a>
+<ul>
+<li>MonoBehaviour derived components for Unity GameObject</li>
+</ul></li>
+<li>Editor: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/editor">editor</a>
+<ul>
+<li>The LWF Inspector</li>
+</ul></li>
+<li>Renderer: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/renderer">renderer</a>
+<ul>
+<li>Render the LWF instance on the game scene</li>
+</ul></li>
+<li>Shaders: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/shaders">shaders</a>
+<ul>
+<li>CG Shader for Renderer</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="5600" data-x="0">
+<h2>Wrapper: LWFObject and LWFPlayer</h2>
+
+<ul>
+<li>LWFObject: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/wrapper/LWFObject.cs">LWFObject.cs</a>
+<ul>
+<li>Just a wrapper for lwf_core.cs</li>
+</ul></li>
+<li>LWFPlayer: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/wrapper/LWFPlayer.cs">LWFPlayer.cs</a>
+<ul>
+<li>It does not work as Flash Player, just play the animations</li>
+<li>Faster than LWFObject because it caches the meshes of each single frame</li>
+<li>It should be used with CombinedMeshRenderer</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="5600" data-x="1200">
+<h2>Editor: LWFObject Inspector</h2>
+
+<p><center><img src="img/lwfinspector.png"></center></p>
+
+<p>Inspector provides the current status of LWFObject instances</p>
+
+</div>
+<div class="step" data-y="5600" data-x="2400">
+<h2>Renderer</h2>
+
+<ul>
+<li>CombinedMeshRenderer: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/renderer/combinedmesh">combinedmesh</a>
+<ul>
+<li>Use MeshFilter and MeshRenderer components</li>
+</ul></li>
+<li>DrawMeshRenderer: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/renderer/drawmesh">drawmesh</a>
+<ul>
+<li>Use DrawMesh, the Unity PRO API</li>
+</ul></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>TextRenderer: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/renderer/common/lwf_unity_text.cs">lwf_unity_text.cs</a>
+<ul>
+<li>Render text using BitmapFont and SystemFont</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="5600" data-x="3600">
+<h2>How to render the LWF instance</h2>
+
+<ol>
+<li>Execute a display list in a frame of a movieclip</li>
+<li>Update the geometry of each node in the display list</li>
+<li>Pass the geometry and color information of each node through a renderer</li>
+<li>Render it using CombinedMeshRenderer or DrawMeshRenderer</li>
+</ol>
+
+</div>
+<div class="step" data-y="5600" data-x="4800">
+<h2>CombinedMeshRenderer</h2>
+
+<ul>
+<li>Generate a mesh per a LWF instance every frame</li>
+<li>And then MeshRenderer renders the mesh automatically</li>
+</ul>
+
+</div>
+<div class="step" data-y="6400" data-x="0">
+<h2>CombinedMeshRenderer</h2>
+
+<p>Pros</p>
+
+<ul>
+<li><strong>Just One Draw Call</strong> per a LWF instance</li>
+<li><strong>Dynamic Batching</strong> friendly</li>
+</ul>
+
+<p>Cons</p>
+
+<ul>
+<li>Z sort with the large mesh</li>
+<li>Have to create a texture sheet (maximum texture sheet size is depends on GPUs, e.g. iPhone 4: 2048x2048)</li>
+<li><strong>CreateVBO</strong>
+<ul>
+<li>With Unity 4.0 or later, LWF does call <strong>Mesh.MarkDynamic()</strong> for prevention of it</li>
+</ul></li>
+</ul>
+
+</div>
+<div data-z="-500" data-scale="0.01" class="step" data-y="6400" data-x="0">
+<h2>How to create a texture sheet</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-500" -->
+<!-- data-scale="0.01" -->
+
+<p><a href="http://www.codeandweb.com/texturepacker">
+<center>TexturePacker</center>
+<center><img src="img/texturepacker.png"></center>
+</a></p>
+
+</div>
+<div data-z="-1000" data-scale="0.001" class="step" data-y="6400" data-x="0">
+<h2>TexturePacker setting for LWF</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-1000" -->
+<!-- data-scale="0.001" -->
+
+<p>LWF Converter (swf2lwf.rb) expects <strong>JSON (Hash)</strong> Data Format
+<center><img src="img/json.png"></center></p>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    $ ruby swf2lwf.rb foo.swf foo_atlas.json
+</code></pre>
+
+</div>
+<div class="step" data-y="6400" data-x="1200">
+<h2><strong>Dynamic Batching</strong> friendly</h2>
+
+<p>ResourceCache (<a href="https://github.com/gree/lwf/blob/master/csharp/unity/renderer/common/lwf_unity_resourcecache.cs">lwf_unity_resourcecache.cs</a>) does the best for it</p>
+
+<p style="margin-top:30px"></p>
+
+<p>Return the same material as possible with caching the resouces</p>
+
+</div>
+<div class="step" data-y="6400" data-x="2400">
+<h2>Load another texture at the runtime </h2>
+
+<p>Implement TextureLoader and pass it through LWFObject Load method or SetLoader method</p>
+
+<p style="margin-top:30px"></p>
+
+<p>Reference: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/wrapper/LWFObject.cs">LWFObject.cs</a></p>
+
+</div>
+<div class="step" data-y="6400" data-x="3600">
+<h2>CombinedMeshRenderer</h2>
+
+<p>How about SkinnedMeshRenderer instead of MeshRenderer?</p>
+
+<p style="margin-top:30px"></p>
+
+<p>It seems that CPU matrix calculation is a little bit better than SkinnedMeshRenderer.</p>
+
+</div>
+<div class="step" data-y="6400" data-x="4800">
+<h2>DrawMeshRenderer</h2>
+
+<ul>
+<li>Call DrawMesh every mesh (a rectangle polygon for each texture) in a LWF instance every frame</li>
+</ul>
+
+</div>
+<div class="step" data-y="7200" data-x="0">
+<h2>DrawMeshRenderer</h2>
+
+<p>Pros</p>
+
+<ul>
+<li>No need to create texture sheets</li>
+<li>Z sort with each single rectangle polygon of a texture</li>
+</ul>
+
+<p>Cons</p>
+
+<ul>
+<li>More Draw Calls</li>
+<li>No Dynamic Batching</li>
+</ul>
+
+</div>
+<div class="step" data-y="7200" data-x="1200">
+<h2>TextRenderer</h2>
+
+<p>LWF decides to use a text renderer by the font name at the runtime</p>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>For a font name that starts with underscore like "<strong>_serif</strong>", use SystemFontRenderer, other than that, use BitmapFontRenderer</li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>BitmapFontRenderer: <a href="https://github.com/gree/lwf/tree/master/csharp/unity/renderer/bitmapfont">bitmapfont</a></li>
+<li>SystemFontRenderer: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/renderer/common/lwf_unity_systemfontrenderer.cs">lwf_unity_systemfontrenderer.cs</a>
+<ul>
+<li>It expects to use with <a href="https://github.com/gree/unity-systemfontrenderer">unity-systemfontrenderer</a></li>
+<li>LWF Integration: <a href="https://github.com/gree/lwf/blob/master/csharp/unity/extension/unity-systemfontrenderer">extension/unity-systemfontrender</a></li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="7200" data-x="2400">
+<h2>Q: Can I change the text string at the runtime?</h2>
+
+<p>A: Use SetText API</p>
+
+</div>
+<div data-z="-1000" data-scale="0.01" class="step" data-y="7200" data-x="2400">
+<h2>How to convert a Bitmap Font</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-1000" -->
+<!-- data-scale="0.01" -->
+
+<p><a href="https://github.com/gree/lwf/blob/master/tools/fontconv/fontconv.rb">fontconv.rb</a></p>
+
+<pre><code class="prettyprint">    $ macruby fontconv.rb MTLmr3m.ttf MotoyaLMaru 17 "" 2048 2048 MTLmr3m
+</code></pre>
+
+</div>
+<div class="step" data-y="7200" data-x="3600">
+<h2>How to integrate SystemFontRenderer with unity-systemfontrenderer</h2>
+
+<pre><code class="prettyprint">    /*
+     * Connect LWF to SystemFontRenderer
+     */
+    LWF.UnityRenderer.ISystemFontRenderer.SetConstructor(() =&gt; {
+        return new SystemFont.Renderer();
+    });
+</code></pre>
+
+</div>
+<div class="step" data-y="7200" data-x="4800">
+<h2>Unity 4.0 Dynamic Font </h2>
+
+<p>We want to integrate it as soon as possible! But</p>
+
+<p style="margin-top:30px;font-size:50%">We need automatic line feed...</p>
+
+</div>
+<div class="step" data-y="8000" data-x="0">
+<h2>NGUI</h2>
+
+<p>LWF works fine with <strong>NGUI</strong>!</p>
+
+<p style="margin-top:30px"></p>
+
+<p>UIWidget inherited class for LWF</p>
+
+</div>
+<div class="step" data-y="8000" data-x="1200">
+<h2>NGUI Integration</h2>
+
+<p><a href="https://github.com/gree/lwf/blob/master/csharp/unity/extension/NGUI">extension/NGUI</a></p>
+
+<p style="margin-top:30px;font-size:50%">It is not included in lwf.unitypackage</p>
+
+</div>
+<div class="step" data-y="8000" data-x="2400">
+<h2>LWF Runtime For HTML5</h2>
+
+</div>
+<div class="step" data-y="8000" data-x="3600">
+<h2><strong>REAL</strong> Example:</h2>
+
+<p><center><canvas width=320 height=380 lwf="lwf/sample2_max_optimized/sample2_max_optimized.lwf"></canvas></center>
+<center><p style="margin-top:30px;font-size:50%">Embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="8000" data-x="4800">
+<h2>LWF Runtime For HTML5</h2>
+
+<ul>
+<li>CoffeeScript
+<ul>
+<li>Ported from C#, the structure is almost same as C# implementation</li>
+<li>Google Closure Compiler "ADVANCED_OPTIMIZATIONS" friendly</li>
+<li>Closure Compiler and UglifyJS for minification</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="8800" data-x="0">
+<h2>core (HTML5-independent part... as Possible)</h2>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/tree/master/coffee/core">core</a></li>
+</ul>
+
+<p style="margin-top:30px;font-size:50%">It might work on node.js and Web Worker</p>
+
+</div>
+<div class="step" data-y="8800" data-x="1200">
+<h2>LWF uses several HTML5 features</h2>
+
+<p>If it is available at the runtime </p>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>Canvas</li>
+<li>CSS3 WebKit Transform</li>
+<li>WebGL</li>
+<li>ArrayBuffer</li>
+<li>Web Worker</li>
+<li>XMLHttpRequest2</li>
+</ul>
+
+</div>
+<div data-z="-1000" data-scale="0.01" class="step" data-y="8800" data-x="1200">
+<h2>JFYI: Canvas / CSS 3D</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-1000" -->
+<!-- data-scale="0.01" -->
+
+<table>
+<tr><th>
+    <th><span style="margin:20px">CSS3 3D</span>
+    <th><span style="margin:20px">Canvas</span>
+<tr><th><span style="margin:20px">Android 2.x-3.x</span>
+    <td><span style="margin:20px">-</span>
+    <td><span style="margin:20px">-</span>
+<tr><th><span style="margin:20px">Android 4.x-</span>
+    <td><span style="margin:20px">-</span>
+    <td><span style="margin:20px">GPU</span>
+<tr><th><span style="margin:20px">iOS 4.x</span>
+    <td><span style="margin:20px">GPU</span>
+    <td><span style="margin:20px">-</span>
+<tr><th><span style="margin:20px">iOS 5.x-
+    <td><span style="margin:20px">GPU</span>
+    <td><span style="margin:20px">GPU</span>
+</table>
+
+<p style="margin-top:30px;font-size:50%">In our experience, Canvas is more stable and faster than CSS3 in every platform, however, of course it may vary by animation data</p>
+
+</div>
+<div class="step" data-y="8800" data-x="2400">
+<h2>Canvas Renderer</h2>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/tree/master/coffee/canvas">canvas</a></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    LWF.useCanvasRenderer();
+    cache = LWF.ResourceCache.get();
+</code></pre>
+
+<p style="margin-top:30px;font-size:50%">Canvas Renderer does not change the Canvas context as possible for the performance</p>
+
+</div>
+<div class="step" data-y="8800" data-x="3600">
+<h2>CSS3 Renderer</h2>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/tree/master/coffee/webkitcss">webkitcss</a></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    LWF.useWebkitCSSRenderer();
+    cache = LWF.ResourceCache.get();
+</code></pre>
+
+<p style="margin-top:30px;font-size:50%">CSS3 Renderer does not change the CSS style of DOM elements as possible for the performance</p>
+
+</div>
+<div class="step" data-y="8800" data-x="4800">
+<h2>CSS3 Renderer</h2>
+
+<ul>
+<li>Default: 3D (use matrix3d)
+<ul>
+<li>GPU friendly</li>
+<li>It does not work correctly on Android 2.x-3.x :(</li>
+</ul></li>
+<li>Option for Android 2.x-3.x: 2D (use matrix)
+<ul>
+<li>It works correctly on Android 2.x-3.x :)</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="9600" data-x="0">
+<h2>WebGL Renderer</h2>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/tree/master/coffee/webgl">webgl</a></li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    LWF.useWebGLRenderer()
+    cache = LWF.ResourceCache.get();
+</code></pre>
+
+<p style="margin-top:30px;font-size:50%">Experimental Implementation, but it would work correctly</p>
+
+</div>
+<div class="step" data-y="9600" data-x="1200">
+<h2>ArrayBuffer</h2>
+
+<p>Loading LWF binary data using ArrayBuffer, better than the below</p>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    LWFLoader.prototype.readByte = function() {
+        return this.d.charCodeAt(this.index++) &amp; 0xff;
+    };
+
+    LWFLoader.prototype.readChar = function() {
+        return String.fromCharCode(this.readByte());
+    };
+</code></pre>
+
+</div>
+<div class="step" data-y="9600" data-x="2400">
+<h2>Web Worker</h2>
+
+<p>Asynchronous Loading LWF binary data</p>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li>iOS5: postMessage</li>
+<li>iOS6: webkitPostMessage with ArrayBuffer</li>
+</ul>
+
+</div>
+<div data-z="-1000" data-scale="0.01" class="step" data-y="9600" data-x="2400">
+<h2>JFYI: A Pitfall</h2>
+
+<!-- data-x="SAME" -->
+<!-- data-y="SAME" -->
+<!-- data-z="-1000" -->
+<!-- data-scale="0.01" -->
+
+<ul>
+<li>Browser
+<ul>
+<li>("window" and "self" are defined and "window" === "self")</li>
+</ul></li>
+<li>Web Worker Thread
+<ul>
+<li>("window" isn't defined, "self" is defined)</li>
+</ul></li>
+<li>cocos2d for iPhone/cocos2d-x JavaScript Binding
+<ul>
+<li>("window" and "self" aren't defined)</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="9600" data-x="3600">
+<h2>XMLHttpRequest2</h2>
+
+<ul>
+<li>iOS6: xhr.responseType = 'arraybuffer'</li>
+</ul>
+
+</div>
+<div class="step" data-y="9600" data-x="4800">
+<h2>How to render bitmap on HTML5</h2>
+
+<ul>
+<li>CSS3 Renderer uses CSS3 Div Node with "background" style</li>
+<li>Canvas Renderer uses Canvas drawImage API</li>
+</ul>
+
+</div>
+<div class="step" data-y="10400" data-x="0">
+<h2>Image Helper at the runtime</h2>
+
+<ul>
+<li>Combine JPEG + Transparent PNG at the loading time
+<ul>
+<li>should include <strong>_withalpha</strong> in image filename</li>
+<li>Reference: <a href="http://blog.jackadam.net/2010/alpha-jpegs/">JPEGs with Alpha Channels?!?</a></li>
+</ul></li>
+<li>Generate color-transformed images at the loading time
+<ul>
+<li>should include <strong>&#x5f;&#x5f;rgb&#x5f;&#x5f;[0-9a-f]{6}</strong> in image filename</li>
+<li>LWF does not support the additive color transform parameter</li>
+<li>It would help such as muzzle flash effect</li>
+</ul></li>
+<li>Generate padded images at the loading time
+<ul>
+<li>For <strong>BAD</strong> anti-alias of the image edges in canvas</li>
+<li>should include <strong>_withpadding</strong> in image filename</li>
+</ul></li>
+</ul>
+
+</div>
+<div class="step" data-y="10400" data-x="1200">
+<h2>Load another image at the runtime </h2>
+
+<p>ResourceCache loadLWF and loadLWFs support it</p>
+
+<p style="margin-top:30px"></p>
+
+<ul>
+<li><a href="https://github.com/gree/lwf/blob/master/coffee/webkitcss/lwf_webkitcss_resourcecache.coffee">lwf_webkitcss_resourcecache.coffee</a></li>
+<li><a href="https://github.com/gree/lwf/blob/master/coffee/canvas/lwf_canvas_resourcecache.coffee">lwf_canvas_resourcecache.coffee.coffee</a></li>
+</ul>
+
+</div>
+<div class="step" data-y="10400" data-x="2400">
+<h2>How to render text on HTML5</h2>
+
+<ul>
+<li>CSS3 Renderer uses CSS3 Text Node </li>
+<li>Canvas/WebGL Renderer uses Canvas fillText API and cache the image of it for the performance</li>
+</ul>
+
+<p style="margin-top:30px"></p>
+
+<p><strong>Retina-ready</strong> text rendering in those renderers!</p>
+
+</div>
+<div class="step" data-y="10400" data-x="3600">
+<h2>Q: Can I change the text string at the runtime?</h2>
+
+<p>A: Use setText API as well as LWF Runtime for Unity</p>
+
+</div>
+<div class="step" data-y="10400" data-x="4800">
+<h2>Embedded JavaScript</h2>
+
+<p>Write JavaScript code in the action panel of Adobe Flash, and then it works on LWF as well as ActionScript of Flash Player</p>
+
+</div>
+<div class="step" data-y="11200" data-x="0">
+<h2>Embedded JavaScript</h2>
+
+<p>JavaScript code should be in the <strong>/* js</strong> comment block</p>
+
+<pre><code class="prettyprint">    /* js
+
+    this.gotoAndPlay("run");
+
+    */
+</code></pre>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    /* js
+
+    this.mc.x += 10;
+    this.mc.y += 15;
+
+    */
+</code></pre>
+
+</div>
+<div class="step" data-y="11200" data-x="1200">
+<h2>Embedded JavaScript</h2>
+
+<p>similar to <a href="http://www.createjs.com/">CreateJS</a></p>
+
+</div>
+<div class="step" data-y="11200" data-x="2400">
+<h2>How to convert with Embedded JavaScript</h2>
+
+<pre><code class="prettyprint">    $ ruby swf2lwf.rb -f foo.fla foo.swf
+
+    Generates foo.lwf and foo.js
+</code></pre>
+
+</div>
+<div class="step" data-y="11200" data-x="3600">
+<h2>Embedded JavaScript</h2>
+
+<pre><code class="prettyprint">/* js
+    frame action
+*/
+
+/* js_load
+    as "on (load)"
+*/
+
+/* js_postLoad
+    as "on (load)"
+*/
+
+/* js_enterFrame
+    as "on (enterFrame)"
+*/
+
+/* js_unload
+    as "on (unload)"
+*/
+</code></pre>
+
+</div>
+<div class="step" data-y="11200" data-x="4800">
+<h2>Embedded JavaScript: Execution order</h2>
+
+<pre><code class="prettyprint">    _root
+       +mcA
+         +mcB
+    Execution order for above movieclips hierarchy
+     V _root js_load action only at first time
+     V     mcA js_load only at first time
+     V     mcA onClipEvent(load) only at first time
+     V         mcB js_load only at first time
+     V         mcB onClipEvent(load) only at first time
+     V         mcB js_postLoad only at first time
+     V         mcB frame action/js
+     V         mcB js_enterFrame action
+     V         mcB onClipEvent(enterFrame)
+     V     mcA js_postLoad only at first time
+     V     mcA frame action/js
+     V     mcA js_enterFrame action
+     V     mcA onClipEvent(enterFrame)
+     V _root js_postLoad action only at first time
+     V _root frame action/js
+     V _root js_enterFrame action
+</code></pre>
+
+</div>
+<div class="step" data-y="12000" data-x="0">
+<h2>Embedded JavaScript</h2>
+
+<p>"<strong>this</strong>" is the Movie instance where the JavaScript is written on</p>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    /* js
+
+    this.gotoAndPlay("run");
+
+    */
+</code></pre>
+
+</div>
+<div class="step" data-y="12000" data-x="1200">
+<h2>Embedded JavaScript</h2>
+
+<p>You can use "<strong>_root</strong>" as well as ActionScript</p>
+
+<p style="margin-top:30px"></p>
+
+<pre><code class="prettyprint">    /* js
+
+    _root.character.gotoAndPlay("run");
+
+    */
+</code></pre>
+
+</div>
+<div class="step" data-y="12000" data-x="2400">
+<h2>Example: Embedded JavaScript</h2>
+
+<p><center><canvas width=320 height=480 lwf="lwf/sample_withlightcord/LWF_sample_charaAnimation.lwf"></canvas></center></p>
+
+<p><center><a href="lwf/sample_withlightcord/LWF_sample_charaAnimation.js">JavaScript</a></center></p>
+
+<p><center><p style="margin-top:30px;font-size:50%">Embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="12000" data-x="3600">
+<h2>tween.js</h2>
+
+<p>LWF for HTML5 includes the modified version of <a href="https://github.com/sole/tween.js/">https://github.com/sole/tween.js/</a></p>
+
+</div>
+<div class="step" data-y="12000" data-x="4800">
+<h2>Example: tween.js</h2>
+
+<pre><code class="prettyprint">    this.addTween()
+        .to({x: 360, y: 80, rotation: 359}, 120)
+        .delay(30)
+        .easing(Tween.Easing.Elastic.InOut);
+</code></pre>
+
+</div>
+<div class="step" data-y="12800" data-x="0">
+<h2>Example: tween.js</h2>
+
+<p><center><canvas width=480 height=329 lwf="lwf/logo2/logo2.lwf"></canvas></center>
+<center><a href="lwf/logo2/logo2.js">JavaScript</a></center></p>
+
+<p><center><p style="margin-top:30px;font-size:50%">Embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="12800" data-x="1200">
+<h2>cocos2d-html5</h2>
+
+<p>Yes! LWF for HTML5 works on <strong>cocos2d-html5</strong>!</p>
+
+</div>
+<div class="step" data-y="12800" data-x="2400">
+<h2>cocos2d-html5</h2>
+
+<p>cocos2d-html5-dependent part: <a href="https://github.com/gree/lwf/tree/master/coffee/cocos2d">cocos2d</a></p>
+
+<p style="margin-top:30px"></p>
+
+<p>It uses cocos2d-html5 API as possible</p>
+
+</div>
+<div class="step" data-y="12800" data-x="3600">
+<h2>Example code for cocos2d-html5</h2>
+
+<pre><code class="prettyprint">    var cache = LWF.ResourceCache.get();
+    cache.loadLWFNode({
+        lwf:"foo.lwf",
+        prefix:"res/lwf/",
+        fitForHeight:true,
+        onload:function(lwfNode) {
+            parentNode.addChild(lwfNode);
+        }
+    });
+</code></pre>
+
+<p><center><p style="margin-top:30px;font-size:50%">cc.LWFNode is a class that is derived from cc.Node class, like LWFObject of LWF for Unity</p></center></p>
+
+</div>
+<div class="step" data-y="12800" data-x="4800">
+<h2>cocos2d for iPhone/cocos2d-x JavaScript Binding</h2>
+
+<p>LWF for cocos2d-html5 works on JSB! But <strong>experimental</strong></p>
+
+</div>
+<div class="step" data-y="13600" data-x="0">
+<h2>cocos2d-html5</h2>
+
+<p><center><a href="http://particledesigner.71squared.com/"><img src="img/particledesigner.png"></a></center></p>
+
+<p>Particle Designer data works on LWF on cocos2d-html5</p>
+
+</div>
+<div class="step" data-y="13600" data-x="1200">
+<h2>How to use LWF for HTML5</h2>
+
+<p>See <a href="https://github.com/gree/lwf/blob/master/coffee/test/test.coffee">test.coffee</a></p>
+
+</div>
+<div class="step" data-y="13600" data-x="2400">
+<h2>How to use LWF for Unity/HTML5</h2>
+
+<p>See <a href="https://github.com/gree/lwf-demo">https://github.com/gree/lwf-demo</a></p>
+
+</div>
+<div class="step" data-y="13600" data-x="3600">
+<h2>LWF Support Tool</h2>
+
+<p>LWFS: <a href="https://github.com/gree/lwfs">https://github.com/gree/lwfs</a></p>
+
+<p style="margin-top:30px"></p>
+
+<p>A Preview Tool, is a daemon that generates <strong>AUTOMATICALLY</strong> lwf files from swf/fla files as soon as these files are modified</p>
+
+</div>
+<div class="step" data-y="13600" data-x="4800">
+<h2><strong>REAL</strong> Example:</h2>
+
+<p><center><canvas width=320 height=410 lwf="lwf/sample3_max_optimized/sample3_max_optimized.lwf"></canvas></center>
+<center><p style="margin-top:30px;font-size:50%">Embedded LWF Runtime for HTML5 with Canvas Renderer</p></center></p>
+
+</div>
+<div class="step" data-y="14400" data-x="0">
+<h2><span></span></h2>
+
+<p><center>END</center></p>
+
+<p style="margin-top:30px"></p>
+
+<p><center>Please visit <a href="https://github.com/gree/lwf">https://github.com/gree/lwf</a></center></p>
+
+</div>
+
+    <div id="overview" class="step" data-x="2500" data-y="1500" data-scale="7">
+    </div>
+</div>
+
+<div class="hint">
+	<p>Use a spacebar or arrow keys to navigate</p>
+</div>
+<script>
+	if ("ontouchstart" in document.documentElement) { 
+		document.querySelector(".hint").innerHTML = "<p>Tap on the left or right to navigate</p>";
+	}
+</script>
+
+<script src="js/impress.js"></script>
+<script>impress().init();</script>
+</body>
+</html>
+
