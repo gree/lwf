@@ -38,6 +38,7 @@ public partial class Factory : IRendererFactory
 			// Ignore null texture
 			if (bitmap.textureFragmentId == -1)
 				continue;
+			int bitmapExId = -i - 1;
 			Format.BitmapEx bitmapEx = new Format.BitmapEx();
 			bitmapEx.matrixId = bitmap.matrixId;
 			bitmapEx.textureFragmentId = bitmap.textureFragmentId;
@@ -45,7 +46,8 @@ public partial class Factory : IRendererFactory
 			bitmapEx.v = 0;
 			bitmapEx.w = 1;
 			bitmapEx.h = 1;
-			m_bitmapContexts[i] = new BitmapContext(this, data, bitmapEx, -i);
+			m_bitmapContexts[i] =
+				new BitmapContext(this, data, bitmapEx, bitmapExId);
 		}
 
 		m_bitmapExContexts = new BitmapContext[data.bitmapExs.Length];
