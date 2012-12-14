@@ -8,6 +8,14 @@ License: MIT license
 
 -----
 Code in:
+coffee/supports/zlib.js
+
+compact zlib, deflate, inflate library in JavaScript
+URL: https://github.com/imaya/zlib.js
+License: MIT license
+
+-----
+Code in:
 tools/closure
 
 Closure Compiler
