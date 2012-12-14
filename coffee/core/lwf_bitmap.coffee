@@ -20,6 +20,6 @@
 
 class Bitmap extends LObject
   constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Format.LObject.Type.BITMAP, objId)
+    super(lwf, parent, Type.BITMAP, objId)
     @dataMatrixId = lwf.data.bitmaps[objId].matrixId
     @renderer = lwf.rendererFactory.constructBitmap(lwf, objId, @)

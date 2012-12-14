@@ -47,45 +47,34 @@ class Matrix
     return @
 
   setWithComparing:(m) ->
-    if @scaleX isnt m.scaleX
-      @scaleX = m.scaleX
-      @scaleY = m.scaleY
-      @skew0 = m.skew0
-      @skew1 = m.skew1
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @scaleY isnt m.scaleY
-      @scaleY = m.scaleY
-      @skew0 = m.skew0
-      @skew1 = m.skew1
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @skew0 isnt m.skew0
-      @skew0 = m.skew0
-      @skew1 = m.skew1
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @skew1 isnt m.skew1
-      @skew1 = m.skew1
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @skew1 isnt m.skew1
-      @skew1 = m.skew1
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @translateX isnt m.translateX
-      @translateX = m.translateX
-      @translateY = m.translateY
-      return true
-    if @translateY isnt m.translateY
-      @translateY = m.translateY
-      return true
-    false
+    return false if m is null
+
+    scaleX = m.scaleX
+    scaleY = m.scaleY
+    skew0 = m.skew0
+    skew1 = m.skew1
+    translateX = m.translateX
+    translateY = m.translateY
+    changed = false
+    if @scaleX isnt scaleX
+      @scaleX = scaleX
+      changed = true
+    if @scaleY isnt scaleY
+      @scaleY = scaleY
+      changed = true
+    if @skew0 isnt skew0
+      @skew0 = skew0
+      changed = true
+    if @skew1 isnt skew1
+      @skew1 = skew1
+      changed = true
+    if @translateX isnt translateX
+      @translateX = translateX
+      changed = true
+    if @translateY isnt translateY
+      @translateY = translateY
+      changed = true
+    return changed
 
 class Color
   constructor:(@red, @green, @blue, @alpha) ->
@@ -127,3 +116,28 @@ class ColorTransform
     @multi.set(c.multi)
     #@add.set(c.add)
     return @
+
+  setWithComparing:(c) ->
+    return false if c is null
+
+    cm = c.multi
+    red = cm.red
+    green = cm.green
+    blue = cm.blue
+    alpha = cm.alpha
+    changed = false
+    m = @multi
+    if m.red isnt red
+      m.red = red
+      changed = true
+    if m.green isnt green
+      m.green = green
+      changed = true
+    if m.blue isnt blue
+      m.blue = blue
+      changed = true
+    if m.alpha isnt alpha
+      m.alpha = alpha
+      changed = true
+    return changed
+

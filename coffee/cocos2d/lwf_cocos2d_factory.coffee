@@ -22,7 +22,7 @@ class Cocos2dRendererFactory
   constructor:(data, @resourceCache, @cache, @textInSubpixel) ->
     @bitmapContexts = []
     for bitmap in data.bitmaps
-      continue if bitmap.textureFragmentId == -1
+      continue if bitmap.textureFragmentId is -1
       bitmapEx = new Format.BitmapEx()
       bitmapEx.matrixId = bitmap.matrixId
       bitmapEx.textureFragmentId = bitmap.textureFragmentId
@@ -30,20 +30,20 @@ class Cocos2dRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
-      @bitmapContexts.push new Cocos2dBitmapContext(this, data, bitmapEx)
+      @bitmapContexts.push new Cocos2dBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []
     for bitmapEx in data.bitmapExs
-      continue if bitmapEx.textureFragmentId == -1
-      @bitmapExContexts.push new Cocos2dBitmapContext(this, data, bitmapEx)
+      continue if bitmapEx.textureFragmentId is -1
+      @bitmapExContexts.push new Cocos2dBitmapContext(@, data, bitmapEx)
 
     @textContexts = []
     for text in data.texts
-      @textContexts.push new Cocos2dTextContext(this, data, text)
+      @textContexts.push new Cocos2dTextContext(@, data, text)
 
     @particleContexts = []
     for particle in data.particles
-      @particleContexts.push new Cocos2dParticleContext(this, data, particle)
+      @particleContexts.push new Cocos2dParticleContext(@, data, particle)
 
     @lwfNode = null
 

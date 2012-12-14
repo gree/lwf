@@ -20,11 +20,7 @@
 
 class LWFContainer extends Button
   constructor:(@parent, @child) ->
-
-  set:(parent, child) ->
-    @parent = parent
-    @child = child
-    return
+    @lwf = @parent.lwf
 
   checkHit:(px, py) ->
     button = @child.inputPoint(px, py)

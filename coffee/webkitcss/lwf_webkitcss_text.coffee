@@ -18,8 +18,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Align = Format.TextProperty.Align
-
 class WebkitCSSTextContext
   constructor:(@factory, @data, @text) ->
     @str = @data.strings[text.stringId]
@@ -39,7 +37,7 @@ class WebkitCSSTextContext
         @align = "right"
       when Align.CENTER
         @align = "center"
-      else # Format.TextProperty.Align.LEFT
+      else # Align.LEFT
         @align = "left"
 
   destruct: ->
@@ -87,7 +85,7 @@ class WebkitCSSTextRenderer
 
     @context.factory.stage.appendChild(@node)
 
-    @matrix = new Matrix()
+    @matrix = new Matrix(0, 0, 0, 0, 0, 0)
     @alpha = -1
     @zIndex = -1
     @visible = true

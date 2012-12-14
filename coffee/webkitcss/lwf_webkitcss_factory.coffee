@@ -22,7 +22,7 @@ class WebkitCSSRendererFactory
   constructor:(data, @resourceCache, @cache, @stage, @textInSubpixel, @use3D) ->
     @bitmapContexts = []
     for bitmap in data.bitmaps
-      continue if bitmap.textureFragmentId == -1
+      continue if bitmap.textureFragmentId is -1
       bitmapEx = new Format.BitmapEx()
       bitmapEx.matrixId = bitmap.matrixId
       bitmapEx.textureFragmentId = bitmap.textureFragmentId
@@ -30,16 +30,16 @@ class WebkitCSSRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
-      @bitmapContexts.push new WebkitCSSBitmapContext(this, data, bitmapEx)
+      @bitmapContexts.push new WebkitCSSBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []
     for bitmapEx in data.bitmapExs
-      continue if bitmapEx.textureFragmentId == -1
-      @bitmapExContexts.push new WebkitCSSBitmapContext(this, data, bitmapEx)
+      continue if bitmapEx.textureFragmentId is -1
+      @bitmapExContexts.push new WebkitCSSBitmapContext(@, data, bitmapEx)
 
     @textContexts = []
     for text in data.texts
-      @textContexts.push new WebkitCSSTextContext(this, data, text)
+      @textContexts.push new WebkitCSSTextContext(@, data, text)
 
     style = @stage.style
     style.display = "block"
@@ -96,16 +96,21 @@ class WebkitCSSRendererFactory
       style.zIndex = renderer.zIndex
       style.opacity = renderer.alpha
       m = command.matrix
+      scaleX = m.scaleX.toFixed(12)
+      scaleY = m.scaleY.toFixed(12)
+      skew1 = m.skew1.toFixed(12)
+      skew0 = m.skew0.toFixed(12)
+      translateX = m.translateX.toFixed(12)
+      translateY = m.translateY.toFixed(12)
       if @use3D
         style.webkitTransform = "matrix3d(" +
-          "#{m.scaleX},#{m.skew1},0,0," +
-          "#{m.skew0},#{m.scaleY},0,0," +
+          "#{scaleX},#{skew1},0,0," +
+          "#{skew0},#{scaleY},0,0," +
           "0,0,1,0," +
-          "#{m.translateX},#{m.translateY},0,1)"
+          "#{translateX},#{translateY},0,1)"
       else
         style.webkitTransform = "matrix(" +
-          "#{m.scaleX},#{m.skew1},#{m.skew0},#{m.scaleY}," +
-          "#{m.translateX},#{m.translateY})"
+          "#{scaleX},#{skew1},#{skew0},#{scaleY},#{translateX},#{translateY})"
 
     @commands = []
     return

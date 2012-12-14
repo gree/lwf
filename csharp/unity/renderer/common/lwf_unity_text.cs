@@ -384,22 +384,17 @@ public class TextRenderer : Renderer
 				m_renderMatrix, m_colorMult, m_colorAdd,
 				m_context.parent.layer, factory.camera);
 		}
-		if (m_context.systemFontRenderer != null) {
-			m_context.systemFontRenderer.Render(
-				m_renderMatrix, m_colorMult, m_colorAdd,
-				m_context.parent.layer, factory.camera);
-		}
 #else
 		factory.ConvertColorTransform(ref m_colorMult, colorTransform);
 		if (m_context.bitmapFontRenderer != null) {
 			m_context.bitmapFontRenderer.Render(m_renderMatrix, m_colorMult,
 				m_context.parent.layer, factory.camera);
 		}
+#endif
 		if (m_context.systemFontRenderer != null) {
 			m_context.systemFontRenderer.Render(m_renderMatrix, m_colorMult,
 				m_context.parent.layer, factory.camera);
 		}
-#endif
 	}
 }
 

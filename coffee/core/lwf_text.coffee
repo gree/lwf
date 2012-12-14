@@ -20,6 +20,6 @@
 
 class Text extends LObject
   constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Format.LObject.Type.TEXT, objId)
+    super(lwf, parent, Type.TEXT, objId)
     @dataMatrixId = lwf.data.texts[objId].matrixId
     @renderer = lwf.rendererFactory.constructText(lwf, objId, @)

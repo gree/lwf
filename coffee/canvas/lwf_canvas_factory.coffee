@@ -23,7 +23,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       @resourceCache, @cache, @stage, @textInSubpixel, @needsClear) ->
     @bitmapContexts = []
     for bitmap in data.bitmaps
-      continue if bitmap.textureFragmentId == -1
+      continue if bitmap.textureFragmentId is -1
       bitmapEx = new Format.BitmapEx()
       bitmapEx.matrixId = bitmap.matrixId
       bitmapEx.textureFragmentId = bitmap.textureFragmentId
@@ -31,18 +31,19 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
-      @bitmapContexts.push new CanvasBitmapContext(this, data, bitmapEx)
+      @bitmapContexts.push new CanvasBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []
     for bitmapEx in data.bitmapExs
-      continue if bitmapEx.textureFragmentId == -1
-      @bitmapExContexts.push new CanvasBitmapContext(this, data, bitmapEx)
+      continue if bitmapEx.textureFragmentId is -1
+      @bitmapExContexts.push new CanvasBitmapContext(@, data, bitmapEx)
 
     @textContexts = []
     for text in data.texts
-      @textContexts.push new CanvasTextContext(this, data, text)
+      @textContexts.push new CanvasTextContext(@, data, text)
 
     @stage.style.webkitUserSelect = "none"
+    @stage.style.webkitTransform = "translateZ(0)"
     @stageContext = @stage.getContext("2d")
     if @stage.width is 0 and @stage.height is 0
       @stage.width = data.header.width

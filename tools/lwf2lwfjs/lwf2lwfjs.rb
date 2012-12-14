@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 # Copyright (C) 2012 GREE, Inc.
 #
@@ -17,14 +18,18 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 #
+require 'base64'
+require 'zlib'
 
-class Particle extends LObject
-  constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Type.PARTICLE, objId)
-    @dataMatrixId = lwf.data.particles[objId].matrixId
-    @renderer = lwf.rendererFactory.constructParticle(lwf, objId, @)
+lwf = ARGV[0]
+lwf =~ /([^\/]*)\.lwf/
+lwfname = $1.downcase
 
-  update:(m, c) ->
-    super(m, c)
-    @renderer.update(@matrix, @colorTransform) if @renderer?
-    return
+str = Base64.encode64(Zlib::Deflate.deflate(File.read(lwf), 9))
+
+f = File.open(lwf.sub(/\.lwf/, '.lwf.js'), "wb")
+f.print <<-EOL
+global['LWF']['DataScript'] = global['LWF']['DataScript'] || {};
+global['LWF']['DataScript']['#{lwfname}'] = "#{str.split.join}";
+EOL
+f.close

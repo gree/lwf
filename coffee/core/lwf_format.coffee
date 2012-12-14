@@ -262,3 +262,11 @@ class Format
       @movieLinkage, \
       @stringData, \
       @lwfLength) ->
+
+Align = Format.TextProperty.Align
+ClipEvent = Format.MovieClipEvent.ClipEvent
+Condition = Format.ButtonCondition.Condition
+Constant = Format.Constant
+Type = Format.LObject.Type
+ControlType = Format.Control.Type
+GObjType = Format.GraphicObject.Type

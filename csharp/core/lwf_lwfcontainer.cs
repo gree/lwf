@@ -27,13 +27,8 @@ public class LWFContainer : Button
 	public LWF child {get {return m_child;}}
 
 	public LWFContainer(Movie parent, LWF child)
-		: base(parent.lwf, parent, -1, -1)
 	{
-		m_child = child;
-	}
-
-	public void Set(Movie parent, LWF child)
-	{
+		m_lwf = parent.lwf;
 		m_parent = parent;
 		m_child = child;
 	}

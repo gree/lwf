@@ -20,7 +20,7 @@
 
 class Graphic extends LObject
   constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Format.LObject.Type.GRAPHIC, objId)
+    super(lwf, parent, Type.GRAPHIC, objId)
 
     data = lwf.data.graphics[objId]
     n = data.graphicObjects
@@ -31,16 +31,17 @@ class Graphic extends LObject
       gobj = graphicObjects[data.graphicObjectId + i]
       graphicObjectId = gobj.graphicObjectId
 
-      continue if graphicObjectId == -1
+      continue if graphicObjectId is -1
 
       switch gobj.graphicObjectType
-        when Format.GraphicObject.Type.BITMAP
+        when GObjType.BITMAP
           obj = new Bitmap(lwf, parent, graphicObjectId)
-        when Format.GraphicObject.Type.BITMAPEX
+        when GObjType.BITMAPEX
           obj = new BitmapEx(lwf, parent, graphicObjectId)
-        when Format.GraphicObject.Type.TEXT
+        when GObjType.TEXT
           obj = new Text(lwf, parent, graphicObjectId)
 
+      obj.exec()
       @displayList[i] = obj
 
   update:(m, c) ->

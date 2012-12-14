@@ -18,8 +18,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Align = Format.TextProperty.Align
-
 class WebGLTextContext
   constructor:(@factory, @data, @text) ->
     @str = @data.strings[@text.stringId]

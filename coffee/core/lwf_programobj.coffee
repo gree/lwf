@@ -20,7 +20,7 @@
 
 class ProgramObject extends LObject
   constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Format.LObject.Type.PROGRAMOBJECT, objId)
+    super(lwf, parent, Type.PROGRAMOBJECT, objId)
     data = lwf.data.programObjects[objId]
     @dataMatrixId = data.matrixId
     ctor = lwf.getProgramObjectConstructor(objId)

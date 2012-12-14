@@ -18,8 +18,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Align = Format.TextProperty.Align
-
 class Cocos2dTextContext
   constructor:(@factory, @data, @text) ->
     @str = @data.strings[@text.stringId]

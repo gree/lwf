@@ -18,11 +18,12 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Condition = Format.ButtonCondition.Condition
-
 class Button extends IObject
-  constructor:(lwf, parent, objId, instId) ->
-    super(lwf, parent, Format.LObject.Type.BUTTON, objId, instId)
+  constructor:(lwf, parent, objId, instId,
+      matrixId = null, colorTransformId = null) ->
+    super(lwf, parent, Type.BUTTON, objId, instId)
+    @matrixId = matrixId
+    @colorTransformId = colorTransformId
     @invert = new Matrix()
     @hitX = Number.MIN_VALUE
     @hitY = Number.MIN_VALUE
@@ -44,7 +45,7 @@ class Button extends IObject
 
   exec:(matrixId = 0, colorTransformId = 0) ->
     super(matrixId, colorTransformId)
-    @handler.call("enterFrame", @) if @handler?
+    @enterFrame()
     return
 
   update:(m, c) ->
@@ -57,7 +58,7 @@ class Button extends IObject
     return
 
   destroy: ->
-    @lwf.clearFocus(this)
+    @lwf.clearFocus(@)
     @handler.call("unload", @) if @handler?
     super
     return
@@ -78,6 +79,10 @@ class Button extends IObject
       @hitX = Number.MIN_VALUE
       @hitY = Number.MIN_VALUE
       return false
+
+  enterFrame: ->
+    @handler.call("enterFrame", @) if @handler?
+    return
 
   rollOver: ->
     @handler.call("rollOver", @) if @handler?

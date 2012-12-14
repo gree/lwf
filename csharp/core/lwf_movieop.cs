@@ -103,7 +103,7 @@ public partial class Movie : IObject
 	public Movie Move(float vx, float vy)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.Move(vx, vy);
 		return this;
 	}
@@ -111,7 +111,7 @@ public partial class Movie : IObject
 	public Movie MoveTo(float vx, float vy)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.MoveTo(vx, vy);
 		return this;
 	}
@@ -119,7 +119,7 @@ public partial class Movie : IObject
 	public Movie Rotate(float degree)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.Rotate(degree);
 		return this;
 	}
@@ -127,7 +127,7 @@ public partial class Movie : IObject
 	public Movie RotateTo(float degree)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.RotateTo(degree);
 		return this;
 	}
@@ -135,7 +135,7 @@ public partial class Movie : IObject
 	public Movie Scale(float vx, float vy)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.Scale(vx, vy);
 		return this;
 	}
@@ -143,7 +143,7 @@ public partial class Movie : IObject
 	public Movie ScaleTo(float vx, float vy)
 	{
 		if (!m_property.hasMatrix)
-			Utility.GetMatrix(this);
+			Utility.SyncMatrix(this);
 		m_property.ScaleTo(vx, vy);
 		return this;
 	}
@@ -157,7 +157,7 @@ public partial class Movie : IObject
 	public Movie SetAlpha(float v)
 	{
 		if (!m_property.hasColorTransform)
-			Utility.GetColorTransform(this);
+			Utility.SyncColorTransform(this);
 		m_property.SetAlpha(v);
 		return this;
 	}

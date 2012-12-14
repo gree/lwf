@@ -53,6 +53,11 @@ public partial class Movie : IObject
 	private int m_execedFrame;
 	private int m_animationPlayedFrame;
 	private int m_depth;
+	private int m_lastControlOffset;
+	private int m_lastControls;
+	private int m_lastControlAnimationOffset;
+	private int m_movieExecCount;
+	private int m_postExecCount;
 	private bool m_active;
 	private bool m_visible;
 	private bool m_playing;
@@ -60,6 +65,10 @@ public partial class Movie : IObject
 	private bool m_overriding;
 	private bool m_hasButton;
 	private bool m_postLoaded;
+	private bool m_lastHasButton;
+	private bool m_skipped;
+	private bool m_attachMovieExeced;
+	private bool m_attachMoviePostExeced;
 	private Matrix m_matrix0;
 	private Matrix m_matrix1;
 	private ColorTransform m_colorTransform0;
@@ -68,11 +77,13 @@ public partial class Movie : IObject
 	private Property m_property;
 
 	public Movie(LWF lwf, Movie parent, int objId,
-			int instId, int matrixId = 0, int colorTransformId = 0,
+			int instId, int matrixId = -1, int colorTransformId = -1,
 			bool attached = false, MovieEventHandlers handler = null)
 		: base(lwf, parent,
 			attached ? Type.ATTACHEDMOVIE : Type.MOVIE, objId, instId)
 	{
+		m_matrixId = matrixId;
+		m_colorTransformId = colorTransformId;
 		m_data = lwf.data.movies[objId];
 		m_matrixId = matrixId;
 		m_colorTransformId = colorTransformId;
@@ -82,12 +93,21 @@ public partial class Movie : IObject
 		m_currentFrameInternal = -1;
 		m_execedFrame = -1;
 		m_animationPlayedFrame = -1;
+		m_lastControlOffset = -1;
+		m_lastControls = -1;
+		m_lastHasButton = false;
+		m_lastControlAnimationOffset = -1;
+		m_skipped = false;
 		m_postLoaded = false;
 		m_active = true;
 		m_visible = true;
 		m_playing = true;
 		m_jumped = false;
 		m_overriding = false;
+		m_attachMovieExeced = false;
+		m_attachMoviePostExeced = false;
+		m_movieExecCount = -1;
+		m_postExecCount = -1;
 
 		m_property = new Property(lwf);
 
@@ -121,6 +141,7 @@ public partial class Movie : IObject
 	public int totalFrames {get {return m_totalFrames;}}
 	public bool playing {get {return m_playing;}}
 	public bool visible {get {return m_visible;}}
+	public bool hasButton {get {return m_hasButton;}}
 
 	public void SetHandlers(MovieEventHandlers handler)
 	{
@@ -166,7 +187,8 @@ public partial class Movie : IObject
 		if (obj == null) {
 			switch ((Type)dataObject.objectType) {
 			case Type.BUTTON:
-				obj = new Button(m_lwf, this, dataObjectId, instId);
+				obj = new Button(m_lwf,
+					this, dataObjectId, instId, matrixId, colorTransformId);
 				break;
 
 			case Type.GRAPHIC:
@@ -200,21 +222,20 @@ public partial class Movie : IObject
 			}
 		}
 
-		if (obj.type == Type.MOVIE) {
-			Movie mobj = (Movie)obj;
-			mobj.m_linkInstance = null;
+		if (obj.IsMovie() || obj.IsButton()) {
+			IObject instance = (IObject)obj;
+			instance.linkInstance = null;
 			if (m_instanceHead == null)
-				m_instanceHead = mobj;
+				m_instanceHead = instance;
 			else
-				m_instanceTail.linkInstance = mobj;
-			m_instanceTail = mobj;
-		} else if (obj.type == Type.BUTTON) {
-			m_hasButton = true;
+				m_instanceTail.linkInstance = instance;
+			m_instanceTail = instance;
+			if (obj.IsButton())
+				m_hasButton = true;
 		}
 
 		m_displayList[dlDepth] = obj;
-		obj.execCount = execCount;
-
+		obj.execCount = m_movieExecCount;
 		obj.Exec(matrixId, colorTransformId);
 	}
 
@@ -223,16 +244,22 @@ public partial class Movie : IObject
 		m_overriding = overriding;
 	}
 
+	public override void Exec(int matrixId = 0, int colorTransformId = 0)
+	{
+		m_attachMovieExeced = false;
+		m_attachMoviePostExeced = false;
+		base.Exec(matrixId, colorTransformId);
+	}
+
 	public void PostExec(bool progressing)
 	{
 		m_hasButton = false;
 		if (!m_active)
 			return;
 
-		m_instanceHead = null;
-		m_instanceTail = null;
 		m_execedFrame = -1;
-		if (progressing && m_playing && !m_jumped)
+		bool postExeced = m_postExecCount == m_lwf.execCount;
+		if (progressing && m_playing && !m_jumped && !postExeced)
 			++m_currentFrameInternal;
 		for (;;) {
 			if (m_currentFrameInternal < 0 ||
@@ -241,84 +268,134 @@ public partial class Movie : IObject
 			if (m_currentFrameInternal == m_execedFrame)
 				break;
 
-			m_instanceHead = null;
-			m_instanceTail = null;
-
 			m_currentFrameCurrent = m_currentFrameInternal;
 			m_execedFrame = m_currentFrameCurrent;
 			Data data = m_lwf.data;
 			Format.Frame frame = data.frames[
 				m_data.frameOffset + m_currentFrameCurrent];
 
-			int controlAnimationOffset = -1;
-			for (int i = 0; i < frame.controls; ++i) {
-				Format.Control control =
-					data.controls[frame.controlOffset + i];
+			int controlAnimationOffset;
+			IObject instance;
 
-				switch ((Format.Control.Type)control.controlType) {
-				case Format.Control.Type.MOVE:
-					{
-						Format.Place p =
-							data.places[control.controlId];
-						ExecObject(p.depth, p.objectId,
-							p.matrixId, 0, p.instanceId);
+			if (m_lastControlOffset == frame.controlOffset &&
+					m_lastControls == frame.controls) {
+
+				controlAnimationOffset = m_lastControlAnimationOffset;
+
+				if (m_skipped) {
+					instance = m_instanceHead;
+					while (instance != null) {
+						if (instance.IsMovie()) {
+							Movie movie = (Movie)instance;
+							movie.m_attachMovieExeced = false;
+							movie.m_attachMoviePostExeced = false;
+						} else if (instance.IsButton()) {
+							((Button)instance).EnterFrame();
+						}
+						instance = instance.linkInstance;
 					}
-					break;
-
-				case Format.Control.Type.MOVEM:
-					{
-						Format.ControlMoveM ctrl =
-							data.controlMoveMs[control.controlId];
-						Format.Place p = data.places[ctrl.placeId];
-						ExecObject(p.depth, p.objectId,
-							ctrl.matrixId, 0, p.instanceId);
+					m_hasButton = m_lastHasButton;
+				} else {
+					for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
+						Object obj = m_displayList[dlDepth];
+						if (obj != null) {
+							if (!postExeced) {
+								obj.matrixIdChanged = false;
+								obj.colorTransformIdChanged = false;
+							}
+							if (obj.IsMovie()) {
+								Movie movie = (Movie)obj;
+								movie.m_attachMovieExeced = false;
+								movie.m_attachMoviePostExeced = false;
+							} else if (obj.IsButton()) {
+								((Button)obj).EnterFrame();
+								m_hasButton = true;
+							}
+						}
 					}
-					break;
-
-				case Format.Control.Type.MOVEC:
-					{
-						Format.ControlMoveC ctrl =
-							data.controlMoveCs[control.controlId];
-						Format.Place p = data.places[ctrl.placeId];
-						ExecObject(p.depth, p.objectId,
-							p.matrixId, ctrl.colorTransformId, p.instanceId);
-					}
-					break;
-
-				case Format.Control.Type.MOVEMC:
-					{
-						Format.ControlMoveMC ctrl =
-							data.controlMoveMCs[control.controlId];
-						Format.Place p = data.places[ctrl.placeId];
-						ExecObject(p.depth, p.objectId,
-							ctrl.matrixId, ctrl.colorTransformId, p.instanceId);
-					}
-					break;
-
-				case Format.Control.Type.ANIMATION:
-					if (controlAnimationOffset == -1)
-						controlAnimationOffset = i;
-					break;
+					m_lastHasButton = m_hasButton;
+					m_skipped = true;
 				}
-			}
 
-			for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
-				Object obj = m_displayList[dlDepth];
-				if (obj != null) {
-					if (obj.execCount != execCount) {
+			} else {
+				++m_movieExecCount;
+				m_instanceHead = null;
+				m_instanceTail = null;
+				m_lastControlOffset = frame.controlOffset;
+				m_lastControls = frame.controls;
+				controlAnimationOffset = -1;
+				for (int i = 0; i < frame.controls; ++i) {
+					Format.Control control =
+						data.controls[frame.controlOffset + i];
+
+					switch ((Format.Control.Type)control.controlType) {
+					case Format.Control.Type.MOVE:
+						{
+							Format.Place p =
+								data.places[control.controlId];
+							ExecObject(p.depth, p.objectId,
+								p.matrixId, 0, p.instanceId);
+						}
+						break;
+
+					case Format.Control.Type.MOVEM:
+						{
+							Format.ControlMoveM ctrl =
+								data.controlMoveMs[control.controlId];
+							Format.Place p = data.places[ctrl.placeId];
+							ExecObject(p.depth, p.objectId,
+								ctrl.matrixId, 0, p.instanceId);
+						}
+						break;
+
+					case Format.Control.Type.MOVEC:
+						{
+							Format.ControlMoveC ctrl =
+								data.controlMoveCs[control.controlId];
+							Format.Place p = data.places[ctrl.placeId];
+							ExecObject(p.depth, p.objectId, p.matrixId,
+								ctrl.colorTransformId, p.instanceId);
+						}
+						break;
+
+					case Format.Control.Type.MOVEMC:
+						{
+							Format.ControlMoveMC ctrl =
+								data.controlMoveMCs[control.controlId];
+							Format.Place p = data.places[ctrl.placeId];
+							ExecObject(p.depth, p.objectId, ctrl.matrixId,
+								ctrl.colorTransformId, p.instanceId);
+						}
+						break;
+
+					case Format.Control.Type.ANIMATION:
+						if (controlAnimationOffset == -1)
+							controlAnimationOffset = i;
+						break;
+					}
+				}
+
+				m_lastControlAnimationOffset = controlAnimationOffset;
+				m_lastHasButton = m_hasButton;
+
+				for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
+					Object obj = m_displayList[dlDepth];
+					if (obj != null && obj.execCount != m_movieExecCount) {
 						obj.Destroy();
 						m_displayList[dlDepth] = null;
 					}
 				}
 			}
 
+			m_attachMovieExeced = true;
 			if (m_attachedMovies != null) {
 				foreach (Movie movie in m_attachedMovieList)
 					if (movie != null)
 						movie.Exec();
 			}
 
-			IObject instance = m_instanceHead;
+			m_attachMoviePostExeced = true;
+			instance = m_instanceHead;
 			while (instance != null) {
 				if (instance.IsMovie()) {
 					Movie movie = (Movie)instance;
@@ -345,6 +422,9 @@ public partial class Movie : IObject
 					}
 				}
 			}
+
+			if (m_attachedLWFs != null)
+				m_hasButton = true;
 
 			if (!m_postLoaded) {
 				m_postLoaded = true;
@@ -374,6 +454,31 @@ public partial class Movie : IObject
 		PlayAnimation(ClipEvent.ENTERFRAME);
 		if (m_handler != null)
 			m_handler.Call(EventType.ENTERFRAME, this);
+		m_postExecCount = m_lwf.execCount;
+	}
+
+	private void UpdateObject(Object obj, Matrix m, ColorTransform c,
+		bool matrixChanged, bool colorTransformChanged)
+	{
+		Matrix objm;
+		if (obj.IsMovie() && ((Movie)obj).m_property.hasMatrix)
+			objm = m;
+		else if (matrixChanged || !obj.updated || obj.matrixIdChanged)
+			objm = Utility.CalcMatrix(m_lwf, m_matrix1, m, obj.matrixId);
+		else
+			objm = null;
+
+		ColorTransform objc;
+		if (obj.IsMovie() && ((Movie)obj).m_property.hasColorTransform)
+			objc = c;
+		else if (colorTransformChanged ||
+				!obj.updated || obj.colorTransformIdChanged)
+			objc = Utility.CalcColorTransform(
+				m_lwf, m_colorTransform1, c, obj.colorTransformId);
+		else
+			objc = null;
+
+		obj.Update(objm, objc);
 	}
 
 	public override void Update(Matrix m, ColorTransform c)
@@ -381,84 +486,47 @@ public partial class Movie : IObject
 		if (!m_active)
 			return;
 
+		bool matrixChanged;
+		bool colorTransformChanged;
+
 		if (m_overriding) {
-			Utility.CopyMatrix(m_matrix, m_lwf.rootMovie.matrix);
-			Utility.CopyColorTransform(
-				m_colorTransform, m_lwf.rootMovie.colorTransform);
+			matrixChanged = true;
+			colorTransformChanged = true;
 		} else {
-			Utility.CopyMatrix(m_matrix, m);
-			Utility.CopyColorTransform(m_colorTransform, c);
+			matrixChanged = m_matrix.SetWithComparing(m);
+			colorTransformChanged = m_colorTransform.SetWithComparing(c);
 		}
 
 		if (m_handler != null)
 			m_handler.Call(EventType.UPDATE, this);
 
+		if (m_property.hasMatrix) {
+			matrixChanged = true;
+			m = Utility.CalcMatrix(m_matrix0, m_matrix, m_property.matrix);
+		} else {
+			m = m_matrix;
+		}
+
+		if (m_property.hasColorTransform) {
+			colorTransformChanged = true;
+			c = Utility.CalcColorTransform(
+				m_colorTransform0, m_colorTransform, m_property.colorTransform);
+		} else {
+			c = m_colorTransform;
+		}
+
 		for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
 			Object obj = m_displayList[dlDepth];
-			if (obj != null) {
-				Matrix objm = m_matrix0;
-				bool objHasOwnMatrix =
-					obj.type == Type.MOVIE && ((Movie)obj).m_property.hasMatrix;
-				if (m_property.hasMatrix) {
-					if (objHasOwnMatrix) {
-						Utility.CalcMatrix(objm, m_matrix, m_property.matrix);
-					} else {
-						Utility.CalcMatrix(
-							m_matrix1, m_matrix, m_property.matrix);
-						Utility.CalcMatrix(
-							m_lwf, objm, m_matrix1, obj.matrixId);
-					}
-				} else {
-					if (objHasOwnMatrix) {
-						Utility.CopyMatrix(objm, m_matrix);
-					} else {
-						Utility.CalcMatrix(m_lwf, objm, m_matrix, obj.matrixId);
-					}
-				}
-
-				ColorTransform objc = m_colorTransform0;
-				bool objHasOwnColorTransform = obj.type == Type.MOVIE &&
-					((Movie)obj).m_property.hasColorTransform;
-				if (m_property.hasColorTransform) {
-					if (objHasOwnColorTransform) {
-						Utility.CalcColorTransform(objc,
-							m_colorTransform, m_property.colorTransform);
-					} else {
-						Utility.CalcColorTransform(m_colorTransform1,
-							m_colorTransform, m_property.colorTransform);
-						Utility.CalcColorTransform(m_lwf,
-							objc, m_colorTransform1, obj.colorTransformId);
-					}
-				} else {
-					if (objHasOwnColorTransform) {
-						Utility.CopyColorTransform(objc, m_colorTransform);
-					} else {
-						Utility.CalcColorTransform(m_lwf,
-							objc, m_colorTransform, obj.colorTransformId);
-					}
-				}
-
-				obj.Update(objm, objc);
-			}
+			if (obj != null)
+				UpdateObject(obj, m, c, matrixChanged, colorTransformChanged);
 		}
 
 		if (m_attachedMovies != null || m_attachedLWFs != null) {
-			m = m_matrix;
-			if (m_property.hasMatrix) {
-				Matrix m1 = m_matrix1.Set(m);
-				Utility.CalcMatrix(m, m1, m_property.matrix);
-			}
-
-			c = m_colorTransform;
-			if (m_property.hasColorTransform) {
-				ColorTransform c1 = m_colorTransform1.Set(c);
-				Utility.CalcColorTransform(c, c1, m_property.colorTransform);
-			}
-
 			if (m_attachedMovies != null) {
 				foreach (Movie movie in m_attachedMovieList)
 					if (movie != null)
-						movie.Update(m, c);
+						UpdateObject(movie,
+							m, c, matrixChanged, colorTransformChanged);
 			}
 
 			if (m_attachedLWFs != null) {
@@ -480,7 +548,7 @@ public partial class Movie : IObject
 
 	public override void LinkButton()
 	{
-		if (!m_visible || !m_active)
+		if (!m_visible || !m_active || !m_hasButton)
 			return;
 
 		if (m_attachedLWFs != null) {
@@ -498,9 +566,9 @@ public partial class Movie : IObject
 		for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
 			Object obj = m_displayList[dlDepth];
 			if (obj != null) {
-				if (obj.type == Type.BUTTON) {
+				if (obj.IsButton()) {
 					((Button)obj).LinkButton();
-				} else if (obj.type == Type.MOVIE) {
+				} else if (obj.IsMovie()) {
 					Movie movie = (Movie)obj;
 					if (movie.m_hasButton)
 						movie.LinkButton();

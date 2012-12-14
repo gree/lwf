@@ -19,8 +19,16 @@
 #
 
 class Game
-  constructor:(@stage, @cache, @textNode = null) ->
+  constructor:(@stage, @cache, @textNode = null, @graphNode = null) ->
     @requests = []
+
+    if @graphNode?
+      @ctx = @graphNode.getContext("2d")
+      @graphIndex = 0
+      @graphX = 0
+      @graphY = 0
+      @graphWidth = @graphNode.width
+      @graphHeight = @graphNode.height
 
   requestLWF:(lwfName, onload) ->
     if lwfName.match(/(.*\/)([^\/]+)/)
@@ -111,7 +119,26 @@ class Game
 
     if @textNode?
       fps = Math.round(1.0 / tick)
+      fps = 99 if fps > 99
       @textNode.textContent = "#{fps}fps"
+      if @ctx?
+        x = @graphIndex
+        y = (1 - fps / 60) * @graphHeight
+        y = 0 if y < 0
+        y = @graphHeight - 1 if y >= @graphHeight
+        @ctx.fillStyle = "rgb(255,255,255)"
+        @ctx.fillRect(@graphX, 0, 2, @graphHeight)
+        @ctx.fillStyle = "rgb(0,0,0)"
+        @ctx.beginPath()
+        @ctx.moveTo(@graphX, @graphY)
+        @ctx.lineTo(x, y)
+        @ctx.stroke()
+        @graphX = x
+        @graphY = y
+        @graphIndex += 2
+        if @graphIndex > @graphWidth
+          @graphIndex = 0
+          @graphX = 0
 
     requestAnimationFrame(=> @exec())
 
@@ -136,7 +163,7 @@ window.onload = ->
     else
       LWF.useWebkitCSSRenderer()
     cache = LWF.ResourceCache.get()
-    game = new Game(stage, cache, textNode)
+    game = new Game(stage, cache, textNode, graphNode)
     window.game = game
     game.load(lwfName)
 
@@ -163,7 +190,7 @@ window.onload = ->
 
   if window.location.search.match(/renderer=(canvas|webgl)/)
     renderer = RegExp.$1
-    if renderer == "webgl"
+    if renderer is "webgl"
       loadScript("lwf_webgl.js", -> startGame("webgl"))
     else
       loadScript("lwf.js", -> startGame("canvas"))
@@ -181,9 +208,17 @@ window.onload = ->
       stage.style.width = RegExp.$1 + "px"
       stage.style.height = RegExp.$2 + "px"
 
+  graphNode = document.createElement("canvas")
+  graphNode.width = 280
+  graphNode.height = 24
+  graphNode.style.float = "left"
+  graphNode.style.paddingRight = "5px"
+  document.body.appendChild(graphNode)
   textNode = document.createTextNode("0fps")
   document.body.appendChild(textNode)
-  document.body.appendChild(document.createElement('br'))
+  br = document.createElement("br")
+  br.style.clear = "left"
+  document.body.appendChild(br)
   div = document.createElement("div")
   document.body.appendChild(div)
   div.appendChild(stage)

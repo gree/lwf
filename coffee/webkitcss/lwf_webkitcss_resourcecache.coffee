@@ -41,7 +41,7 @@ class WebkitCSSResourceCache
       newUrl = imageMap[url]
       url = newUrl if newUrl?
     url = prefix + url unless url.match(/^\//)
-    url = url.replace(/(\.png|\.jpg)$/i, suffix + "$1")
+    url = url.replace(/(\.png|\.jpg)/i, suffix + "$1")
     return url
 
   checkTextures:(settings, data) ->
@@ -91,7 +91,7 @@ class WebkitCSSResourceCache
 
       settings._textures.push(texture)
       url = @getTextureURL(settings, data, texture)
-      m = url.match(/^(.*)_withalpha(.*\.)jpg$/i)
+      m = url.match(/^(.*)_withalpha(.*\.)jpg/i)
       if m?
         pngURL = "#{m[1]}_alpha#{m[2]}png"
         pm = pngURL.match(/\/([^\/]+)$/)
@@ -113,7 +113,7 @@ class WebkitCSSResourceCache
 
     lwfUrl = settings["lwf"]
     @cache[lwfUrl] = {}
-    @cache[lwfUrl].__data__ = data
+    @cache[lwfUrl].data = data
     settings.total = settings._textures.length + 1
     settings.total++ if data.useScript
     settings.loadedCount = 1
@@ -133,7 +133,7 @@ class WebkitCSSResourceCache
     settings.error = []
 
     if @cache[lwfUrl]?
-      data = @cache[lwfUrl].__data__
+      data = @cache[lwfUrl].data
       if data?
         @checkTextures(settings, data)
         settings.total = settings._textures.length + 1
@@ -146,6 +146,51 @@ class WebkitCSSResourceCache
     @loadLWFData(settings, url)
     return
 
+  dispatchOnloaddata:(settings, \
+      url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data) ->
+    if useWorker
+      workerJS = null
+      scripts = document.getElementsByTagName("script")
+      re = new RegExp("(^|.*\/#{__FILE__})$", "i")
+      for i in [0...scripts.length]
+        continue if scripts[i].src is ""
+        m = scripts[i].src.match(re)
+        if m?
+          workerJS = m[1]
+          break
+      if workerJS?
+        do (workerJS) =>
+          worker = new Worker(workerJS)
+          worker.onmessage = (e) =>
+            data = new Data(e.data)
+            worker = worker.onmessage = worker.onerror = null
+            @onloaddata(settings, data, url)
+          worker.onerror = (e) =>
+            settings.error.push({url:workerJS, reason:"error"})
+            worker = worker.onmessage = worker.onerror = null
+            settings["onload"].call(settings, null)
+          if useWorkerWithArrayBuffer and data.type isnt "base64"
+            worker.webkitPostMessage(data.data)
+          else
+            worker.postMessage(data.data)
+
+    unless workerJS?
+      if data.type is "base64"
+        data = (new Zlib.Inflate(atob(data.data))).decompress()
+        if typeof Uint8Array isnt 'undefined' and
+            typeof Uint16Array isnt 'undefined' and
+            typeof Uint32Array isnt 'undefined'
+          data = Loader.loadArrayBuffer(data)
+        else
+          data = Loader.loadArray(data)
+      else if useArrayBuffer
+        data = Loader.loadArrayBuffer(data.data)
+      else
+        data = Loader.load(data.data)
+      @onloaddata(settings, data, url)
+
+    return
+
   loadLWFData:(settings, url) ->
     onload = settings["onload"]
     useWorker = false
@@ -155,6 +200,39 @@ class WebkitCSSResourceCache
       useWorker = true
       if typeof Worker.prototype.webkitPostMessage isnt "undefined"
         useWorkerWithArrayBuffer = true
+
+    m = url.match(/([^\/]+)\.lwf\.js/i)
+    if m?
+      name = m[1].toLowerCase()
+      head = document.getElementsByTagName('head')[0]
+      script = document.createElement("script")
+      script.type = "text/javascript"
+      script.charset = "UTF-8"
+      script.onabort = =>
+        settings.error.push({url:url, reason:"abort"})
+        head.removeChild(script)
+        script = script.onload = script.onabort = script.onerror = null
+        onload.call(settings, null)
+      script.onerror = =>
+        settings.error.push({url:url, reason:"error"})
+        head.removeChild(script)
+        script = script.onload = script.onabort = script.onerror = null
+        onload.call(settings, null)
+      script.onload = =>
+        str = global["LWF"]?["DataScript"]?[name]
+        head.removeChild(script)
+        script = script.onload = script.onabort = script.onerror = null
+        if str?
+          data = type:"base64", data:str
+          @dispatchOnloaddata(settings,
+            url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data)
+        else
+          settings.error.push({url:url, reason:"error"})
+          onload.call(settings, null)
+
+      script.src = url
+      head.appendChild(script)
+      return
 
     xhr = new XMLHttpRequest
     xhr.open 'GET', url, true
@@ -180,39 +258,12 @@ class WebkitCSSResourceCache
       return if xhr.readyState isnt 4
       return if !(xhr.status in [0, 200])
 
-      if useWorker
-        workerJS = null
-        scripts = document.getElementsByTagName("script")
-        re = new RegExp("(^|.*\/#{__FILE__})$", "i")
-        for i in [0...scripts.length]
-          continue if scripts[i].src is ""
-          m = scripts[i].src.match(re)
-          if m?
-            workerJS = m[1]
-            break
-        if workerJS?
-          do (workerJS) =>
-            worker = new Worker(workerJS)
-            worker.onmessage = (e) =>
-              data = new Data(e.data)
-              worker = worker.onmessage = worker.onerror = null
-              @onloaddata(settings, data, url)
-            worker.onerror = (e) =>
-              settings.error.push({url:workerJS, reason:"error"})
-              worker = worker.onmessage = worker.onerror = null
-              settings["onload"].call(settings, null)
-            if useWorkerWithArrayBuffer
-              worker.webkitPostMessage(xhr.response)
-            else
-              worker.postMessage(xhr.response)
-
-      unless workerJS?
-        if useArrayBuffer
-          data = Loader.loadArrayBuffer(xhr.response)
-          @onloaddata(settings, data, url)
-        else
-          data = Loader.load(xhr.responseText)
-          @onloaddata(settings, data, url)
+      if useArrayBuffer
+        data = type:"arraybuffer", data:xhr.response
+      else
+        data = type:"text", data:xhr.responseText
+      @dispatchOnloaddata(settings, url,
+        useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data)
 
       xhr = xhr.onabort = xhr.onerror = xhr.onreadystatechange = null
 
@@ -221,7 +272,7 @@ class WebkitCSSResourceCache
 
   loadJS:(settings, data) ->
     lwfUrl = settings["lwf"]
-    url = settings["js"] ? lwfUrl.replace(/\.lwf$/i, ".js")
+    url = settings["js"] ? lwfUrl.replace(/\.lwf/i, ".js")
     url = (settings["prefix"] ? "") + url unless url.match(/^\//)
     onload = settings["onload"]
     onprogress = settings["onprogress"]
@@ -243,6 +294,7 @@ class WebkitCSSResourceCache
       settings.loadedCount++
       onprogress.call(settings,
         settings.loadedCount, settings.total) if onprogress?
+      @cache[lwfUrl].script = script
       script = script.onload = script.onabort = script.onerror = null
       @loadImages(settings, data)
     script.src = url
@@ -331,7 +383,7 @@ class WebkitCSSResourceCache
             alphaImg = imageCache[alpha.filename]
             if jpgImg? and alphaImg?
               if @.constructor is WebkitCSSResourceCache
-                name = "canvas_" + jpg.filename.replace(/[\.-]/, "_")
+                name = "canvas_" + jpg.filename.replace(/[\.-]/g, "_")
                 ctx = document.getCSSCanvasContext(
                   "2d", name, jpgImg.width, jpgImg.height)
                 canvas = ctx.canvas
@@ -374,8 +426,8 @@ class WebkitCSSResourceCache
   newLWF:(settings, imageCache, data) ->
     lwfUrl = settings["lwf"]
     cache = @cache[lwfUrl]
-    cache.__instances__ ?= 0
-    cache.__instances__++
+    cache.instances ?= 0
+    cache.instances++
     factory = @newFactory(settings, imageCache, data)
     embeddedScript = global["LWF"]?["Script"]?[data.name()] if data.useScript
     lwf = new LWF(data, factory, embeddedScript, settings["privateData"])
@@ -390,7 +442,10 @@ class WebkitCSSResourceCache
     return
 
   unloadLWF:(lwf) ->
-    if @cache[lwf.url]? and --@cache[lwf.url].__instances__ <= 0
+    cache = @cache[lwf.url]
+    if cache? and --cache.instances <= 0
+      head = document.getElementsByTagName('head')[0]
+      head.removeChild(cache.script)
       delete @cache[lwf.url]
     return
 

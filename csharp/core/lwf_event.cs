@@ -331,6 +331,8 @@ public partial class LWF
 		ButtonEventHandler rollOut = null,
 		ButtonKeyPressHandler keyPress = null)
 	{
+		interactive = true;
+
 		int instId = SearchInstanceId(GetStringId(instanceName));
 		if (instId >= 0) {
 			AddButtonEventHandler(instId,
@@ -369,6 +371,8 @@ public partial class LWF
 		ButtonEventHandler rollOut = null,
 		ButtonKeyPressHandler keyPress = null)
 	{
+		interactive = true;
+
 		if (instId < 0 || instId >= m_instances.Length)
 			return;
 

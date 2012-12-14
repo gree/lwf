@@ -18,8 +18,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Constant = Format.Constant
-
 class Utility
   @calcMatrixToPoint:(sx, sy, m) ->
     dx = m.scaleX * sx + m.skew0  * sy + m.translateX
@@ -29,8 +27,8 @@ class Utility
   @getMatrixDeterminant:(matrix) ->
     return matrix.scaleX * matrix.scaleY - matrix.skew0 * matrix.skew1 < 0
 
-  @getMatrix:(movie) ->
-    matrixId = movie.matrixId
+  @syncMatrix:(movie) ->
+    matrixId = movie.matrixId ? 0
     if (matrixId & Constant.MATRIX_FLAG) is 0
       translate = movie.lwf.data.translates[matrixId]
       scaleX = 1
@@ -61,8 +59,67 @@ class Utility
     movie.property.setMatrix(matrix, scaleX, scaleY, rotation)
     return
 
-  @getColorTransform:(movie) ->
-    colorTransformId = movie.colorTransformId
+  @getX:(movie) ->
+    matrixId = movie.matrixId ? 0
+    if (matrixId & Constant.MATRIX_FLAG) is 0
+      translate = movie.lwf.data.translates[matrixId]
+      return translate.translateX
+    else
+      matrixId &= ~Constant.MATRIX_FLAG
+      matrix = movie.lwf.data.matrices[matrixId]
+      return matrix.translateX
+
+  @getY:(movie) ->
+    matrixId = movie.matrixId ? 0
+    if (matrixId & Constant.MATRIX_FLAG) is 0
+      translate = movie.lwf.data.translates[matrixId]
+      return translate.translateY
+    else
+      matrixId &= ~Constant.MATRIX_FLAG
+      matrix = movie.lwf.data.matrices[matrixId]
+      return matrix.translateY
+
+  @getScaleX:(movie) ->
+    matrixId = movie.matrixId ? 0
+    if (matrixId & Constant.MATRIX_FLAG) is 0
+      return 1
+    else
+      matrixId &= ~Constant.MATRIX_FLAG
+      matrix = movie.lwf.data.matrices[matrixId]
+      md = @getMatrixDeterminant(matrix)
+      scaleX = Math.sqrt(
+        matrix.scaleX * matrix.scaleX + matrix.skew1 * matrix.skew1)
+      scaleX = -scaleX if md
+      return scaleX
+
+  @getScaleY:(movie) ->
+    matrixId = movie.matrixId ? 0
+    if (matrixId & Constant.MATRIX_FLAG) is 0
+      return 1
+    else
+      matrixId &= ~Constant.MATRIX_FLAG
+      matrix = movie.lwf.data.matrices[matrixId]
+      scaleY = Math.sqrt(
+        matrix.scaleY * matrix.scaleY + matrix.skew0 * matrix.skew0)
+      return scaleY
+
+  @getRotation:(movie) ->
+    matrixId = movie.matrixId ? 0
+    if (matrixId & Constant.MATRIX_FLAG) is 0
+      return 0
+    else
+      matrixId &= ~Constant.MATRIX_FLAG
+      matrix = movie.lwf.data.matrices[matrixId]
+      md = @getMatrixDeterminant(matrix)
+      if md
+        rotation = Math.atan2(matrix.skew1, -matrix.scaleX)
+      else
+        rotation = Math.atan2(matrix.skew1, matrix.scaleX)
+      rotation = rotation / Math.PI * 180
+      return rotation
+
+  @syncColorTransform:(movie) ->
+    colorTransformId = movie.colorTransformId ? 0
     if (colorTransformId & Constant.COLORTRANSFORM_FLAG) is 0
       alphaTransform = movie.lwf.data.alphaTransforms[colorTransformId]
       colorTransform =
@@ -77,6 +134,16 @@ class Utility
 
     movie.property.setColorTransform(colorTransform)
     return
+
+  @getAlpha:(movie) ->
+    colorTransformId = movie.colorTransformId ? 0
+    if (colorTransformId & Constant.COLORTRANSFORM_FLAG) is 0
+      alphaTransform = movie.lwf.data.alphaTransforms[colorTransformId]
+      return alphaTransform.alpha
+    else
+      colorTransformId = colorTransformId & ~Constant.COLORTRANSFORM_FLAG
+      colorTransform = movie.lwf.data.colorTransforms[colorTransformId]
+      return colorTransform.alpha
 
   @calcMatrixId:(lwf, dst, src0, src1Id) ->
     if src1Id is 0
@@ -99,7 +166,7 @@ class Utility
       matrixId = src1Id & ~Constant.MATRIX_FLAG
       src1 = lwf.data.matrices[matrixId]
       @calcMatrix(dst, src0, src1)
-    return
+    return dst
 
   @calcMatrix:(dst, src0, src1) ->
     dst.scaleX =
@@ -122,7 +189,7 @@ class Utility
       src0.skew1  * src1.translateX +
       src0.scaleY * src1.translateY +
       src0.translateY
-    return
+    return dst
 
   @rotateMatrix:(dst, src, scale, offsetX, offsetY) ->
     offsetX *= scale
@@ -173,8 +240,8 @@ class Utility
     return
 
   @copyMatrix:(dst, src) ->
-    if src then dst.set(src) else dst.clear()
-    return
+    if src isnt null then dst.set(src) else dst.clear()
+    return dst
 
   @invertMatrix:(dst, src) ->
     dt = src.scaleX * src.scaleY - src.skew0 * src.skew1
@@ -205,7 +272,7 @@ class Utility
       colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG
       src1 = lwf.data.colorTransforms[colorTransformId]
       @calcColorTransform(dst, src0, src1)
-    return
+    return dst
 
   @calcColorTransform:(dst, src0, src1) ->
     dst.multi.red   = src0.multi.red   * src1.multi.red
@@ -216,11 +283,11 @@ class Utility
     #dst.add.green = src0.add.green * src1.multi.green + src1.add.green
     #dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue
     #dst.add.alpha = src0.add.alpha * src1.multi.alpha + src1.add.alpha
-    return
+    return dst
 
   @copyColorTransform:(dst, src) ->
-    if src then dst.set(src) else dst.clear()
-    return
+    if src isnt null then dst.set(src) else dst.clear()
+    return dst
 
   @calcColor:(dst, c, t) ->
     dst.red   = c.red   * t.multi.red

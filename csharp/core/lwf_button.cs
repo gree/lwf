@@ -46,9 +46,15 @@ public partial class Button : IObject
 		set {m_buttonLink = value;}
 	}
 
-	public Button(LWF lwf, Movie parent, int objId, int instId)
+	public Button() {}
+
+	public Button(LWF lwf, Movie parent, int objId, int instId,
+			int matrixId = -1, int colorTransformId = -1)
 		: base(lwf, parent, Format.Object.Type.BUTTON, objId, instId)
 	{
+		m_matrixId = matrixId;
+		m_colorTransformId = colorTransformId;
+
 		m_invert = new Matrix();
 		m_hitX = Int32.MinValue;
 		m_hitY = Int32.MinValue;
@@ -72,8 +78,7 @@ public partial class Button : IObject
 	{
 		base.Exec(matrixId, colorTransformId);
 
-		if (m_handler != null)
-			m_handler.Call(EventType.ENTERFRAME, this);
+		EnterFrame();
 	}
 
 	public override void Update(Matrix m, ColorTransform c)
@@ -120,6 +125,12 @@ public partial class Button : IObject
 		m_hitX = Int32.MinValue;
 		m_hitY = Int32.MinValue;
 		return false;
+	}
+
+	public void EnterFrame()
+	{
+		if (m_handler != null)
+			m_handler.Call(EventType.ENTERFRAME, this);
 	}
 
 	public virtual void RollOver()

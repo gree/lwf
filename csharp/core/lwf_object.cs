@@ -28,7 +28,7 @@ public class Object
 	protected LWF m_lwf;
 	protected Movie m_parent;
 	protected Type m_type;
-	protected uint m_execCount;
+	protected int m_execCount;
 	protected int m_objectId;
 	protected int m_matrixId;
 	protected int m_colorTransformId;
@@ -36,6 +36,9 @@ public class Object
 	protected int m_dataMatrixId;
 	protected ColorTransform m_colorTransform;
 	protected Renderer m_renderer;
+	protected bool m_matrixIdChanged;
+	protected bool m_colorTransformIdChanged;
+	protected bool m_updated;
 
 	public LWF lwf {get {return m_lwf;}}
 	public Movie parent {get {return m_parent;}}
@@ -45,10 +48,21 @@ public class Object
 	public int colorTransformId {get {return m_colorTransformId;}}
 	public Matrix matrix {get {return m_matrix;}}
 	public ColorTransform colorTransform {get {return m_colorTransform;}}
-	public uint execCount {
+	public bool matrixIdChanged {
+		get {return m_matrixIdChanged;}
+		set {m_matrixIdChanged = value;}
+	}
+	public bool colorTransformIdChanged {
+		get {return m_colorTransformIdChanged;}
+		set {m_colorTransformIdChanged = value;}
+	}
+	public bool updated {get {return m_updated;}}
+	public int execCount {
 		get {return m_execCount;}
 		set {m_execCount = value;}
 	}
+
+	public Object() {}
 
 	public Object(LWF lwf, Movie parent, int type, int objId)
 		: this(lwf, parent, (Type)type, objId) {}
@@ -59,21 +73,31 @@ public class Object
 		m_parent = parent;
 		m_type = type;
 		m_objectId = objId;
-		m_matrix = new Matrix();
-		m_colorTransform = new ColorTransform();
+		m_matrixId = -1;
+		m_colorTransformId = -1;
+		m_matrixIdChanged = true;
+		m_colorTransformIdChanged = true;
+		m_matrix = new Matrix(0, 0, 0, 0, 0, 0);
+		m_colorTransform = new ColorTransform(0, 0, 0, 0);
 		m_execCount = 0;
+		m_updated = false;
 	}
 
 	public virtual void Exec(int matrixId = 0, int colorTransformId = 0)
 	{
+		m_matrixIdChanged = m_matrixId != matrixId;
 		m_matrixId = matrixId;
+		m_colorTransformIdChanged = m_colorTransformId != colorTransformId;
 		m_colorTransformId = colorTransformId;
 	}
 
 	public virtual void Update(Matrix m, ColorTransform c)
 	{
-		Utility.CalcMatrix(m_lwf, m_matrix, m, m_dataMatrixId);
-		Utility.CopyColorTransform(m_colorTransform, c);
+		m_updated = true;
+		if (m != null)
+			Utility.CalcMatrix(m_lwf, m_matrix, m, m_dataMatrixId);
+		if (c != null)
+			Utility.CopyColorTransform(m_colorTransform, c);
 		m_lwf.RenderObject();
 	}
 

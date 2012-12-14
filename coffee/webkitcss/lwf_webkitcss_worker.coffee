@@ -19,12 +19,30 @@
 #
 
 if !window? and self?
+
+  unless atob?
+    atob = Base64.decode
+
   self.onmessage = (event) ->
-    if typeof self.webkitPostMessage isnt "undefined"
-      data = (new LWFLoaderWithArrayBuffer).load(event.data)
+    if typeof self.webkitPostMessage isnt "undefined" and
+        typeof event.data is "object"
+      data = Loader.loadArrayBuffer(event.data)
       self.webkitPostMessage(data)
     else
-      data = (new LWFLoader).load(event.data)
-      self.postMessage(data)
+      data = event.data
+      if data[0] is 'L' and data[1] is 'W' and data[2] is 'F'
+        data = Loader.load(data)
+      else
+        data = (new Zlib.Inflate(atob(data))).decompress()
+        if typeof Uint8Array isnt 'undefined' and
+            typeof Uint16Array isnt 'undefined' and
+            typeof Uint32Array isnt 'undefined'
+          data = Loader.loadArrayBuffer(data.buffer)
+        else
+          data = Loader.loadArray(data)
+      if typeof self.webkitPostMessage isnt "undefined"
+        self.webkitPostMessage(data)
+      else
+        self.postMessage(data)
     self.close()
 

@@ -37,6 +37,8 @@ public class IObject : Object {
 	public int instanceId {get {return m_instanceId;}}
 	public string name {get {return m_name;}}
 
+	public IObject() {}
+
 	public IObject(LWF lwf, Movie parent, int type, int objId, int instId)
 		: this(lwf, parent, (Type)type, objId, instId) {}
 

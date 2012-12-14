@@ -38,7 +38,7 @@ public class Utility
 		return matrix.scaleX * matrix.scaleY - matrix.skew0 * matrix.skew1 < 0;
 	}
 
-	public static void GetMatrix(Movie movie)
+	public static void SyncMatrix(Movie movie)
 	{
 		int matrixId = movie.matrixId;
 		float scaleX = 1;
@@ -69,7 +69,83 @@ public class Utility
 		movie.SetMatrix(matrix, scaleX, scaleY, rotation);
 	}
 
-	public static void GetColorTransform(Movie movie)
+	public static float GetX(Movie movie)
+	{
+		int matrixId = movie.matrixId;
+		if ((matrixId & (int)Constant.MATRIX_FLAG) == 0) {
+			Translate translate = movie.lwf.data.translates[matrixId];
+			return translate.translateX;
+		} else {
+			matrixId &= ~(int)Constant.MATRIX_FLAG_MASK;
+			Matrix matrix = movie.lwf.data.matrices[matrixId];
+			return matrix.translateX;
+		}
+	}
+
+	public static float GetY(Movie movie)
+	{
+		int matrixId = movie.matrixId;
+		if ((matrixId & (int)Constant.MATRIX_FLAG) == 0) {
+			Translate translate = movie.lwf.data.translates[matrixId];
+			return translate.translateY;
+		} else {
+			matrixId &= ~(int)Constant.MATRIX_FLAG_MASK;
+			Matrix matrix = movie.lwf.data.matrices[matrixId];
+			return matrix.translateY;
+		}
+	}
+
+	public static float GetScaleX(Movie movie)
+	{
+		int matrixId = movie.matrixId;
+		if ((matrixId & (int)Constant.MATRIX_FLAG) == 0) {
+			return 1;
+		} else {
+			matrixId &= ~(int)Constant.MATRIX_FLAG_MASK;
+			Matrix matrix = movie.lwf.data.matrices[matrixId];
+			bool md = GetMatrixDeterminant(matrix);
+			float scaleX = (float)Math.Sqrt(
+				matrix.scaleX * matrix.scaleX + matrix.skew1 * matrix.skew1);
+			if (md)
+				scaleX = -scaleX;
+			return scaleX;
+		}
+	}
+
+	public static float GetScaleY(Movie movie)
+	{
+		int matrixId = movie.matrixId;
+		if ((matrixId & (int)Constant.MATRIX_FLAG) == 0) {
+			return 1;
+		} else {
+			matrixId &= ~(int)Constant.MATRIX_FLAG_MASK;
+			Matrix matrix = movie.lwf.data.matrices[matrixId];
+			float scaleY = (float)Math.Sqrt(
+				matrix.scaleY * matrix.scaleY + matrix.skew0 * matrix.skew0);
+			return scaleY;
+		}
+	}
+
+	public static float GetRotation(Movie movie)
+	{
+		int matrixId = movie.matrixId;
+		if ((matrixId & (int)Constant.MATRIX_FLAG) == 0) {
+			return 0;
+		} else {
+			matrixId &= ~(int)Constant.MATRIX_FLAG_MASK;
+			Matrix matrix = movie.lwf.data.matrices[matrixId];
+			bool md = GetMatrixDeterminant(matrix);
+			float rotation;
+			if (md)
+				rotation = (float)Math.Atan2(matrix.skew1, -matrix.scaleX);
+			else
+				rotation = (float)Math.Atan2(matrix.skew1, matrix.scaleX);
+			rotation = rotation / (float)Math.PI * 180.0f;
+			return rotation;
+		}
+	}
+
+	public static void SyncColorTransform(Movie movie)
 	{
 		int colorTransformId = movie.colorTransformId;
 		ColorTransform colorTransform;
@@ -85,7 +161,23 @@ public class Utility
 		movie.SetColorTransform(colorTransform);
 	}
 
-	public static void CalcMatrix(LWF lwf, Matrix dst, Matrix src0, int src1Id)
+	public static float GetAlpha(Movie movie)
+	{
+		int colorTransformId = movie.colorTransformId;
+		ColorTransform colorTransform;
+		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
+			AlphaTransform alphaTransform =
+				movie.lwf.data.alphaTransforms[colorTransformId];
+			return alphaTransform.alpha;
+		} else {
+			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
+			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			return colorTransform.multi.alpha;
+		}
+	}
+
+	public static Matrix CalcMatrix(
+		LWF lwf, Matrix dst, Matrix src0, int src1Id)
 	{
 		if (src1Id == 0) {
 			dst.Set(src0);
@@ -108,9 +200,11 @@ public class Utility
 			Matrix src1 = lwf.data.matrices[matrixId];
 			CalcMatrix(dst, src0, src1);
 		}
+
+		return dst;
 	}
 
-	public static void CalcMatrix(Matrix dst, Matrix src0, Matrix src1)
+	public static Matrix CalcMatrix(Matrix dst, Matrix src0, Matrix src1)
 	{
 		dst.scaleX =
 			src0.scaleX * src1.scaleX +
@@ -132,6 +226,7 @@ public class Utility
 			src0.skew1  * src1.translateX +
 			src0.scaleY * src1.translateY +
 			src0.translateY;
+		return dst;
 	}
 
 	public static void FitForHeight(LWF lwf, float stageHeight)
@@ -164,12 +259,13 @@ public class Utility
 		lwf.property.Scale(scale, scale);
 	}
 
-	public static void CopyMatrix(Matrix dst, Matrix src)
+	public static Matrix CopyMatrix(Matrix dst, Matrix src)
 	{
 		if (src == null)
 			dst.Clear();
 		else
 			dst.Set(src);
+		return dst;
 	}
 
 	public static void InvertMatrix(Matrix dst, Matrix src)
@@ -189,7 +285,7 @@ public class Utility
 		}
 	}
 
-	public static void CalcColorTransform(LWF lwf,
+	public static ColorTransform CalcColorTransform(LWF lwf,
 		ColorTransform dst, ColorTransform src0, int src1Id)
 	{
 		ColorTransform src1 = null;
@@ -211,9 +307,10 @@ public class Utility
 			src1 = lwf.data.colorTransforms[colorTransformId];
 			CalcColorTransform(dst, src0, src1);
 		}
+		return dst;
 	}
 
-	public static void CalcColorTransform(ColorTransform dst,
+	public static ColorTransform CalcColorTransform(ColorTransform dst,
 		ColorTransform src0, ColorTransform src1)
 	{
 		dst.multi.red   = src0.multi.red   * src1.multi.red;
@@ -226,15 +323,17 @@ public class Utility
 		dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue;
 		dst.add.alpha = src0.add.alpha * src1.multi.alpha + src1.add.alpha;
 #endif
+		return dst;
 	}
 
-	public static void CopyColorTransform(
+	public static ColorTransform CopyColorTransform(
 		ColorTransform dst, ColorTransform src)
 	{
 		if (src == null)
 			dst.Clear();
 		else
 			dst.Set(src);
+		return dst;
 	}
 
 	public static void CalcColor(Color dst, Color c, ColorTransform t)

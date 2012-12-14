@@ -18,15 +18,13 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Type = Format.LObject.Type
-ClipEvent = Format.MovieClipEvent.ClipEvent
-
 class Movie extends IObject
-  constructor:(lwf, parent, objId, instId, \
-      @matrixId = 0, @colorTransformId = 0, attached = false, handler = null) ->
+  constructor:(lwf, parent, objId, instId, matrixId = null,
+      colorTransformId = null, attached = false, handler = null) ->
     type = if attached then Type.ATTACHEDMOVIE else Type.MOVIE
     super(lwf, parent, type, objId, instId)
-
+    @matrixId = matrixId
+    @colorTransformId = colorTransformId
     @data = lwf.data.movies[objId]
     @totalFrames = @data.frames
     @instanceHead = null
@@ -34,6 +32,11 @@ class Movie extends IObject
     @currentFrameInternal = -1
     @execedFrame = -1
     @animationPlayedFrame = -1
+    @lastControlOffset = -1
+    @lastControls = -1
+    @lastHasButton = false
+    @lastControlAnimationOffset = -1
+    @skipped = false
     @postLoaded = false
     @active = true
     @visible = true
@@ -42,6 +45,8 @@ class Movie extends IObject
     @overriding = false
     @attachMovieExeced = false
     @attachMoviePostExeced = false
+    @movieExecCount = -1
+    @postExecCount = -1
 
     @property = new Property(lwf)
 
@@ -265,10 +270,10 @@ class Movie extends IObject
     return null unless recursive
 
     instance = @instanceHead
-    while instance?
-      if instance.isMovie()
+    while instance isnt null
+      if instance.isMovie
         i = instance.searchAttachedMovie(attachName, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
     return null
 
@@ -377,10 +382,10 @@ class Movie extends IObject
     return null unless recursive
 
     instance = @instanceHead
-    while instance?
-      if instance.isMovie()
+    while instance isnt null
+      if instance.isMovie
         i = instance.searchAttachedLWF(attachName, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
     return null
 
@@ -412,20 +417,21 @@ class Movie extends IObject
     obj = @displayList[depth]
 
     if obj? and (obj.type isnt dataObject.objectType or
-        obj.objectId != dataObjectId or (obj.isMovie() and
-        obj.instanceId != instId))
+        obj.objectId isnt dataObjectId or
+        (obj.isMovie and obj.instanceId isnt instId))
       obj.destroy()
       obj = null
 
     unless obj?
       switch dataObject.objectType
         when Type.BUTTON
-          obj = new Button(@lwf, @, dataObjectId, instId)
+          obj = new Button(@lwf,
+            @, dataObjectId, instId, matrixId, colorTransformId)
         when Type.GRAPHIC
           obj = new Graphic(@lwf, @, dataObjectId)
         when Type.MOVIE
-          obj = new Movie(
-            @lwf, @, dataObjectId, instId, matrixId, colorTransformId)
+          obj = new Movie(@lwf,
+            @, dataObjectId, instId, matrixId, colorTransformId)
         when Type.BITMAP
           obj = new Bitmap(@lwf, @, dataObjectId)
         when Type.BITMAPEX
@@ -437,19 +443,18 @@ class Movie extends IObject
         when Type.PROGRAMOBJECT
           obj = new ProgramObject(@lwf, @, dataObjectId)
 
-    if obj.type == Type.MOVIE
+    if obj.isMovie or obj.isButton
       obj.linkInstance = null
-      unless @instanceHead?
+      if @instanceHead is null
         @instanceHead = obj
       else
         @instanceTail.linkInstance = obj
       @instanceTail = obj
-    else if obj.type == Type.BUTTON
-      @hasButton = true
+      if obj.isButton
+        @hasButton = true
 
     @displayList[depth] = obj
-    obj.execCount = @lwf.execCount
-
+    obj.execCount = @movieExecCount
     obj.exec(matrixId, colorTransformId)
     return
 
@@ -470,56 +475,92 @@ class Movie extends IObject
     @hasButton = false
     return unless @active
 
-    @instanceHead = null
-    @instanceTail = null
     @execedFrame = -1
-    ++@currentFrameInternal if progressing and @playing and !@jumped
+    postExeced = @postExecCount is @lwf.execCount
+    if progressing and @playing and !@jumped and !postExeced
+      ++@currentFrameInternal
     loop
       @currentFrameInternal = 0 if \
         @currentFrameInternal < 0 or @currentFrameInternal >= @totalFrames
       break if @currentFrameInternal is @execedFrame
-
-      @instanceHead = null
-      @instanceTail = null
 
       @currentFrameCurrent = @currentFrameInternal
       @execedFrame = @currentFrameCurrent
       data = @lwf.data
       frame = data.frames[@data.frameOffset + @currentFrameCurrent]
 
-      controlAnimationOffset = -1
-      for i in [0...frame.controls]
-        control = data.controls[frame.controlOffset + i]
+      if @lastControlOffset is frame.controlOffset and
+          @lastControls is frame.controls
 
-        switch control.controlType
-          when Format.Control.Type.MOVE
-            p = data.places[control.controlId]
-            @execObject(p.depth, p.objectId, p.matrixId, 0, p.instanceId)
+        controlAnimationOffset = @lastControlAnimationOffset
 
-          when Format.Control.Type.MOVEM
-            ctrl = data.controlMoveMs[control.controlId]
-            p = data.places[ctrl.placeId]
-            @execObject(p.depth, p.objectId, ctrl.matrixId, 0, p.instanceId)
+        if @skipped
+          instance = @instanceHead
+          while instance isnt null
+            if instance.isMovie
+              instance.attachMovieExeced = false
+              instance.attachMoviePostExeced = false
+            else if instance.isButton
+              instance.enterFrame()
+            instance = instance.linkInstance
+          @hasButton = @lastHasButton
+        else
+          for depth in [0...@data.depths]
+            obj = @displayList[depth]
+            if obj?
+              unless postExeced
+                obj.matrixIdChanged = false
+                obj.colorTransformIdChanged = false
+              if obj.isMovie
+                obj.attachMovieExeced = false
+                obj.attachMoviePostExeced = false
+              else if obj.isButton
+                obj.enterFrame()
+                @hasButton = true
+          @lastHasButton = @hasButton
+          @skipped = true
 
-          when Format.Control.Type.MOVEC
-            ctrl = data.controlMoveCs[control.controlId]
-            p = data.places[ctrl.placeId]
-            @execObject(p.depth, p.objectId, p.matrixId,
-              ctrl.colorTransformId, p.instanceId)
+      else
+        ++@movieExecCount
+        @instanceHead = null
+        @instanceTail = null
+        @lastControlOffset = frame.controlOffset
+        @lastControls = frame.controls
+        controlAnimationOffset = -1
+        for i in [0...frame.controls]
+          control = data.controls[frame.controlOffset + i]
+  
+          switch control.controlType
+            when ControlType.MOVE
+              p = data.places[control.controlId]
+              @execObject(p.depth, p.objectId, p.matrixId, 0, p.instanceId)
+  
+            when ControlType.MOVEM
+              ctrl = data.controlMoveMs[control.controlId]
+              p = data.places[ctrl.placeId]
+              @execObject(p.depth, p.objectId, ctrl.matrixId, 0, p.instanceId)
+  
+            when ControlType.MOVEC
+              ctrl = data.controlMoveCs[control.controlId]
+              p = data.places[ctrl.placeId]
+              @execObject(p.depth, p.objectId, p.matrixId,
+                ctrl.colorTransformId, p.instanceId)
+  
+            when ControlType.MOVEMC
+              ctrl = data.controlMoveMCs[control.controlId]
+              p = data.places[ctrl.placeId]
+              @execObject(p.depth, p.objectId,
+                ctrl.matrixId, ctrl.colorTransformId, p.instanceId)
+  
+            when ControlType.ANIMATION
+              controlAnimationOffset = i if controlAnimationOffset is -1
 
-          when Format.Control.Type.MOVEMC
-            ctrl = data.controlMoveMCs[control.controlId]
-            p = data.places[ctrl.placeId]
-            @execObject(p.depth, p.objectId,
-              ctrl.matrixId, ctrl.colorTransformId, p.instanceId)
-
-          when Format.Control.Type.ANIMATION
-            controlAnimationOffset = i if controlAnimationOffset is -1
-
-      for depth in [0...@data.depths]
-        obj = @displayList[depth]
-        if obj?
-          if obj.execCount isnt @lwf.execCount
+        @lastControlAnimationOffset = controlAnimationOffset
+        @lastHasButton = @hasButton
+  
+        for depth in [0...@data.depths]
+          obj = @displayList[depth]
+          if obj? and obj.execCount isnt @movieExecCount
             obj.destroy()
             @displayList[depth] = null
 
@@ -529,8 +570,8 @@ class Movie extends IObject
           movie.exec() if movie?
 
       instance = @instanceHead
-      while instance?
-        if instance.isMovie()
+      while instance isnt null
+        if instance.isMovie
           movie = instance
           movie.postExec(progressing)
           if !@hasButton and movie.hasButton
@@ -546,8 +587,9 @@ class Movie extends IObject
         for movie in @attachedMovieList
           if movie?
             movie.postExec(progressing)
-            if !@hasButton and movie.hasButton
-              @hasButton = true
+            @hasButton = true if !@hasButton and movie.hasButton
+
+      @hasButton = true if @attachedLWFs?
 
       unless @postLoaded
         @postLoaded = true
@@ -569,69 +611,61 @@ class Movie extends IObject
     @enterFrameFunc.call(@) if @enterFrameFunc?
     @playAnimation(ClipEvent.ENTERFRAME)
     @handler.call("enterFrame", @) if @handler?
+    @postExecCount = @lwf.execCount
     return
+
+  updateObject:(obj, m, c, matrixChanged, colorTransformChanged) ->
+    if obj.isMovie and obj.property.hasMatrix
+      objm = m
+    else if matrixChanged or !obj.updated or obj.matrixIdChanged
+      objm = Utility.calcMatrixId(@lwf, @matrix1, m, obj.matrixId)
+    else
+      objm = null
+
+    if obj.isMovie and obj.property.hasColorTransform
+      objc = c
+    else if colorTransformChanged or !obj.updated or obj.colorTransformIdChanged
+      objc = Utility.calcColorTransformId(
+        @lwf, @colorTransform1, c, obj.colorTransformId)
+    else
+      objc = null
+
+    obj.update(objm, objc)
 
   update:(m, c) ->
     return unless @active
 
-    unless @overriding
-      Utility.copyMatrix(@matrix, m)
-      Utility.copyColorTransform(@colorTransform, c)
+    if @overriding
+      matrixChanged = true
+      colorTransformChanged = true
+    else
+      matrixChanged = @matrix.setWithComparing(m)
+      colorTransformChanged = @colorTransform.setWithComparing(c)
 
     @handler.call("update", @) if @handler?
 
+    if @property.hasMatrix
+      matrixChanged = true
+      m = Utility.calcMatrix(@matrix0, @matrix, @property.matrix)
+    else
+      m = @matrix
+
+    if @property.hasColorTransform
+      colorTransformChanged = true
+      c = Utility.calcColorTransform(
+        @colorTransform0, @colorTransform, @property.colorTransform)
+    else
+      c = @colorTransform
+
     for depth in [0...@data.depths]
       obj = @displayList[depth]
-      if obj?
-        objm = @matrix0
-        objHasOwnMatrix = obj.type is Type.MOVIE and obj.property.hasMatrix
-        if @property.hasMatrix
-          if objHasOwnMatrix
-            Utility.calcMatrix(objm, @matrix, @property.matrix)
-          else
-            Utility.calcMatrix(@matrix1, @matrix, @property.matrix)
-            Utility.calcMatrixId(@lwf, objm, @matrix1, obj.matrixId)
-        else
-          if objHasOwnMatrix
-            Utility.copyMatrix(objm, @matrix)
-          else
-            Utility.calcMatrixId(@lwf, objm, @matrix, obj.matrixId)
-
-        objc = @colorTransform0
-        objHasOwnColorTransform =
-          obj.type is Type.MOVIE and obj.property.hasColorTransform
-        if @property.hasColorTransform
-          if objHasOwnColorTransform
-            Utility.calcColorTransform(objc,
-              @colorTransform, @property.colorTransform)
-          else
-            Utility.calcColorTransform(@colorTransform1,
-              @colorTransform, @property.colorTransform)
-            Utility.calcColorTransformId(@lwf,
-              objc, @colorTransform1, obj.colorTransformId)
-        else
-          if objHasOwnColorTransform
-            Utility.copyColorTransform(objc, @colorTransform)
-          else
-            Utility.calcColorTransformId(@lwf,
-              objc, @colorTransform, obj.colorTransformId)
-
-        obj.update(objm, objc)
+      @updateObject(obj, m, c, matrixChanged, colorTransformChanged) if obj?
 
     if @attachedMovies? or @attachedLWFs?
-      m = @matrix
-      if @property.hasMatrix
-        m1 = @matrix1.set(m)
-        Utility.calcMatrix(m, m1, @property.matrix)
-
-      c = @colorTransform
-      if @property.hasColorTransform
-        c1 = @colorTransform1.set(c)
-        Utility.calcColorTransform(c, c1, @property.colorTransform)
-
       if @attachedMovies?
         for movie in @attachedMovieList
-          movie.update(m, c) if movie?
+          if movie?
+            @updateObject(movie, m, c, matrixChanged, colorTransformChanged)
 
       if @attachedLWFs?
         for attachName, v of @detachedLWFs
@@ -645,7 +679,7 @@ class Movie extends IObject
     return
 
   linkButton:() ->
-    return if !@visible or !@active
+    return if !@visible or !@active or !@hasButton
 
     if @attachedLWFs?
       for lwfContainer in @attachedLWFList
@@ -658,12 +692,10 @@ class Movie extends IObject
     for depth in [0...@data.depths]
       obj = @displayList[depth]
       if obj?
-        if obj.type is Type.BUTTON
+        if obj.isButton
           obj.linkButton()
-        else if obj.type is Type.MOVIE
-          movie = obj
-          if movie.hasButton
-            movie.linkButton()
+        else if obj.isMovie
+          obj.linkButton() if obj.hasButton
     return
 
   render:(v, rOffset) ->
@@ -785,80 +817,80 @@ class Movie extends IObject
   searchMovieInstance:(stringId, recursive = true) ->
     stringId = @lwf.getStringId(stringId) if typeof stringId is "string"
     instance = @instanceHead
-    while instance?
-      if instance.isMovie() and
+    while instance isnt null
+      if instance.isMovie and
           @lwf.getInstanceNameStringId(instance.instanceId) == stringId
         return instance
-      else if recursive and instance.isMovie()
+      else if recursive and instance.isMovie
         i = instance.searchMovieInstance(stringId, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
 
     return null
 
   searchMovieInstanceByInstanceId:(instId, recursive) ->
     instance = @instanceHead
-    while instance?
-      if instance.isMovie() and instance.instanceId == instId
+    while instance isnt null
+      if instance.isMovie and instance.instanceId is instId
         return instance
-      else if recursive and instance.isMovie()
+      else if recursive and instance.isMovie
         i = instance.searchMovieInstanceByInstanceId(instId, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
     return null
 
   searchButtonInstance:(stringId, recursive = true) ->
     stringId = @lwf.getStringId(stringId) if typeof stringId is "string"
     instance = @instanceHead
-    while instance?
-      if instance.isButton() and
+    while instance isnt null
+      if instance.isButton and
           @lwf.getInstanceNameStringId(instance.instanceId) == stringId
         return instance
-      else if recursive and instance.isMovie()
+      else if recursive and instance.isMovie
         i = instance.searchButtonInstance(stringId, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
 
     return null
 
   searchButtonInstanceByInstanceId:(instId, recursive) ->
     instance = @instanceHead
-    while instance?
-      if instance.isButton() and instance.instanceId == instId
+    while instance isnt null
+      if instance.isButton and instance.instanceId is instId
         return instance
-      else if recursive and instance.isMovie()
+      else if recursive and instance.isMovie
         i = instance.searchMovieInstanceByInstanceId(instId, recursive)
-        return i if i?
+        return i if i isnt null
       instance = instance.linkInstance
     return null
 
   move:(x, y) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.move(x, y)
     return @
 
   moveTo:(x, y) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.moveTo(x, y)
     return @
 
   rotate:(degree) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.rotate(degree)
     return @
 
   rotateTo:(degree) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.rotateTo(degree)
     return @
 
   scale:(x, y) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.scale(x, y)
     return @
 
   scaleTo:(x, y) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.scaleTo(x, y)
     return @
 
@@ -867,7 +899,7 @@ class Movie extends IObject
     return @
 
   setAlpha:(alpha) ->
-    Utility.getColorTransform(@) unless @property.hasColorTransform
+    Utility.syncColorTransform(@) unless @property.hasColorTransform
     @property.setAlpha(alpha)
     return @
 
@@ -880,55 +912,67 @@ class Movie extends IObject
     return @
 
   getX: ->
-    Utility.getMatrix(@) unless @property.hasMatrix
-    return @property.matrix.translateX
+    if @property.hasMatrix
+      return @property.matrix.translateX
+    else
+      return Utility.getX(@)
 
   setX:(v) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.moveTo(v, @property.matrix.translateY)
     return
 
   getY: ->
-    Utility.getMatrix(@) unless @property.hasMatrix
-    return @property.matrix.translateY
+    if @property.hasMatrix
+      return @property.matrix.translateY
+    else
+      return Utility.getY(@)
 
   setY:(v) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.moveTo(@property.matrix.translateX, v)
     return
 
   getScaleX: ->
-    Utility.getMatrix(@) unless @property.hasMatrix
-    return @property.scaleX
+    if @property.hasMatrix
+      return @property.scaleX
+    else
+      return Utility.getScaleX(@)
 
   setScaleX:(v) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.scaleTo(v, @property.scaleY)
     return
 
   getScaleY: ->
-    Utility.getMatrix(@) unless @property.hasMatrix
-    return @property.scaleY
+    if @property.hasMatrix
+      return @property.scaleY
+    else
+      return Utility.getScaleY(@)
 
   setScaleY:(v) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.scaleTo(@property.scaleX, v)
     return
 
   getRotation: ->
-    Utility.getMatrix(@) unless @property.hasMatrix
-    return @property.rotation
+    if @property.hasMatrix
+      return @property.rotation
+    else
+      return Utility.getRotation(@)
 
   setRotation:(v) ->
-    Utility.getMatrix(@) unless @property.hasMatrix
+    Utility.syncMatrix(@) unless @property.hasMatrix
     @property.rotateTo(v)
     return
 
   getAlphaProperty: ->
-    Utility.getColorTransform(@) unless @property.hasColorTransform
-    return @property.colorTransform.multi.alpha
+    if @property.hasColorTransform
+      return @property.colorTransform.multi.alpha
+    else
+      return Utility.getAlpha(@)
 
   setAlphaProperty:(v) ->
-    Utility.getColorTransform(@) unless @property.hasColorTransform
+    Utility.syncColorTransform(@) unless @property.hasColorTransform
     @property.setAlpha(v)
     return

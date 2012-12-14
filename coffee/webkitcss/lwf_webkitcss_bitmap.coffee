@@ -120,7 +120,10 @@ class WebkitCSSBitmapRenderer
       else if scale isnt 1 or x isnt 0 or y isnt 0
         m = Utility.scaleMatrix(@matrixForAtlas, m, scale, x, y)
     else
-      m = @matrixForAtlas if @matrixForAtlas?
+      if @matrixForAtlas?
+        m = @matrixForAtlas
+      else
+        m = @matrix
 
     return if !matrixChanged and
       @alpha is c.multi.alpha and

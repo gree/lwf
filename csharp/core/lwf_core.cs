@@ -56,8 +56,8 @@ public partial class LWF
 	private int m_renderingIndexOffsetted;
 	private int m_renderingCount;
 	private int m_depth;
-	private uint m_execCount;
-	private uint m_updateCount;
+	private int m_execCount;
+	private int m_updateCount;
 	private double m_time;
 	private float m_progress;
 	private float m_tick;
@@ -75,7 +75,9 @@ public partial class LWF
 	private float m_pointY;
 	private bool m_pressing;
 	private Matrix m_matrix;
+	private Matrix m_matrixIdentity;
 	private ColorTransform m_colorTransform;
+	private ColorTransform m_colorTransformIdentity;
 
 	public Data data {get {return m_data;}}
 	public bool interactive {get; set;}
@@ -101,12 +103,13 @@ public partial class LWF
 	public int renderingIndex {get {return m_renderingIndex;}}
 	public int renderingIndexOffsetted {get {return m_renderingIndexOffsetted;}}
 	public int renderingCount {get {return m_renderingCount;}}
+	public int execCount {get {return m_execCount;}}
+	public int updateCount {get {return m_updateCount;}}
 	public float width {get {return m_data.header.width;}}
 	public float height {get {return m_data.header.height;}}
 	public double time {get {return m_time;}}
 	public float tick {get {return m_tick;}}
 	public float thisTick {get {return m_thisTick;}}
-	public uint updateCount {get {return m_updateCount;}}
 	public Movie parent {
 		get {return m_parent;}
 		set {m_parent = value;}
@@ -159,7 +162,9 @@ public partial class LWF
 			new ProgramObjectConstructor[m_data.programObjects.Length];
 
 		m_matrix = new Matrix();
+		m_matrixIdentity = new Matrix();
 		m_colorTransform = new ColorTransform();
+		m_colorTransformIdentity = new ColorTransform();
 
 		Init();
 
@@ -266,13 +271,12 @@ public partial class LWF
 		Property p = m_property;
 		if (p.hasMatrix) {
 			if (matrix != null) {
-				m = m_matrix;
-				Utility.CalcMatrix(m, matrix, p.matrix);
+				m = Utility.CalcMatrix(m_matrix, matrix, p.matrix);
 			} else {
 				m = p.matrix;
 			}
 		} else {
-			m = matrix;
+			m = matrix == null ? m_matrixIdentity : matrix;
 		}
 		return m;
 	}
@@ -283,13 +287,14 @@ public partial class LWF
 		Property p = m_property;
 		if (p.hasColorTransform) {
 			if (colorTransform != null) {
-				c = m_colorTransform;
-				Utility.CalcColorTransform(c, colorTransform, p.colorTransform);
+				c = Utility.CalcColorTransform(
+					m_colorTransform, colorTransform, p.colorTransform);
 			} else {
 				c = p.colorTransform;
 			}
 		} else {
-			c = colorTransform;
+			c = colorTransform == null ?
+				m_colorTransformIdentity : colorTransform;
 		}
 		return c;
 	}
@@ -302,7 +307,7 @@ public partial class LWF
 
 		if (m_execDisabled) {
 			if (!m_executedForExecDisabled) {
-				m_rootMovie.execCount = ++m_execCount;
+				++m_execCount;
 				m_rootMovie.Exec();
 				m_rootMovie.PostExec(true);
 				m_executedForExecDisabled = true;
@@ -333,7 +338,7 @@ public partial class LWF
 					break;
 				}
 				m_progress -= m_tick;
-				m_rootMovie.execCount = ++m_execCount;
+				++m_execCount;
 				m_rootMovie.Exec();
 				m_rootMovie.PostExec(progressing);
 				execed = true;
@@ -342,10 +347,9 @@ public partial class LWF
 			if (m_progress < m_roundOffTick)
 				m_progress = 0;
 
-			if (interactive) {
-				m_buttonHead = null;
+			m_buttonHead = null;
+			if (interactive && m_rootMovie.hasButton)
 				m_rootMovie.LinkButton();
-			}
 		}
 
 		if (execed || isLWFAttached ||
@@ -375,6 +379,7 @@ public partial class LWF
 	public void Update(
 		Matrix matrix = null, ColorTransform colorTransform = null)
 	{
+		++m_updateCount;
 		Matrix m = CalcMatrix(matrix);
 		ColorTransform c = CalcColorTransform(colorTransform);
 		m_renderingIndex = 0;
@@ -383,7 +388,6 @@ public partial class LWF
 		m_renderingCount = m_renderingIndex;
 		m_thisTick = 0;
 		m_propertyDirty = false;
-		m_updateCount++;
 	}
 
 	public int Render(int rIndex = 0,

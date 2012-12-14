@@ -18,8 +18,6 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-Type = Format.LObject.Type
-
 class IObject extends LObject
   constructor:(lwf, parent, type, objId, instId) ->
     super(lwf, parent, type, objId)

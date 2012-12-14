@@ -20,6 +20,6 @@
 
 class BitmapEx extends LObject
   constructor:(lwf, parent, objId) ->
-    super(lwf, parent, Format.LObject.Type.BITMAPEX, objId)
+    super(lwf, parent, Type.BITMAPEX, objId)
     @dataMatrixId = lwf.data.bitmapExs[objId].matrixId
     @renderer = lwf.rendererFactory.constructBitmapEx(lwf, objId, @)

@@ -95,14 +95,43 @@ public partial class Matrix
 		return this;
 	}
 
-	public bool Equals(Matrix m)
+	public bool SetWithComparing(Matrix m)
 	{
-		return scaleX == m.scaleX &&
-			scaleY == m.scaleY &&
-			skew0 == m.skew0 &&
-			skew1 == m.skew1 &&
-			translateX == m.translateX &&
-			translateY == m.translateY;
+		if (m == null)
+			return false;
+
+		float sX = m.scaleX;
+		float sY = m.scaleY;
+		float s0 = m.skew0;
+		float s1 = m.skew1;
+		float tX = m.translateX;
+		float tY = m.translateY;
+		bool changed = false;
+		if (scaleX != sX) {
+			scaleX = sX;
+			changed = true;
+		}
+		if (scaleY != sY) {
+			scaleY = sY;
+			changed = true;
+		}
+		if (skew0 != s0) {
+			skew0 = s0;
+			changed = true;
+		}
+		if (skew1 != s1) {
+			skew1 = s1;
+			changed = true;
+		}
+		if (translateX != tX) {
+			translateX = tX;
+			changed = true;
+		}
+		if (translateY != tY) {
+			translateY = tY;
+			changed = true;
+		}
+		return changed;
 	}
 }
 
@@ -203,13 +232,59 @@ public partial class ColorTransform
 		return this;
 	}
 
-	public bool Equals(ColorTransform c)
+	public bool SetWithComparing(ColorTransform c)
 	{
-		bool equals = multi.Equals(c.multi);
+		if (c == null)
+			return false;
+
+		Color cm = c.multi;
+		float red = cm.red;
+		float green = cm.green;
+		float blue = cm.blue;
+		float alpha = cm.alpha;
+		bool changed = false;
+		Color m = multi;
+		if (m.red != red) {
+			m.red = red;
+			changed = true;
+		}
+		if (m.green != green) {
+			m.green = green;
+			changed = true;
+		}
+		if (m.blue != blue) {
+			m.blue = blue;
+			changed = true;
+		}
+		if (m.alpha != alpha) {
+			m.alpha = alpha;
+			changed = true;
+		}
 #if LWF_USE_ADDITIONALCOLOR
-		equals &&= add.Equals(c.add);
+		Color ca = c.add;
+		red = ca.red;
+		green = ca.green;
+		blue = ca.blue;
+		alpha = ca.alpha;
+		Color a = add;
+		if (a.red != red) {
+			a.red = red;
+			changed = true;
+		}
+		if (a.green != green) {
+			a.green = green;
+			changed = true;
+		}
+		if (a.blue != blue) {
+			a.blue = blue;
+			changed = true;
+		}
+		if (a.alpha != alpha) {
+			a.alpha = alpha;
+			changed = true;
+		}
 #endif
-		return equals;
+		return changed;
 	}
 }
 

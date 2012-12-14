@@ -63,7 +63,7 @@ public partial class Factory : UnityRenderer.Factory
 	public bool premultipliedAlpha;
 	private Data data;
 	private string textureName;
-	private uint updateCount;
+	private int updateCount;
 	private int bitmapCount;
 
 	public Factory(Data d, GameObject gObj,

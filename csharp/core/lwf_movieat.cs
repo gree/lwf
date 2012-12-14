@@ -120,6 +120,10 @@ public partial class Movie : IObject
 		MovieEventHandlers handlers = new MovieEventHandlers();
 		handlers.Add(load, postLoad, unload, enterFrame, update, render);
 		Movie movie = new Movie(m_lwf, this, movieId, -1, 0, 0, true, handlers);
+		if (m_attachMovieExeced)
+			movie.Exec();
+		if (m_attachMoviePostExeced)
+			movie.PostExec(true);
 
 		return AttachMovieInternal(movie, attachName, attachDepth, reorder);
 	}

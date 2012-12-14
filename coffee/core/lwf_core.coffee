@@ -39,7 +39,6 @@ class LWF
     @thisTick = 0
     @attachVisible = true
     @execCount = 0
-    @updateCount = 0
     @isExecDisabled = false
     @isPropertyDirty = false
     @isLWFAttached = false
@@ -49,6 +48,7 @@ class LWF
     @pointX = Number.MIN_VALUE
     @pointY = Number.MIN_VALUE
     @pressing = false
+    @buttonHead = null
 
     @disableExec() if !@interactive and @data.frames.length is 1
 
@@ -65,7 +65,9 @@ class LWF
     @depth = null
 
     @matrix = new Matrix
+    @matrixIdentity = new Matrix
     @colorTransform = new ColorTransform
+    @colorTransformIdentity = new ColorTransform
 
     @init()
 
@@ -148,24 +150,23 @@ class LWF
     p = @property
     if p.hasMatrix
       if matrix?
-        m = @matrix
-        Utility.calcMatrix(m, matrix, p.matrix)
+        m = Utility.calcMatrix(@matrix, matrix, p.matrix)
       else
         m = p.matrix
     else
-      m = matrix
+      m = matrix ? @matrixIdentity
     return m
 
   calcColorTransform:(colorTransform) ->
     p = @property
     if p.hasColorTransform
       if colorTransform?
-        c = @colorTransform
-        Utility.calcColorTransform(c, colorTransform, p.colorTransform)
+        c = Utility.calcColorTransform(
+          @colorTransform, colorTransform, p.colorTransform)
       else
         c = p.colorTransform
     else
-      c = colorTransform
+      c = colorTransform ? @colorTransformIdentity
     return c
 
   exec:(tick = 0, matrix = null, colorTransform = null) ->
@@ -174,7 +175,7 @@ class LWF
 
     if @isExecDisabled
       unless @executedForExecDisabled
-        @rootMovie.execCount = ++@execCount
+        ++@execCount
         @rootMovie.exec()
         @rootMovie.postExec(true)
         @executedForExecDisabled = true
@@ -201,7 +202,7 @@ class LWF
           @progress = 0
           break
         @progress -= @tick
-        @rootMovie.execCount = ++@execCount
+        ++@execCount
         @rootMovie.exec()
         @rootMovie.postExec(progressing)
         execed = true
@@ -209,9 +210,8 @@ class LWF
       if @progress < @roundOffTick
         @progress = 0
 
-      if @interactive
-        @buttonHead = null
-        @rootMovie.linkButton()
+      @buttonHead = null
+      @rootMovie.linkButton() if @interactive and @rootMovie.hasButton
 
     if execed or @isLWFAttached or @isPropertyDirty or
         matrix? or colorTransform?
@@ -238,7 +238,6 @@ class LWF
     @renderingCount = @renderingIndex
     @thisTick = 0
     @isPropertyDirty = false
-    @updateCount++
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
@@ -249,9 +248,9 @@ class LWF
     if @property.hasRenderingOffset
       @renderOffset()
       rOffset = @property.renderingOffset
-    @rendererFactory.beginRender(this)
+    @rendererFactory.beginRender(@)
     @rootMovie.render(@attachVisible, rOffset)
-    @rendererFactory.endRender(this)
+    @rendererFactory.endRender(@)
     @renderingCount = renderingCountBackup
     return @renderingCount
 
@@ -345,7 +344,7 @@ class LWF
     return null if instId < 0 or instId >= @data.instanceNames.length
     obj = @instances[instId]
     while obj?
-      return obj if obj.isMovie()
+      return obj if obj.isMovie
       obj = obj.nextInstance
     return null
 
@@ -372,7 +371,7 @@ class LWF
     return null if instId < 0 or instId >= @data.instanceNames.length
     obj = @instances[instId]
     while obj?
-      return obj if obj.isButton()
+      return obj if obj.isButton
       obj = obj.nextInstance
     return null
 
@@ -512,6 +511,7 @@ class LWF
     return @buttonEventHandlers[m.instanceId]
 
   addButtonEventHandler:(instanceName, handlers) ->
+    @interactive = true
     instId = @searchInstanceId(@getStringId(instanceName))
     if instId >= 0 and instId < @data.instanceNames.length
       h = @buttonEventHandlers[instId]
@@ -635,7 +635,7 @@ class LWF
     return
 
   setPropertyDirty: ->
-    @propertyDirty = true
+    @isPropertyDirty = true
     @parent.lwf.setPropertyDirty() if @parent?
     return
 

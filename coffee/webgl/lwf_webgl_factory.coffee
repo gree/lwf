@@ -91,7 +91,7 @@ void main() {
     @textures = {}
     @bitmapContexts = []
     for bitmap in data.bitmaps
-      continue if bitmap.textureFragmentId == -1
+      continue if bitmap.textureFragmentId is -1
       bitmapEx = new Format.BitmapEx()
       bitmapEx.matrixId = bitmap.matrixId
       bitmapEx.textureFragmentId = bitmap.textureFragmentId
@@ -103,7 +103,7 @@ void main() {
 
     @bitmapExContexts = []
     for bitmapEx in data.bitmapExs
-      continue if bitmapEx.textureFragmentId == -1
+      continue if bitmapEx.textureFragmentId is -1
       @bitmapExContexts.push new WebGLBitmapContext(@, data, bitmapEx)
 
     @textContexts = []

@@ -58,6 +58,7 @@ public class Graphic : Object
 				break;
 			}
 
+			obj.Exec();
 			m_displayList[i] = obj;
 		}
 	}

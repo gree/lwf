@@ -74,9 +74,9 @@ class LWFLoader
       @readSingle())
 
   loadColorTransform: ->
-    return new ColorTransform(
-      @loadColor(),
-      @loadColor())
+    multi = @loadColor()
+    add = @loadColor()
+    return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha)
 
   loadTexture: ->
     return new Format.Texture(
@@ -542,6 +542,16 @@ class LWFLoader
         when Animation.END
           return array
 
+class LWFLoaderWithArray extends LWFLoader
+  readByte: ->
+    return @d[@index++]
+
+  readBytes:(length) ->
+    bytes = ""
+    for i in [0...length]
+      bytes += String.fromCharCode(@d[@index++])
+    return bytes
+
 class LWFLoaderWithArrayBuffer extends LWFLoader
   constructor: ->
     @int32Array = new Int32Array()
@@ -576,6 +586,11 @@ class Loader
   @load:(d) ->
     return if !d? or typeof d isnt "string"
     lwfLoader = new LWFLoader
+    return lwfLoader.load(d)
+
+  @loadArray:(d) ->
+    return if !d?
+    lwfLoader = new LWFLoaderWithArray
     return lwfLoader.load(d)
 
   @loadArrayBuffer:(d) ->

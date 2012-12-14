@@ -27,78 +27,84 @@ public partial class Movie : IObject
 {
 	public float x {
 		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.matrix.translateX;
+			if (m_property.hasMatrix)
+				return m_property.matrix.translateX;
+			else
+				return Utility.GetX(this);
 		}
 		set {
 			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
+				Utility.SyncMatrix(this);
 			m_property.MoveTo(value, m_property.matrix.translateY);
 		}
 	}
 
 	public float y {
 		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.matrix.translateY;
+			if (m_property.hasMatrix)
+				return m_property.matrix.translateY;
+			else
+				return Utility.GetY(this);
 		}
 		set {
 			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
+				Utility.SyncMatrix(this);
 			m_property.MoveTo(m_property.matrix.translateX, value);
 		}
 	}
 
 	public float scaleX {
 		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_scaleX;
+			if (m_property.hasMatrix)
+				return m_property.m_scaleX;
+			else
+				return Utility.GetScaleX(this);
 		}
 		set {
 			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
+				Utility.SyncMatrix(this);
 			m_property.ScaleTo(value, m_property.m_scaleY);
 		}
 	}
 
 	public float scaleY {
 		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_scaleY;
+			if (m_property.hasMatrix)
+				return m_property.m_scaleY;
+			else
+				return Utility.GetScaleY(this);
 		}
 		set {
 			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
+				Utility.SyncMatrix(this);
 			m_property.ScaleTo(m_property.m_scaleX, value);
 		}
 	}
 
 	public float rotation {
 		get {
-			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
-			return m_property.m_rotation;
+			if (m_property.hasMatrix)
+				return m_property.m_rotation;
+			else
+				return Utility.GetRotation(this);
 		}
 		set {
 			if (!m_property.hasMatrix)
-				Utility.GetMatrix(this);
+				Utility.SyncMatrix(this);
 			m_property.RotateTo(value);
 		}
 	}
 
 	public float alpha {
 		get {
-			if (!m_property.hasColorTransform)
-				Utility.GetColorTransform(this);
-			return m_property.colorTransform.multi.alpha;
+			if (m_property.hasColorTransform)
+				return m_property.colorTransform.multi.alpha;
+			else
+				return Utility.GetAlpha(this);
 		}
 		set {
 			if (!m_property.hasColorTransform)
-				Utility.GetColorTransform(this);
+				Utility.SyncColorTransform(this);
 			m_property.SetAlpha(value);
 		}
 	}

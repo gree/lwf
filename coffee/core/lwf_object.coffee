@@ -20,15 +20,32 @@
 
 class LObject
   constructor:(@lwf, @parent, @type, @objectId) ->
-    @matrix = new Matrix
-    @colorTransform = new ColorTransform
+    @matrixId = null
+    @colorTransformId = null
+    @matrixIdChanged = true
+    @colorTransformIdChanged = true
+    @matrix = new Matrix(0, 0, 0, 0, 0, 0)
+    @colorTransform = new ColorTransform(0, 0, 0, 0)
     @execCount = 0
+    @updated = false
 
-  exec:(@matrixId = 0, @colorTransformId = 0) ->
+    @isButton = @type is Type.BUTTON
+    @isMovie = @type is Type.MOVIE or @type is Type.ATTACHEDMOVIE
+    @isParticle = @type is Type.PARTICLE
+    @isProgramObject = @type is Type.PROGRAMOBJECT
+    @isText = @type is Type.TEXT
+
+  exec:(matrixId = 0, colorTransformId = 0) ->
+    @matrixIdChanged = @matrixId isnt matrixId
+    @matrixId = matrixId
+    @colorTransformIdChanged = @colorTransformId isnt colorTransformId
+    @colorTransformId = colorTransformId
+    return
 
   update:(m, c) ->
-    Utility.calcMatrixId(@lwf, @matrix, m, @dataMatrixId)
-    Utility.copyColorTransform(@colorTransform, c)
+    @updated = true
+    Utility.calcMatrixId(@lwf, @matrix, m, @dataMatrixId) if m isnt null
+    Utility.copyColorTransform(@colorTransform, c) if c isnt null
     @lwf.renderObject()
     return
 
@@ -37,7 +54,7 @@ class LObject
       rIndex = @lwf.renderingIndex
       rIndexOffsetted = @lwf.renderingIndexOffsetted
       rCount = @lwf.renderingCount
-      if rOffset != Number.MIN_VALUE
+      if rOffset isnt Number.MIN_VALUE
         rIndex = rIndexOffsetted - rOffset + rCount
       @renderer.render(@matrix, @colorTransform, rIndex, rCount, v)
     @lwf.renderObject()
@@ -47,7 +64,7 @@ class LObject
     rIndex = @lwf.renderingIndex
     rIndexOffsetted = @lwf.renderingIndexOffsetted
     rCount = @lwf.renderingCount
-    if rOffset != Number.MIN_VALUE
+    if rOffset isnt Number.MIN_VALUE
       rIndex = rIndexOffsetted + rOffset + rCount
     inspector(@, hierarchy, depth, rIndex)
     @lwf.renderObject()
@@ -60,18 +77,3 @@ class LObject
     @parent = null
     @lwf = null
     return
-
-  isButton: ->
-    return @type == Type.BUTTON
-
-  isMovie: ->
-    return @type == Type.MOVIE or @type == Type.ATTACHEDMOVIE
-
-  isParticle: ->
-    return @type == Type.PARTICLE
-
-  isProgramObject: ->
-    return @type == Type.PROGRAMOBJECT
-
-  isText: ->
-    return @type == Type.TEXT
