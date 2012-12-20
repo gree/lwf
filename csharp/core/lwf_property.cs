@@ -134,6 +134,27 @@ public class Property
 		m_lwf.SetPropertyDirty();
 	}
 
+	public void SetRed(float red)
+	{
+		m_colorTransform.multi.red = red;
+		m_hasColorTransform = true;
+		m_lwf.SetPropertyDirty();
+	}
+
+	public void SetGreen(float green)
+	{
+		m_colorTransform.multi.green = green;
+		m_hasColorTransform = true;
+		m_lwf.SetPropertyDirty();
+	}
+
+	public void SetBlue(float blue)
+	{
+		m_colorTransform.multi.blue = blue;
+		m_hasColorTransform = true;
+		m_lwf.SetPropertyDirty();
+	}
+
 	public void SetColorTransform(ColorTransform c)
 	{
 		m_colorTransform.Set(c);

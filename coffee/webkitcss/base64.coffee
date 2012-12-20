@@ -18,9 +18,10 @@ class Base64
 
   @decode:(str) ->
     table_length = Base64.table.length
-    decoded = []
+    decoded = new Array((((table_length + 2) / 3) | 0) * 4)
     c = 0
     n = 0
+    j = 0
     for i in [0...str.length]
       v = (str.charCodeAt(i) & 0xff) - 43
       continue if v < 0 or v >= table_length
@@ -32,16 +33,17 @@ class Base64
           ++n
         when 1
           c |= (fragment & 0x030) >> 4
-          decoded.push c
+          decoded[j++] = c
           c = (fragment & 0x00f) << 4
           ++n
         when 2
           c |= (fragment & 0x03c) >> 2
-          decoded.push c
+          decoded[j++] = c
           c = (fragment & 0x003) << 6
           ++n
         when 3
           c |= (fragment & 0x03f)
-          decoded.push c
+          decoded[j++] = c
           n = 0
     return decoded
+

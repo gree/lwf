@@ -20,8 +20,7 @@
 
 if !window? and self?
 
-  unless atob?
-    atob = Base64.decode
+  atob = Base64.decode unless atob?
 
   self.onmessage = (event) ->
     if typeof self.webkitPostMessage isnt "undefined" and

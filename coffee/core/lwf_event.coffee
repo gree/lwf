@@ -45,7 +45,7 @@ class EventHandlers
     return
 
   remove:(handlers) ->
-    for type in TYPES
+    for type in @types
       handler = handlers[type]
       @removeHandler(@[type], handler) if handler?
     return

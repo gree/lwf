@@ -60,7 +60,7 @@ PRELUDEJSCORE = %w|
 |
 
 ADDJSCORE = %w|
-  supports/tween.js/src/Tween.js
+  supports/tween.js/Tween.js
   supports/zlib.js/inflate.min.js
 |
 

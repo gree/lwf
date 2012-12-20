@@ -49,6 +49,7 @@ LWF.prototype["fitForWidth"] = LWF.prototype.fitForWidth
 LWF.prototype["forceExec"] = LWF.prototype.forceExec
 LWF.prototype["forceExecWithoutProgress"] =
   LWF.prototype.forceExecWithoutProgress
+LWF.prototype["getStringId"] = LWF.prototype.getStringId
 LWF.prototype["init"] = LWF.prototype.init
 LWF.prototype["inputKeyPress"] = LWF.prototype.inputKeyPress
 LWF.prototype["inputPoint"] = LWF.prototype.inputPoint
@@ -66,6 +67,7 @@ LWF.prototype["scaleForHeight"] = LWF.prototype.scaleForHeight
 LWF.prototype["scaleForWidth"] = LWF.prototype.scaleForWidth
 LWF.prototype["searchAttachedLWF"] = LWF.prototype.searchAttachedLWF
 LWF.prototype["searchAttachedMovie"] = LWF.prototype.searchAttachedMovie
+LWF.prototype["searchEventId"] = LWF.prototype.searchEventId
 LWF.prototype["searchFrame"] = LWF.prototype.searchFrame
 LWF.prototype["setButtonEventHandler"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler

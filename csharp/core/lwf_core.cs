@@ -32,9 +32,16 @@ using DetachHandler = Action<LWF>;
 using Inspector = System.Action<Object, int, int, int>;
 using AllowButtonList = Dictionary<int, bool>;
 using DenyButtonList = Dictionary<int, bool>;
+using ExecHandler = Action<LWF>;
+using ExecHandlerList = List<Action<LWF>>;
 
 public partial class LWF
 {
+	public enum TweenMode {
+		Movie,
+		LWF,
+	}
+
 	private static float ROUND_OFF_TICK_RATE = 0.05f;
 
 	private Data m_data;
@@ -50,6 +57,7 @@ public partial class LWF
 	private DetachHandler m_detachHandler;
 	private AllowButtonList m_allowButtonList;
 	private DenyButtonList m_denyButtonList;
+	private ExecHandlerList m_execHandlers;
 	private int m_frameRate;
 	private int m_execLimit;
 	private int m_renderingIndex;
@@ -87,6 +95,8 @@ public partial class LWF
 	public bool isPropertyDirty {get {return m_propertyDirty;}}
 	public bool isLWFAttached {get; set;}
 	public object privateData {get; set;}
+	public TweenMode tweenMode {get; set;}
+	public object tweens {get; set;}
 	public IRendererFactory rendererFactory
 		{get {return m_rendererFactory;}}
 	public Property property {get {return m_property;}}
@@ -330,6 +340,9 @@ public partial class LWF
 					m_progress += tick;
 				}
 			}
+
+			if (m_execHandlers != null)
+				m_execHandlers.ForEach(h => h(this));
 
 			int execLimit = m_execLimit;
 			while (m_progress >= m_tick - m_roundOffTick) {
@@ -687,6 +700,31 @@ public partial class LWF
 		m_propertyDirty = true;
 		if (m_parent != null)
 			m_parent.lwf.SetPropertyDirty();
+	}
+
+	public void AddExecHandler(ExecHandler execHandler)
+	{
+		if (m_execHandlers == null)
+			m_execHandlers = new ExecHandlerList();
+		m_execHandlers.Add(execHandler);
+	}
+
+	public void RemoveExecHandler(ExecHandler execHandler)
+	{
+		if (m_execHandlers == null)
+			return;
+		m_execHandlers.RemoveAll(h => h == execHandler);
+	}
+
+	public void ClearExecHandler()
+	{
+		m_execHandlers = null;
+	}
+
+	public void SetExecHandler(ExecHandler execHandler)
+	{
+		ClearExecHandler();
+		AddExecHandler(execHandler);
 	}
 }
 

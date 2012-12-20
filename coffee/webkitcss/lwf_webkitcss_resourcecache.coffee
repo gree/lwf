@@ -35,7 +35,7 @@ class WebkitCSSResourceCache
     imageMap = settings["imageMap"]
     url = texture.filename
     if typeof imageMap is 'function'
-      newUrl = imageMap(url)
+      newUrl = imageMap.call(settings, url)
       url = newUrl if newUrl?
     else if typeof imageMap is 'object'
       newUrl = imageMap[url]
@@ -109,6 +109,8 @@ class WebkitCSSResourceCache
       settings["onload"].call(settings, null)
       return
 
+    settings["name"] = data.name()
+
     @checkTextures(settings, data)
 
     lwfUrl = settings["lwf"]
@@ -135,6 +137,7 @@ class WebkitCSSResourceCache
     if @cache[lwfUrl]?
       data = @cache[lwfUrl].data
       if data?
+        settings["name"] = data.name()
         @checkTextures(settings, data)
         settings.total = settings._textures.length + 1
         settings.loadedCount = 1
@@ -272,7 +275,7 @@ class WebkitCSSResourceCache
 
   loadJS:(settings, data) ->
     lwfUrl = settings["lwf"]
-    url = settings["js"] ? lwfUrl.replace(/\.lwf/i, ".js")
+    url = settings["js"] ? lwfUrl.replace(/\.lwf(\.js)?/i, ".js")
     url = (settings["prefix"] ? "") + url unless url.match(/^\//)
     onload = settings["onload"]
     onprogress = settings["onprogress"]

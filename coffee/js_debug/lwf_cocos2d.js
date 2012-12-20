@@ -4237,9 +4237,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     EventHandlers.prototype.remove = function(handlers) {
-      var handler, type, _i, _len;
-      for (_i = 0, _len = TYPES.length; _i < _len; _i++) {
-        type = TYPES[_i];
+      var handler, type, _i, _len, _ref;
+      _ref = this.types;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        type = _ref[_i];
         handler = handlers[type];
         if (handler != null) {
           this.removeHandler(this[type], handler);
@@ -4340,6 +4341,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       this.property = new Property(this);
       this.instances = [];
+      this.execHandlers = null;
       this.eventHandlers = [];
       this.movieEventHandlers = [];
       this.buttonEventHandlers = [];
@@ -4476,7 +4478,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.exec = function(tick, matrix, colorTransform) {
-      var currentProgress, execLimit, execed, progressing;
+      var currentProgress, execLimit, execed, handler, handlers, progressing, _i, _len;
       if (tick == null) {
         tick = 0;
       }
@@ -4511,6 +4513,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           } else {
             this.time += tick;
             this.progress += tick;
+          }
+        }
+        handlers = this.execHandlers;
+        if (handlers != null) {
+          for (_i = 0, _len = handlers.length; _i < _len; _i++) {
+            handler = handlers[_i];
+            handler.call(this);
           }
         }
         execLimit = this.execLimit;
@@ -4665,6 +4674,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.property = null;
       this.buttonHead = null;
       this.instances = null;
+      this.execHandlers = null;
       this.eventHandlers = null;
       this.movieEventHandlers = null;
       this.buttonEventHandlers = null;
@@ -4874,6 +4884,39 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     LWF.prototype.setInstance = function(instId, instance) {
       this.instances[instId] = instance;
+    };
+
+    LWF.prototype.addExecHandler = function(execHandler) {
+      var _ref;
+      if ((_ref = this.execHandlers) == null) {
+        this.execHandlers = [];
+      }
+      this.execHandlers.push(execHandler);
+    };
+
+    LWF.prototype.removeExecHandler = function(execHandler) {
+      var handlers, i;
+      handlers = this.execHandlers;
+      if (handlers == null) {
+        return;
+      }
+      i = 0;
+      while (i < handlers.length) {
+        if (handlers[i] === execHandler) {
+          handlers.splice(i, 1);
+        } else {
+          ++i;
+        }
+      }
+    };
+
+    LWF.prototype.clearExecHandler = function() {
+      this.execHandlers = null;
+    };
+
+    LWF.prototype.setExecHandler = function(execHandler) {
+      this.clearExecHandler();
+      this.addExecHandler(execHandler);
     };
 
     LWF.prototype.addEventHandler = function(eventId, eventHandler) {
@@ -5253,7 +5296,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.playAnimation = function(animationId, movie, button) {
-      var a, animations, count, eventId, func, handler, handlers, i, instId, j, stringId, target, _i, _j, _len, _ref;
+      var a, animations, count, eventId, func, i, instId, j, stringId, target, _i, _ref;
       i = 0;
       animations = this.data.animations[animationId];
       target = movie;
@@ -5307,13 +5350,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Animation.EVENT:
             eventId = animations[i++];
-            handlers = this.eventHandlers[eventId];
-            if (handlers != null) {
-              for (_j = 0, _len = handlers.length; _j < _len; _j++) {
-                handler = handlers[_j];
-                handler(movie, button);
-              }
-            }
+            this.dispatchEvent(eventId, movie, button);
             break;
           case Animation.CALL:
             stringId = animations[i++];
@@ -5323,6 +5360,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             }
         }
       }
+    };
+
+    LWF.prototype.dispatchEvent = function(eventId, movie, button) {
+      var handler, handlers, _i, _len;
+      if (movie == null) {
+        movie = this.rootMovie;
+      }
+      if (button == null) {
+        button = null;
+      }
+      handlers = this.eventHandlers[eventId];
+      if (handlers == null) {
+        return false;
+      }
+      for (_i = 0, _len = handlers.length; _i < _len; _i++) {
+        handler = handlers[_i];
+        handler(movie, button);
+      }
+      return true;
     };
 
     LWF.prototype.inputPoint = function(x, y) {
@@ -5462,6 +5518,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["forceExecWithoutProgress"] = LWF.prototype.forceExecWithoutProgress;
 
+  LWF.prototype["getStringId"] = LWF.prototype.getStringId;
+
   LWF.prototype["init"] = LWF.prototype.init;
 
   LWF.prototype["inputKeyPress"] = LWF.prototype.inputKeyPress;
@@ -5493,6 +5551,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["searchAttachedLWF"] = LWF.prototype.searchAttachedLWF;
 
   LWF.prototype["searchAttachedMovie"] = LWF.prototype.searchAttachedMovie;
+
+  LWF.prototype["searchEventId"] = LWF.prototype.searchEventId;
 
   LWF.prototype["searchFrame"] = LWF.prototype.searchFrame;
 
@@ -5701,7 +5761,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       imageMap = settings["imageMap"];
       url = texture.filename;
       if (typeof imageMap === 'function') {
-        newUrl = imageMap(url);
+        newUrl = imageMap.call(settings, url);
         if (newUrl != null) {
           url = newUrl;
         }
@@ -5792,6 +5852,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         settings["onload"].call(settings, null);
         return;
       }
+      settings["name"] = data.name();
       this.checkTextures(settings, data);
       lwfUrl = settings["lwf"];
       this.cache[lwfUrl] = {};
@@ -5822,6 +5883,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.cache[lwfUrl] != null) {
         data = this.cache[lwfUrl].data;
         if (data != null) {
+          settings["name"] = data.name();
           this.checkTextures(settings, data);
           settings.total = settings._textures.length + 1;
           settings.loadedCount = 1;
@@ -6008,7 +6070,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var head, lwfUrl, onload, onprogress, script, url, _ref1, _ref2,
         _this = this;
       lwfUrl = settings["lwf"];
-      url = (_ref1 = settings["js"]) != null ? _ref1 : lwfUrl.replace(/\.lwf/i, ".js");
+      url = (_ref1 = settings["js"]) != null ? _ref1 : lwfUrl.replace(/\.lwf(\.js)?/i, ".js");
       if (!url.match(/^\//)) {
         url = ((_ref2 = settings["prefix"]) != null ? _ref2 : "") + url;
       }
@@ -6289,11 +6351,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Base64.table = [62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51];
 
     Base64.decode = function(str) {
-      var c, decoded, fragment, i, n, table_length, v, _i, _ref1;
+      var c, decoded, fragment, i, j, n, table_length, v, _i, _ref1;
       table_length = Base64.table.length;
-      decoded = [];
+      decoded = new Array((((table_length + 2) / 3) | 0) * 4);
       c = 0;
       n = 0;
+      j = 0;
       for (i = _i = 0, _ref1 = str.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
         v = (str.charCodeAt(i) & 0xff) - 43;
         if (v < 0 || v >= table_length) {
@@ -6310,19 +6373,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case 1:
             c |= (fragment & 0x030) >> 4;
-            decoded.push(c);
+            decoded[j++] = c;
             c = (fragment & 0x00f) << 4;
             ++n;
             break;
           case 2:
             c |= (fragment & 0x03c) >> 2;
-            decoded.push(c);
+            decoded[j++] = c;
             c = (fragment & 0x003) << 6;
             ++n;
             break;
           case 3:
             c |= fragment & 0x03f;
-            decoded.push(c);
+            decoded[j++] = c;
             n = 0;
         }
       }
@@ -7231,7 +7294,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 }).call(this);
 /**
  * @author sole / http://soledadpenades.com
- * @author mr.doob / http://mrdoob.com
+ * @author mrdoob / http://mrdoob.com
  * @author Robert Eisele / http://www.xarg.org
  * @author Philippe / http://philippe.elsass.me
  * @author Robert Penner / http://www.robertpenner.com/easing_terms_of_use.html
@@ -7239,6 +7302,33 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
  * @author lechecacharro
  * @author Josh Faul / http://jocafa.com/
  * @author egraether / http://egraether.com/
+ * @author GREE, Inc.
+ *
+ * The MIT License
+ *
+ * Copyright (c) 2010-2012 Tween.js authors.
+ * Copyright (c) 2012 GREE, Inc.
+ *
+ * Easing equations
+ *   Copyright (c) 2001 Robert Penner http://robertpenner.com/easing/
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 (function() {
@@ -7256,7 +7346,9 @@ TWEENLWF.Tween = function ( movie ) {
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
 	this.interpolationFunction = TWEENLWF.Interpolation.Linear;
-	this.chainedTween = null;
+	this.chainedTweens = [];
+	this.onStartCallback = null;
+	this.onStartCallbackFired = false;
 	this.onUpdateCallback = null;
 	this.onCompleteCallback = null;
 
@@ -7264,50 +7356,25 @@ TWEENLWF.Tween = function ( movie ) {
 
 		this.lwf._tweens = [];
 
-		this.lwf[ "getTweens" ] = function () {
+		if ( this.lwf._tweenMode === "lwf" ) {
 
-			return this.tweens;
+			this.lwf.addExecHandler( TWEENLWF._tweenExecHandler );
 
-		};
+		} else {
 
-		this.lwf[ "stopTweens" ] = function () {
+			this.lwf.addMovieEventHandler( "_root", {
 
-			this.tweens = [];
+				"enterFrame": TWEENLWF._tweenMovieHandler
 
-		};
+			});
 
-		this.lwf.addMovieEventHandler( "_root", {
-
-			"enterFrame": function () {
-
-				var i = 0;
-				var num_tweens = this.lwf._tweens.length;
-				var time = this.lwf.time;
-
-				while ( i < num_tweens ) {
-
-					if ( this.lwf._tweens[ i ].update( time ) ) {
-
-						i ++;
-
-					} else {
-
-						this.lwf._tweens.splice( i, 1 );
-						num_tweens --;
-
-					}
-
-				}
-
-			}
-
-		});
+		}
 
 	}
 
 	this.to = function ( properties, duration ) {
 
-		if ( duration !== null ) {
+		if ( duration !== undefined ) {
 
 			this.duration = duration * this.lwf.tick;
 
@@ -7322,6 +7389,8 @@ TWEENLWF.Tween = function ( movie ) {
 	this.start = function () {
 
 		this.lwf._tweens.push( this );
+
+		this.onStartCallbackFired = false;
 
 		this.startTime = this.lwf.time;
 		this.startTime += this.delayTime;
@@ -7365,6 +7434,12 @@ TWEENLWF.Tween = function ( movie ) {
 
 			this.lwf._tweens.splice( i, 1 );
 
+			if ( this.lwf._tweens.length == 0 ) {
+
+				this.stopTweens();
+
+			}
+
 		}
 
 		return this;
@@ -7396,29 +7471,36 @@ TWEENLWF.Tween = function ( movie ) {
 
 		if ( typeof chainedTween !== "undefined" && chainedTween !== null ) {
 
-			this.chainedTween = chainedTween;
+			this.chainedTweens.push( chainedTween );
 			return this;
 
 		} else {
 
 			chainedTween = new TWEENLWF.Tween( this.object );
-			this.chainedTween = chainedTween;
+			this.chainedTweens.push( chainedTween );
 			return chainedTween;
 
 		}
 
 	};
 
-	this.onUpdate = function ( onUpdateCallback ) {
+	this.onStart = function ( callback ) {
 
-		this.onUpdateCallback = onUpdateCallback;
+		this.onStartCallback = callback;
 		return this;
 
 	};
 
-	this.onComplete = function ( onCompleteCallback ) {
+	this.onUpdate = function ( callback ) {
 
-		this.onCompleteCallback = onCompleteCallback;
+		this.onUpdateCallback = callback;
+		return this;
+
+	};
+
+	this.onComplete = function ( callback ) {
+
+		this.onCompleteCallback = callback;
 		return this;
 
 	};
@@ -7428,6 +7510,18 @@ TWEENLWF.Tween = function ( movie ) {
 		if ( time < this.startTime ) {
 
 			return true;
+
+		}
+
+		if ( this.onStartCallbackFired === false ) {
+
+			if ( this.onStartCallback !== null ) {
+
+				this.onStartCallback.call( this.object );
+
+			}
+
+			this.onStartCallbackFired = true;
 
 		}
 
@@ -7467,9 +7561,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 			}
 
-			if ( this.chainedTween !== null ) {
+			for ( var i = 0, l = this.chainedTweens.length; i < l; i ++ ) {
 
-				this.chainedTween.start();
+				this.chainedTweens[ i ].start( time );
 
 			}
 
@@ -7488,6 +7582,7 @@ TWEENLWF.Tween = function ( movie ) {
 	this[ "easing" ] = this.easing;
 	this[ "interpolation" ] = this.interpolation;
 	this[ "chain" ] = this.chain;
+	this[ "onStart" ] = this.onStart;
 	this[ "onUpdate" ] = this.onUpdate;
 	this[ "onComplete" ] = this.onComplete;
 	this[ "update" ] = this.update;
@@ -7562,7 +7657,7 @@ TWEENLWF.Easing = {
 
 		Out: function ( k ) {
 
-			return 1 - --k * k * k * k;
+			return 1 - ( --k * k * k * k );
 
 		},
 
@@ -7655,7 +7750,7 @@ TWEENLWF.Easing = {
 
 		Out: function ( k ) {
 
-			return Math.sqrt( 1 - --k * k );
+			return Math.sqrt( 1 - ( --k * k ) );
 
 		},
 
@@ -7845,7 +7940,7 @@ TWEENLWF.Interpolation = {
 				for ( i = n; i > 1; i-- ) s *= i;
 				return a[ n ] = s;
 
-			}
+			};
 
 		} )(),
 
@@ -7862,7 +7957,77 @@ TWEENLWF.Interpolation = {
 
 if ( typeof global !== "undefined" && global !== null ) {
 
-	global[ "LWF" ][ "Movie" ].prototype[ "addTween" ] = function() {
+	var lwfPrototype = global[ "LWF" ][ "LWF" ].prototype;
+
+	lwfPrototype[ "setTweenMode" ] = function( mode ) {
+
+		this._tweenMode = mode;
+
+	};
+
+	lwfPrototype.stopTweens = function() {
+
+		if ( typeof this._tweens !== "undefined" ) {
+
+			this._tweens = undefined;
+
+			this.removeExecHandler( TWEENLWF._tweenExecHandler );
+			this.removeMovieEventHandler( "_root", {
+				
+				"enterFrame": TWEENLWF._tweenMovieHandler
+
+			});
+
+		}
+
+	};
+
+	lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
+
+	TWEENLWF._tweenUpdater = function() {
+
+		var i = 0;
+		var num_tweens = this._tweens.length;
+		var time = this.time;
+
+		while ( i < num_tweens ) {
+
+			if ( this._tweens[ i ].update( time ) ) {
+
+				i ++;
+
+			} else {
+
+				this._tweens.splice( i, 1 );
+				num_tweens --;
+
+			}
+
+		}
+
+		if ( this._tweens.length == 0 ) {
+
+			this.stopTweens();
+
+		}
+
+	};
+
+	TWEENLWF._tweenExecHandler = function() {
+
+		TWEENLWF._tweenUpdater();
+
+	};
+
+	TWEENLWF._tweenMovieHandler = function() {
+
+		TWEENLWF._tweenUpdater.call( this.lwf );
+
+	};
+
+	var moviePrototype = global[ "LWF" ][ "Movie" ].prototype;
+
+	moviePrototype[ "addTween" ] = function() {
 
 		var tween = new TWEENLWF.Tween( this );
 
@@ -7870,12 +8035,14 @@ if ( typeof global !== "undefined" && global !== null ) {
 
 	};
 
-	global[ "LWF" ][ "Movie" ].prototype[ "stopTweens" ] = function() {
+	moviePrototype[ "stopTweens" ] = function() {
 
 		if ( typeof this.lwf === "undefined" || this.lwf === null ||
 				typeof this.lwf._tweens === "undefined" ||
 					this.lwf._tweens === null ) {
+
 			return this;
+
 		}
 
 		var tweens = this.lwf._tweens;
@@ -7885,7 +8052,7 @@ if ( typeof global !== "undefined" && global !== null ) {
 
 		while ( i < num_tweens ) {
 
-			if ( tweens[ i ]._object == this ) {
+			if ( tweens[ i ]._object === this ) {
 
 				tweens.splice( i, 1 );
 				num_tweens --;
@@ -7895,6 +8062,12 @@ if ( typeof global !== "undefined" && global !== null ) {
 				i ++;
 
 			}
+
+		}
+
+		if ( tweens.length == 0 ) {
+
+			this.lwf.stopTweens();
 
 		}
 

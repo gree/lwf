@@ -20,8 +20,8 @@
 
 class CanvasBitmapContext
   constructor:(@factory, @data, bitmapEx) ->
-    @fragment = data.textureFragments[bitmapEx.textureFragmentId]
-    texture = data.textures[@fragment.textureId]
+    @fragment = @data.textureFragments[bitmapEx.textureFragmentId]
+    texture = @data.textures[@fragment.textureId]
     @image = @factory.cache[texture.filename]
     imageWidth = @image.width
     withPadding = if texture.filename.match(/_withpadding/) then true else false
@@ -61,8 +61,8 @@ class CanvasBitmapContext
     if @fragment.rotated
       @w = Math.round(h * imageScale)
       @h = Math.round(w * imageScale)
-      @w = @image.height if @w > @image.height
-      @h = @image.width if @h > @image.width
+      @w = @image.width if @w > @image.width
+      @h = @image.height if @h > @image.height
     else
       @w = Math.round(w * imageScale)
       @h = Math.round(h * imageScale)

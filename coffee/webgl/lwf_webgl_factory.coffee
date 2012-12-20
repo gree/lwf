@@ -19,6 +19,8 @@
 #
 
 class WebGLRendererFactory extends WebkitCSSRendererFactory
+  @shaderProgram = null
+
   constructor:(data, @resourceCache, @cache, @stage, @textInSubpixel) ->
     params = {premultipliedAlpha:false}
     @stage.style.webkitUserSelect = "none"
@@ -37,7 +39,10 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl.depthFunc(gl.LEQUAL)
     gl.enable(gl.BLEND)
 
-    vertexShader = @loadShader(gl, gl.VERTEX_SHADER, """
+    if WebGLRendererFactory.shaderProgram?
+      shaderProgram = WebGLRendererFactory.shaderProgram
+    else
+      vertexShader = @loadShader(gl, gl.VERTEX_SHADER, """
 attribute vec3 aVertexPosition;
 attribute vec2 aTextureCoord;
 uniform mat4 uPMatrix;
@@ -49,7 +54,7 @@ void main() {
 }
 """)
 
-    fragmentShader = @loadShader(gl, gl.FRAGMENT_SHADER, """
+      fragmentShader = @loadShader(gl, gl.FRAGMENT_SHADER, """
 varying mediump vec2 vTextureCoord;
 uniform lowp vec4 uColor;
 uniform sampler2D uTexture;
@@ -58,12 +63,14 @@ void main() {
 }
 """)
 
-    shaderProgram = gl.createProgram()
-    gl.attachShader(shaderProgram, vertexShader)
-    gl.attachShader(shaderProgram, fragmentShader)
-    gl.linkProgram(shaderProgram)
-    unless gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)
-      alert("Unable to initialize the shader program.")
+      shaderProgram = gl.createProgram()
+      gl.attachShader(shaderProgram, vertexShader)
+      gl.attachShader(shaderProgram, fragmentShader)
+      gl.linkProgram(shaderProgram)
+      unless gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)
+        alert("Unable to initialize the shader program.")
+      WebGLRendererFactory.shaderProgram = shaderProgram
+
     gl.useProgram(shaderProgram)
 
     @aVertexPosition = gl.getAttribLocation(shaderProgram, "aVertexPosition")

@@ -54,6 +54,7 @@ class LWF
 
     @property = new Property(@)
     @instances = []
+    @execHandlers = null
     @eventHandlers = []
     @movieEventHandlers = []
     @buttonEventHandlers = []
@@ -196,6 +197,9 @@ class LWF
           @time += tick
           @progress += tick
 
+      handlers = @execHandlers
+      handler.call(@) for handler in handlers if handlers?
+
       execLimit = @execLimit
       while @progress >= @tick - @roundOffTick
         if --execLimit < 0
@@ -283,6 +287,7 @@ class LWF
     @property = null
     @buttonHead = null
     @instances = null
+    @execHandlers = null
     @eventHandlers = null
     @movieEventHandlers = null
     @buttonEventHandlers = null
@@ -392,6 +397,31 @@ class LWF
 
   setInstance:(instId, instance) ->
     @instances[instId] = instance
+    return
+
+  addExecHandler:(execHandler) ->
+    @execHandlers ?= []
+    @execHandlers.push(execHandler)
+    return
+
+  removeExecHandler:(execHandler) ->
+    handlers = @execHandlers
+    return unless handlers?
+    i = 0
+    while i < handlers.length
+      if handlers[i] is execHandler
+        handlers.splice(i, 1)
+      else
+        ++i
+    return
+
+  clearExecHandler: ->
+    @execHandlers = null
+    return
+
+  setExecHandler:(execHandler) ->
+    @clearExecHandler()
+    @addExecHandler(execHandler)
     return
 
   addEventHandler:(eventId, eventHandler) ->
@@ -699,14 +729,19 @@ class LWF
   
         when Animation.EVENT
           eventId = animations[i++]
-          handlers = @eventHandlers[eventId]
-          handler(movie, button) for handler in handlers if handlers?
+          @dispatchEvent(eventId, movie, button)
 
         when Animation.CALL
           stringId = animations[i++]
           func = @functions?[@data.strings[stringId]]
           func.call(movie) if func?
     return
+
+  dispatchEvent:(eventId, movie = @rootMovie, button = null) ->
+    handlers = @eventHandlers[eventId]
+    return false unless handlers?
+    handler(movie, button) for handler in handlers
+    return true
 
   inputPoint:(x, y) ->
     @intercepted = false

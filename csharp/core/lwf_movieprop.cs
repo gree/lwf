@@ -108,6 +108,48 @@ public partial class Movie : IObject
 			m_property.SetAlpha(value);
 		}
 	}
+
+	public float red {
+		get {
+			if (m_property.hasColorTransform)
+				return m_property.colorTransform.multi.red;
+			else
+				return Utility.GetRed(this);
+		}
+		set {
+			if (!m_property.hasColorTransform)
+				Utility.SyncColorTransform(this);
+			m_property.SetRed(value);
+		}
+	}
+
+	public float green {
+		get {
+			if (m_property.hasColorTransform)
+				return m_property.colorTransform.multi.green;
+			else
+				return Utility.GetGreen(this);
+		}
+		set {
+			if (!m_property.hasColorTransform)
+				Utility.SyncColorTransform(this);
+			m_property.SetGreen(value);
+		}
+	}
+
+	public float blue {
+		get {
+			if (m_property.hasColorTransform)
+				return m_property.colorTransform.multi.blue;
+			else
+				return Utility.GetBlue(this);
+		}
+		set {
+			if (!m_property.hasColorTransform)
+				Utility.SyncColorTransform(this);
+			m_property.SetBlue(value);
+		}
+	}
 }
 
 }	// namespace LWF

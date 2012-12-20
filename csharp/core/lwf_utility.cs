@@ -176,6 +176,45 @@ public class Utility
 		}
 	}
 
+	public static float GetRed(Movie movie)
+	{
+		int colorTransformId = movie.colorTransformId;
+		ColorTransform colorTransform;
+		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
+			return 1;
+		} else {
+			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
+			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			return colorTransform.multi.red;
+		}
+	}
+
+	public static float GetGreen(Movie movie)
+	{
+		int colorTransformId = movie.colorTransformId;
+		ColorTransform colorTransform;
+		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
+			return 1;
+		} else {
+			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
+			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			return colorTransform.multi.green;
+		}
+	}
+
+	public static float GetBlue(Movie movie)
+	{
+		int colorTransformId = movie.colorTransformId;
+		ColorTransform colorTransform;
+		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
+			return 1;
+		} else {
+			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
+			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			return colorTransform.multi.blue;
+		}
+	}
+
 	public static Matrix CalcMatrix(
 		LWF lwf, Matrix dst, Matrix src0, int src1Id)
 	{
