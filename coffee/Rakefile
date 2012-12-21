@@ -61,7 +61,14 @@ PRELUDEJSCORE = %w|
 
 ADDJSCORE = %w|
   supports/tween.js/Tween.js
-  supports/zlib.js/inflate.min.js
+  supports/base64.js/base64.js
+  supports/zlib.js/zlib.prelude.js
+  supports/zlib.js/zlib.js
+  supports/zlib.js/adler32.js
+  supports/zlib.js/huffman.js
+  supports/zlib.js/rawinflate.js
+  supports/zlib.js/inflate.js
+  supports/zlib.js/zlib.finale.js
 |
 
 JS["lwf"] = CORE + %w|
@@ -71,7 +78,6 @@ JS["lwf"] = CORE + %w|
   webkitcss/lwf_webkitcss_domelement
   webkitcss/lwf_webkitcss_resourcecache
   webkitcss/lwf_webkitcss_expose
-  webkitcss/base64
   webkitcss/lwf_webkitcss_worker
   canvas/lwf_canvas_factory
   canvas/lwf_canvas_bitmap
@@ -90,7 +96,6 @@ JS["lwf_webgl"] = CORE + %w|
   webkitcss/lwf_webkitcss_factory
   webkitcss/lwf_webkitcss_domelement
   webkitcss/lwf_webkitcss_resourcecache
-  webkitcss/base64
   webkitcss/lwf_webkitcss_worker
   webgl/lwf_webgl_factory
   webgl/lwf_webgl_bitmap
@@ -106,7 +111,6 @@ COMPILEROPTIONS["lwf_webgl"] = "--compilation_level ADVANCED_OPTIMIZATIONS"
 JS["lwf_cocos2d"] = CORE + %w|
   webkitcss/lwf_webkitcss_domelement
   webkitcss/lwf_webkitcss_resourcecache
-  webkitcss/base64
   webkitcss/lwf_webkitcss_worker
   cocos2d/lwf_cocos2d_factory
   cocos2d/lwf_cocos2d_bitmap
@@ -196,7 +200,7 @@ rule ".js" => lambda{|o| DEPENDS[o]} do |t|
   f.puts "// Copyright (c) 2012 GREE, Inc - http://git.io/uvS3hQ"
   f.puts "// Copyright (c) 2010-2012 Tween.js authors - http://git.io/tiDrNw"
   f.puts "// Copyright (c) 2001 Robert Penner - http://goo.gl/Qjqc0"
-  f.puts "// Copyright (c) 2012 imaya - http://git.io/oVL5vg"
+  f.puts "// Copyright (c) 2012 imaya - http://git.io/SKEzIQ http://git.io/cC8gDw"
   f.write js
   f.close
   FileUtils.rm_f tmp

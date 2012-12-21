@@ -42,7 +42,7 @@ class Game
       stage:@stage,
       onload:onload,
       useBackgroundColor:true,
-      #worker:false,
+      worker:false,
     })
 
   loadLWFs:(onloadall) ->

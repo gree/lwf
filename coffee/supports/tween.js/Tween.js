@@ -661,183 +661,179 @@ TWEENLWF.Interpolation = {
 
 };
 
-if ( typeof global !== "undefined" && global !== null ) {
+var lwfPrototype = global[ "LWF" ][ "LWF" ].prototype;
 
-	var lwfPrototype = global[ "LWF" ][ "LWF" ].prototype;
+lwfPrototype[ "setTweenMode" ] = function( mode ) {
 
-	lwfPrototype[ "setTweenMode" ] = function( mode ) {
+	this._tweenMode = mode;
 
-		this._tweenMode = mode;
+};
 
-	};
+lwfPrototype.stopTweens = function() {
 
-	lwfPrototype.stopTweens = function() {
+	if ( typeof this._tweens !== "undefined" ) {
 
-		if ( typeof this._tweens !== "undefined" ) {
+		this._tweens = undefined;
 
-			this._tweens = undefined;
+		this.removeExecHandler( TWEENLWF._tweenExecHandler );
+		this.removeMovieEventHandler( "_root", {
+			
+			"enterFrame": TWEENLWF._tweenMovieHandler
 
-			this.removeExecHandler( TWEENLWF._tweenExecHandler );
-			this.removeMovieEventHandler( "_root", {
-				
-				"enterFrame": TWEENLWF._tweenMovieHandler
+		});
 
-			});
+	}
 
-		}
+};
 
-	};
+lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
 
-	lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
+TWEENLWF._tweenUpdater = function() {
 
-	TWEENLWF._tweenUpdater = function() {
+	var i = 0;
+	var num_tweens = this._tweens.length;
+	var time = this.time;
 
-		var i = 0;
-		var num_tweens = this._tweens.length;
-		var time = this.time;
+	while ( i < num_tweens ) {
 
-		while ( i < num_tweens ) {
+		if ( this._tweens[ i ].update( time ) ) {
 
-			if ( this._tweens[ i ].update( time ) ) {
+			i ++;
 
-				i ++;
+		} else {
 
-			} else {
-
-				this._tweens.splice( i, 1 );
-				num_tweens --;
-
-			}
+			this._tweens.splice( i, 1 );
+			num_tweens --;
 
 		}
 
-		if ( this._tweens.length == 0 ) {
+	}
 
-			this.stopTweens();
+	if ( this._tweens.length == 0 ) {
 
-		}
+		this.stopTweens();
 
-	};
+	}
 
-	TWEENLWF._tweenExecHandler = function() {
+};
 
-		TWEENLWF._tweenUpdater();
+TWEENLWF._tweenExecHandler = function() {
 
-	};
+	TWEENLWF._tweenUpdater();
 
-	TWEENLWF._tweenMovieHandler = function() {
+};
 
-		TWEENLWF._tweenUpdater.call( this.lwf );
+TWEENLWF._tweenMovieHandler = function() {
 
-	};
+	TWEENLWF._tweenUpdater.call( this.lwf );
 
-	var moviePrototype = global[ "LWF" ][ "Movie" ].prototype;
+};
 
-	moviePrototype[ "addTween" ] = function() {
+var moviePrototype = global[ "LWF" ][ "Movie" ].prototype;
 
-		var tween = new TWEENLWF.Tween( this );
+moviePrototype[ "addTween" ] = function() {
 
-		return tween;
+	var tween = new TWEENLWF.Tween( this );
 
-	};
+	return tween;
 
-	moviePrototype[ "stopTweens" ] = function() {
+};
 
-		if ( typeof this.lwf === "undefined" || this.lwf === null ||
-				typeof this.lwf._tweens === "undefined" ||
-					this.lwf._tweens === null ) {
+moviePrototype[ "stopTweens" ] = function() {
 
-			return this;
-
-		}
-
-		var tweens = this.lwf._tweens;
-
-		var i = 0;
-		var num_tweens = tweens.length;
-
-		while ( i < num_tweens ) {
-
-			if ( tweens[ i ]._object === this ) {
-
-				tweens.splice( i, 1 );
-				num_tweens --;
-
-			} else {
-
-				i ++;
-
-			}
-
-		}
-
-		if ( tweens.length == 0 ) {
-
-			this.lwf.stopTweens();
-
-		}
+	if ( typeof this.lwf === "undefined" || this.lwf === null ||
+			typeof this.lwf._tweens === "undefined" ||
+				this.lwf._tweens === null ) {
 
 		return this;
 
-	};
+	}
 
-	global[ "LWF" ][ "Tween" ] = TWEENLWF.Tween;
-	global[ "LWF" ][ "Tween" ][ "Easing" ] = TWEENLWF.Easing;
-	var e = global[ "LWF" ][ "Tween" ][ "Easing" ];
-	e[ "Linear" ] = TWEENLWF.Easing.Linear;
-	e[ "Linear" ][ "None" ] = TWEENLWF.Easing.Linear.None;
-	e[ "Quadratic" ] = TWEENLWF.Easing.Quadratic;
-	e[ "Quadratic" ][ "In" ] = TWEENLWF.Easing.Quadratic.In;
-	e[ "Quadratic" ][ "Out" ] = TWEENLWF.Easing.Quadratic.Out;
-	e[ "Quadratic" ][ "InOut" ] = TWEENLWF.Easing.Quadratic.InOut;
-	e[ "Cubic" ] = TWEENLWF.Easing.Cubic;
-	e[ "Cubic" ][ "In" ] = TWEENLWF.Easing.Cubic.In;
-	e[ "Cubic" ][ "Out" ] = TWEENLWF.Easing.Cubic.Out;
-	e[ "Cubic" ][ "InOut" ] = TWEENLWF.Easing.Cubic.InOut;
-	e[ "Quartic" ] = TWEENLWF.Easing.Quartic;
-	e[ "Quartic" ][ "In" ] = TWEENLWF.Easing.Quartic.In;
-	e[ "Quartic" ][ "Out" ] = TWEENLWF.Easing.Quartic.Out;
-	e[ "Quartic" ][ "InOut" ] = TWEENLWF.Easing.Quartic.InOut;
-	e[ "Quintic" ] = TWEENLWF.Easing.Quintic;
-	e[ "Quintic" ][ "In" ] = TWEENLWF.Easing.Quintic.In;
-	e[ "Quintic" ][ "Out" ] = TWEENLWF.Easing.Quintic.Out;
-	e[ "Quintic" ][ "InOut" ] = TWEENLWF.Easing.Quintic.InOut;
-	e[ "Sinusoidal" ] = TWEENLWF.Easing.Sinusoidal;
-	e[ "Sinusoidal" ][ "In" ] = TWEENLWF.Easing.Sinusoidal.In;
-	e[ "Sinusoidal" ][ "Out" ] = TWEENLWF.Easing.Sinusoidal.Out;
-	e[ "Sinusoidal" ][ "InOut" ] = TWEENLWF.Easing.Sinusoidal.InOut;
-	e[ "Exponential" ] = TWEENLWF.Easing.Exponential;
-	e[ "Exponential" ][ "In" ] = TWEENLWF.Easing.Exponential.In;
-	e[ "Exponential" ][ "Out" ] = TWEENLWF.Easing.Exponential.Out;
-	e[ "Exponential" ][ "InOut" ] = TWEENLWF.Easing.Exponential.InOut;
-	e[ "Circular" ] = TWEENLWF.Easing.Circular;
-	e[ "Circular" ][ "In" ] = TWEENLWF.Easing.Circular.In;
-	e[ "Circular" ][ "Out" ] = TWEENLWF.Easing.Circular.Out;
-	e[ "Circular" ][ "InOut" ] = TWEENLWF.Easing.Circular.InOut;
-	e[ "Elastic" ] = TWEENLWF.Easing.Elastic;
-	e[ "Elastic" ][ "In" ] = TWEENLWF.Easing.Elastic.In;
-	e[ "Elastic" ][ "Out" ] = TWEENLWF.Easing.Elastic.Out;
-	e[ "Elastic" ][ "InOut" ] = TWEENLWF.Easing.Elastic.InOut;
-	e[ "Back" ] = TWEENLWF.Easing.Back;
-	e[ "Back" ][ "In" ] = TWEENLWF.Easing.Back.In;
-	e[ "Back" ][ "Out" ] = TWEENLWF.Easing.Back.Out;
-	e[ "Back" ][ "InOut" ] = TWEENLWF.Easing.Back.InOut;
-	e[ "Bounce" ] = TWEENLWF.Easing.Bounce;
-	e[ "Bounce" ][ "In" ] = TWEENLWF.Easing.Bounce.In;
-	e[ "Bounce" ][ "Out" ] = TWEENLWF.Easing.Bounce.Out;
-	e[ "Bounce" ][ "InOut" ] = TWEENLWF.Easing.Bounce.InOut;
+	var tweens = this.lwf._tweens;
 
-	global[ "LWF" ][ "Tween" ][ "Interpolation" ] = TWEENLWF.Interpolation;
-	var i = global[ "LWF" ][ "Tween" ][ "Interpolation" ];
-	i[ "Linear" ] = TWEENLWF.Interpolation.Linear;
-	i[ "Bezier" ] = TWEENLWF.Interpolation.Bezier;
-	i[ "CatmullRom" ] = TWEENLWF.Interpolation.CatmullRom;
-	i[ "Utils" ] = TWEENLWF.Interpolation.Utils;
-	i[ "Utils" ][ "Linear" ] = TWEENLWF.Interpolation.Utils.Linear;
-	i[ "Utils" ][ "Bernstein" ] = TWEENLWF.Interpolation.Utils.Bernstein;
-	i[ "Utils" ][ "Factorial" ] = TWEENLWF.Interpolation.Utils.Factorial;
-	i[ "Utils" ][ "CatmullRom" ] = TWEENLWF.Interpolation.Utils.CatmullRom;
+	var i = 0;
+	var num_tweens = tweens.length;
 
-}
+	while ( i < num_tweens ) {
+
+		if ( tweens[ i ]._object === this ) {
+
+			tweens.splice( i, 1 );
+			num_tweens --;
+
+		} else {
+
+			i ++;
+
+		}
+
+	}
+
+	if ( tweens.length == 0 ) {
+
+		this.lwf.stopTweens();
+
+	}
+
+	return this;
+
+};
+
+global[ "LWF" ][ "Tween" ] = TWEENLWF.Tween;
+global[ "LWF" ][ "Tween" ][ "Easing" ] = TWEENLWF.Easing;
+var e = global[ "LWF" ][ "Tween" ][ "Easing" ];
+e[ "Linear" ] = TWEENLWF.Easing.Linear;
+e[ "Linear" ][ "None" ] = TWEENLWF.Easing.Linear.None;
+e[ "Quadratic" ] = TWEENLWF.Easing.Quadratic;
+e[ "Quadratic" ][ "In" ] = TWEENLWF.Easing.Quadratic.In;
+e[ "Quadratic" ][ "Out" ] = TWEENLWF.Easing.Quadratic.Out;
+e[ "Quadratic" ][ "InOut" ] = TWEENLWF.Easing.Quadratic.InOut;
+e[ "Cubic" ] = TWEENLWF.Easing.Cubic;
+e[ "Cubic" ][ "In" ] = TWEENLWF.Easing.Cubic.In;
+e[ "Cubic" ][ "Out" ] = TWEENLWF.Easing.Cubic.Out;
+e[ "Cubic" ][ "InOut" ] = TWEENLWF.Easing.Cubic.InOut;
+e[ "Quartic" ] = TWEENLWF.Easing.Quartic;
+e[ "Quartic" ][ "In" ] = TWEENLWF.Easing.Quartic.In;
+e[ "Quartic" ][ "Out" ] = TWEENLWF.Easing.Quartic.Out;
+e[ "Quartic" ][ "InOut" ] = TWEENLWF.Easing.Quartic.InOut;
+e[ "Quintic" ] = TWEENLWF.Easing.Quintic;
+e[ "Quintic" ][ "In" ] = TWEENLWF.Easing.Quintic.In;
+e[ "Quintic" ][ "Out" ] = TWEENLWF.Easing.Quintic.Out;
+e[ "Quintic" ][ "InOut" ] = TWEENLWF.Easing.Quintic.InOut;
+e[ "Sinusoidal" ] = TWEENLWF.Easing.Sinusoidal;
+e[ "Sinusoidal" ][ "In" ] = TWEENLWF.Easing.Sinusoidal.In;
+e[ "Sinusoidal" ][ "Out" ] = TWEENLWF.Easing.Sinusoidal.Out;
+e[ "Sinusoidal" ][ "InOut" ] = TWEENLWF.Easing.Sinusoidal.InOut;
+e[ "Exponential" ] = TWEENLWF.Easing.Exponential;
+e[ "Exponential" ][ "In" ] = TWEENLWF.Easing.Exponential.In;
+e[ "Exponential" ][ "Out" ] = TWEENLWF.Easing.Exponential.Out;
+e[ "Exponential" ][ "InOut" ] = TWEENLWF.Easing.Exponential.InOut;
+e[ "Circular" ] = TWEENLWF.Easing.Circular;
+e[ "Circular" ][ "In" ] = TWEENLWF.Easing.Circular.In;
+e[ "Circular" ][ "Out" ] = TWEENLWF.Easing.Circular.Out;
+e[ "Circular" ][ "InOut" ] = TWEENLWF.Easing.Circular.InOut;
+e[ "Elastic" ] = TWEENLWF.Easing.Elastic;
+e[ "Elastic" ][ "In" ] = TWEENLWF.Easing.Elastic.In;
+e[ "Elastic" ][ "Out" ] = TWEENLWF.Easing.Elastic.Out;
+e[ "Elastic" ][ "InOut" ] = TWEENLWF.Easing.Elastic.InOut;
+e[ "Back" ] = TWEENLWF.Easing.Back;
+e[ "Back" ][ "In" ] = TWEENLWF.Easing.Back.In;
+e[ "Back" ][ "Out" ] = TWEENLWF.Easing.Back.Out;
+e[ "Back" ][ "InOut" ] = TWEENLWF.Easing.Back.InOut;
+e[ "Bounce" ] = TWEENLWF.Easing.Bounce;
+e[ "Bounce" ][ "In" ] = TWEENLWF.Easing.Bounce.In;
+e[ "Bounce" ][ "Out" ] = TWEENLWF.Easing.Bounce.Out;
+e[ "Bounce" ][ "InOut" ] = TWEENLWF.Easing.Bounce.InOut;
+
+global[ "LWF" ][ "Tween" ][ "Interpolation" ] = TWEENLWF.Interpolation;
+var i = global[ "LWF" ][ "Tween" ][ "Interpolation" ];
+i[ "Linear" ] = TWEENLWF.Interpolation.Linear;
+i[ "Bezier" ] = TWEENLWF.Interpolation.Bezier;
+i[ "CatmullRom" ] = TWEENLWF.Interpolation.CatmullRom;
+i[ "Utils" ] = TWEENLWF.Interpolation.Utils;
+i[ "Utils" ][ "Linear" ] = TWEENLWF.Interpolation.Utils.Linear;
+i[ "Utils" ][ "Bernstein" ] = TWEENLWF.Interpolation.Utils.Bernstein;
+i[ "Utils" ][ "Factorial" ] = TWEENLWF.Interpolation.Utils.Factorial;
+i[ "Utils" ][ "CatmullRom" ] = TWEENLWF.Interpolation.Utils.CatmullRom;
 
 }).call(this);

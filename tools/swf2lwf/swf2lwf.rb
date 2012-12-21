@@ -3016,9 +3016,12 @@ def swf2lwf(*args)
 
   @textures.each do |texture|
     if texture.name =~ /(.*)_rgb_[0-9a-f]{6}(.*)/
-      name = File.basename($1 + $2, '.*')
-      if texturenamemap[name.downcase].nil?
-        error "Texture [#{name}] not found for [#{texture.name}]"
+      basename = $1 + $2
+      unless basename =~ /\.[^\.]+_atlas_.+_info_.+(_.+){6}/
+        name = File.basename(basename, '.*')
+        if texturenamemap[name.downcase].nil?
+          error "Texture [#{name}] not found for [#{texture.name}]"
+        end
       end
     end
   end

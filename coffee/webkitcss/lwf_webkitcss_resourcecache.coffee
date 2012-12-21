@@ -157,7 +157,8 @@ class WebkitCSSResourceCache
       re = new RegExp("(^|.*\/#{__FILE__})$", "i")
       for i in [0...scripts.length]
         continue if scripts[i].src is ""
-        m = scripts[i].src.match(re)
+        src = scripts[i].src.split('?')[0]
+        m = src.match(re)
         if m?
           workerJS = m[1]
           break
@@ -179,13 +180,9 @@ class WebkitCSSResourceCache
 
     unless workerJS?
       if data.type is "base64"
-        data = (new Zlib.Inflate(atob(data.data))).decompress()
-        if typeof Uint8Array isnt 'undefined' and
-            typeof Uint16Array isnt 'undefined' and
-            typeof Uint32Array isnt 'undefined'
-          data = Loader.loadArrayBuffer(data)
-        else
-          data = Loader.loadArray(data)
+        data = global["LWF"].Base64.atobArray(data.data)
+        data = (new global["LWF"].Zlib.Inflate(data)).decompress()
+        data = Loader.loadArray(data)
       else if useArrayBuffer
         data = Loader.loadArrayBuffer(data.data)
       else

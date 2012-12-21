@@ -20,8 +20,6 @@
 
 if !window? and self?
 
-  atob = Base64.decode unless atob?
-
   self.onmessage = (event) ->
     if typeof self.webkitPostMessage isnt "undefined" and
         typeof event.data is "object"
@@ -32,13 +30,9 @@ if !window? and self?
       if data[0] is 'L' and data[1] is 'W' and data[2] is 'F'
         data = Loader.load(data)
       else
-        data = (new Zlib.Inflate(atob(data))).decompress()
-        if typeof Uint8Array isnt 'undefined' and
-            typeof Uint16Array isnt 'undefined' and
-            typeof Uint32Array isnt 'undefined'
-          data = Loader.loadArrayBuffer(data.buffer)
-        else
-          data = Loader.loadArray(data)
+        data = global["LWF"].Base64.atobArray(data)
+        data = (new global["LWF"].Zlib.Inflate(data)).decompress()
+        data = Loader.loadArray(data)
       if typeof self.webkitPostMessage isnt "undefined"
         self.webkitPostMessage(data)
       else

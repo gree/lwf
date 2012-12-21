@@ -17,6 +17,14 @@ License: MIT license
 
 -----
 Code in:
+coffee/supports/base64.js
+
+base64 implementation
+URL: https://github.com/imaya/base64.js
+License: MIT license
+
+-----
+Code in:
 tools/closure
 
 Closure Compiler
