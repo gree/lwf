@@ -82,7 +82,7 @@ public class UISystemFontLabel : UIWidget
 	}
 
 	override public void OnFill(BetterList<Vector3> verts,
-		BetterList<Vector2> uvs, BetterList<Color> cols)
+		BetterList<Vector2> uvs, BetterList<Color32> cols)
 	{
 		Vector3[] v = mRenderer.mesh.vertices;
 		verts.Add(v[0]);

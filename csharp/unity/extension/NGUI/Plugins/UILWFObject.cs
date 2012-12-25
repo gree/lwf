@@ -40,6 +40,9 @@ public class UILWFObject : UIWidget
 		get {return mScaleType;}
 		set {mScaleType = value; mPropertyChanged = true;}
 	}
+	public LWFObject lwfObject {
+		get {return mLWFObject;}
+	}
 
 	void DestroyLWF()
 	{
