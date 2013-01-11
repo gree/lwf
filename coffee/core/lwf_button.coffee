@@ -104,7 +104,7 @@ class Button extends IObject
     @playAnimation(Condition.RELEASE)
     return
 
-  keyPress: ->
+  keyPress:(code) ->
     @handler.call("keyPress", @) if @handler?
     @playAnimation(Condition.KEYPRESS, code)
     return
