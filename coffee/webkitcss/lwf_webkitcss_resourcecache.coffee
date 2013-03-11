@@ -444,8 +444,9 @@ class WebkitCSSResourceCache
   unloadLWF:(lwf) ->
     cache = @cache[lwf.url]
     if cache? and --cache.instances <= 0
-      head = document.getElementsByTagName('head')[0]
-      head.removeChild(cache.script)
+      if cache.data.useScript
+        head = document.getElementsByTagName('head')[0]
+        head.removeChild(cache.script)
       delete @cache[lwf.url]
     return
 
