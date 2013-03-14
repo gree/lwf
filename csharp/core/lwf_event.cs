@@ -26,6 +26,8 @@ namespace LWF {
 
 using EventHandler = Action<Movie, Button>;
 using EventHandlerList = List<Action<Movie, Button>>;
+using GenericEventHandlerDictionary =
+	Dictionary<string, List<Action<Movie, Button>>>;
 using MovieEventHandler = Action<Movie>;
 using ButtonEventHandler = Action<Button>;
 using ButtonKeyPressHandler = Action<Button, int>;
@@ -43,6 +45,7 @@ using DenyButtonList = Dictionary<int, bool>;
 public partial class LWF
 {
 	private EventHandlerList[] m_eventHandlers;
+	private GenericEventHandlerDictionary m_genericEventHandlerDictionary;
 	private MovieEventHandlers[] m_movieEventHandlers;
 	private ButtonEventHandlers[] m_buttonEventHandlers;
 	private MovieEventHandlersDictionary m_movieEventHandlersByFullName;
@@ -51,13 +54,25 @@ public partial class LWF
 	private void InitEvent()
 	{
 		m_eventHandlers = new EventHandlerList[m_data.events.Length];
+		m_genericEventHandlerDictionary = new GenericEventHandlerDictionary();
 		m_movieEventHandlers = new MovieEventHandlers[m_instances.Length];
 		m_buttonEventHandlers = new ButtonEventHandlers[m_instances.Length];
 	}
 
 	public void AddEventHandler(string eventName, EventHandler eventHandler)
 	{
-		AddEventHandler(SearchEventId(eventName), eventHandler);
+		int eventId = SearchEventId(eventName);
+		if (eventId >= 0 && eventId < m_data.events.Length) {
+			AddEventHandler(eventId, eventHandler);
+		} else {
+			EventHandlerList list;
+			if (!m_genericEventHandlerDictionary.TryGetValue(
+					eventName, out list)) {
+				list = new EventHandlerList();
+				m_genericEventHandlerDictionary[eventName] = list;
+			}
+			list.Add(eventHandler);
+		}
 	}
 
 	public void AddEventHandler(int eventId, EventHandler eventHandler)
@@ -74,7 +89,15 @@ public partial class LWF
 
 	public void RemoveEventHandler(string eventName, EventHandler eventHandler)
 	{
-		RemoveEventHandler(SearchEventId(eventName), eventHandler);
+		int eventId = SearchEventId(eventName);
+		if (eventId >= 0 && eventId < m_data.events.Length) {
+			RemoveEventHandler(SearchEventId(eventName), eventHandler);
+		} else {
+			EventHandlerList list = m_genericEventHandlerDictionary[eventName];
+			if (list == null)
+				return;
+			list.RemoveAll(h => h == eventHandler);
+		}
 	}
 
 	public void RemoveEventHandler(int eventId, EventHandler eventHandler)
@@ -89,7 +112,12 @@ public partial class LWF
 
 	public void ClearEventHandler(string eventName)
 	{
-		ClearEventHandler(SearchEventId(eventName));
+		int eventId = SearchEventId(eventName);
+		if (eventId >= 0 && eventId < m_data.events.Length) {
+			ClearEventHandler(SearchEventId(eventName));
+		} else {
+			m_genericEventHandlerDictionary.Remove(eventName);
+		}
 	}
 
 	public void ClearEventHandler(int eventId)
@@ -108,6 +136,23 @@ public partial class LWF
 	{
 		ClearEventHandler(eventId);
 		AddEventHandler(eventId, eventHandler);
+	}
+
+	public void DispatchEvent(string eventName, Movie m = null, Button b = null)
+	{
+		if (m == null)
+			m = m_rootMovie;
+		int eventId = SearchEventId(eventName);
+		if (eventId >= 0 && eventId < m_data.events.Length) {
+			EventHandlerList list =
+				new EventHandlerList(m_eventHandlers[eventId]);
+			list.ForEach(h => h(m, b));
+		} else {
+			EventHandlerList list = new EventHandlerList(
+				m_genericEventHandlerDictionary[eventName]);
+			foreach (EventHandler h in list)
+				h(m, b);
+		}
 	}
 
 	public MovieEventHandlers GetMovieEventHandlers(Movie m)
@@ -147,9 +192,9 @@ public partial class LWF
 		if (m_movieEventHandlersByFullName == null)
 			m_movieEventHandlersByFullName = new MovieEventHandlersDictionary();
 
-		MovieEventHandlers handlers =
-			m_movieEventHandlersByFullName[instanceName];
-		if (handlers == null) {
+		MovieEventHandlers handlers;
+		if (!m_movieEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers)) {
 			handlers = new MovieEventHandlers();
 			m_movieEventHandlersByFullName[instanceName] = handlers;
 		}
@@ -197,9 +242,9 @@ public partial class LWF
 		if (m_movieEventHandlersByFullName == null)
 			return;
 
-		MovieEventHandlers handlers =
-			m_movieEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		MovieEventHandlers handlers;
+		if (!m_movieEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers)) 
 			return;
 
 		handlers.Remove(load, postLoad, unload, enterFrame, update, render);
@@ -231,9 +276,9 @@ public partial class LWF
 		if (m_movieEventHandlersByFullName == null)
 			return;
 
-		MovieEventHandlers handlers =
-			m_movieEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		MovieEventHandlers handlers;
+		if (!m_movieEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers))
 			return;
 
 		handlers.Clear();
@@ -263,9 +308,9 @@ public partial class LWF
 		if (m_movieEventHandlersByFullName == null)
 			return;
 
-		MovieEventHandlers handlers =
-			m_movieEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		MovieEventHandlers handlers;
+		if (!m_movieEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers))
 			return;
 
 		handlers.Clear(type);
@@ -348,9 +393,9 @@ public partial class LWF
 			m_buttonEventHandlersByFullName =
 				new ButtonEventHandlersDictionary();
 
-		ButtonEventHandlers handlers =
-			m_buttonEventHandlersByFullName[instanceName];
-		if (handlers == null) {
+		ButtonEventHandlers handlers;
+		if (!m_buttonEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers)) {
 			handlers = new ButtonEventHandlers();
 			m_buttonEventHandlersByFullName[instanceName] = handlers;
 		}
@@ -409,9 +454,9 @@ public partial class LWF
 		if (m_buttonEventHandlersByFullName == null)
 			return;
 
-		ButtonEventHandlers handlers =
-			m_buttonEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		ButtonEventHandlers handlers;
+		if (!m_buttonEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers))
 			return;
 
 		handlers.Remove(load, unload, enterFrame, update, render,
@@ -448,9 +493,9 @@ public partial class LWF
 		if (m_buttonEventHandlersByFullName == null)
 			return;
 
-		ButtonEventHandlers handlers =
-			m_buttonEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		ButtonEventHandlers handlers;
+		if (!m_buttonEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers))
 			return;
 
 		handlers.Clear();
@@ -480,9 +525,9 @@ public partial class LWF
 		if (m_buttonEventHandlersByFullName == null)
 			return;
 
-		ButtonEventHandlers handlers =
-			m_buttonEventHandlersByFullName[instanceName];
-		if (handlers == null)
+		ButtonEventHandlers handlers;
+		if (!m_buttonEventHandlersByFullName.TryGetValue(
+				instanceName, out handlers))
 			return;
 
 		handlers.Clear(type);

@@ -50,12 +50,12 @@ Shader "LWF/PreMultipliedAlpha" {
 				v2f o;
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.uv.xy = TRANSFORM_TEX(v.texcoord, _MainTex);
-				o.color = v.color;
+				o.color = v.color * _Color;
 				return o;
 			}
 			fixed4 frag(v2f i): COLOR0
 			{
-				return tex2D(_MainTex, i.uv.xy) * i.color * _Color;
+				return tex2D(_MainTex, i.uv.xy) * i.color;
 			}
 			ENDCG
 		}

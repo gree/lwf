@@ -36,16 +36,22 @@ class LObject
     @isText = @type is Type.TEXT
 
   exec:(matrixId = 0, colorTransformId = 0) ->
-    @matrixIdChanged = @matrixId isnt matrixId
-    @matrixId = matrixId
-    @colorTransformIdChanged = @colorTransformId isnt colorTransformId
-    @colorTransformId = colorTransformId
+    if @matrixId isnt matrixId
+      @matrixIdChanged = true
+      @matrixId = matrixId
+    if @colorTransformId isnt colorTransformId
+      @colorTransformIdChanged = true
+      @colorTransformId = colorTransformId
     return
 
   update:(m, c) ->
     @updated = true
-    Utility.calcMatrixId(@lwf, @matrix, m, @dataMatrixId) if m isnt null
-    Utility.copyColorTransform(@colorTransform, c) if c isnt null
+    if m isnt null
+      Utility.calcMatrixId(@lwf, @matrix, m, @dataMatrixId)
+      @matrixIdChanged = false
+    if c isnt null
+      Utility.copyColorTransform(@colorTransform, c)
+      @colorTransformIdChanged = false
     @lwf.renderObject()
     return
 

@@ -24,12 +24,17 @@ using System.Collections.Generic;
 namespace LWF {
 
 using Type = Format.Object.Type;
+using EventHandler = Action;
+using EventHandlerList = List<Action>;
+using EventHandlerDictionary = Dictionary<string, List<Action>>;
 using EventType = MovieEventHandlers.Type;
 using ClipEvent = Format.MovieClipEvent.ClipEvent;
 using AttachedMovies = Dictionary<string, Movie>;
-using AttachedMovieList = List<Movie>;
+using AttachedMovieList = SortedDictionary<int, Movie>;
+using AttachedMovieDescendingList = SortedDictionary<int, int>;
 using AttachedLWFs = Dictionary<string, LWFContainer>;
-using AttachedLWFList = List<LWFContainer>;
+using AttachedLWFList = SortedDictionary<int, LWFContainer>;
+using AttachedLWFDescendingList = SortedDictionary<int, int>;
 using DetachDict = Dictionary<string, bool>;
 using Inspector = System.Action<Object, int, int, int>;
 
@@ -39,12 +44,15 @@ public partial class Movie : IObject
 	private IObject m_instanceHead;
 	private IObject m_instanceTail;
 	private Object[] m_displayList;
+	private EventHandlerDictionary m_eventHandlers;
 	private MovieEventHandlers m_handler;
 	private AttachedMovies m_attachedMovies;
 	private AttachedMovieList m_attachedMovieList;
+	private AttachedMovieDescendingList m_attachedMovieDescendingList;
 	private DetachDict m_detachedMovies;
 	private AttachedLWFs m_attachedLWFs;
 	private AttachedLWFList m_attachedLWFList;
+	private AttachedLWFDescendingList m_attachedLWFDescendingList;
 	private DetachDict m_detachedLWFs;
 	private string m_attachName;
 	private int m_totalFrames;
@@ -77,13 +85,11 @@ public partial class Movie : IObject
 	private Property m_property;
 
 	public Movie(LWF lwf, Movie parent, int objId,
-			int instId, int matrixId = -1, int colorTransformId = -1,
+			int instId, int matrixId = 0, int colorTransformId = 0,
 			bool attached = false, MovieEventHandlers handler = null)
 		: base(lwf, parent,
 			attached ? Type.ATTACHEDMOVIE : Type.MOVIE, objId, instId)
 	{
-		m_matrixId = matrixId;
-		m_colorTransformId = colorTransformId;
 		m_data = lwf.data.movies[objId];
 		m_matrixId = matrixId;
 		m_colorTransformId = colorTransformId;
@@ -120,6 +126,7 @@ public partial class Movie : IObject
 
 		PlayAnimation(ClipEvent.LOAD);
 
+		m_eventHandlers = new EventHandlerDictionary();
 		m_handler = (handler != null ?
 			handler : lwf.GetMovieEventHandlers(this));
 		if (m_handler != null)
@@ -389,7 +396,7 @@ public partial class Movie : IObject
 
 			m_attachMovieExeced = true;
 			if (m_attachedMovies != null) {
-				foreach (Movie movie in m_attachedMovieList)
+				foreach (Movie movie in m_attachedMovieList.Values)
 					if (movie != null)
 						movie.Exec();
 			}
@@ -414,7 +421,7 @@ public partial class Movie : IObject
 						DeleteAttachedMovie(this, movie, true, false);
 				}
 				m_detachedMovies.Clear();
-				foreach (Movie movie in m_attachedMovieList) {
+				foreach (Movie movie in m_attachedMovieList.Values) {
 					if (movie != null) {
 						movie.PostExec(progressing);
 						if (!m_hasButton && movie.m_hasButton)
@@ -523,7 +530,7 @@ public partial class Movie : IObject
 
 		if (m_attachedMovies != null || m_attachedLWFs != null) {
 			if (m_attachedMovies != null) {
-				foreach (Movie movie in m_attachedMovieList)
+				foreach (Movie movie in m_attachedMovieList.Values)
 					if (movie != null)
 						UpdateObject(movie,
 							m, c, matrixChanged, colorTransformChanged);
@@ -538,7 +545,8 @@ public partial class Movie : IObject
 						DeleteAttachedLWF(this, lwfContainer, true, false);
 				}
 				m_detachedLWFs.Clear();
-				foreach (LWFContainer lwfContainer in m_attachedLWFList) {
+				foreach (LWFContainer lwfContainer
+						in m_attachedLWFList.Values) {
 					m_lwf.RenderObject(
 						lwfContainer.child.Exec(m_lwf.thisTick, m, c));
 				}
@@ -552,13 +560,13 @@ public partial class Movie : IObject
 			return;
 
 		if (m_attachedLWFs != null) {
-			foreach (LWFContainer lwfContainer in m_attachedLWFList)
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values)
 				if (lwfContainer != null)
 					lwfContainer.LinkButton();
 		}
 
 		if (m_attachedMovies != null) {
-			foreach (Movie movie in m_attachedMovieList)
+			foreach (Movie movie in m_attachedMovieList.Values)
 				if (movie != null && movie.m_hasButton)
 					movie.LinkButton();
 		}
@@ -599,13 +607,13 @@ public partial class Movie : IObject
 		}
 
 		if (m_attachedMovies != null) {
-			foreach (Movie movie in m_attachedMovieList)
+			foreach (Movie movie in m_attachedMovieList.Values)
 				if (movie != null)
 					movie.Render(v, rOffset);
 		}
 
 		if (m_attachedLWFs != null) {
-			foreach (LWFContainer lwfContainer in m_attachedLWFList) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values) {
 				if (lwfContainer != null) {
 					LWF child = lwfContainer.child;
 					child.SetAttachVisible(v);
@@ -615,6 +623,32 @@ public partial class Movie : IObject
 			}
 		}
 	}
+
+#if UNITY_EDITOR
+	public override void RenderNow()
+	{
+		for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
+			Object obj = m_displayList[dlDepth];
+			if (obj != null)
+				obj.RenderNow();
+		}
+
+		if (m_attachedMovies != null) {
+			foreach (Movie movie in m_attachedMovieList.Values)
+				if (movie != null)
+					movie.RenderNow();
+		}
+
+		if (m_attachedLWFs != null) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values) {
+				if (lwfContainer != null) {
+					LWF child = lwfContainer.child;
+					child.RenderNow();
+				}
+			}
+		}
+	}
+#endif
 
 	public override void Inspect(
 		Inspector inspector, int hierarchy, int inspectDepth, int rOffset)
@@ -638,13 +672,13 @@ public partial class Movie : IObject
 		}
 
 		if (m_attachedMovies != null) {
-			foreach (Movie movie in m_attachedMovieList)
+			foreach (Movie movie in m_attachedMovieList.Values)
 				if (movie != null)
 					movie.Inspect(inspector, hierarchy, d++, rOffset);
 		}
 
 		if (m_attachedLWFs != null) {
-			foreach (LWFContainer lwfContainer in m_attachedLWFList) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values) {
 				if (lwfContainer != null) {
 					LWF child = lwfContainer.child;
 					m_lwf.RenderObject(
@@ -790,6 +824,43 @@ public partial class Movie : IObject
 			}
 		}
 		return null;
+	}
+
+	public void AddEventHandler(string eventName, EventHandler eventHandler)
+	{
+		EventHandlerList list;
+		if (!m_eventHandlers.TryGetValue(eventName, out list)) {
+			list = new EventHandlerList();
+			m_eventHandlers[eventName] = list;
+		}
+		list.Add(eventHandler);
+	}
+
+	public void RemoveEventHandler(string eventName, EventHandler eventHandler)
+	{
+		EventHandlerList list = m_eventHandlers[eventName];
+		if (list == null)
+			return;
+		list.RemoveAll(h => h == eventHandler);
+	}
+
+	public void ClearEventHandler(string eventName)
+	{
+		m_eventHandlers.Remove(eventName);
+	}
+
+	public void SetEventHandler(string eventName, EventHandler eventHandler)
+	{
+		ClearEventHandler(eventName);
+		AddEventHandler(eventName, eventHandler);
+	}
+
+	public void DispatchEvent(string eventName)
+	{
+		EventHandlerList list =
+			new EventHandlerList(m_eventHandlers[eventName]);
+		foreach (EventHandler h in list)
+			h();
 	}
 }
 

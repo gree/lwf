@@ -126,6 +126,12 @@ public class ISystemFontRenderer
 		UnityEngine.Color multColor, int layer = 0, Camera camera = null)
 	{
 	}
+
+#if UNITY_EDITOR
+	public virtual void RenderNow(Matrix4x4 matrix, UnityEngine.Color multColor)
+	{
+	}
+#endif
 }
 
 }	// namespace UnityRenderer

@@ -155,6 +155,8 @@ public class BitmapRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 	UnityEngine.Color m_colorAdd;
 #endif
+	bool m_available;
+
 	static Color32 s_clearColor = new Color32(0, 0, 0, 0);
 
 	public BitmapRenderer(LWF lwf, BitmapContext context) : base(lwf)
@@ -165,6 +167,7 @@ public class BitmapRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
 #endif
+		m_available = false;
 
 		if (m_context != null)
 			m_context.factory.AddBitmap();
@@ -222,9 +225,8 @@ public class BitmapRenderer : Renderer
 				buffer.colors32[index + i] = color32;
 		}
 
-		if (!buffer.clean &&
-				buffer.objects[bufferIndex] == m_context.objectId)
-		{
+		if (!buffer.clean && m_available &&
+				buffer.objects[bufferIndex] == m_context.objectId) {
 			index = bufferIndex * 4;
 			for (int i = 0; i < 4; ++i) {
 				buffer.vertices[index + i] =
@@ -248,6 +250,7 @@ public class BitmapRenderer : Renderer
 			buffer.triangles[index + i] = m_context.triangles[i] + offset;
 
 		buffer.changed = true;
+		m_available = true;
 		return;
 
 invisible:
@@ -256,6 +259,7 @@ invisible:
 			buffer.vertices[index + i] = Vector3.zero;
 			buffer.colors32[index + i] = s_clearColor;
 		}
+		m_available = false;
 	}
 }
 

@@ -201,6 +201,11 @@ public class ResourceCache
 
 			Material material = new Material(shader);
 			material.mainTexture = textureLoader(filename);
+			if (material.mainTexture != null) {
+				material.mainTexture.name =
+					string.Format("LWF/{0}/{1}", lwfName, filename);
+				material.name = material.mainTexture.name;
+			}
 			material.color = new UnityEngine.Color(1, 1, 1, 1);
 
 			TextureContext context = new TextureContext(material,
@@ -221,6 +226,7 @@ public class ResourceCache
 				TextureContext context = item.Entity();
 				if (context.material.mainTexture != null)
 					context.unloader((Texture2D)context.material.mainTexture);
+				Material.Destroy(context.material);
 				m_textureCache.Remove(cacheName);
 			}
 		}
@@ -267,6 +273,7 @@ public class ResourceCache
 			float y1 = (y + h) / texture.scale;
 
 			Mesh mesh = new Mesh();
+			mesh.name = "LWF/" + cacheName;
 			mesh.vertices = new Vector3[]{
 				new Vector3(x1, y1, 0),
 				new Vector3(x1, y0, 0),
@@ -377,7 +384,9 @@ public class ResourceCache
 		m_meshCache.Clear();
 		foreach (TextureItem item in m_textureCache.Values) {
 			TextureContext context = item.Entity();
-			context.unloader((Texture2D)context.material.mainTexture);
+			if (context.material.mainTexture != null)
+				context.unloader((Texture2D)context.material.mainTexture);
+			Material.Destroy(context.material);
 		}
 		m_textureCache.Clear();
 		m_shaderCache.Clear();

@@ -158,22 +158,29 @@ public class ButtonEventHandlers
 
 	public void Call(Type type, Button target)
 	{
+		ButtonEventHandlerList list = null; 
 		switch (type) {
-		case Type.LOAD: load.ForEach(h => h(target)); break;
-		case Type.UNLOAD: unload.ForEach(h => h(target)); break;
-		case Type.ENTERFRAME: enterFrame.ForEach(h => h(target)); break;
-		case Type.UPDATE: update.ForEach(h => h(target)); break;
-		case Type.RENDER: render.ForEach(h => h(target)); break;
-		case Type.PRESS: press.ForEach(h => h(target)); break;
-		case Type.RELEASE: release.ForEach(h => h(target)); break;
-		case Type.ROLLOVER: rollOver.ForEach(h => h(target)); break;
-		case Type.ROLLOUT: rollOut.ForEach(h => h(target)); break;
+		case Type.LOAD: list = load; break;
+		case Type.UNLOAD: list = unload; break;
+		case Type.ENTERFRAME: list = enterFrame; break;
+		case Type.UPDATE: list = update; break;
+		case Type.RENDER: list = render; break;
+		case Type.PRESS: list = press; break;
+		case Type.RELEASE: list = release; break;
+		case Type.ROLLOVER: list = rollOver; break;
+		case Type.ROLLOUT: list = rollOut; break;
+		}
+		if (list != null) {
+			list = new ButtonEventHandlerList(list);
+			list.ForEach(h => h(target));
 		}
 	}
 
 	public void CallKEYPRESS(Button target, int code)
 	{
-		keyPress.ForEach(h => h(target, code));
+		ButtonKeyPressHandlerList list =
+			new ButtonKeyPressHandlerList(keyPress);
+		list.ForEach(h => h(target, code));
 	}
 }
 

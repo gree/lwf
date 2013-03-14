@@ -27,38 +27,37 @@ using Type = Format.Object.Type;
 using MovieEventHandler = Action<Movie>;
 using DetachHandler = Action<LWF>;
 using AttachedMovies = Dictionary<string, Movie>;
-using AttachedMovieList = List<Movie>;
+using AttachedMovieList = SortedDictionary<int, Movie>;
+using AttachedMovieDescendingList = SortedDictionary<int, int>;
 using AttachedLWFs = Dictionary<string, LWFContainer>;
-using AttachedLWFList = List<LWFContainer>;
+using AttachedLWFList = SortedDictionary<int, LWFContainer>;
+using AttachedLWFDescendingList = SortedDictionary<int, int>;
 using DetachDict = Dictionary<string, bool>;
+
+class DescendingComparer<T> : IComparer<T> where T : IComparable<T>
+{
+	public int Compare(T x, T y)
+	{
+		return y.CompareTo(x);
+	}
+}
 
 public partial class Movie : IObject
 {
-	private void ShrinkAttachedMovieList()
-	{
-		for (int i = m_attachedMovieList.Count - 1; i >= 0; --i) {
-			if (m_attachedMovieList[i] != null) {
-				if (i != m_attachedMovieList.Count - 1)
-					m_attachedMovieList.RemoveRange(i,
-						m_attachedMovieList.Count - i);
-				return;
-			}
-		}
-		m_attachedMovieList.Clear();
-	}
-
 	private void ReorderAttachedMovieList(bool reorder, int index, Movie movie)
 	{
-		if (!reorder || index >= m_attachedMovieList.Count) {
-			for (int i = m_attachedMovieList.Count; i < index; ++i)
-				m_attachedMovieList.Add(null);
-			m_attachedMovieList.Add(movie);
-		} else {
-			m_attachedMovieList.Insert(index, movie);
-			if (reorder) {
-				m_attachedMovieList.Remove(null);
-				for (int i = 0; i < m_attachedMovieList.Count; ++i)
-					m_attachedMovieList[i].depth = i;
+		m_attachedMovieList[index] = movie;
+		if (reorder) {
+			AttachedMovieList list = m_attachedMovieList;
+			m_attachedMovieList = new AttachedMovieList();
+			m_attachedMovieDescendingList =
+				new AttachedMovieDescendingList(new DescendingComparer<int>());
+			int i = 0;
+			foreach (Movie m in list.Values) {
+				m.depth = i;
+				m_attachedMovieList[i] = m;
+				m_attachedMovieDescendingList[i] = i;
+				++i;
 			}
 		}
 	}
@@ -69,10 +68,10 @@ public partial class Movie : IObject
 		string attachName = movie.attachName;
 		int attachDepth = movie.depth;
 		parent.m_attachedMovies.Remove(attachName);
-		parent.m_attachedMovieList[attachDepth] = null;
+		parent.m_attachedMovieList.Remove(attachDepth);
+		parent.m_attachedMovieDescendingList.Remove(attachDepth);
 		if (deleteFromDetachedMovies)
 			parent.m_detachedMovies.Remove(attachName);
-		parent.ShrinkAttachedMovieList();
 		if (destroy)
 			movie.Destroy();
 	}
@@ -84,22 +83,21 @@ public partial class Movie : IObject
 			m_attachedMovies = new AttachedMovies();
 			m_detachedMovies = new DetachDict();
 			m_attachedMovieList = new AttachedMovieList();
+			m_attachedMovieDescendingList =
+				new AttachedMovieDescendingList(new DescendingComparer<int>());
 		}
 
 		Movie attachedMovie;
 		if (m_attachedMovies.TryGetValue(attachName, out attachedMovie))
 			DeleteAttachedMovie(this, attachedMovie);
 
-		if (!reorder && attachDepth >= 0 &&
-				attachDepth <= m_attachedMovieList.Count - 1) {
-			attachedMovie = m_attachedMovieList[attachDepth];
-			if (attachedMovie != null)
+		if (!reorder && attachDepth >= 0)
+			if (m_attachedMovieList.TryGetValue(attachDepth, out attachedMovie))
 				DeleteAttachedMovie(this, attachedMovie);
-		}
 
 		movie.m_attachName = attachName;
-		movie.depth = attachDepth >= 0 ?
-			attachDepth : m_attachedMovieList.Count;
+		movie.depth = attachDepth >= 0 ? attachDepth :
+			m_attachedMovieDescendingList.Keys.GetEnumerator().Current + 1;
 		movie.m_name = attachName;
 		m_attachedMovies[attachName] = movie;
 		ReorderAttachedMovieList(reorder, movie.depth, movie);
@@ -148,14 +146,10 @@ public partial class Movie : IObject
 		if (m_attachedMovies == null)
 			return;
 
-		int d = depth0;
-		if (depth1 > d)
-			d = depth1;
-		for (int i = m_attachedMovieList.Count; i <= d; ++i)
-			m_attachedMovieList.Add(null);
-
-		Movie attachedMovie0 = m_attachedMovieList[depth0];
-		Movie attachedMovie1 = m_attachedMovieList[depth1];
+		Movie attachedMovie0;
+		m_attachedMovieList.TryGetValue(depth0, out attachedMovie0);
+		Movie attachedMovie1;
+		m_attachedMovieList.TryGetValue(depth1, out attachedMovie1);
 		if (attachedMovie0 != null)
 			attachedMovie0.depth = depth1;
 		if (attachedMovie1 != null)
@@ -177,9 +171,9 @@ public partial class Movie : IObject
 	public Movie GetAttachedMovie(int attachDepth)
 	{
 		if (m_attachedMovies != null) {
-			if (attachDepth < 0 || attachDepth >= m_attachedMovieList.Count)
-				return null;
-			return m_attachedMovieList[attachDepth];
+			Movie movie;
+			if (m_attachedMovieList.TryGetValue(attachDepth, out movie))
+				return movie;
 		}
 		return null;
 	}
@@ -213,11 +207,11 @@ public partial class Movie : IObject
 
 	public void DetachMovie(int attachDepth)
 	{
-		if (m_detachedMovies != null &&
-				attachDepth >= 0 && attachDepth < m_attachedMovieList.Count &&
-				m_attachedMovieList[attachDepth] != null)
-			m_detachedMovies[
-				m_attachedMovieList[attachDepth].attachName] = true;
+		if (m_detachedMovies != null) {
+			Movie movie;
+			if (m_attachedMovieList.TryGetValue(attachDepth, out movie))
+				m_detachedMovies[movie.attachName] = true;
+		}
 	}
 
 	public void DetachMovie(Movie movie)
@@ -237,32 +231,21 @@ public partial class Movie : IObject
 			m_parent.DetachMovie(this);
 	}
 
-	private void ShrinkAttachedLWFList()
-	{
-		for (int i = m_attachedLWFList.Count - 1; i >= 0; --i) {
-			if (m_attachedLWFList[i] != null) {
-				if (i != m_attachedLWFList.Count - 1)
-					m_attachedLWFList.RemoveRange(i,
-						m_attachedLWFList.Count - i);
-				return;
-			}
-		}
-		m_attachedLWFList.Clear();
-	}
-
 	private void ReorderAttachedLWFList(
 		bool reorder, int index, LWFContainer lwfContainer)
 	{
-		if (!reorder || index >= m_attachedLWFList.Count) {
-			for (int i = m_attachedLWFList.Count; i < index; ++i)
-				m_attachedLWFList.Add(null);
-			m_attachedLWFList.Add(lwfContainer);
-		} else {
-			m_attachedLWFList.Insert(index, lwfContainer);
-			if (reorder) {
-				m_attachedLWFList.Remove(null);
-				for (int i = 0; i < m_attachedLWFList.Count; ++i)
-					m_attachedLWFList[i].child.depth = i;
+		m_attachedLWFList[index] = lwfContainer;
+		if (reorder) {
+			AttachedLWFList list = m_attachedLWFList;
+			m_attachedLWFList = new AttachedLWFList();
+			m_attachedLWFDescendingList =
+				new AttachedLWFDescendingList(new DescendingComparer<int>());
+			int i = 0;
+			foreach (LWFContainer l in list.Values) {
+				l.child.depth = i;
+				m_attachedLWFList[i] = l;
+				m_attachedLWFDescendingList[i] = i;
+				++i;
 			}
 		}
 	}
@@ -273,16 +256,17 @@ public partial class Movie : IObject
 		string attachName = lwfContainer.child.attachName;
 		int attachDepth = lwfContainer.child.depth;
 		parent.m_attachedLWFs.Remove(attachName);
-		parent.m_attachedLWFList[attachDepth] = null;
+		parent.m_attachedLWFList.Remove(attachDepth);
+		parent.m_attachedLWFDescendingList.Remove(attachDepth);
 		if (deleteFromDetachedLWFs)
 			parent.m_detachedLWFs.Remove(attachName);
-		parent.ShrinkAttachedLWFList();
 		if (destroy && lwfContainer.child.detachHandler != null) {
 			lwfContainer.child.detachHandler(lwfContainer.child);
 			lwfContainer.child.parent = null;
 			lwfContainer.child.detachHandler = null;
 			lwfContainer.child.attachName = null;
 			lwfContainer.child.depth = -1;
+			lwfContainer.Destroy();
 		}
 	}
 
@@ -294,6 +278,8 @@ public partial class Movie : IObject
 			m_attachedLWFs = new AttachedLWFs();
 			m_detachedLWFs = new DetachDict();
 			m_attachedLWFList = new AttachedLWFList();
+			m_attachedLWFDescendingList =
+				new AttachedLWFDescendingList(new DescendingComparer<int>());
 		}
 
 		LWFContainer lwfContainer;
@@ -306,12 +292,9 @@ public partial class Movie : IObject
 				DeleteAttachedLWF(this, lwfContainer);
 		}
 
-		if (!reorder && attachDepth >= 0 &&
-				attachDepth <= m_attachedLWFList.Count - 1) {
-			lwfContainer = m_attachedLWFList[attachDepth];
-			if (lwfContainer != null)
+		if (!reorder && attachDepth >= 0)
+			if (m_attachedLWFList.TryGetValue(attachDepth, out lwfContainer))
 				DeleteAttachedLWF(this, lwfContainer);
-		}
 
 		lwfContainer = new LWFContainer(this, attachLWF);
 
@@ -320,8 +303,8 @@ public partial class Movie : IObject
 		attachLWF.parent = this;
 		attachLWF.detachHandler = detachHandler;
 		attachLWF.attachName = attachName;
-		attachLWF.depth = attachDepth >= 0 ?
-			attachDepth : m_attachedLWFList.Count;
+		attachLWF.depth = attachDepth >= 0 ? attachDepth :
+			m_attachedLWFDescendingList.Keys.GetEnumerator().Current + 1;
 		m_attachedLWFs[attachName] = lwfContainer;
 		ReorderAttachedLWFList(reorder, attachLWF.depth, lwfContainer);
 
@@ -333,14 +316,10 @@ public partial class Movie : IObject
 		if (m_attachedLWFs == null)
 			return;
 
-		int d = depth0;
-		if (depth1 > d)
-			d = depth1;
-		for (int i = m_attachedLWFList.Count; i <= d; ++i)
-			m_attachedLWFList.Add(null);
-
-		LWFContainer attachedLWF0 = m_attachedLWFList[depth0];
-		LWFContainer attachedLWF1 = m_attachedLWFList[depth1];
+		LWFContainer attachedLWF0;
+		m_attachedLWFList.TryGetValue(depth0, out attachedLWF0);
+		LWFContainer attachedLWF1;
+		m_attachedLWFList.TryGetValue(depth1, out attachedLWF1);
 		if (attachedLWF0 != null)
 			attachedLWF0.child.depth = depth1;
 		if (attachedLWF1 != null)
@@ -362,10 +341,9 @@ public partial class Movie : IObject
 	public LWF GetAttachedLWF(int attachDepth)
 	{
 		if (m_attachedLWFs != null) {
-			if (attachDepth < 0 || attachDepth >= m_attachedLWFList.Count)
-				return null;
-			LWFContainer lwfContainer = m_attachedLWFList[attachDepth];
-			return lwfContainer == null ? null : lwfContainer.child;
+			LWFContainer lwfContainer;
+			if (m_attachedLWFList.TryGetValue(attachDepth, out lwfContainer))
+				return lwfContainer.child;
 		}
 		return null;
 	}
@@ -399,11 +377,11 @@ public partial class Movie : IObject
 
 	public void DetachLWF(int attachDepth)
 	{
-		if (m_detachedLWFs != null &&
-				attachDepth >= 0 && attachDepth < m_attachedLWFList.Count &&
-				m_attachedLWFList[attachDepth] != null)
-			m_detachedLWFs[
-				m_attachedLWFList[attachDepth].child.attachName] = true;
+		if (m_detachedLWFs != null) {
+			LWFContainer lwfContainer;
+			if (m_attachedLWFList.TryGetValue(attachDepth, out lwfContainer))
+				m_detachedLWFs[lwfContainer.child.attachName] = true;
+		}
 	}
 
 	public void DetachLWF(LWF detachLWF)

@@ -22,8 +22,8 @@ class Animation
   @END = 0
   @PLAY = 1
   @STOP = 2
-  @GOTONEXTFRAME = 3
-  @GOTOPREVFRAME = 4
+  @NEXTFRAME = 3
+  @PREVFRAME = 4
   @GOTOFRAME = 5
   @GOTOLABEL = 6
   @SETTARGET = 7

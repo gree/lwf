@@ -31,6 +31,9 @@ public class Renderer
 	public virtual void Update(Matrix matrix, ColorTransform colorTransform) {}
 	public virtual void Render(Matrix matrix, ColorTransform colorTransform,
 		int renderingIndex, int renderingCount, bool visible) {}
+#if UNITY_EDITOR
+	public virtual void RenderNow() {}
+#endif
 }
 
 public interface IRendererFactory

@@ -98,6 +98,7 @@ public partial class Button : IObject
 	public override void Destroy()
 	{
 		m_lwf.ClearFocus(this);
+		m_lwf.ClearPressed(this);
 
 		if (m_handler != null)
 			m_handler.Call(EventType.UNLOAD, this);

@@ -21,6 +21,8 @@
 class CanvasRendererFactory extends WebkitCSSRendererFactory
   constructor:(data, \
       @resourceCache, @cache, @stage, @textInSubpixel, @needsClear) ->
+    @blendMode = "normal"
+    @maskMode = "normal"
     @bitmapContexts = []
     for bitmap in data.bitmaps
       continue if bitmap.textureFragmentId is -1
@@ -49,7 +51,16 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       @stage.width = data.header.width
       @stage.height = data.header.height
 
+    @initCommands()
+
+  initCommands: ->
     @commands = {}
+    @commandsKeys = Utility.newIntArray()
+
+  addCommand:(rIndex, cmd) ->
+    @commands[rIndex] = cmd
+    Utility.insertIntArray(@commandsKeys, rIndex)
+    return
 
   destruct: ->
     context.destruct() for context in @bitmapContexts
@@ -59,26 +70,88 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
 
   beginRender:(lwf) ->
 
+  renderMask: ->
+    ctx = @eraseCanvas.getContext('2d')
+    ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = "source-out"
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.drawImage(@layerCanvas, 0, 0)
+
+    ctx = @stageContext
+    ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = "source-over"
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.drawImage(@eraseCanvas, 0, 0)
+
   endRender:(lwf) ->
     ctx = @stageContext
     if lwf.parent?
-      commands = lwf.parent.lwf.rendererFactory.commands
-      for rIndex, cmd of @commands
-        commands[rIndex] = cmd
-      @commands = {}
+      f = lwf.parent.lwf.rendererFactory
+      f.addCommand(parseInt(rIndex, 10), cmd) for rIndex, cmd of @commands
+      @initCommands()
       return
 
     if @needsClear
-      ctx.globalAlpha = 1
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       if @clearColor?
+        if @clearColor[3] is 'a'
+          ctx.clearRect(0, 0, @stage.width, @stage.height)
         ctx.fillStyle = @clearColor
         ctx.fillRect(0, 0, @stage.width, @stage.height)
       else
         ctx.clearRect(0, 0, @stage.width, @stage.height)
 
-    for rIndex, cmd of @commands
+    blendMode = "normal"
+    maskMode = "normal"
+    for rIndex in @commandsKeys
+      cmd = @commands[rIndex]
       ctx.globalAlpha = cmd.alpha
+      if maskMode isnt cmd.maskMode
+        switch cmd.maskMode
+          when "erase"
+            unless @eraseCanvas?
+              @eraseCanvas = document.createElement('canvas')
+              @eraseCanvas.width = @stage.width
+              @eraseCanvas.height = @stage.height
+              cleared = true
+            else
+              cleared = false
+            ctx = @eraseCanvas.getContext('2d')
+            ctx.globalAlpha = 1
+            ctx.globalCompositeOperation = "source-over"
+            blendMode = "normal"
+            unless cleared
+              ctx.setTransform(1, 0, 0, 1, 0, 0)
+              ctx.clearRect(0, 0, @stage.width, @stage.height)
+          when "layer"
+            unless @layerCanvas?
+              @layerCanvas = document.createElement('canvas')
+              @layerCanvas.width = @stage.width
+              @layerCanvas.height = @stage.height
+              cleared = true
+            else
+              cleared = false
+            ctx = @layerCanvas.getContext('2d')
+            ctx.globalAlpha = 1
+            ctx.globalCompositeOperation = "source-over"
+            blendMode = "normal"
+            unless cleared
+              ctx.setTransform(1, 0, 0, 1, 0, 0)
+              ctx.clearRect(0, 0, @stage.width, @stage.height)
+          when "normal"
+            ctx = @stageContext
+            ctx.globalAlpha = 1
+            ctx.globalCompositeOperation = "source-over"
+            blendMode = "normal"
+            @renderMask() if maskMode is "layer"
+        maskMode = cmd.maskMode
+      if blendMode isnt cmd.blendMode
+        blendMode = cmd.blendMode
+        switch blendMode
+          when "add"
+            ctx.globalCompositeOperation = "lighter"
+          when "normal"
+            ctx.globalCompositeOperation = "source-over"
       m = cmd.matrix
       ctx.setTransform(
         m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
@@ -87,8 +160,15 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       w = cmd.w
       h = cmd.h
       ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
-    @commands = {}
+    ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = "source-over"
+    @renderMask() if maskMode is "layer"
+    @initCommands()
     return
+
+  setBlendMode:(@blendMode) ->
+
+  setMaskMode:(@maskMode) ->
 
   constructBitmap:(lwf, objectId, bitmap) ->
     context = @bitmapContexts[objectId]
@@ -110,10 +190,8 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
   getStageSize: ->
     return [@stage.width, @stage.height]
 
-  setBackgroundColor:(lwf) ->
-    bgColor = lwf.data.header.backgroundColor
-    r = (bgColor >> 16) & 0xff
-    g = (bgColor >>  8) & 0xff
-    b = (bgColor >>  0) & 0xff
-    @clearColor = "rgb(#{r}, #{g}, #{b})"
+  setBackgroundColor:(v) ->
+    [r, g, b, a] = @parseBackgroundColor(v)
+    @clearColor = "rgba(#{r},#{g},#{b},#{a / 255})"
     return
+

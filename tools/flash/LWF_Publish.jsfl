@@ -69,10 +69,8 @@ function Init()
 
 		BitmapDirName = FlaDirName + FileID + ".bitmap/";
 
-		fl.showIdleMessage(false);
 		CheckVersion();
 		CheckLibraryAndElement();
-		fl.showIdleMessage(true);
 
 		StartPublish();
 
@@ -147,11 +145,14 @@ function CheckLibraryAndElement()
 			CheckPngLinkage(lib, item, name);
 		}
 		
-		if ('bitmap' == lib.getItemType(name)) {
+		switch (lib.getItemType(name)) {
+		case 'bitmap':
 			continue;
-		} else if ('movie clip' == lib.getItemType(name)) {
+		case 'movie clip':
+		case 'button':
 			lib.selectItem(name);
 			setLinkageName(lib, name.split("/").join("_"));
+			break;
 		}
 
 		for (var i = 0, layers = tl.layers, il = layers.length; i < il; i++) {

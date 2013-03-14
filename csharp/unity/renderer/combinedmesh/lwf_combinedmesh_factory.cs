@@ -76,6 +76,7 @@ public partial class Factory : UnityRenderer.Factory
 	{
 		data = d;
 		mesh = new Mesh();
+		mesh.name = "LWF/" + data.name;
 #if !UNITY_3_5
 		mesh.MarkDynamic();
 #endif

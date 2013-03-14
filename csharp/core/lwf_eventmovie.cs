@@ -116,13 +116,18 @@ public class MovieEventHandlers
 
 	public void Call(Type type, Movie target)
 	{
+		MovieEventHandlerList list = null;
 		switch (type) {
-		case Type.LOAD: load.ForEach(h => h(target)); break;
-		case Type.POSTLOAD: postLoad.ForEach(h => h(target)); break;
-		case Type.UNLOAD: unload.ForEach(h => h(target)); break;
-		case Type.ENTERFRAME: enterFrame.ForEach(h => h(target)); break;
-		case Type.UPDATE: update.ForEach(h => h(target)); break;
-		case Type.RENDER: render.ForEach(h => h(target)); break;
+		case Type.LOAD: list = load; break;
+		case Type.POSTLOAD: list = postLoad; break;
+		case Type.UNLOAD: list = unload; break;
+		case Type.ENTERFRAME: list = enterFrame; break;
+		case Type.UPDATE: list = update; break;
+		case Type.RENDER: list = render; break;
+		}
+		if (list != null) {
+			list = new MovieEventHandlerList(list);
+			list.ForEach(h => h(target));
 		}
 	}
 }

@@ -24,8 +24,8 @@ enum Animation {
 	END = 0,
 	PLAY,
 	STOP,
-	GOTONEXTFRAME,
-	GOTOPREVFRAME,
+	NEXTFRAME,
+	PREVFRAME,
 	GOTOFRAME,		// FRAMENO(4bytes)
 	GOTOLABEL,		// LABELID(4bytes)
 	SETTARGET,		// COUNT(1byte) INSTANCEID(4bytes) ...
@@ -64,12 +64,12 @@ public partial class LWF
 				target.Stop();
 				break;
 
-			case Animation.GOTONEXTFRAME:
-				target.GotoNextFrame();
+			case Animation.NEXTFRAME:
+				target.NextFrame();
 				break;
 
-			case Animation.GOTOPREVFRAME:
-				target.GotoPrevFrame();
+			case Animation.PREVFRAME:
+				target.PrevFrame();
 				break;
 
 			case Animation.GOTOFRAME:

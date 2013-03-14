@@ -58,7 +58,7 @@ TWEENLWF.Tween = function ( movie ) {
 	this.onUpdateCallback = null;
 	this.onCompleteCallback = null;
 
-	if ( typeof this.lwf._tweens === "undefined" ) {
+	if ( this.lwf._tweens === null ) {
 
 		this.lwf._tweens = [];
 
@@ -671,9 +671,9 @@ lwfPrototype[ "setTweenMode" ] = function( mode ) {
 
 lwfPrototype.stopTweens = function() {
 
-	if ( typeof this._tweens !== "undefined" ) {
+	if ( this._tweens !== null ) {
 
-		this._tweens = undefined;
+		this._tweens = null;
 
 		this.removeExecHandler( TWEENLWF._tweenExecHandler );
 		this.removeMovieEventHandler( "_root", {
@@ -742,8 +742,7 @@ moviePrototype[ "addTween" ] = function() {
 moviePrototype[ "stopTweens" ] = function() {
 
 	if ( typeof this.lwf === "undefined" || this.lwf === null ||
-			typeof this.lwf._tweens === "undefined" ||
-				this.lwf._tweens === null ) {
+			this.lwf._tweens === null ) {
 
 		return this;
 

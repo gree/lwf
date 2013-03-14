@@ -33,16 +33,24 @@ if typeof global isnt "undefined"
 
 LWF.prototype["addAllowButton"] = LWF.prototype.addAllowButton
 LWF.prototype["addButtonEventHandler"] = LWF.prototype.addButtonEventHandler
+LWF.prototype["addButtonEventListener"] = LWF.prototype.addButtonEventHandler
 LWF.prototype["addDenyButton"] = LWF.prototype.addDenyButton
 LWF.prototype["addEventHandler"] = LWF.prototype.addEventHandler
+LWF.prototype["addEventListener"] = LWF.prototype.addEventHandler
 LWF.prototype["addMovieEventHandler"] = LWF.prototype.addMovieEventHandler
+LWF.prototype["addMovieEventListener"] = LWF.prototype.addMovieEventHandler
 LWF.prototype["clearAllowButton"] = LWF.prototype.clearAllowButton
 LWF.prototype["clearButtonEventHandler"] = LWF.prototype.clearButtonEventHandler
+LWF.prototype["clearButtonEventListener"] =
+  LWF.prototype.clearButtonEventHandler
 LWF.prototype["clearDenyButton"] = LWF.prototype.clearDenyButton
 LWF.prototype["clearEventHandler"] = LWF.prototype.clearEventHandler
+LWF.prototype["clearEventListener"] = LWF.prototype.clearEventHandler
 LWF.prototype["clearMovieEventHandler"] = LWF.prototype.clearMovieEventHandler
+LWF.prototype["clearMovieEventListener"] = LWF.prototype.clearMovieEventHandler
 LWF.prototype["denyAllButtons"] = LWF.prototype.denyAllButtons
 LWF.prototype["destroy"] = LWF.prototype.destroy
+LWF.prototype["dispatchEvent"] = LWF.prototype.dispatchEvent
 LWF.prototype["exec"] = LWF.prototype.exec
 LWF.prototype["fitForHeight"] = LWF.prototype.fitForHeight
 LWF.prototype["fitForWidth"] = LWF.prototype.fitForWidth
@@ -59,9 +67,14 @@ LWF.prototype["inspect"] = LWF.prototype.inspect
 LWF.prototype["removeAllowButton"] = LWF.prototype.removeAllowButton
 LWF.prototype["removeButtonEventHandler"] =
   LWF.prototype.removeButtonEventHandler
+LWF.prototype["removeButtonEventListener"] =
+  LWF.prototype.removeButtonEventHandler
 LWF.prototype["removeDenyButton"] = LWF.prototype.removeDenyButton
 LWF.prototype["removeEventHandler"] = LWF.prototype.removeEventHandler
+LWF.prototype["removeEventListener"] = LWF.prototype.removeEventHandler
 LWF.prototype["removeMovieEventHandler"] = LWF.prototype.removeMovieEventHandler
+LWF.prototype["removeMovieEventListener"] =
+  LWF.prototype.removeMovieEventHandler
 LWF.prototype["render"] = LWF.prototype.render
 LWF.prototype["scaleForHeight"] = LWF.prototype.scaleForHeight
 LWF.prototype["scaleForWidth"] = LWF.prototype.scaleForWidth
@@ -69,11 +82,15 @@ LWF.prototype["searchAttachedLWF"] = LWF.prototype.searchAttachedLWF
 LWF.prototype["searchAttachedMovie"] = LWF.prototype.searchAttachedMovie
 LWF.prototype["searchEventId"] = LWF.prototype.searchEventId
 LWF.prototype["searchFrame"] = LWF.prototype.searchFrame
+LWF.prototype["searchProgramObjectId"] = LWF.prototype.searchProgramObjectId
 LWF.prototype["setButtonEventHandler"] = LWF.prototype.setButtonEventHandler
+LWF.prototype["setButtonEventListener"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler
+LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler
 LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
 LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand
 LWF.prototype["setMovieEventHandler"] = LWF.prototype.setMovieEventHandler
+LWF.prototype["setMovieEventListener"] = LWF.prototype.setMovieEventHandler
 LWF.prototype["setProgramObjectConstructor"] =
   LWF.prototype.setProgramObjectConstructor
 LWF.prototype["setRendererFactory"] = LWF.prototype.setRendererFactory
@@ -85,11 +102,16 @@ Data.prototype["name"] = Data.prototype.name
 
 IObject.prototype["getFullName"] = IObject.prototype.getFullName
 
+Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler
+Movie.prototype["addEventListener"] = Movie.prototype.addEventHandler
 Movie.prototype["attachLWF"] = Movie.prototype.attachLWF
 Movie.prototype["attachMovie"] = Movie.prototype.attachMovie
+Movie.prototype["clearEventHandler"] = Movie.prototype.clearEventHandler
+Movie.prototype["clearEventListener"] = Movie.prototype.clearEventHandler
 Movie.prototype["detachFromParent"] = Movie.prototype.detachFromParent
 Movie.prototype["detachLWF"] = Movie.prototype.detachLWF
 Movie.prototype["detachMovie"] = Movie.prototype.detachMovie
+Movie.prototype["dispatchEvent"] = Movie.prototype.dispatchEvent
 Movie.prototype["getAttachedLWF"] = Movie.prototype.getAttachedLWF
 Movie.prototype["getAttachedMovie"] = Movie.prototype.getAttachedMovie
 Movie.prototype["globalToLocal"] = Movie.prototype.globalToLocal
@@ -97,14 +119,17 @@ Movie.prototype["gotoAndPlay"] = Movie.prototype.gotoAndPlay
 Movie.prototype["gotoAndStop"] = Movie.prototype.gotoAndStop
 Movie.prototype["gotoFrame"] = Movie.prototype.gotoFrame
 Movie.prototype["gotoLabel"] = Movie.prototype.gotoLabel
-Movie.prototype["gotoNextFrame"] = Movie.prototype.gotoNextFrame
-Movie.prototype["gotoPrevFrame"] = Movie.prototype.gotoPrevFrame
 Movie.prototype["inspect"] = Movie.prototype.inspect
 Movie.prototype["localToGlobal"] = Movie.prototype.localToGlobal
 Movie.prototype["move"] = Movie.prototype.move
 Movie.prototype["moveTo"] = Movie.prototype.moveTo
+Movie.prototype["nextFrame"] = Movie.prototype.nextFrame
 Movie.prototype["override"] = Movie.prototype.override
 Movie.prototype["play"] = Movie.prototype.play
+Movie.prototype["prevFrame"] = Movie.prototype.prevFrame
+Movie.prototype["removeEventHandler"] = Movie.prototype.removeEventHandler
+Movie.prototype["removeEventListener"] = Movie.prototype.removeEventHandler
+Movie.prototype["removeMovieClip"] = Movie.prototype.removeMovieClip
 Movie.prototype["rotate"] = Movie.prototype.rotate
 Movie.prototype["rotateTo"] = Movie.prototype.rotateTo
 Movie.prototype["scale"] = Movie.prototype.scale
@@ -116,6 +141,8 @@ Movie.prototype["searchMovieInstanceByInstanceId"] =
   Movie.prototype.searchMovieInstanceByInstanceId
 Movie.prototype["setAlpha"] = Movie.prototype.setAlpha
 Movie.prototype["setColorTransform"] = Movie.prototype.setColorTransform
+Movie.prototype["setEventHandler"] = Movie.prototype.setEventHandler
+Movie.prototype["setEventListener"] = Movie.prototype.setEventHandler
 Movie.prototype["setMatrix"] = Movie.prototype.setMatrix
 Movie.prototype["setRenderingOffset"] = Movie.prototype.setRenderingOffset
 Movie.prototype["setVisible"] = Movie.prototype.setVisible
@@ -123,6 +150,7 @@ Movie.prototype["stop"] = Movie.prototype.stop
 Movie.prototype["swapAttachedLWFDepth"] = Movie.prototype.swapAttachedLWFDepth
 Movie.prototype["swapAttachedMovieDepth"] =
   Movie.prototype.swapAttachedMovieDepth
+Movie.prototype["swapDepths"] = Movie.prototype.swapDepths
 
 Property.prototype["clear"] = Property.prototype.clear
 Property.prototype["move"] = Property.prototype.move

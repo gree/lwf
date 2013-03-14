@@ -93,8 +93,8 @@ public partial class Factory : IRendererFactory
 		return null;
 	}
 
-	public void ConvertMatrix(ref Matrix4x4 m,
-		Matrix lm, float scale = 1, float z = 0, float height = 0)
+	public static void ConvertMatrix(ref Matrix4x4 m, Matrix lm,
+		float scale, float z, float zO, float zR, float height)
 	{
 		m.m00 = lm.scaleX * scale;
 		m.m01 = -lm.skew0 * scale;
@@ -109,12 +109,18 @@ public partial class Factory : IRendererFactory
 		m.m20 = 0;
 		m.m21 = 0;
 		m.m22 = 1;
-		m.m23 = zOffset + z * zRate;
+		m.m23 = zO + z * zR;
 
 		m.m30 = 0;
 		m.m31 = 0;
 		m.m32 = 0;
 		m.m33 = 1;
+	}
+
+	public void ConvertMatrix(ref Matrix4x4 m,
+		Matrix lm, float scale = 1, float z = 0, float height = 0)
+	{
+		ConvertMatrix(ref m, lm, scale, z, zOffset, zRate, height);
 	}
 
 	public static void MultiplyMatrix(ref Matrix4x4 m,

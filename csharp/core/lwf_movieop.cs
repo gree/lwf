@@ -35,14 +35,14 @@ public partial class Movie : IObject
 		m_playing = false;
 	}
 
-	public void GotoNextFrame()
+	public void NextFrame()
 	{
 		m_jumped = true;
 		Stop();
 		++m_currentFrameInternal;
 	}
 
-	public void GotoPrevFrame()
+	public void PrevFrame()
 	{
 		m_jumped = true;
 		Stop();
@@ -64,6 +64,7 @@ public partial class Movie : IObject
 	public void SetVisible(bool visible)
 	{
 		m_visible = visible;
+		m_lwf.SetPropertyDirty();
 	}
 
 	public void GotoLabel(string label)

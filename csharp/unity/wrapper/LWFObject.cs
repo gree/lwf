@@ -28,6 +28,7 @@ using TextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFDataCallback = System.Func<LWF.Data, bool>;
 using BitmapFontDataLoader = System.Func<string, byte[]>;
 using BitmapFontTextureLoader = System.Func<string, UnityEngine.Texture2D>;
+using BitmapFontTextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFCallback = System.Action<LWFObject>;
 using LWFCallbacks = System.Collections.Generic.List<System.Action<LWFObject>>;
 
@@ -41,6 +42,10 @@ using ProgramObjectConstructor =
 using LWFObjectDetachHandler = System.Func<LWFObject, bool>;
 using RendererFactoryConstructor =
 	System.Func<RendererFactoryArguments, LWF.UnityRenderer.Factory>;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class RendererFactoryArguments
 {
@@ -244,9 +249,12 @@ public class LWFObject : MonoBehaviour
 				if (lwf == null)
 					return;
 			}
-			if (press)
+			if (press) {
 				lwf.InputPress();
-			else if (release)
+				if (lwf == null)
+					return;
+			}
+			if (release)
 				lwf.InputRelease();
 		}
 
@@ -331,27 +339,29 @@ public class LWFObject : MonoBehaviour
 		return WorldToLWFPoint(worldPoint);
 	}
 
-	public void AttachLWF(LWF.Movie movie, LWFObject lwfObject,
+	public void AttachLWF(string instanceName, LWFObject lwfObject,
 		string attachName, int attachDepth = -1, bool reorder = false,
 		LWFObjectDetachHandler detachHandler = null)
 	{
 		AddLoadCallback((o) => {
 			lwfObject.AddLoadCallback((lo) => {
-				movie.AttachLWF(lwfObject.lwf,
-						attachName, attachDepth, reorder, (attachedLWF) => {
-					if (detachHandler == null) {
-						if (lwfObject.isAlive)
-							Destroy(lwfObject.gameObject);
-					} else {
-						if (detachHandler(lwfObject) && lwfObject.isAlive)
-							Destroy(lwfObject.gameObject);
-					}
+				AddMovieLoadHandler(instanceName, (m) => {
+					m.AttachLWF(lwfObject.lwf,
+							attachName, attachDepth, reorder, (attachedLWF) => {
+						if (detachHandler == null) {
+							if (lwfObject.isAlive)
+								Destroy(lwfObject.gameObject);
+						} else {
+							if (detachHandler(lwfObject) && lwfObject.isAlive)
+								Destroy(lwfObject.gameObject);
+						}
+					});
 				});
 
 				lwfObject.callUpdate = false;
 
 				Transform transform = lwfObject.gameObject.transform;
-				transform.parent = lwfObject.transform;
+				transform.parent = gameObject.transform;
 				transform.localPosition = Vector3.zero;
 				transform.localRotation = Quaternion.identity;
 				transform.localScale = Vector3.one;
@@ -367,6 +377,13 @@ public class LWFObject : MonoBehaviour
 		movie.DetachLWF(attachName);
 	}
 
+	public void DetachLWF(string instanceName, string attachName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachLWF(attachName);
+		});
+	}
+
 	public void DetachLWF(LWF.Movie movie, LWFObject lwfObject)
 	{
 		if (movie == null)
@@ -375,12 +392,26 @@ public class LWFObject : MonoBehaviour
 		movie.DetachLWF(lwfObject.lwf);
 	}
 
+	public void DetachLWF(string instanceName, LWFObject lwfObject)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachLWF(lwfObject.lwf);
+		});
+	}
+
 	public void DetachAllLWFs(LWF.Movie movie)
 	{
 		if (movie == null)
 			return;
 
 		movie.DetachAllLWFs();
+	}
+
+	public void DetachAllLWFs(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachAllLWFs();
+		});
 	}
 
 	public virtual void Pause()
@@ -439,11 +470,12 @@ public class LWFObject : MonoBehaviour
 
 	public static void SetBitmapFontLoader(
 		BitmapFontDataLoader dataLoader = null,
-		BitmapFontTextureLoader textureLoader = null)
+		BitmapFontTextureLoader textureLoader = null,
+		BitmapFontTextureUnloader textureUnloader = null)
 	{
 		BitmapFont.ResourceCache cache =
 			BitmapFont.ResourceCache.SharedInstance();
-		cache.SetLoader(dataLoader, textureLoader);
+		cache.SetLoader(dataLoader, textureLoader, textureUnloader);
 	}
 
 	public void AddEventHandler(string eventName, EventHandler eventHandler)
@@ -625,112 +657,166 @@ public class LWFObject : MonoBehaviour
 	}
 
 	public void AddMovieLoadHandler(
-		string instanceName, MovieEventHandler handler)
+		string instanceName, MovieEventHandler handler, bool immortal = false)
 	{
 		AddLoadCallback((o) => {
-			lwf.AddMovieEventHandler(instanceName, load:handler);
+			MovieEventHandler h = (m) => {
+				if (!immortal)
+					lwf.RemoveMovieEventHandler(instanceName, load:h);
+				handler(m);
+			};
+
 			LWF.Movie movie = lwf[instanceName];
-			if (movie != null)
+			if (movie != null) {
 				handler(movie);
+				if (immortal)
+					lwf.AddMovieEventHandler(instanceName, load:h);
+			} else {
+				lwf.AddMovieEventHandler(instanceName, load:h);
+			}
 		});
 	}
 
-	public void PlayMovie(string instanceName)
+	public void PlayMovie(string instanceName, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.Play();});
+		AddMovieLoadHandler(instanceName, (m) => {m.Play();}, immortal);
 	}
 
-	public void StopMovie(string instanceName)
+	public void StopMovie(string instanceName, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.Stop();});
+		AddMovieLoadHandler(instanceName, (m) => {m.Stop();}, immortal);
 	}
 
-	public void GotoNextFrameMovie(string instanceName)
+	public void NextFrameMovie(string instanceName, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoNextFrame();});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.NextFrame();}, immortal);
 	}
 
-	public void GotoPrevFrameMovie(string instanceName)
+	public void PrevFrameMovie(string instanceName, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoPrevFrame();});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.PrevFrame();}, immortal);
 	}
 
-	public void SetVisibleMovie(string instanceName, bool visible)
+	public void SetVisibleMovie(string instanceName,
+		bool visible, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.SetVisible(visible);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.SetVisible(visible);}, immortal);
 	}
 
-	public void GotoAndStopMovie(string instanceName, string label)
+	public void GotoAndStopMovie(string instanceName,
+		string label, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndStop(label);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.GotoAndStop(label);}, immortal);
 	}
 
-	public void GotoAndStopMovie(string instanceName, int frameNo)
+	public void GotoAndStopMovie(string instanceName,
+		int frameNo, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndStop(frameNo);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.GotoAndStop(frameNo);}, immortal);
 	}
 
-	public void GotoAndPlayMovie(string instanceName, string label)
+	public void GotoAndPlayMovie(string instanceName,
+		string label, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndPlay(label);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.GotoAndPlay(label);}, immortal);
 	}
 
-	public void GotoAndPlayMovie(string instanceName, int frameNo)
+	public void GotoAndPlayMovie(string instanceName,
+		int frameNo, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.GotoAndPlay(frameNo);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.GotoAndPlay(frameNo);}, immortal);
 	}
 
-	public void MoveMovie(string instanceName, float vx, float vy)
+	public void MoveMovie(string instanceName,
+		float vx, float vy, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.Move(vx, vy);});
+		AddMovieLoadHandler(instanceName, (m) => {m.Move(vx, vy);}, immortal);
 	}
 
-	public void MoveToMovie(string instanceName, float vx, float vy)
+	public void MoveToMovie(string instanceName,
+		float vx, float vy, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.MoveTo(vx, vy);});
+		AddMovieLoadHandler(instanceName, (m) => {m.MoveTo(vx, vy);}, immortal);
 	}
 
-	public void RotateMovie(string instanceName, float degree)
+	public void RotateMovie(string instanceName,
+		float degree, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.Rotate(degree);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.Rotate(degree);}, immortal);
 	}
 
-	public void RotateToMovie(string instanceName, float degree)
+	public void RotateToMovie(string instanceName,
+		float degree, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.RotateTo(degree);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.RotateTo(degree);}, immortal);
 	}
 
-	public void ScaleMovie(string instanceName, float vx, float vy)
+	public void ScaleMovie(string instanceName,
+		float vx, float vy, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.Scale(vx, vy);});
+		AddMovieLoadHandler(instanceName, (m) => {m.Scale(vx, vy);}, immortal);
 	}
 
-	public void ScaleToMovie(string instanceName, float vx, float vy)
+	public void ScaleToMovie(string instanceName,
+		float vx, float vy, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.ScaleTo(vx, vy);});
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.ScaleTo(vx, vy);}, immortal);
 	}
 
 	public void SetMatrixMovie(string instanceName,
-		LWF.Matrix matrix, float sx = 1, float sy = 1, float r = 0)
+		LWF.Matrix matrix, float sx = 1, float sy = 1, float r = 0,
+		bool immortal = false)
 	{
 		AddMovieLoadHandler(
-			instanceName, (m) => {m.SetMatrix(matrix, sx, sy, r);});
+			instanceName, (m) => {m.SetMatrix(matrix, sx, sy, r);}, immortal);
 	}
 
-	public void SetAlphaMovie(string instanceName, float v)
+	public void SetAlphaMovie(string instanceName,
+		float v, bool immortal = false)
 	{
-		AddMovieLoadHandler(instanceName, (m) => {m.SetAlpha(v);});
+		AddMovieLoadHandler(instanceName, (m) => {m.SetAlpha(v);}, immortal);
 	}
 
 	public void SetColorTransformMovie(
-		string instanceName, LWF.ColorTransform c)
-	{
-		AddMovieLoadHandler(instanceName, (m) => {m.SetColorTransform(c);});
-	}
-
-	public void SetRenderingOffsetMovie(string instanceName, int rOffset)
+		string instanceName, LWF.ColorTransform c, bool immortal = false)
 	{
 		AddMovieLoadHandler(
-			instanceName, (m) => {m.SetRenderingOffset(rOffset);});
+			instanceName, (m) => {m.SetColorTransform(c);}, immortal);
 	}
+
+	public void SetRenderingOffsetMovie(string instanceName,
+		int rOffset, bool immortal = false)
+	{
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.SetRenderingOffset(rOffset);}, immortal);
+	}
+
+#if UNITY_EDITOR
+	public virtual void OnEnable()
+	{
+		SceneView.onSceneGUIDelegate += this.OnSceneGUI;
+	}
+
+	public virtual void OnDisable()
+	{
+		SceneView.onSceneGUIDelegate -= this.OnSceneGUI;
+	}
+
+	public virtual void OnSceneGUI(SceneView sceneView)
+	{
+		if (lwf != null)
+			lwf.RenderNow();
+	}
+#endif
+
 }

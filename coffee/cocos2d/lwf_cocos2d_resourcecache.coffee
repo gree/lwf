@@ -65,13 +65,6 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
       settings["onload"].call(settings, lwf)
     return
 
-  clear: ->
-    for k, cache of @cache
-      for name, url of cache
-        if url.match(/\.(png|jpg)$/)
-          cc.TextureCache.getInstance().removeTextureForKey(url)
-    super
-
   onLoadImage: ->
     # @ is settings
     @loadedCount++
@@ -110,12 +103,11 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
     return
 
   unloadLWF:(lwf) ->
-    cache = @cache[lwf.url]
-    if cache? and --cache.instances <= 0
-      for name, url of cache
+    super
+    unless @cache[lwf.url]?
+      for name, url of lwf.renderFactory.cache
         if url.match(/\.(png|jpg)$/i)
           cc.TextureCache.getInstance().removeTextureForKey(url)
-      delete @cache[lwf.url]
     return
 
   setParticlePath:(prefix, suffix) ->

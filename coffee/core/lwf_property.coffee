@@ -79,8 +79,12 @@ class Property
 
   setScaleAndRotation: ->
     radian = @rotation * Math.PI / 180
-    c = Math.cos(radian)
-    s = Math.sin(radian)
+    if radian is 0
+      c = 1
+      s = 0
+    else
+      c = Math.cos(radian)
+      s = Math.sin(radian)
     @matrix.scaleX = @scaleX * c
     @matrix.skew0 = @scaleY * -s
     @matrix.skew1 = @scaleX * s

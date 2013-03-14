@@ -235,7 +235,15 @@ public class TextContext
 
 		if (fontName.StartsWith("_")) {
 
-			ISystemFontRenderer.Style style = ISystemFontRenderer.Style.NORMAL;
+			ISystemFontRenderer.Style style;
+			if (fontName == "_bold")
+				style = ISystemFontRenderer.Style.BOLD;
+			else if (fontName == "_italic")
+				style = ISystemFontRenderer.Style.ITALIC;
+			else if (fontName == "_bold_italic")
+				style = ISystemFontRenderer.Style.BOLD_ITALIC;
+			else
+				style = ISystemFontRenderer.Style.NORMAL;
 
 			ISystemFontRenderer.Align align;
 			int a = textProperty.align & (int)Align.ALIGN_MASK;
@@ -332,6 +340,11 @@ public class TextRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 	private UnityEngine.Color m_colorAdd;
 #endif
+#if UNITY_EDITOR
+	private bool m_visible;
+#endif
+	private bool m_shouldBeOnTop;
+	private float m_zOffset;
 
 	public TextRenderer(LWF lwf, TextContext context) : base(lwf)
 	{
@@ -358,11 +371,21 @@ public class TextRenderer : Renderer
 				p.mLeftMargin * scale,
 				p.mRightMargin * scale);
 		}
+
+		CombinedMeshRenderer.Factory factory =
+			lwf.rendererFactory as CombinedMeshRenderer.Factory;
+		if (factory != null) {
+			m_shouldBeOnTop = true;
+			m_zOffset = Mathf.Abs(factory.zRate);
+		}
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
 		int renderingIndex, int renderingCount, bool visible)
 	{
+#if UNITY_EDITOR
+		m_visible = visible;
+#endif
 		if (m_context == null || !visible)
 			return;
 
@@ -371,8 +394,8 @@ public class TextRenderer : Renderer
 			scale /= m_lwf.scaleByStage;
 
 		Factory factory = m_context.factory;
-		factory.ConvertMatrix(ref m_matrix,
-			matrix, scale, renderingCount - renderingIndex);
+		factory.ConvertMatrix(ref m_matrix, matrix, scale,
+			m_shouldBeOnTop ? m_zOffset : renderingCount - renderingIndex);
 		Factory.MultiplyMatrix(ref m_renderMatrix,
 			m_context.parent.transform.localToWorldMatrix, m_matrix);
 
@@ -396,6 +419,18 @@ public class TextRenderer : Renderer
 				m_context.parent.layer, factory.camera);
 		}
 	}
+
+#if UNITY_EDITOR
+	public override void RenderNow()
+	{
+		if (m_context == null || !m_visible)
+			return;
+		if (m_context.bitmapFontRenderer != null)
+			m_context.bitmapFontRenderer.RenderNow(m_renderMatrix, m_colorMult);
+		if (m_context.systemFontRenderer != null)
+			m_context.systemFontRenderer.RenderNow(m_renderMatrix, m_colorMult);
+	}
+#endif
 }
 
 }	// namespace UnityRenderer

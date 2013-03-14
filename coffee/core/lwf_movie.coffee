@@ -47,6 +47,7 @@ class Movie extends IObject
     @attachMoviePostExeced = false
     @movieExecCount = -1
     @postExecCount = -1
+    @eventHandlers = {}
 
     @property = new Property(lwf)
 
@@ -90,6 +91,7 @@ class Movie extends IObject
     @matrix1 = new Matrix
     @colorTransform0 = new ColorTransform
     @colorTransform1 = new ColorTransform
+    @blendMode = "normal"
 
     @displayList = []
     @attachName = null
@@ -126,13 +128,13 @@ class Movie extends IObject
     @playing = false
     return @
 
-  gotoNextFrame: ->
+  nextFrame: ->
     @jumped = true
     @stop()
     ++@currentFrameInternal
     return @
 
-  gotoPrevFrame: ->
+  prevFrame: ->
     @jumped = true
     @stop()
     --@currentFrameInternal
@@ -161,28 +163,23 @@ class Movie extends IObject
     [x, y] = Utility.calcMatrixToPoint(point.x, point.y, @matrix)
     return new Point(x, y)
 
-  shrinkList:(list) ->
-    for i in [(list.length - 1)..0]
-      if list[i]?
-        if i is list.length - 1
-          return list
-        else
-          return list[0..i]
-    return []
+  getDepth:(keys) ->
+    depth = if keys.length is 0 then 0 else keys[keys.length - 1] + 1
+    return depth
 
-  reorderList:(reorder, list, index, object, op) ->
-    if !reorder or index >= list.length
-      list[index] = object
-    else
-      list.splice(index, 0, object)
+  reorderList:(reorder, keys, list, index, object, op) ->
+    Utility.insertIntArray(keys, index)
+    list[index] = object
     if reorder
       i = 0
-      while i < list.length
-        if list[i]?
-          op(list[i], i)
-          i += 1
-        else
-          list.splice(i, 1)
+      newlist = {}
+      for k, v of list
+        op(v, i)
+        keys[i] = i
+        newlist[i] = v
+        ++i
+      list = newlist
+    return list
 
   deleteAttachedMovie:( \
       parent, movie, destroy = true, deleteFromDetachedMovies = true) ->
@@ -190,12 +187,15 @@ class Movie extends IObject
     depth = movie.depth
     delete parent.attachedMovies[attachName]
     delete parent.attachedMovieList[depth]
+    Utility.deleteIntArray(parent.attachedMovieListKeys, depth)
     delete parent.detachedMovies[attachName] if deleteFromDetachedMovies
     delete parent[attachName]
-    parent.attachedMovieList = @shrinkList(parent.attachedMovieList)
     movie.destroy() if destroy
 
   attachMovie:(linkageName, attachName, options = null) ->
+    if linkageName instanceof LWF
+      return attachLWF(linkageName, attachName, options)
+
     options ?= {}
     depth = options["depth"]
     reorder = options["reorder"] ? false
@@ -218,7 +218,8 @@ class Movie extends IObject
     unless @attachedMovies?
       @attachedMovies = {}
       @detachedMovies = {}
-      @attachedMovieList = []
+      @attachedMovieList = {}
+      @attachedMovieListKeys = Utility.newIntArray()
 
     attachedMovie = @attachedMovies[attachName]
     @deleteAttachedMovie(@, attachedMovie) if attachedMovie?
@@ -236,22 +237,33 @@ class Movie extends IObject
       movie.exec() if @attachMovieExeced
       movie.postExec(true) if @attachMoviePostExeced
     movie.attachName = attachName
-    movie.depth = depth ? @attachedMovieList.length
+    depth = @getDepth(@attachedMovieListKeys) unless depth?
+    movie.depth = depth
     movie.name = attachName
     @attachedMovies[attachName] = movie
-    @reorderList(reorder,
+    @attachedMovieList = @reorderList(reorder, @attachedMovieListKeys,
       @attachedMovieList, movie.depth, movie, (o, i) -> o.depth = i)
     @[attachName] = movie
     return movie
 
   swapAttachedMovieDepth:(depth0, depth1) ->
-    return unless @attachedMovies?
+    return if !@attachedMovies? or depth0 is depth1
     attachedMovie0 = @attachedMovieList[depth0]
     attachedMovie1 = @attachedMovieList[depth1]
-    attachedMovie0.depth = depth1 if attachedMovie0?
-    attachedMovie1.depth = depth0 if attachedMovie1?
-    @attachedMovieList[depth0] = attachedMovie1
-    @attachedMovieList[depth1] = attachedMovie0
+    if attachedMovie0?
+      attachedMovie0.depth = depth1
+      @attachedMovieList[depth1] = attachedMovie0
+      Utility.insertIntArray(@attachedMovieListKeys, depth1)
+    else
+      delete @attachedMovieList[depth1]
+      Utility.deleteIntArray(@attachedMovieListKeys, depth1)
+    if attachedMovie1?
+      attachedMovie1.depth = depth0
+      @attachedMovieList[depth0] = attachedMovie1
+      Utility.insertIntArray(@attachedMovieListKeys, depth0)
+    else
+      delete @attachedMovieList[depth0]
+      Utility.deleteIntArray(@attachedMovieListKeys, depth0)
     return
 
   getAttachedMovie:(attachName) ->
@@ -297,6 +309,13 @@ class Movie extends IObject
     @parent.detachMovie(@) if @parent?
     return
 
+  removeMovieClip: ->
+    if @attachName?
+      @parent.detachMovie(@) if @parent?
+    else if @lwf.attachName?
+      @parent.detachLWF(@) if @parent?
+    return
+
   execDetachHandler:(lwfContainer) ->
     lwf = lwfContainer.child
     if lwf.detachHandler?
@@ -314,9 +333,9 @@ class Movie extends IObject
     depth = lwfContainer.child.depth
     delete parent.attachedLWFs[attachName]
     delete parent.attachedLWFList[depth]
+    Utility.deleteIntArray(parent.attachedLWFListKeys, depth)
     delete parent.detachedLWFs[attachName] if deleteFromDetachedLWFs
     delete parent[attachName]
-    parent.attachedLWFList = @shrinkList(parent.attachedLWFList)
     @execDetachHandler(lwfContainer) if destroy
 
   attachLWF:(attachLWF, attachName, options = null) ->
@@ -328,7 +347,8 @@ class Movie extends IObject
     unless @attachedLWFs?
       @attachedLWFs = {}
       @detachedLWFs = {}
-      @attachedLWFList = []
+      @attachedLWFList = {}
+      @attachedLWFListKeys = Utility.newIntArray()
 
     if attachLWF.parent?
       lwfContainer = attachLWF.parent.attachedLWFs[attachLWF.attachName]
@@ -345,25 +365,53 @@ class Movie extends IObject
 
     @lwf.interactive = true if attachLWF.interactive
     attachLWF.parent = @
+    attachLWF.rootMovie.parent = @
     attachLWF.detachHandler = detachHandler
     attachLWF.attachName = attachName
-    attachLWF.depth = depth ? @attachedLWFList.length
+    depth = @getDepth(@attachedLWFListKeys) unless depth?
+    attachLWF.depth = depth
     @attachedLWFs[attachName] = lwfContainer
-    @reorderList(reorder, @attachedLWFList,
-      attachLWF.depth, lwfContainer, (o, i) -> o.child.depth = i)
+    @attachedLWFList = @reorderList(reorder, @attachedLWFListKeys,
+      @attachedLWFList, attachLWF.depth, lwfContainer,
+      (o, i) -> o.child.depth = i)
     @[attachName] = attachLWF.rootMovie
+    delete @lwf.loadedLWFs[attachLWF.lwfInstanceId] if attachLWF.lwfInstanceId?
 
     @lwf.isLWFAttached = true
     return
 
   swapAttachedLWFDepth:(depth0, depth1) ->
-    return unless @attachedLWFs?
+    return if !@attachedLWFs? or depth0 is depth1
     attachedLWF0 = @attachedLWFList[depth0]
     attachedLWF1 = @attachedLWFList[depth1]
-    attachedLWF0.child.depth = depth1 if attachedLWF0?
-    attachedLWF1.child.depth = depth0 if attachedLWF1?
-    @attachedLWFList[depth0] = attachedLWF1
-    @attachedLWFList[depth1] = attachedLWF0
+    if attachedLWF0?
+      attachedLWF0.child.depth = depth1
+      @attachedLWFList[depth1] = attachedLWF0
+      Utility.insertIntArray(@attachedLWFListKeys, depth1)
+    else
+      delete @attachedLWFList[depth1]
+      Utility.deleteIntArray(@attachedLWFListKeys, depth1)
+    if attachedLWF1?
+      attachedLWF1.child.depth = depth0
+      @attachedLWFList[depth0] = attachedLWF1
+      Utility.insertIntArray(@attachedLWFListKeys, depth0)
+    else
+      delete @attachedLWFList[depth0]
+      Utility.deleteIntArray(@attachedLWFListKeys, depth0)
+    return
+
+  swapDepths:(depth) ->
+    if depth instanceof Movie
+      movie = depth
+      if @attachName?
+        @parent.swapAttachedMovieDepth(@depth, movie.depth)
+      else if @lwf is movie.lwf and @lwf.attachName?
+        @parent.swapAttachedLWFDepth(@lwf.depth, movie.lwf.depth)
+    else
+      if @attachName?
+        @parent.swapAttachedMovieDepth(@depth, depth)
+      else if @lwf.attachName?
+        @parent.swapAttachedLWFDepth(@lwf.depth, depth)
     return
 
   getAttachedLWF:(attachName) ->
@@ -566,8 +614,9 @@ class Movie extends IObject
 
       @attachMovieExeced = true
       if @attachedMovies?
-        for movie in @attachedMovieList
-          movie.exec() if movie?
+        for k in @attachedMovieListKeys
+          movie = @attachedMovieList[k]
+          movie.exec()
 
       instance = @instanceHead
       while instance isnt null
@@ -584,10 +633,10 @@ class Movie extends IObject
           movie = @attachedMovies[attachName]
           @deleteAttachedMovie(@, movie, true, false) if movie?
         @detachedMovies = {}
-        for movie in @attachedMovieList
-          if movie?
-            movie.postExec(progressing)
-            @hasButton = true if !@hasButton and movie.hasButton
+        for k in @attachedMovieListKeys
+          movie = @attachedMovieList[k]
+          movie.postExec(progressing)
+          @hasButton = true if !@hasButton and movie.hasButton
 
       @hasButton = true if @attachedLWFs?
 
@@ -663,9 +712,9 @@ class Movie extends IObject
 
     if @attachedMovies? or @attachedLWFs?
       if @attachedMovies?
-        for movie in @attachedMovieList
-          if movie?
-            @updateObject(movie, m, c, matrixChanged, colorTransformChanged)
+        for k in @attachedMovieListKeys
+          movie = @attachedMovieList[k]
+          @updateObject(movie, m, c, matrixChanged, colorTransformChanged)
 
       if @attachedLWFs?
         for attachName, v of @detachedLWFs
@@ -673,21 +722,23 @@ class Movie extends IObject
           @deleteAttachedLWF(@, lwfContainer, true, false) if lwfContainer?
 
         @detachedLWFs = {}
-        for lwfContainer in @attachedLWFList
-          if lwfContainer?
-            @lwf.renderObject(lwfContainer.child.exec(@lwf.thisTick, m, c))
+        for k in @attachedLWFListKeys
+          lwfContainer = @attachedLWFList[k]
+          @lwf.renderObject(lwfContainer.child.exec(@lwf.thisTick, m, c))
     return
 
   linkButton:() ->
     return if !@visible or !@active or !@hasButton
 
     if @attachedLWFs?
-      for lwfContainer in @attachedLWFList
-        lwfContainer.linkButton() if lwfContainer?
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        lwfContainer.linkButton()
 
     if @attachedMovies?
-      for movie in @attachedMovieList
-        movie.linkButton() if movie?.hasButton
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        movie.linkButton() if movie.hasButton
 
     for depth in [0...@data.depths]
       obj = @displayList[depth]
@@ -700,6 +751,17 @@ class Movie extends IObject
 
   render:(v, rOffset) ->
     v = false if !@visible or !@active
+
+    useBlendMode = false
+    useMaskMode = false
+    if @blendMode isnt "normal"
+      switch @blendMode
+        when "add"
+          @lwf.beginBlendMode(@blendMode)
+          useBlendMode = true
+        when "erase", "layer"
+          @lwf.beginMaskMode(@blendMode)
+          useMaskMode = true
 
     @handler.call("render", @) if @handler?
 
@@ -714,16 +776,20 @@ class Movie extends IObject
       obj.render(v, rOffset) if obj?
 
     if @attachedMovies?
-      for attachedMovie in @attachedMovieList
-        attachedMovie.render(v, rOffset) if attachedMovie?
+      for k in @attachedMovieListKeys
+        attachedMovie = @attachedMovieList[k]
+        attachedMovie.render(v, rOffset)
 
     if @attachedLWFs?
-      for lwfContainer in @attachedLWFList
-        if lwfContainer?
-          child = lwfContainer.child
-          child.setAttachVisible(v)
-          @lwf.renderObject(child.render(
-            @lwf.renderingIndex, @lwf.renderingCount, rOffset))
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        child = lwfContainer.child
+        child.setAttachVisible(v)
+        @lwf.renderObject(child.render(
+          @lwf.renderingIndex, @lwf.renderingCount, rOffset))
+
+    @lwf.endBlendMode() if useBlendMode
+    @lwf.endMaskMode() if useMaskMode
     return
 
   inspect:(inspector, hierarchy, depth) ->
@@ -742,15 +808,15 @@ class Movie extends IObject
       obj.inspect(inspector, hierarchy, d, rOffset) if obj?
 
     if @attachedMovies?
-      for attachedMovie in @attachedMovieList
-        if attachedMovie?
-          attachedMovie.inspect(inspector, hierarchy, d++, rOffset)
+      for k in @attachedMovieListKeys
+        attachedMovie = @attachedMovieList[k]
+        attachedMovie.inspect(inspector, hierarchy, d++, rOffset)
 
     if @attachedLWFs?
-      for lwfContainer in @attachedLWFList
-        if lwfContainer?
-          child = lwfContainer.child
-          @lwf.renderObject(child.inspect(inspector, hierarchy, d++, rOffset))
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        child = lwfContainer.child
+        @lwf.renderObject(child.inspect(inspector, hierarchy, d++, rOffset))
     return
 
   destroy: ->
@@ -762,12 +828,14 @@ class Movie extends IObject
       @attachedMovies = null
       @detachedMovies = null
       @attachedMovieList = null
+      @attachedMovieListKeys = null
 
     if @attachedLWFs?
       @execDetachHandler(lwfContainer) for k, lwfContainer of @attachedLWFs
       @attachedLWFs = null
       @detachedLWFs = null
       @attachedLWFList = null
+      @attachedLWFListKeys = null
 
     @unloadFunc.call(@) if @unloadFunc?
     @playAnimation(ClipEvent.UNLOAD)
@@ -788,6 +856,60 @@ class Movie extends IObject
       c = clipEvents[@data.clipEventId + i]
       if (c.clipEvent & clipEvent) isnt 0
         @lwf.playAnimation(c.animationId, @)
+    return
+
+  dispatchEvent:(e) ->
+    switch e
+      when "load", "postLoad", "unload", "enterFrame", "update", "render"
+        @handler.call(e, @) if @handler?
+      else
+        handlers = @eventHandlers[e]
+        return false unless handlers?
+        handlers = (handler for handler in handlers)
+        for handler in handlers
+          handler.call(@) if handler?
+    return true
+
+  addEventHandler:(e, eventHandler) ->
+    switch e
+      when "load", "postLoad", "unload", "enterFrame", "update", "render"
+        @setHandlers(new MovieEventHandlers()) unless @handler?
+        @handler.addHandler(e, eventHandler)
+      else
+        @eventHandlers[e] ?= []
+        @eventHandlers[e].push(eventHandler)
+    return
+
+  removeEventHandler:(e, eventHandler) ->
+    switch e
+      when "load", "postLoad", "unload", "enterFrame", "update", "render"
+        @handler.removeHandler(e, eventHandler) if @handler?
+      else
+        handlers = @eventHandlers[e]
+        return unless handlers?
+        i = 0
+        while i < handlers.length
+          if handlers[i] is eventHandler
+            handlers.splice(i, 1)
+          else
+            ++i
+        delete @eventHandlers[e] if handlers.length is 0
+    return
+
+  clearEventHandler:(e = null) ->
+    switch e
+      when null
+        @handler.clear() if @handler?
+        @eventHandlers = {}
+      when "load", "postLoad", "unload", "enterFrame", "update", "render"
+        @handler.clear(e) if @handler?
+      else
+        delete @eventHandlers[e]
+    return
+
+  setEventHandler:(e, eventHandler) ->
+    @clearEventHandler(e)
+    @addEventHandler(e, eventHandler)
     return
 
   searchFrame:(label) ->

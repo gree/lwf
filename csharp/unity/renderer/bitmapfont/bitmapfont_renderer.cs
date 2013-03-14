@@ -136,6 +136,7 @@ public class Renderer
 			dir += "/";
 		mMaterial = cache.LoadTexture(dir + mData.textureName);
 		mMesh = new Mesh();
+		mMesh.name = "BitmapFont";
 		mProperty = new MaterialPropertyBlock();
 
 		Metric asciiEm = SearchMetric('M');
@@ -489,6 +490,18 @@ public class Renderer
 		mProperty.AddColor("_AdditionalColor", addColor);
 		Graphics.DrawMesh(
 			mMesh, matrix, mMaterial, layer, camera, 0, mProperty);
+	}
+#endif
+
+#if UNITY_EDITOR
+	public virtual void RenderNow(Matrix4x4 matrix, Color multColor)
+	{
+		if (mEmpty)
+			return;
+		Material material = new Material(mMaterial);
+		material.color = multColor;
+		material.SetPass(0);
+		Graphics.DrawMeshNow(mMesh, matrix);
 	}
 #endif
 }

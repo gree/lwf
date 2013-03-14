@@ -85,19 +85,27 @@ public class Object
 
 	public virtual void Exec(int matrixId = 0, int colorTransformId = 0)
 	{
-		m_matrixIdChanged = m_matrixId != matrixId;
-		m_matrixId = matrixId;
-		m_colorTransformIdChanged = m_colorTransformId != colorTransformId;
-		m_colorTransformId = colorTransformId;
+		if (m_matrixId != matrixId) {
+			m_matrixIdChanged = true;
+			m_matrixId = matrixId;
+		}
+		if (m_colorTransformId != colorTransformId) {
+			m_colorTransformIdChanged = true;
+			m_colorTransformId = colorTransformId;
+		}
 	}
 
 	public virtual void Update(Matrix m, ColorTransform c)
 	{
 		m_updated = true;
-		if (m != null)
+		if (m != null) {
 			Utility.CalcMatrix(m_lwf, m_matrix, m, m_dataMatrixId);
-		if (c != null)
+			m_matrixIdChanged = false;
+		}
+		if (c != null) {
 			Utility.CopyColorTransform(m_colorTransform, c);
+			m_colorTransformIdChanged = false;
+		}
 		m_lwf.RenderObject();
 	}
 
@@ -113,6 +121,14 @@ public class Object
 		}
 		m_lwf.RenderObject();
 	}
+
+#if UNITY_EDITOR
+	public virtual void RenderNow()
+	{
+		if (m_renderer != null)
+			m_renderer.RenderNow();
+	}
+#endif
 
 	public virtual void Inspect(
 		Inspector inspector, int hierarchy, int depth, int rOffset)

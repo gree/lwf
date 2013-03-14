@@ -488,8 +488,8 @@ class LWFLoader
         data.movieLinkages[i].stringId
 
     programObjectMap = data.programObjectMap
-    for i, o of data.programObjects
-      programObjectMap[o.stringId] = i
+    for i in [0...data.programObjects.length]
+      programObjectMap[data.programObjects[i].stringId] = i
 
     labelMap = data.labelMap
     for m in data.movies

@@ -136,6 +136,9 @@ public class BitmapRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 	UnityEngine.Color m_colorAdd;
 #endif
+#if UNITY_EDITOR
+	bool m_visible;
+#endif
 
 	public BitmapRenderer(LWF lwf, BitmapContext context) : base(lwf)
 	{
@@ -153,6 +156,9 @@ public class BitmapRenderer : Renderer
 		int renderingIndex, int renderingCount, bool visible)
 	{
 		// Ignore null texture
+#if UNITY_EDITOR
+		m_visible = visible;
+#endif
 		if (m_context == null || !visible)
 			return;
 
@@ -185,6 +191,19 @@ public class BitmapRenderer : Renderer
 		Graphics.DrawMesh(m_context.mesh, m_renderMatrix, m_context.material,
 			factory.gameObject.layer, factory.camera, 0, m_property);
 	}
+
+#if UNITY_EDITOR
+	public override void RenderNow()
+	{
+		if (m_context == null || !m_visible)
+			return;
+
+		Material material = new Material(m_context.material);
+		material.color = m_colorMult;
+		material.SetPass(0);
+		Graphics.DrawMeshNow(m_context.mesh, m_renderMatrix);
+	}
+#endif
 }
 
 }	// namespace DrawMeshRenderer

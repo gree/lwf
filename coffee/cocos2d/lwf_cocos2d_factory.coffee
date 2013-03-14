@@ -74,6 +74,10 @@ class Cocos2dRendererFactory
 
   endRender:(lwf) ->
 
+  setBlendMode:(blendMode) ->
+
+  setMaskMode:(maskMode) ->
+
   constructBitmap:(lwf, objectId, bitmap) ->
     context = @bitmapContexts[objectId]
     new Cocos2dBitmapRenderer(context) if context
@@ -132,10 +136,20 @@ class Cocos2dRendererFactory
     lwf.scaleForWidth(w, h) if w isnt 0 and w isnt lwf.data.header.width
     return
 
-  setBackgroundColor:(lwf) ->
-    bgColor = lwf.backgroundColor
-    r = (bgColor >> 16) & 0xff
-    g = (bgColor >>  8) & 0xff
-    b = (bgColor >>  0) & 0xff
+  setBackgroundColor:(v) ->
+    if typeof v is "number"
+      bgColor = v
+    else if typeof v is "string"
+      bgColor = parseInt(v, 16)
+    else if v instanceof LWF
+      lwf = v
+      bgColor = lwf.data.header.backgroundColor
+      bgColor |= 0xff << 24
+    else
+      return
+    a = ((bgColor >> 24) & 0xff) / 255.0
+    r = ((bgColor >> 16) & 0xff) / 255.0
+    g = ((bgColor >>  8) & 0xff) / 255.0
+    b = ((bgColor >>  0) & 0xff) / 255.0
     #TODO
     return

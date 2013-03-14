@@ -80,7 +80,7 @@ module RKelly
         [LITERALS[value], value]
       end
 
-      token(:RAW_IDENT, /\A([_\$A-Za-z][_\$0-9A-Za-z]*)/) do |type,value|
+      token(:RAW_IDENT, /\A([@\$]*[_\$A-Za-z][_\$0-9A-Za-z]*)/) do |type,value|
         if KEYWORDS.include?(value)
           [value.upcase.to_sym, value]
         elsif RESERVED.include?(value)
@@ -115,6 +115,7 @@ module RKelly
       tokens = []
       line_number = 1
       accepting_regexp = true
+      offset = 0
       while string.length > 0
         longest_token = nil
 
@@ -132,8 +133,10 @@ module RKelly
           accepting_regexp = followable_by_regex(longest_token)
         end
 
+        longest_token.offset = offset
         longest_token.line = line_number
         line_number += longest_token.value.scan(/\n/).length
+        offset += longest_token.value.length
         string = string.slice(Range.new(longest_token.value.length, -1))
         tokens << longest_token
       end

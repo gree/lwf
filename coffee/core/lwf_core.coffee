@@ -31,6 +31,7 @@ class LWF
     @name = @data.strings[@data.header.nameStringId]
     @interactive = @data.buttonConditions.length > 0
     @url = null
+    @lwfInstanceId = null
     @frameRate = @data.header.frameRate
     @execLimit = 3
     @tick = 1.0 / @frameRate
@@ -49,6 +50,9 @@ class LWF
     @pointY = Number.MIN_VALUE
     @pressing = false
     @buttonHead = null
+    @blendModes = []
+    @maskModes = []
+    @_tweens = null
 
     @disableExec() if !@interactive and @data.frames.length is 1
 
@@ -56,10 +60,12 @@ class LWF
     @instances = []
     @execHandlers = null
     @eventHandlers = []
+    @genericEventHandlers = []
     @movieEventHandlers = []
     @buttonEventHandlers = []
     @movieCommands = {}
     @programObjectConstructors = []
+    @loadedLWFs = {}
 
     @parent = null
     @attachName = null
@@ -70,9 +76,9 @@ class LWF
     @colorTransform = new ColorTransform
     @colorTransformIdentity = new ColorTransform
 
-    @init()
-
     @setRendererFactory(rendererFactory)
+
+    @init()
 
   setRendererFactory:(rendererFactory = null) ->
     rendererFactory = new NullRendererFactory() unless rendererFactory?
@@ -120,12 +126,38 @@ class LWF
     @renderingIndexOffsetted += count
     return @renderingIndex
 
+  beginBlendMode:(blendMode) ->
+    @blendModes.unshift(blendMode)
+    @rendererFactory.setBlendMode(blendMode)
+    return
+
+  endBlendMode: ->
+    @blendModes.shift()
+    @rendererFactory.setBlendMode(
+      if @blendModes.length > 0 then @blendModes[0] else "normal")
+    return
+
+  beginMaskMode:(maskMode) ->
+    @maskModes.unshift(maskMode)
+    @rendererFactory.setMaskMode(maskMode)
+    return
+
+  endMaskMode: ->
+    @maskModes.shift()
+    @rendererFactory.setMaskMode(
+      if @maskModes.length > 0 then @maskModes[0] else "normal")
+    return
+
   setAttachVisible:(visible) ->
     @attachVisible = visible
     return
 
   clearFocus:(button) ->
     @focus = null if @focus is button
+    return
+
+  clearPressed:(button) ->
+    @pressed = null if @pressed is button
     return
 
   clearIntercepted: ->
@@ -138,6 +170,7 @@ class LWF
 
     @instances = []
     @focus = null
+    @pressed = null
 
     @movieCommands = {}
 
@@ -171,10 +204,11 @@ class LWF
     return c
 
   exec:(tick = 0, matrix = null, colorTransform = null) ->
+    return unless @rootMovie?
     execed = false
     currentProgress = @progress
 
-    if @isExecDisabled
+    if @isExecDisabled and @_tweens is null
       unless @executedForExecDisabled
         ++@execCount
         @rootMovie.exec()
@@ -245,6 +279,7 @@ class LWF
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
+    return unless @rootMovie?
     renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
@@ -273,7 +308,11 @@ class LWF
     return @renderingCount
 
   destroy: ->
+    return unless @rootMovie?
     @stopTweens() if @stopTweens?
+    for k, lwfInstance of @loadedLWFs
+      lwfInstance.destroy()
+    @loadedLWFs = null
     @rootMovie.destroy()
     @rootMovie = null
     func = @functions?['destroy']
@@ -289,6 +328,7 @@ class LWF
     @instances = null
     @execHandlers = null
     @eventHandlers = null
+    @genericEventHandlers = null
     @movieEventHandlers = null
     @buttonEventHandlers = null
     @movieCommands = null
@@ -424,30 +464,43 @@ class LWF
     @addExecHandler(execHandler)
     return
 
-  addEventHandler:(eventId, eventHandler) ->
-    eventId = @searchEventId(eventId) if typeof eventId is "string"
-    return if eventId < 0 or eventId >= @data.events.length
-    @eventHandlers[eventId] ?= []
-    @eventHandlers[eventId].push(eventHandler)
+  addEventHandler:(e, eventHandler) ->
+    eventId = if typeof e is "string" then @searchEventId(e) else e
+    if eventId < 0 or eventId >= @data.events.length
+      @genericEventHandlers[e] ?= []
+      @genericEventHandlers[e].push(eventHandler)
+    else
+      @eventHandlers[eventId] ?= []
+      @eventHandlers[eventId].push(eventHandler)
     return
 
-  removeEventHandler:(eventId, eventHandler) ->
-    eventId = @searchEventId(eventId) if typeof eventId is "string"
-    return if eventId < 0 or eventId >= @data.events.length
-    handlers = @eventHandlers[eventId]
-    return unless handlers?
-    i = 0
-    while i < handlers.length
-      if handlers[i] is eventHandler
-        handlers.splice(i, 1)
-      else
-        ++i
+  removeEventHandler:(e, eventHandler) ->
+    eventId = if typeof e is "string" then @searchEventId(e) else e
+    if eventId < 0 or eventId >= @data.events.length
+      handlers = @genericEventHandlers[e]
+      return unless handlers?
+      keys = []
+      for k, v of handlers
+        keys.push k if v is eventHandler
+      delete handlers[k] for k in keys
+    else
+      handlers = @eventHandlers[eventId]
+      return unless handlers?
+      i = 0
+      while i < handlers.length
+        if handlers[i] is eventHandler
+          handlers.splice(i, 1)
+        else
+          ++i
+      delete @eventHandlers[eventId] if handlers.length is 0
     return
 
-  clearEventHandler:(eventId) ->
-    eventId = @searchEventId(eventId) if typeof eventId is "string"
-    return if eventId < 0 or eventId >= @data.events.length
-    @eventHandlers[eventId] = null
+  clearEventHandler:(e) ->
+    eventId = if typeof e is "string" then @searchEventId(e) else e
+    if eventId < 0 or eventId >= @data.events.length
+      @genericEventHandlers[e] = null
+    else
+      @eventHandlers[eventId] = null
     return
 
   setEventHandler:(eventId, eventHandler) ->
@@ -694,11 +747,11 @@ class LWF
         when Animation.STOP
           target.stop()
   
-        when Animation.GOTONEXTFRAME
-          target.gotoNextFrame()
+        when Animation.NEXTFRAME
+          target.nextFrame()
   
-        when Animation.GOTOPREVFRAME
-          target.gotoPrevFrame()
+        when Animation.PREVFRAME
+          target.prevFrame()
   
         when Animation.GOTOFRAME
           target.gotoFrameInternal(animations[i++])
@@ -729,7 +782,8 @@ class LWF
   
         when Animation.EVENT
           eventId = animations[i++]
-          @dispatchEvent(eventId, movie, button)
+          handlers = @eventHandlers[eventId]
+          handler(movie, button) for handler in handlers if handlers?
 
         when Animation.CALL
           stringId = animations[i++]
@@ -737,13 +791,20 @@ class LWF
           func.call(movie) if func?
     return
 
-  dispatchEvent:(eventId, movie = @rootMovie, button = null) ->
-    handlers = @eventHandlers[eventId]
+  dispatchEvent:(e, movie = @rootMovie, button = null) ->
+    eventId = if typeof e is "string" then @searchEventId(e) else e
+    if eventId < 0 or eventId >= @data.events.length
+      handlers = @genericEventHandlers[e]
+    else
+      handlers = @eventHandlers[eventId]
     return false unless handlers?
-    handler(movie, button) for handler in handlers
+    handlers = (handler for handler in handlers)
+    for handler in handlers
+      handler(movie, button) if handler?
     return true
 
   inputPoint:(x, y) ->
+    return null unless @rootMovie?
     @intercepted = false
     return null unless @interactive
 
@@ -787,22 +848,29 @@ class LWF
     return @focus
 
   inputPress: ->
+    return unless @rootMovie?
     return unless @interactive
 
     @pressing = true
 
-    @focus.press() if @focus?
+    if @focus?
+      @pressed = @focus
+      @focus.press()
     return
 
   inputRelease: ->
+    return unless @rootMovie?
     return unless @interactive
 
     @pressing = false
 
-    @focus.release() if @focus?
+    if @focus? and @pressed is @focus
+      @focus.release()
+      @pressed = null
     return
 
   inputKeyPress:(code) ->
+    return unless @rootMovie?
     return unless @interactive
 
     button = @buttonHead

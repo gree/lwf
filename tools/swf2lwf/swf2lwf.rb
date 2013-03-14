@@ -2582,19 +2582,6 @@ def create_instance_name(x, y)
     "_y" + y.to_s.sub(/\.0$/, '').sub(/\./, "_")
 end
 
-def check_script(script)
-  if script =~ /fscommand\s*\(([^\)]*)\)/
-    args = $1
-    if args =~ /^\s*["']\s*event\s*["']\s*,\s*["']\s*(\S+)\s*["']\s*$/
-      event = $1
-      error "Invalid event name: #{event}" unless event =~ /^[a-zA-Z0-9_]+$/
-      @event_map[event] = true
-    else
-      error "Invalid fscommand notation [#{args}]"
-    end
-  end
-end
-
 def parse_xflxml(xml, isRootMovie = false)
   return unless xml =~ /\/\*\s*js/
   if defined?(LibXML)
@@ -2636,76 +2623,66 @@ def parse_xflxml(xml, isRootMovie = false)
       script_nest = 0
       i = 0
       nest = 0
-      text = e.send(textMsg)
+      text = e.send(textMsg).strip.gsub(/\n/, "\001")
       while i < text.length
-        s = text[i, text.length - i].gsub(/\n/, ' ')
+        s = text[i, text.length - i]
+        pos = (/(\/\*\s*|\*\/\s*)/ =~ s)
+        if pos
+          i += pos
+        else
+          break
+        end
+        s = text[i, text.length - i]
+        skip = 0
         case s
-        when /^\/\*/
+        when /^(\/\*\s*)/
+          skip += $1.length
           if script_index.nil?
             case s
-            when /^(\/\*\s*js\s+)/i
+            when /^(\/\*\s*)(js|js_load|js_postLoad|js_enterFrame|js_unload)(\s*\001|\s+)/i
               lang = :JavaScript
-              type = "frame"
-              script_index = i + $1.length
-              script_nest = nest
-            when /^(\/\*\s*js_load\s+)/i
-              if index != 0
-                error "#{name}:frame #{index+1}: " +
-                  "js_load should be in the first frame of the movie"
-              else
-                lang = :JavaScript
+              case $2.downcase
+              when "js"
+                type = "frame"
+              when "js_load"
                 type = "load"
-                script_index = i + $1.length
-                script_nest = nest
-              end
-            when /^(\/\*\s*js_postLoad\s+)/i
-              if index != 0
-                error "#{name}:frame #{index+1}: " +
-                  "js_postLoad should be in the first frame of the movie"
-              else
-                lang = :JavaScript
+              when "js_postload"
                 type = "postLoad"
-                script_index = i + $1.length
-                script_nest = nest
-              end
-            when /^(\/\*\s*js_enterFrame\s+)/i
-              if index != 0
-                error "#{name}:frame #{index+1}: " +
-                  "js_enterFrame should be in the first frame of the movie"
-              else
-                lang = :JavaScript
+              when "js_enterframe"
                 type = "enterFrame"
-                script_index = i + $1.length
-                script_nest = nest
+              when "js_unload"
+                type = "unload"
               end
-            when /^(\/\*\s*js_unload\s+)/i
-              if index != 0
+              if type != "frame" and index != 0
                 error "#{name}:frame #{index+1}: " +
-                  "js_unload should be in the first frame of the movie"
+                  "js_#{type} should be in the first frame of the movie"
               else
                 lang = :JavaScript
-                type = "unload"
-                script_index = i + $1.length
+                script_index = i + $1.length + $2.length + $3.length
+                skip += $2.length + $3.length
                 script_nest = nest
               end
             end
           end
           nest += 1
-        when /^\*\//
+        when /^(\*\/\s*)/
+          skip += $1.length
           nest -= 1
           if !script_index.nil? and nest == script_nest
             scripts[type] ||= ""
-            scripts[type] +=
-              text[script_index, i - script_index].sub(/\s*$/, '')
+            tmp = text[script_index, i - script_index]
+            tmp.sub!(/^[\s\001]*\001/, '')
+            tmp.sub!(/[\s\001]+$/, '')
+            tmp.gsub!(/\001/, "\n")
+            scripts[type] += tmp
             script_index = nil
           end
         end
-        i += 1
+        i += skip
       end
 
       scripts.each do |type, script|
         if script =~ /\W/
-          check_script(script)
           if type == "frame"
             @script_map[name] ||= Hash.new
             @script_map[name][index] ||= Hash.new
@@ -2727,7 +2704,7 @@ def parse_xflxml(xml, isRootMovie = false)
       item = layer.parent.parent.parent.parent
 
       instance_linkage_name = symbol_instance.attributes["libraryItemName"]
-      instance_linkage_name = escape(instance_linkage_name)
+      instance_linkage_name = escape(instance_linkage_name).gsub(/(\/|%2F)/, '_')
       instance_name = symbol_instance.attributes["name"]
       instance_name = escape(instance_name)
       if instance_name.nil? or instance_name.empty?
@@ -2755,33 +2732,37 @@ def parse_xflxml(xml, isRootMovie = false)
       script_nest = 0
       i = 0
       nest = 0
-      text = e.send(textMsg)
+      text = e.send(textMsg).strip.gsub(/\n/, "\001")
       while i < text.length
-        s = text[i, text.length - i].gsub(/\n/, ' ')
+        s = text[i, text.length - i]
+        pos = (/((on|onClipEvent)([\s\001]*)(\([\s\001]*)([a-zA-Z]+)([\s\001]*\))|on[\s\001]*\([\s\001]*keyPress[\s\001]*".*"[\s\001]*\)|\{\s*|\}\s*|\/\*\s*|\*\/\s*)/ =~ s)
+        if pos
+          i += pos
+        else
+          break
+        end
+        s = text[i, text.length - i]
+        skip = 0
         case s
-        when /^(on|onClipEvent)\s*\(\s*([a-zA-Z]+)\s*\)/
-          event = $2 if event_nest == 0
-        when /^on\s*\(\s*keyPress\s*".*"\s*\)/
+        when /^(on|onClipEvent)([\s\001]*)(\([\s\001]*)([a-zA-Z]+)([\s\001]*\))/
+          skip += $1.length + $2.length + $3.length + $4.length + $5.length
+          event = $4 if event_nest == 0
+        when /^(on[\s\001]*\([\s\001]*keyPress[\s\001]*".*"[\s\001]*\))/
+          skip += $1.length
           event = "keyPress"
-        when /^\{/
+        when /^(\{\s*)/
+          skip += $1.length
           event_nest += 1
-        when /^\}/
+        when /^(\}\s*)/
+          skip += $1.length
           event_nest -= 1
           if event_nest == 0
             if script =~ /\W/
-              check_script(script)
               if event == "keyPress"
                 error "doesn't support script in keyPress event"
               else
-                tail = script_name = ''
-                if instance_linkage_name =~ /.+\/([^\/]+)$/
-                  tail = $1
-                  script_name =
-                    "#{name}_#{index}_#{tail}_#{instance_name}"
-                else
-                  script_name =
-                    "#{name}_#{index}_#{instance_linkage_name}_#{instance_name}"
-                end
+                script_name =
+                  "#{name}_#{index}_#{instance_linkage_name}_#{instance_name}"
                 funcname = "#{script_name}_#{event}"
                 @instance_script_map[script_name] ||= Hash.new
                 @instance_script_map[script_name][event] ||= Hash.new
@@ -2793,24 +2774,31 @@ def parse_xflxml(xml, isRootMovie = false)
             event = nil
             script = ""
           end
-        when /^\/\*/
+        when /^(\/\*\s*)/
+          skip += $1.length
           if script_index.nil?
             case s
-            when /^(\/\*\s*js\s+)/i
+            when /^(\/\*\s*)(js)(\s*\001|\s+)/i
               lang = :JavaScript
-              script_index = i + $1.length
+              script_index = i + $1.length + $2.length + $3.length
+              skip += $2.length + $3.length
               script_nest = nest
             end
           end
           nest += 1
-        when /^\*\//
+        when /^(\*\/\s*)/
+          skip += $1.length
           nest -= 1
           if !script_index.nil? and nest == script_nest
-            script += text[script_index, i - script_index].sub(/\s*$/, '')
+            tmp = text[script_index, i - script_index].sub(/\s*$/, '')
+            tmp.sub!(/^[\s\001]*\001/, '')
+            tmp.sub!(/[\s\001]+$/, '')
+            tmp.gsub!(/\001/, "\n")
+            script += tmp
             script_index = nil
           end
         end
-        i += 1
+        i += skip
       end
     end
   end
@@ -3666,14 +3654,7 @@ global.LWF.Script["#{lwfname}"] = function() {
 
 	var fscommand = function(type, arg) {
 		if (type === "event") {
-			var lwf = _root.lwf;
-			var stringId = lwf.getStringId(arg);
-			if (stringId == -1)
-				throw Error("unknown fscommand event string");
-			var eventId = lwf.searchEventId(stringId);
-			if (eventId == -1)
-				throw Error("unknown fscommand event");
-			lwf.dispatchEvent(eventId, this);
+			_root.lwf.dispatchEvent(arg, this);
 		} else {
 			throw Error("unknown fscommand");
 		}
@@ -3682,7 +3663,10 @@ global.LWF.Script["#{lwfname}"] = function() {
 	var Script = (function() {function Script() {}
 
 	Script.prototype["init"] = function() {
-		_root = this;
+		var movie = this;
+		while (movie.parent !== null)
+			movie = movie.parent.lwf.rootMovie;
+		_root = movie;
 	};
 
 	Script.prototype["destroy"] = function() {
@@ -3695,14 +3679,33 @@ global.LWF.Script["#{lwfname}"] = function() {
 
 	Script.prototype["#{k}"] = function() {
       EOL
-      # TODO
-      # parser = RKelly::Parser.new
-      # parser.parse(v[:script])
-      v[:script].each_line do |line|
-        f.write "\t\t"
-        line = line.gsub(/@\s*([a-zA-Z_])/, "this.\\1").gsub(/@\s*\[/, "this[").gsub(/@/, "this").gsub(/\$\s*([a-zA-Z_])/, "_root.\\1").gsub(/\$\s*\[/, "_root[").gsub(/\$/, "_root")
-        f.puts line
+      script = v[:script]
+      offset = 0
+      RKelly::Tokenizer.new.raw_tokens(script).each do |token|
+        next if token.name != :RAW_IDENT and token.name != :SINGLE_CHAR
+        case token.value
+        when /^@([a-zA-Z_])/
+          script[token.offset + offset, 2] = "this.#{$1}"
+          offset += 4
+        when /^@\[/
+          script[token.offset + offset, 2] = "this["
+          offset += 3
+        when /^@$/
+          script[token.offset + offset, 1] = "this"
+          offset += 3
+        when /^\$([a-zA-Z_])/
+          script[token.offset + offset, 2] = "_root.#{$1}"
+          offset += 5
+        when /^\$\[/
+          script[token.offset + offset, 2] = "_root["
+          offset += 4
+        when /^\$$/
+          script[token.offset + offset, 1] = "_root"
+          offset += 4
+        end
       end
+      f.write script.gsub(/^/, "\t\t")
+      f.write "\n"
       f.write <<-EOL
 	};
       EOL

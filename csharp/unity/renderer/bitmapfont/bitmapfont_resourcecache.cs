@@ -24,6 +24,7 @@ using System.Collections.Generic;
 
 using DataLoader = System.Func<string, byte[]>;
 using TextureLoader = System.Func<string, UnityEngine.Texture2D>;
+using TextureUnloader = System.Action<UnityEngine.Texture2D>;
 
 using DataItem = BitmapFont.CacheItem<BitmapFont.Data>;
 using TextureItem = BitmapFont.CacheItem<UnityEngine.Material>;
@@ -56,6 +57,7 @@ public class ResourceCache
 	private static ResourceCache s_instance;
 	private DataLoader m_dataLoader;
 	private TextureLoader m_textureLoader;
+	private TextureUnloader m_textureUnloader;
 	private DataCache m_dataCache;
 	private TextureCache m_textureCache;
 	private ShaderCache m_shaderCache;
@@ -76,10 +78,12 @@ public class ResourceCache
 	}
 
 	public void SetLoader(DataLoader dataLoader = null,
-		TextureLoader textureLoader = null)
+		TextureLoader textureLoader = null,
+		TextureUnloader textureUnloader = null)
 	{
 		m_dataLoader = dataLoader;
 		m_textureLoader = textureLoader;
+		m_textureUnloader = textureUnloader;
 
 		if (m_dataLoader == null) {
 			m_dataLoader = (name) => {
@@ -91,6 +95,12 @@ public class ResourceCache
 		if (m_textureLoader == null) {
 			m_textureLoader = (name) => {
 				return (Texture2D)Resources.Load(name);
+			};
+		}
+
+		if (m_textureUnloader == null) {
+			m_textureUnloader = (texture) => {
+				Resources.UnloadAsset(texture);
 			};
 		}
 	}
@@ -123,6 +133,10 @@ public class ResourceCache
 			Shader shader = GetShader("BitmapFont");
 			Material material = new Material(shader);
 			material.mainTexture = m_textureLoader(name);
+			if (material.mainTexture != null) {
+				material.mainTexture.name = "BitmapFont/" + name;
+				material.name = material.mainTexture.name;
+			}
 			material.color = new UnityEngine.Color(1, 1, 1, 1);
 			item = new TextureItem(material);
 			m_textureCache[name] = item;
@@ -135,8 +149,13 @@ public class ResourceCache
 	{
 		TextureItem item;
 		if (m_textureCache.TryGetValue(name, out item)) {
-			if (item.Unref() <= 0)
+			if (item.Unref() <= 0) {
+				Material material = item.Entity();
+				if (material.mainTexture != null)
+					m_textureUnloader((Texture2D)material.mainTexture);
+				Material.Destroy(material);
 				m_textureCache.Remove(name);
+			}
 		}
 	}
 
@@ -153,6 +172,12 @@ public class ResourceCache
 	public void UnloadAll()
 	{
 		m_dataCache.Clear();
+		foreach (TextureItem item in m_textureCache.Values) {
+			Material material = item.Entity();
+			if (material.mainTexture != null)
+				m_textureUnloader((Texture2D)material.mainTexture);
+			Material.Destroy(material);
+		}
 		m_textureCache.Clear();
 		m_shaderCache.Clear();
 	}

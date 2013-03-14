@@ -61,13 +61,11 @@ class CanvasBitmapContext
     if @fragment.rotated
       @w = Math.round(h * imageScale)
       @h = Math.round(w * imageScale)
-      @w = @image.width if @w > @image.width
-      @h = @image.height if @h > @image.height
     else
       @w = Math.round(w * imageScale)
       @h = Math.round(h * imageScale)
-      @w = @image.width if @w > @image.width
-      @h = @image.height if @h > @image.height
+    @w = @image.width - @u if @u + @w > @image.width
+    @h = @image.height - @v if @v + @h > @image.height
     @imageHeight = h * imageScale
 
   destruct: ->
@@ -101,14 +99,16 @@ class CanvasBitmapRenderer
     @alpha = c.multi.alpha
 
     fragment = @context.fragment
-    @context.factory.commands[renderingIndex] = {
+    @context.factory.addCommand(renderingIndex, {
       alpha:@alpha,
+      blendMode:@context.factory.blendMode,
+      maskMode:@context.factory.maskMode,
       matrix:m,
       image:@context.image,
       u:@context.u,
       v:@context.v,
       w:@context.w,
       h:@context.h
-    }
+    })
     return
 

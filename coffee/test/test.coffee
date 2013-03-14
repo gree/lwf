@@ -19,7 +19,8 @@
 #
 
 class Game
-  constructor:(@stage, @cache, @textNode = null, @graphNode = null) ->
+  constructor:(@touchDelegate, \
+      @stage, @cache, @textNode = null, @graphNode = null) ->
     @requests = []
 
     if @graphNode?
@@ -87,22 +88,22 @@ class Game
     @from = @getTime()
     @exec()
 
-    @stage.addEventListener("mousedown", @onpress, false)
-    @stage.addEventListener("mousemove", @onmove, false)
-    @stage.addEventListener("mouseup", @onrelease, false)
-    @stage.addEventListener("touchstart", @onpress, false)
-    @stage.addEventListener("touchmove", @onmove, false)
-    @stage.addEventListener("touchend", @onrelease, false)
+    @touchDelegate.addEventListener("mousedown", @onpress, false)
+    @touchDelegate.addEventListener("mousemove", @onmove, false)
+    @touchDelegate.addEventListener("mouseup", @onrelease, false)
+    @touchDelegate.addEventListener("touchstart", @onpress, false)
+    @touchDelegate.addEventListener("touchmove", @onmove, false)
+    @touchDelegate.addEventListener("touchend", @onrelease, false)
 
   exec: ->
     if @destroyed?
       if @lwf?
-        @stage.removeEventListener("mousedown", @onpress, false)
-        @stage.removeEventListener("mousemove", @onmove, false)
-        @stage.removeEventListener("mouseup", @onrelease, false)
-        @stage.removeEventListener("touchstart", @onpress, false)
-        @stage.removeEventListener("touchmove", @onmove, false)
-        @stage.removeEventListener("touchend", @onrelease, false)
+        @touchDelegate.removeEventListener("mousedown", @onpress, false)
+        @touchDelegate.removeEventListener("mousemove", @onmove, false)
+        @touchDelegate.removeEventListener("mouseup", @onrelease, false)
+        @touchDelegate.removeEventListener("touchstart", @onpress, false)
+        @touchDelegate.removeEventListener("touchmove", @onmove, false)
+        @touchDelegate.removeEventListener("touchend", @onrelease, false)
         @cache = null
         @lwf.destroy()
         @lwf = null
@@ -155,6 +156,9 @@ window.onload = ->
     head = document.getElementsByTagName('head')[0]
     head.appendChild(script)
 
+  div = null
+  stage = null
+
   startGame = (renderer) ->
     if renderer is "webgl"
       LWF.useWebGLRenderer()
@@ -163,7 +167,7 @@ window.onload = ->
     else
       LWF.useWebkitCSSRenderer()
     cache = LWF.ResourceCache.get()
-    game = new Game(stage, cache, textNode, graphNode)
+    game = new Game(div, stage, cache, textNode, graphNode)
     window.game = game
     game.load(lwfName)
 

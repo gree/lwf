@@ -51,6 +51,7 @@ public partial class LWF
 	private Movie m_rootMovie;
 	private IObject[] m_instances;
 	private Button m_focus;
+	private Button m_pressed;
 	private Button m_buttonHead;
 	private MovieCommands m_movieCommands;
 	private ProgramObjectConstructor[] m_programObjectConstructors;
@@ -102,6 +103,7 @@ public partial class LWF
 	public Property property {get {return m_property;}}
 	public Movie rootMovie {get {return m_rootMovie;}}
 	public Button focus {get {return m_focus;}}
+	public Button pressed {get {return m_pressed;}}
 	public Button buttonHead {
 		get {return m_buttonHead;}
 		set {m_buttonHead = value;}
@@ -253,6 +255,12 @@ public partial class LWF
 			m_focus = null;
 	}
 
+	public void ClearPressed(Button button)
+	{
+		if (m_pressed == button)
+			m_pressed = null;
+	}
+
 	public void ClearIntercepted()
 	{
 		m_intercepted = false;
@@ -315,7 +323,7 @@ public partial class LWF
 		bool execed = false;
 		float currentProgress = m_progress;
 
-		if (m_execDisabled) {
+		if (m_execDisabled && tweens == null) {
 			if (!m_executedForExecDisabled) {
 				++m_execCount;
 				m_rootMovie.Exec();
@@ -421,6 +429,13 @@ public partial class LWF
 		m_renderingCount = renderingCountBackup;
 		return m_renderingCount;
 	}
+
+#if UNITY_EDITOR
+	public void RenderNow()
+	{
+		m_rootMovie.RenderNow();
+	}
+#endif
 
 	public int Inspect(Inspector inspector, int hierarchy = 0,
 		int inspectDepth = 0, int rIndex = 0, int rCount = 0,

@@ -39,9 +39,55 @@ LWF.prototype.tick;
 LWF.prototype.time;
 LWF.prototype.width;
 
+function Data() {}
+Data.prototype.alphaTransforms;
+Data.prototype.animations;
+Data.prototype.bitmapExs;
+Data.prototype.bitmaps;
+Data.prototype.buttonConditions;
+Data.prototype.buttons;
+Data.prototype.colorTransforms;
+Data.prototype.colors;
+Data.prototype.controlMoveCs;
+Data.prototype.controlMoveMCs;
+Data.prototype.controlMoveMs;
+Data.prototype.controls;
+Data.prototype.events;
+Data.prototype.fonts;
+Data.prototype.frames;
+Data.prototype.graphicObjects;
+Data.prototype.graphics;
+Data.prototype.header;
+Data.prototype.instanceNames;
+Data.prototype.labels;
+Data.prototype.matrices;
+Data.prototype.movieClipEvents;
+Data.prototype.movieLinkages;
+Data.prototype.movies;
+Data.prototype.objects;
+Data.prototype.particleDatas;
+Data.prototype.particles;
+Data.prototype.places;
+Data.prototype.programObjects;
+Data.prototype.strings;
+Data.prototype.textProperties;
+Data.prototype.texts;
+Data.prototype.textureFragments;
+Data.prototype.textures;
+Data.prototype.translates;
+
+function Format() {};
+Format.ProgramObject = function() {};
+Format.ProgramObject.prototype.colorTransformId;
+Format.ProgramObject.prototype.height;
+Format.ProgramObject.prototype.matrixId;
+Format.ProgramObject.prototype.stringId;
+Format.ProgramObject.prototype.width;
+
 function Movie() {}
 Movie.prototype.alpha;
 Movie.prototype.attachName;
+Movie.prototype.blendMode;
 Movie.prototype.currentFrame;
 Movie.prototype.data;
 Movie.prototype.depth;

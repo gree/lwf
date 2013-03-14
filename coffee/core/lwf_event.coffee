@@ -35,7 +35,11 @@ class EventHandlers
       @[type].push(handler) if handler?
     return
 
-  removeHandler:(array, handler) ->
+  addHandler:(type, handler) ->
+    @[type].push(handler) if handler?
+    return
+
+  removeInternal:(array, handler) ->
     i = 0
     while i < array.length
       if array[i] is handler
@@ -47,12 +51,17 @@ class EventHandlers
   remove:(handlers) ->
     for type in @types
       handler = handlers[type]
-      @removeHandler(@[type], handler) if handler?
+      @removeInternal(@[type], handler) if handler?
+    return
+
+  removeHandler:(type, handler) ->
+    @removeInternal(@[type], handler) if handler?
     return
 
   call:(type, target) ->
     handlers = @[type]
-    if handlers?
+    if handlers? and handlers.length > 0
+      handlers = (handler for handler in handlers)
       handler.call(target) for handler in handlers
     return
 

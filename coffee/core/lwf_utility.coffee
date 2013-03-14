@@ -299,3 +299,31 @@ class Utility
     #dst.blue  = c.blue  * t.multi.blue  + t.add.blue
     #dst.alpha = c.alpha * t.multi.alpha + t.add.alpha
     return
+
+  @newIntArray:() ->
+    return []
+
+  @insertIntArray:(array, v) ->
+    if array.length is 0 or v > array[array.length - 1]
+      array.push(v)
+      return
+    i = @locationOfIntArray(array, v, 0, array.length - 1)
+    array.splice(i, 0, v) if array[i] isnt v
+    return
+
+  @deleteIntArray:(array, v) ->
+    i = @locationOfIntArray(array, v, 0, array.length - 1)
+    array.splice(i, 1) if array[i] is v
+    return
+
+  @locationOfIntArray:(array, v, first, last) ->
+    while first <= last
+      mid = ((first + last) / 2) >> 0
+      if v > array[mid]
+        first = mid + 1
+      else if v < array[mid]
+        last = mid - 1
+      else
+        return mid
+    return first
+

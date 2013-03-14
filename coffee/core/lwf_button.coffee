@@ -59,6 +59,7 @@ class Button extends IObject
 
   destroy: ->
     @lwf.clearFocus(@)
+    @lwf.clearPressed(@)
     @handler.call("unload", @) if @handler?
     super
     return

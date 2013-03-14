@@ -220,11 +220,11 @@ public partial class ProgramObject
 	public ProgramObject() {}
 	public ProgramObject(BinaryReader br)
 	{
+		stringId = br.ReadInt32();
 		width = br.ReadInt32();
 		height = br.ReadInt32();
 		matrixId = br.ReadInt32();
 		colorTransformId = br.ReadInt32();
-		stringId = br.ReadInt32();
 	}
 }
 
@@ -656,13 +656,12 @@ public partial class Data
 			eventMap[events[i].stringId] = i;
 
 		movieLinkageMap = new Dictionary<int, int>();
-		for (int i = 0; i < movieLinkages.Length; ++i)
-			movieLinkageMap[movieLinkages[i].stringId] = i;
-
 		movieLinkageNameMap = new Dictionary<int, int>();
-		for (int i = 0; i < movieLinkages.Length; ++i)
+		for (int i = 0; i < movieLinkages.Length; ++i) {
+			movieLinkageMap[movieLinkages[i].stringId] = i;
 			movieLinkageNameMap[movieLinkages[i].movieId] =
 				movieLinkages[i].stringId;
+		}
 
 		programObjectMap = new Dictionary<int, int>();
 		for (int i = 0; i < programObjects.Length; ++i)
@@ -699,8 +698,8 @@ public partial class Data
 			switch ((Animation)code) {
 			case Animation.PLAY:
 			case Animation.STOP:
-			case Animation.GOTONEXTFRAME:
-			case Animation.GOTOPREVFRAME:
+			case Animation.NEXTFRAME:
+			case Animation.PREVFRAME:
 				break;
 
 			case Animation.GOTOFRAME:

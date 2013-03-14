@@ -88,8 +88,10 @@ public partial class LWF
 
 		m_pressing = true;
 
-		if (m_focus != null)
+		if (m_focus != null) {
+			m_pressed = m_focus;
 			m_focus.Press();
+		}
 	}
 
 	public void InputRelease()
@@ -99,8 +101,10 @@ public partial class LWF
 
 		m_pressing = false;
 
-		if (m_focus != null)
+		if (m_focus != null && m_pressed == m_focus) {
 			m_focus.Release();
+			m_pressed = null;
+		}
 	}
 
 	public void InputKeyPress(int code)
