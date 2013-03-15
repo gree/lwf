@@ -548,7 +548,6 @@ class LWF
         h = new MovieEventHandlers()
         @movieEventHandlers[instId] = h
       movie = @searchMovieInstanceByInstanceId(instId)
-      movie.setHandlers(h) if movie?
     else
       return if instanceName.indexOf(".") is -1
       @movieEventHandlersByFullName ?= []
@@ -557,18 +556,22 @@ class LWF
         h = new MovieEventHandlers()
         @movieEventHandlersByFullName[instanceName] = h
       movie = @searchMovieInstance(instanceName)
-      movie.setHandlers(h) if movie?
     h.add(handlers)
+    movie.setHandlers(h) if movie?
     return
 
   removeMovieEventHandler:(instanceName, handlers) ->
     h = @getMovieEventHandlers(instanceName)
     h.remove(handlers) if h?
+    movie = @searchMovieInstance(instanceName)
+    movie.handler.remove(handlers) if movie?.handler?
     return
 
   clearMovieEventHandler:(instanceName, type = null) ->
     h = @getMovieEventHandlers(instanceName)
     h.clear(type) if h?
+    movie = @searchMovieInstance(instanceName)
+    movie.handler.clear(type) if movie?.handler?
     return
 
   setMovieEventHandler:(instanceName, handlers) ->
@@ -602,7 +605,6 @@ class LWF
         h = new ButtonEventHandlers()
         @buttonEventHandlers[instId] = h
       button = @searchButtonInstanceByInstanceId(instId)
-      button.setHandlers(h) if button?
     else
       return if instanceName.indexOf(".") is -1
       @buttonEventHandlersByFullName ?= []
@@ -611,18 +613,22 @@ class LWF
         h = new ButtonEventHandlers()
         @buttonEventHandlersByFullName[instanceName] = h
       button = @searchButtonInstance(instanceName)
-      button.setHandlers(h) if movie?
     h.add(handlers)
+    button.setHandlers(h) if button?
     return
 
   removeButtonEventHandler:(instanceName, handlers) ->
     h = @getButtonEventHandlers(instanceName)
     h.remove(handlers) if h?
+    button = @searchButtonInstance(instanceName)
+    button.handler.remove(handlers) if button?.handler?
     return
 
   clearButtonEventHandler:(instanceName, type = null) ->
     h = @getButtonEventHandlers(instanceName)
     h.clear(type) if h?
+    button = @searchButtonInstance(instanceName)
+    button.handler.clear(type) if buffon?.handler?
     return
 
   setButtonEventHandler:(instanceName, handlers) ->

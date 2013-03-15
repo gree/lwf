@@ -102,6 +102,16 @@ Data.prototype["name"] = Data.prototype.name
 
 IObject.prototype["getFullName"] = IObject.prototype.getFullName
 
+Button.prototype["addEventHandler"] = Button.prototype.addEventHandler
+Button.prototype["addEventListener"] = Button.prototype.addEventHandler
+Button.prototype["clearEventHandler"] = Button.prototype.clearEventHandler
+Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler
+Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent
+Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler
+Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler
+Button.prototype["setEventHandler"] = Button.prototype.setEventHandler
+Button.prototype["setEventListener"] = Button.prototype.setEventHandler
+
 Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler
 Movie.prototype["addEventListener"] = Movie.prototype.addEventHandler
 Movie.prototype["attachLWF"] = Movie.prototype.attachLWF

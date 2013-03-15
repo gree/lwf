@@ -47,7 +47,7 @@ TWEENLWF.Tween = function ( movie ) {
 	this.object = movie;
 	this.valuesStart = {};
 	this.valuesEnd = {};
-	this.duration = 1;
+	this.duration = 0;
 	this.delayTime = 0;
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
@@ -231,7 +231,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 		}
 
-		var elapsed = ( time - this.startTime ) / this.duration;
+		var duration = this.duration <= 0 ? this.lwf.tick : this.duration;
+
+		var elapsed = ( time - this.startTime ) / duration;
 		elapsed = elapsed > 1 ? 1 : elapsed;
 
 		var value = this.easingFunction( elapsed );
@@ -690,6 +692,9 @@ lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
 
 TWEENLWF._tweenUpdater = function() {
 
+	if ( this._tweens === null )
+		return;
+
 	var i = 0;
 	var num_tweens = this._tweens.length;
 	var time = this.time;
@@ -719,7 +724,7 @@ TWEENLWF._tweenUpdater = function() {
 
 TWEENLWF._tweenExecHandler = function() {
 
-	TWEENLWF._tweenUpdater();
+	TWEENLWF._tweenUpdater.call( this );
 
 };
 

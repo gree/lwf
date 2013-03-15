@@ -140,7 +140,8 @@ public class ResourceCache
 
 		if (m_textureUnloader == null) {
 			m_textureUnloader = (texture) => {
-				Resources.UnloadAsset(texture);
+				if (!Application.isEditor)
+					Resources.UnloadAsset(texture);
 			};
 		}
 	}

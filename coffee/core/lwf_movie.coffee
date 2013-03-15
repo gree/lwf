@@ -117,7 +117,10 @@ class Movie extends IObject
     return
 
   setHandlers:(handler) ->
-    @handler = handler
+    if @handler?
+      @handler.concat(handler)
+    else
+      @handler = handler
     return
 
   play: ->

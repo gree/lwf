@@ -40,7 +40,10 @@ class Button extends IObject
     @handler.call("load", @) if @handler?
 
   setHandlers:(handler) ->
-    @handler = handler
+    if @handler?
+      @handler.concat(handler)
+    else
+      @handler = handler
     return
 
   exec:(matrixId = 0, colorTransformId = 0) ->
@@ -118,3 +121,33 @@ class Button extends IObject
           (condition isnt Condition.KEYPRESS or c.keyCode is code)
         @lwf.playAnimation(c.animationId, @parent, @)
     return
+
+  addEventHandler:(e, eventHandler) ->
+    switch e
+      when "load", "unload", "enterFrame", "update", "render", \
+          "press", "release", "rollOver", "rollOut", "keyPress"
+        @setHandlers(new ButtonEventHandlers()) unless @handler?
+        @handler.addHandler(e, eventHandler)
+    return
+
+  removeEventHandler:(e, eventHandler) ->
+    switch e
+      when "load", "unload", "enterFrame", "update", "render", \
+          "press", "release", "rollOver", "rollOut", "keyPress"
+        @handler.removeHandler(e, eventHandler) if @handler?
+    return
+
+  clearEventHandler:(e = null) ->
+    switch e
+      when null
+        @handler.clear() if @handler?
+      when "load", "unload", "enterFrame", "update", "render", \
+          "press", "release", "rollOver", "rollOut", "keyPress"
+        @handler.clear(e) if @handler?
+    return
+
+  setEventHandler:(e, eventHandler) ->
+    @clearEventHandler(e)
+    @addEventHandler(e, eventHandler)
+    return
+

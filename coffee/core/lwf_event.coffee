@@ -35,6 +35,12 @@ class EventHandlers
       @[type].push(handler) if handler?
     return
 
+  concat:(handlers) ->
+    for type in @types
+      handler = handlers[type]
+      @[type].push(h) for h in handler
+    return
+
   addHandler:(type, handler) ->
     @[type].push(handler) if handler?
     return
