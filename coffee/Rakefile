@@ -72,9 +72,9 @@ ADDJSCORE = %w|
 |
 
 JS["lwf"] = CORE + %w|
-  webkitcss/lwf_html5_text
   webkitcss/lwf_webkitcss_factory
   webkitcss/lwf_webkitcss_bitmap
+  webkitcss/lwf_html5_text
   webkitcss/lwf_webkitcss_text
   webkitcss/lwf_webkitcss_domelement
   webkitcss/lwf_webkitcss_resourcecache
@@ -101,6 +101,7 @@ JS["lwf_webgl"] = CORE + %w|
   webgl/lwf_webgl_factory
   webgl/lwf_webgl_bitmap
   webgl/lwf_webgl_resourcecache
+  webkitcss/lwf_html5_text
   webgl/lwf_webgl_text
   webgl/lwf_webgl_expose
 |

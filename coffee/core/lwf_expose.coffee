@@ -57,6 +57,7 @@ LWF.prototype["fitForWidth"] = LWF.prototype.fitForWidth
 LWF.prototype["forceExec"] = LWF.prototype.forceExec
 LWF.prototype["forceExecWithoutProgress"] =
   LWF.prototype.forceExecWithoutProgress
+LWF.prototype["getStageSize"] = LWF.prototype.getStageSize
 LWF.prototype["getStringId"] = LWF.prototype.getStringId
 LWF.prototype["init"] = LWF.prototype.init
 LWF.prototype["inputKeyPress"] = LWF.prototype.inputKeyPress

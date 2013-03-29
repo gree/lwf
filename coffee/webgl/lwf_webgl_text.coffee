@@ -18,31 +18,9 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-class WebGLTextContext
+class WebGLTextContext extends HTML5TextContext
   constructor:(@factory, @data, @text) ->
-    @str = @data.strings[@text.stringId]
-    @textProperty = @data.textProperties[@text.textPropertyId]
-    font = @data.fonts[@textProperty.fontId]
-    @textColor = @data.colors[@text.colorId]
-    @name = @data.strings[@text.nameStringId]
-
-    if @textProperty.strokeColorId isnt -1
-      @strokeColor = @data.colors[@textProperty.strokeColorId]
-    if @textProperty.shadowColorId isnt -1
-      @shadowColor = @data.colors[@textProperty.shadowColorId]
-
-    @fontName = "\"#{@data.strings[font.stringId]}\",sans-serif"
-
-    switch (@textProperty.align & Align.ALIGN_MASK)
-      when Align.RIGHT
-        @align = "right"
-        @offsetX = @text.width
-      when Align.CENTER
-        @align = "center"
-        @offsetX = @text.width / 2
-      else # Align.LEFT
-        @align = "left"
-        @offsetX = 0
+    super
 
     gl = @factory.stageContext
     tw = @text.width
@@ -102,26 +80,12 @@ class WebGLTextContext
     gl.deleteBuffer(@trianglesBuffer)
     return
 
-class WebGLTextRenderer
+class WebGLTextRenderer extends HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
-    @str = @textObject.parent[@context.name] ? @context.str
-    @str = String(@str) if @str?
+    super
 
-    scale = @lwf.scaleByStage
-    canvas = document.createElement("canvas")
-    canvas.width = @context.text.width * scale
-    canvas.height = @context.text.height * scale
-    ctx = canvas.getContext("2d")
-    fontHeight = @context.textProperty.fontHeight * scale
-    ctx.font = "#{fontHeight}px #{@context.fontName}"
-    ctx.textAlign = @context.align
-    @canvas = canvas
-    @canvasContext = ctx
-    @textRendered = false
-
-    @matrixForScale = new Matrix()
-    @matrix = new Float32Array([0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1])
-    @color = new Float32Array([0,0,0,0])
+    @glMatrix = new Float32Array([0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1])
+    @glColor = new Float32Array([0,0,0,0])
 
   destruct: ->
     gl = @context.factory.stageContext
@@ -129,15 +93,9 @@ class WebGLTextRenderer
     return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
-    return unless visible
+    return if !visible or c.multi.alpha is 0
 
-    strChanged = false
-    str = @textObject.parent[@context.name]
-    str = String(str) if str?
-    if str? and str isnt @str
-      strChanged = true
-      @str = str
-    @renderText() if !@textRendered or strChanged
+    super
 
     factory = @context.factory
     gl = factory.stageContext
@@ -147,8 +105,8 @@ class WebGLTextRenderer
     gl.bindBuffer(gl.ARRAY_BUFFER, @context.uvBuffer)
     gl.vertexAttribPointer(factory.aTextureCoord, 2, gl.FLOAT, false, 0, 0)
 
-    textInSubpixel = @context.factory.textInSubpixel
-    gm = @matrix
+    textInSubpixel = factory.textInSubpixel
+    gm = @glMatrix
     gm[0] = m.scaleX
     gm[1] = m.skew1
     gm[4] = m.skew0
@@ -158,7 +116,7 @@ class WebGLTextRenderer
     gm[14] = factory.farZ + renderingIndex
     gl.uniformMatrix4fv(factory.uMatrix, false, gm)
 
-    gc = @color
+    gc = @glColor
     src = gl.SRC_ALPHA
     gc[0] = c.multi.red
     gc[1] = c.multi.green
@@ -175,48 +133,8 @@ class WebGLTextRenderer
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     return
 
-  renderText: ->
-    @textRendered = true
-    canvas = @canvas
-    ctx = @canvasContext
-    lines = @str.split("\n")
-    scale = @lwf.scaleByStage
-    property = @context.textProperty
-    fontHeight = property.fontHeight * scale
-    leading = property.leading * scale
-    h = (fontHeight * lines.length + leading * (lines.length - 1)) * 96 / 72
-    switch (property.align & Align.VERTICAL_MASK)
-      when Align.VERTICAL_BOTTOM
-        offsetY = canvas.height - h
-      when Align.VERTICAL_MIDDLE
-        offsetY = (canvas.height - h) / 2
-      else
-        offsetY = 0
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = @context.factory.convertRGB(@context.textColor)
-
-    useStroke = false
-    if @context.strokeColor?
-      ctx.strokeStyle = @context.factory.convertRGB(@context.strokeColor)
-      ctx.lineWidth = property.strokeWidth
-      useStroke = true
-
-    if @context.shadowColor?
-      shadowColor = @context.factory.convertRGB(@context.shadowColor)
-      ctx.shadowOffsetX = property.shadowOffsetX
-      ctx.shadowOffsetY = property.shadowOffsetY
-      ctx.shadowBlur = property.shadowBlur
-
-    for i in [0...lines.length]
-      line = lines[i]
-      x = @context.offsetX * scale
-      y = fontHeight + offsetY
-      y += (fontHeight + leading) * i * 96 / 72 if i > 0
-      ctx.shadowColor = shadowColor if @context.shadowColor?
-      ctx.fillText(line, x, y)
-      if useStroke
-        ctx.shadowColor = "rgba(0, 0, 0, 0)" if @context.shadowColor?
-        ctx.strokeText(line, x, y)
+  renderText:(textColor) ->
+    super
 
     gl = @context.factory.stageContext
     if @texture
@@ -225,7 +143,7 @@ class WebGLTextRenderer
     @texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, @texture)
     gl.texImage2D(gl.TEXTURE_2D,
-      0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas)
+      0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, @canvas)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)

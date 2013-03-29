@@ -2554,7 +2554,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     Button.prototype.setHandlers = function(handler) {
-      this.handler = handler;
+      if (this.handler != null) {
+        this.handler.concat(handler);
+      } else {
+        this.handler = handler;
+      }
     };
 
     Button.prototype.exec = function(matrixId, colorTransformId) {
@@ -2663,6 +2667,75 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.lwf.playAnimation(c.animationId, this.parent, this);
         }
       }
+    };
+
+    Button.prototype.addEventHandler = function(e, eventHandler) {
+      switch (e) {
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          this.lwf.interactive = true;
+          if (this.handler == null) {
+            this.setHandlers(new ButtonEventHandlers());
+          }
+          this.handler.addHandler(e, eventHandler);
+      }
+    };
+
+    Button.prototype.removeEventHandler = function(e, eventHandler) {
+      switch (e) {
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          if (this.handler != null) {
+            this.handler.removeHandler(e, eventHandler);
+          }
+      }
+    };
+
+    Button.prototype.clearEventHandler = function(e) {
+      if (e == null) {
+        e = null;
+      }
+      switch (e) {
+        case null:
+          if (this.handler != null) {
+            this.handler.clear();
+          }
+          break;
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          if (this.handler != null) {
+            this.handler.clear(e);
+          }
+      }
+    };
+
+    Button.prototype.setEventHandler = function(e, eventHandler) {
+      this.clearEventHandler(e);
+      this.addEventHandler(e, eventHandler);
     };
 
     return Button;
@@ -3004,7 +3077,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.setHandlers = function(handler) {
-      this.handler = handler;
+      if (this.handler != null) {
+        this.handler.concat(handler);
+      } else {
+        this.handler = handler;
+      }
     };
 
     Movie.prototype.play = function() {
@@ -4461,6 +4538,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
+    EventHandlers.prototype.concat = function(handlers) {
+      var h, handler, type, _i, _j, _len, _len1, _ref;
+      _ref = this.types;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        type = _ref[_i];
+        handler = handlers[type];
+        for (_j = 0, _len1 = handler.length; _j < _len1; _j++) {
+          h = handler[_j];
+          this[type].push(h);
+        }
+      }
+    };
+
     EventHandlers.prototype.addHandler = function(type, handler) {
       if (handler != null) {
         this[type].push(handler);
@@ -4665,6 +4755,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     LWF.prototype.scaleForWidth = function(stageWidth) {
       Utility.scaleForWidth(this, stageWidth);
+    };
+
+    LWF.prototype.getStageSize = function() {
+      var h, w, _ref;
+      _ref = this.rendererFactory.getStageSize(), w = _ref[0], h = _ref[1];
+      return {
+        width: w,
+        height: h
+      };
     };
 
     LWF.prototype.renderOffset = function() {
@@ -5351,9 +5450,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.movieEventHandlers[instId] = h;
         }
         movie = this.searchMovieInstanceByInstanceId(instId);
-        if (movie != null) {
-          movie.setHandlers(h);
-        }
       } else {
         if (instanceName.indexOf(".") === -1) {
           return;
@@ -5367,29 +5463,37 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.movieEventHandlersByFullName[instanceName] = h;
         }
         movie = this.searchMovieInstance(instanceName);
-        if (movie != null) {
-          movie.setHandlers(h);
-        }
       }
       h.add(handlers);
+      if (movie != null) {
+        movie.setHandlers(h);
+      }
     };
 
     LWF.prototype.removeMovieEventHandler = function(instanceName, handlers) {
-      var h;
+      var h, movie;
       h = this.getMovieEventHandlers(instanceName);
       if (h != null) {
         h.remove(handlers);
       }
+      movie = this.searchMovieInstance(instanceName);
+      if ((movie != null ? movie.handler : void 0) != null) {
+        movie.handler.remove(handlers);
+      }
     };
 
     LWF.prototype.clearMovieEventHandler = function(instanceName, type) {
-      var h;
+      var h, movie;
       if (type == null) {
         type = null;
       }
       h = this.getMovieEventHandlers(instanceName);
       if (h != null) {
         h.clear(type);
+      }
+      movie = this.searchMovieInstance(instanceName);
+      if ((movie != null ? movie.handler : void 0) != null) {
+        movie.handler.clear(type);
       }
     };
 
@@ -5435,9 +5539,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.buttonEventHandlers[instId] = h;
         }
         button = this.searchButtonInstanceByInstanceId(instId);
-        if (button != null) {
-          button.setHandlers(h);
-        }
       } else {
         if (instanceName.indexOf(".") === -1) {
           return;
@@ -5451,29 +5552,37 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.buttonEventHandlersByFullName[instanceName] = h;
         }
         button = this.searchButtonInstance(instanceName);
-        if (typeof movie !== "undefined" && movie !== null) {
-          button.setHandlers(h);
-        }
       }
       h.add(handlers);
+      if (button != null) {
+        button.setHandlers(h);
+      }
     };
 
     LWF.prototype.removeButtonEventHandler = function(instanceName, handlers) {
-      var h;
+      var button, h;
       h = this.getButtonEventHandlers(instanceName);
       if (h != null) {
         h.remove(handlers);
       }
+      button = this.searchButtonInstance(instanceName);
+      if ((button != null ? button.handler : void 0) != null) {
+        button.handler.remove(handlers);
+      }
     };
 
     LWF.prototype.clearButtonEventHandler = function(instanceName, type) {
-      var h;
+      var button, h;
       if (type == null) {
         type = null;
       }
       h = this.getButtonEventHandlers(instanceName);
       if (h != null) {
         h.clear(type);
+      }
+      button = this.searchButtonInstance(instanceName);
+      if ((typeof buffon !== "undefined" && buffon !== null ? buffon.handler : void 0) != null) {
+        button.handler.clear(type);
       }
     };
 
@@ -5893,6 +6002,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["forceExecWithoutProgress"] = LWF.prototype.forceExecWithoutProgress;
 
+  LWF.prototype["getStageSize"] = LWF.prototype.getStageSize;
+
   LWF.prototype["getStringId"] = LWF.prototype.getStringId;
 
   LWF.prototype["init"] = LWF.prototype.init;
@@ -5966,6 +6077,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Data.prototype["name"] = Data.prototype.name;
 
   IObject.prototype["getFullName"] = IObject.prototype.getFullName;
+
+  Button.prototype["addEventHandler"] = Button.prototype.addEventHandler;
+
+  Button.prototype["addEventListener"] = Button.prototype.addEventHandler;
+
+  Button.prototype["clearEventHandler"] = Button.prototype.clearEventHandler;
+
+  Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler;
+
+  Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent;
+
+  Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler;
+
+  Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler;
+
+  Button.prototype["setEventHandler"] = Button.prototype.setEventHandler;
+
+  Button.prototype["setEventListener"] = Button.prototype.setEventHandler;
 
   Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler;
 
@@ -6090,270 +6219,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   ColorTransform.prototype["clear"] = ColorTransform.prototype.clear;
 
   ColorTransform.prototype["set"] = ColorTransform.prototype.set;
-
-  HTML5TextContext = (function() {
-
-    function HTML5TextContext(factory, data, text) {
-      var font;
-      this.factory = factory;
-      this.data = data;
-      this.text = text;
-      this.str = this.data.strings[this.text.stringId];
-      this.textProperty = this.data.textProperties[this.text.textPropertyId];
-      font = this.data.fonts[this.textProperty.fontId];
-      this.textColor = this.data.colors[this.text.colorId];
-      this.name = this.data.strings[this.text.nameStringId];
-      if (this.textProperty.strokeColorId !== -1) {
-        this.strokeColor = this.data.colors[this.textProperty.strokeColorId];
-      }
-      if (this.textProperty.shadowColorId !== -1) {
-        this.shadowColor = this.data.colors[this.textProperty.shadowColorId];
-      }
-      this.fontName = "\"" + this.data.strings[font.stringId] + "\",sans-serif";
-    }
-
-    HTML5TextContext.prototype.destruct = function() {};
-
-    return HTML5TextContext;
-
-  })();
-
-  HTML5TextRenderer = (function() {
-
-    function HTML5TextRenderer(lwf, context, textObject) {
-      var align, canvas, ctx, leftMargin, lm, property, rightMargin, rm, scale, sw, text, _ref1;
-      this.lwf = lwf;
-      this.context = context;
-      this.textObject = textObject;
-      this.str = (_ref1 = this.textObject.parent[this.context.name]) != null ? _ref1 : this.context.str;
-      if (this.str != null) {
-        this.str = String(this.str);
-      }
-      this.matrixForScale = new Matrix();
-      this.color = new Color;
-      scale = this.lwf.scaleByStage;
-      property = this.context.textProperty;
-      this.leading = property.leading * scale;
-      this.fontHeight = property.fontHeight * scale;
-      leftMargin = property.leftMargin / this.fontHeight;
-      rightMargin = property.rightMargin / this.fontHeight;
-      lm = 0;
-      rm = 0;
-      if (this.context.strokeColor != null) {
-        lm = rm = property.strokeWidth / 2 * scale;
-      }
-      if (this.context.shadowColor != null) {
-        sw = (property.shadowBlur - property.shadowOffsetX) * scale;
-        if (sw > lm) {
-          lm = sw;
-        }
-        sw = (property.shadowOffsetX + property.shadowBlur) * scale;
-        if (sw > rm) {
-          rm = sw;
-        }
-      }
-      leftMargin += lm;
-      rightMargin += rm;
-      text = this.context.text;
-      switch (property.align & Align.ALIGN_MASK) {
-        case Align.RIGHT:
-          align = "right";
-          this.offsetX = text.width - rightMargin;
-          break;
-        case Align.CENTER:
-          align = "center";
-          this.offsetX = text.width / 2;
-          break;
-        default:
-          align = "left";
-          this.offsetX = leftMargin;
-      }
-      canvas = document.createElement("canvas");
-      canvas.width = this.context.text.width * scale;
-      canvas.height = this.context.text.height * scale;
-      this.maxWidth = canvas.width - (leftMargin + rightMargin);
-      ctx = canvas.getContext("2d");
-      ctx.font = "" + this.fontHeight + "px " + this.context.fontName;
-      ctx.textAlign = align;
-      ctx.textBaseline = "bottom";
-      this.canvas = canvas;
-      this.canvasContext = ctx;
-      this.textRendered = false;
-    }
-
-    HTML5TextRenderer.prototype.destruct = function() {};
-
-    HTML5TextRenderer.prototype.fitText = function(line, words, lineStart, imin, imax) {
-      var imid, start, str, w;
-      if (imax < imin) {
-        return;
-      }
-      imid = ((imin + imax) / 2) >> 0;
-      start = lineStart === 0 ? 0 : words[lineStart - 1];
-      str = line.slice(start, words[imid]);
-      w = this.canvasContext.measureText(str).width;
-      if (w <= this.maxWidth) {
-        if (w > this.lineWidth) {
-          this.index = imid;
-          this.lineWidth = w;
-        }
-        this.fitText(line, words, lineStart, imid + 1, imax);
-      }
-      if (w >= this.lineWidth) {
-        return this.fitText(line, words, lineStart, imin, imid - 1);
-      }
-    };
-
-    HTML5TextRenderer.prototype.adjustText = function(lines) {
-      var c, i, imax, imin, line, newlines, prev, start, str, to, word, words, _i, _j, _k, _len, _len1, _ref1;
-      newlines = [];
-      for (_i = 0, _len = lines.length; _i < _len; _i++) {
-        line = lines[_i];
-        words = line.split(" ");
-        line = "";
-        for (_j = 0, _len1 = words.length; _j < _len1; _j++) {
-          word = words[_j];
-          if (word.length > 0) {
-            if (line.length > 0) {
-              line += " ";
-            }
-            line += word;
-          }
-        }
-        if (this.canvasContext.measureText(line).width > this.maxWidth) {
-          words = [];
-          prev = 0;
-          for (i = _k = 1, _ref1 = line.length; 1 <= _ref1 ? _k < _ref1 : _k > _ref1; i = 1 <= _ref1 ? ++_k : --_k) {
-            c = line.charCodeAt(i);
-            if (c === 0x20 || c >= 0x80 || prev >= 0x80) {
-              words.push(i);
-            }
-            prev = c;
-          }
-          words.push(line.length);
-          imin = 0;
-          imax = words.length - 1;
-          while (true) {
-            this.index = null;
-            this.lineWidth = 0;
-            this.fitText(line, words, imin, imin, imax);
-            if (this.index === null) {
-              break;
-            }
-            start = imin === 0 ? 0 : words[imin - 1];
-            if (line.charCodeAt(start) === 0x20) {
-              ++start;
-            }
-            to = words[this.index];
-            str = line.slice(start, to);
-            if (this.index === imax) {
-              line = str;
-              break;
-            }
-            newlines.push(str);
-            start = to + (line.charCodeAt(to) === 0x20 ? 1 : 0);
-            str = line.slice(start);
-            if (this.canvasContext.measureText(str).width <= this.maxWidth) {
-              line = str;
-              break;
-            }
-            imin = this.index + 1;
-          }
-        }
-        newlines.push(line);
-      }
-      return newlines;
-    };
-
-    HTML5TextRenderer.prototype.renderText = function(textColor) {
-      var canvas, context, ctx, h, i, len, line, lines, offsetY, property, scale, shadowColor, useStroke, x, y, _i, _ref1;
-      this.textRendered = true;
-      context = this.context;
-      canvas = this.canvas;
-      ctx = this.canvasContext;
-      scale = this.lwf.scaleByStage;
-      lines = this.adjustText(this.str.split("\n"));
-      property = context.textProperty;
-      switch (property.align & Align.VERTICAL_MASK) {
-        case Align.VERTICAL_BOTTOM:
-          len = lines.length;
-          h = (this.fontHeight * len + this.leading * (len - 1)) * 96 / 72;
-          offsetY = canvas.height - h;
-          break;
-        case Align.VERTICAL_MIDDLE:
-          len = lines.length + 1;
-          h = (this.fontHeight * len + this.leading * (len - 1)) * 96 / 72;
-          offsetY = (canvas.height - h) / 2;
-          break;
-        default:
-          offsetY = 0;
-      }
-      offsetY += this.fontHeight * 1.2;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgb(" + textColor.red + "," + textColor.green + "," + textColor.blue + ")";
-      useStroke = false;
-      if (context.strokeColor != null) {
-        ctx.strokeStyle = context.factory.convertRGB(context.strokeColor);
-        ctx.lineWidth = property.strokeWidth * scale;
-        useStroke = true;
-      }
-      if (context.shadowColor != null) {
-        shadowColor = context.factory.convertRGB(context.shadowColor);
-        ctx.shadowOffsetX = property.shadowOffsetX * scale;
-        ctx.shadowOffsetY = property.shadowOffsetY * scale;
-        ctx.shadowBlur = property.shadowBlur * scale;
-      }
-      for (i = _i = 0, _ref1 = lines.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-        line = lines[i];
-        x = this.offsetX * scale;
-        y = offsetY + (this.fontHeight + this.leading) * i * 96 / 72;
-        if (context.shadowColor != null) {
-          ctx.shadowColor = shadowColor;
-        }
-        ctx.fillText(line, x, y);
-        if (useStroke) {
-          if (context.shadowColor != null) {
-            ctx.shadowColor = "rgba(0, 0, 0, 0)";
-          }
-          ctx.strokeText(line, x, y);
-        }
-      }
-    };
-
-    HTML5TextRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var blue, colorChanged, green, red, str, strChanged;
-      m = Utility.scaleMatrix(this.matrixForScale, m, 1 / this.lwf.scaleByStage, 0, 0);
-      if (!this.context.factory.textInSubpixel) {
-        m.translateX = Math.round(m.translateX);
-        m.translateY = Math.round(m.translateY);
-      }
-      this.matrix = m;
-      red = this.color.red;
-      green = this.color.green;
-      blue = this.color.blue;
-      this.context.factory.convertColor(this.color, this.context.textColor, c);
-      c = this.color;
-      colorChanged = false;
-      if (red !== c.red || green !== c.green || blue !== c.blue) {
-        colorChanged = true;
-      }
-      strChanged = false;
-      str = this.textObject.parent[this.context.name];
-      if (str != null) {
-        str = String(str);
-      }
-      if ((str != null) && str !== this.str) {
-        strChanged = true;
-        this.str = str;
-      }
-      if (!this.textRendered || colorChanged || strChanged) {
-        this.renderText(c);
-      }
-    };
-
-    return HTML5TextRenderer;
-
-  })();
 
   WebkitCSSRendererFactory = (function() {
 
@@ -6898,6 +6763,270 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     return WebkitCSSBitmapRenderer;
+
+  })();
+
+  HTML5TextContext = (function() {
+
+    function HTML5TextContext(factory, data, text) {
+      var font;
+      this.factory = factory;
+      this.data = data;
+      this.text = text;
+      this.str = this.data.strings[this.text.stringId];
+      this.textProperty = this.data.textProperties[this.text.textPropertyId];
+      font = this.data.fonts[this.textProperty.fontId];
+      this.textColor = this.data.colors[this.text.colorId];
+      this.name = this.data.strings[this.text.nameStringId];
+      if (this.textProperty.strokeColorId !== -1) {
+        this.strokeColor = this.data.colors[this.textProperty.strokeColorId];
+      }
+      if (this.textProperty.shadowColorId !== -1) {
+        this.shadowColor = this.data.colors[this.textProperty.shadowColorId];
+      }
+      this.fontName = "\"" + this.data.strings[font.stringId] + "\",sans-serif";
+    }
+
+    HTML5TextContext.prototype.destruct = function() {};
+
+    return HTML5TextContext;
+
+  })();
+
+  HTML5TextRenderer = (function() {
+
+    function HTML5TextRenderer(lwf, context, textObject) {
+      var align, canvas, ctx, leftMargin, lm, property, rightMargin, rm, scale, sw, text, _ref1;
+      this.lwf = lwf;
+      this.context = context;
+      this.textObject = textObject;
+      this.str = (_ref1 = this.textObject.parent[this.context.name]) != null ? _ref1 : this.context.str;
+      if (this.str != null) {
+        this.str = String(this.str);
+      }
+      this.matrixForScale = new Matrix();
+      this.color = new Color;
+      scale = this.lwf.scaleByStage;
+      property = this.context.textProperty;
+      this.leading = property.leading * scale;
+      this.fontHeight = property.fontHeight * scale;
+      leftMargin = property.leftMargin / this.fontHeight;
+      rightMargin = property.rightMargin / this.fontHeight;
+      lm = 0;
+      rm = 0;
+      if (this.context.strokeColor != null) {
+        lm = rm = property.strokeWidth / 2 * scale;
+      }
+      if (this.context.shadowColor != null) {
+        sw = (property.shadowBlur - property.shadowOffsetX) * scale;
+        if (sw > lm) {
+          lm = sw;
+        }
+        sw = (property.shadowOffsetX + property.shadowBlur) * scale;
+        if (sw > rm) {
+          rm = sw;
+        }
+      }
+      leftMargin += lm;
+      rightMargin += rm;
+      text = this.context.text;
+      switch (property.align & Align.ALIGN_MASK) {
+        case Align.RIGHT:
+          align = "right";
+          this.offsetX = text.width - rightMargin;
+          break;
+        case Align.CENTER:
+          align = "center";
+          this.offsetX = text.width / 2;
+          break;
+        default:
+          align = "left";
+          this.offsetX = leftMargin;
+      }
+      canvas = document.createElement("canvas");
+      canvas.width = this.context.text.width * scale;
+      canvas.height = this.context.text.height * scale;
+      this.maxWidth = canvas.width - (leftMargin + rightMargin);
+      ctx = canvas.getContext("2d");
+      ctx.font = "" + this.fontHeight + "px " + this.context.fontName;
+      ctx.textAlign = align;
+      ctx.textBaseline = "bottom";
+      this.canvas = canvas;
+      this.canvasContext = ctx;
+      this.textRendered = false;
+    }
+
+    HTML5TextRenderer.prototype.destruct = function() {};
+
+    HTML5TextRenderer.prototype.fitText = function(line, words, lineStart, imin, imax) {
+      var imid, start, str, w;
+      if (imax < imin) {
+        return;
+      }
+      imid = ((imin + imax) / 2) >> 0;
+      start = lineStart === 0 ? 0 : words[lineStart - 1];
+      str = line.slice(start, words[imid]);
+      w = this.canvasContext.measureText(str).width;
+      if (w <= this.maxWidth) {
+        if (w > this.lineWidth) {
+          this.index = imid;
+          this.lineWidth = w;
+        }
+        this.fitText(line, words, lineStart, imid + 1, imax);
+      }
+      if (w >= this.lineWidth) {
+        return this.fitText(line, words, lineStart, imin, imid - 1);
+      }
+    };
+
+    HTML5TextRenderer.prototype.adjustText = function(lines) {
+      var c, i, imax, imin, line, newlines, prev, start, str, to, word, words, _i, _j, _k, _len, _len1, _ref1;
+      newlines = [];
+      for (_i = 0, _len = lines.length; _i < _len; _i++) {
+        line = lines[_i];
+        words = line.split(" ");
+        line = "";
+        for (_j = 0, _len1 = words.length; _j < _len1; _j++) {
+          word = words[_j];
+          if (word.length > 0) {
+            if (line.length > 0) {
+              line += " ";
+            }
+            line += word;
+          }
+        }
+        if (this.canvasContext.measureText(line).width > this.maxWidth) {
+          words = [];
+          prev = 0;
+          for (i = _k = 1, _ref1 = line.length; 1 <= _ref1 ? _k < _ref1 : _k > _ref1; i = 1 <= _ref1 ? ++_k : --_k) {
+            c = line.charCodeAt(i);
+            if (c === 0x20 || c >= 0x80 || prev >= 0x80) {
+              words.push(i);
+            }
+            prev = c;
+          }
+          words.push(line.length);
+          imin = 0;
+          imax = words.length - 1;
+          while (true) {
+            this.index = null;
+            this.lineWidth = 0;
+            this.fitText(line, words, imin, imin, imax);
+            if (this.index === null) {
+              break;
+            }
+            start = imin === 0 ? 0 : words[imin - 1];
+            if (line.charCodeAt(start) === 0x20) {
+              ++start;
+            }
+            to = words[this.index];
+            str = line.slice(start, to);
+            if (this.index === imax) {
+              line = str;
+              break;
+            }
+            newlines.push(str);
+            start = to + (line.charCodeAt(to) === 0x20 ? 1 : 0);
+            str = line.slice(start);
+            if (this.canvasContext.measureText(str).width <= this.maxWidth) {
+              line = str;
+              break;
+            }
+            imin = this.index + 1;
+          }
+        }
+        newlines.push(line);
+      }
+      return newlines;
+    };
+
+    HTML5TextRenderer.prototype.renderText = function(textColor) {
+      var canvas, context, ctx, h, i, len, line, lines, offsetY, property, scale, shadowColor, useStroke, x, y, _i, _ref1;
+      this.textRendered = true;
+      context = this.context;
+      canvas = this.canvas;
+      ctx = this.canvasContext;
+      scale = this.lwf.scaleByStage;
+      lines = this.adjustText(this.str.split("\n"));
+      property = context.textProperty;
+      switch (property.align & Align.VERTICAL_MASK) {
+        case Align.VERTICAL_BOTTOM:
+          len = lines.length;
+          h = (this.fontHeight * len + this.leading * (len - 1)) * 96 / 72;
+          offsetY = canvas.height - h;
+          break;
+        case Align.VERTICAL_MIDDLE:
+          len = lines.length + 1;
+          h = (this.fontHeight * len + this.leading * (len - 1)) * 96 / 72;
+          offsetY = (canvas.height - h) / 2;
+          break;
+        default:
+          offsetY = 0;
+      }
+      offsetY += this.fontHeight * 1.2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgb(" + textColor.red + "," + textColor.green + "," + textColor.blue + ")";
+      useStroke = false;
+      if (context.strokeColor != null) {
+        ctx.strokeStyle = context.factory.convertRGB(context.strokeColor);
+        ctx.lineWidth = property.strokeWidth * scale;
+        useStroke = true;
+      }
+      if (context.shadowColor != null) {
+        shadowColor = context.factory.convertRGB(context.shadowColor);
+        ctx.shadowOffsetX = property.shadowOffsetX * scale;
+        ctx.shadowOffsetY = property.shadowOffsetY * scale;
+        ctx.shadowBlur = property.shadowBlur * scale;
+      }
+      for (i = _i = 0, _ref1 = lines.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+        line = lines[i];
+        x = this.offsetX * scale;
+        y = offsetY + (this.fontHeight + this.leading) * i * 96 / 72;
+        if (context.shadowColor != null) {
+          ctx.shadowColor = shadowColor;
+        }
+        ctx.fillText(line, x, y);
+        if (useStroke) {
+          if (context.shadowColor != null) {
+            ctx.shadowColor = "rgba(0, 0, 0, 0)";
+          }
+          ctx.strokeText(line, x, y);
+        }
+      }
+    };
+
+    HTML5TextRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
+      var blue, colorChanged, green, red, str, strChanged;
+      m = Utility.scaleMatrix(this.matrixForScale, m, 1 / this.lwf.scaleByStage, 0, 0);
+      if (!this.context.factory.textInSubpixel) {
+        m.translateX = Math.round(m.translateX);
+        m.translateY = Math.round(m.translateY);
+      }
+      this.matrix = m;
+      red = this.color.red;
+      green = this.color.green;
+      blue = this.color.blue;
+      this.context.factory.convertColor(this.color, this.context.textColor, c);
+      c = this.color;
+      colorChanged = false;
+      if (red !== c.red || green !== c.green || blue !== c.blue) {
+        colorChanged = true;
+      }
+      strChanged = false;
+      str = this.textObject.parent[this.context.name];
+      if (str != null) {
+        str = String(str);
+      }
+      if ((str != null) && str !== this.str) {
+        strChanged = true;
+        this.str = str;
+      }
+      if (!this.textRendered || colorChanged || strChanged) {
+        this.renderText(c);
+      }
+    };
+
+    return HTML5TextRenderer;
 
   })();
 
@@ -8297,7 +8426,7 @@ TWEENLWF.Tween = function ( movie ) {
 	this.object = movie;
 	this.valuesStart = {};
 	this.valuesEnd = {};
-	this.duration = 1;
+	this.duration = 0;
 	this.delayTime = 0;
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
@@ -8481,7 +8610,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 		}
 
-		var elapsed = ( time - this.startTime ) / this.duration;
+		var duration = this.duration <= 0 ? this.lwf.tick : this.duration;
+
+		var elapsed = ( time - this.startTime ) / duration;
 		elapsed = elapsed > 1 ? 1 : elapsed;
 
 		var value = this.easingFunction( elapsed );
@@ -8940,6 +9071,9 @@ lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
 
 TWEENLWF._tweenUpdater = function() {
 
+	if ( this._tweens === null )
+		return;
+
 	var i = 0;
 	var num_tweens = this._tweens.length;
 	var time = this.time;
@@ -8969,7 +9103,7 @@ TWEENLWF._tweenUpdater = function() {
 
 TWEENLWF._tweenExecHandler = function() {
 
-	TWEENLWF._tweenUpdater();
+	TWEENLWF._tweenUpdater.call( this );
 
 };
 

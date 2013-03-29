@@ -113,6 +113,10 @@ class LWF
     Utility.scaleForWidth(@, stageWidth)
     return
 
+  getStageSize: ->
+    [w, h] = @rendererFactory.getStageSize()
+    return {width:w, height:h}
+
   renderOffset: ->
     @renderingIndexOffsetted = 0
     return

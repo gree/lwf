@@ -110,9 +110,9 @@ class WebGLBitmapContext
     gl.bindBuffer(gl.ARRAY_BUFFER, @uvBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW)
 
-    triangles = new Uint16Array([
+    triangles = new Uint8Array([
       0, 1, 2,
-      2, 1, 3
+      2, 1, 3,
     ])
     @trianglesBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @trianglesBuffer)
@@ -168,14 +168,19 @@ class WebGLBitmapRenderer
       gc[1] = c.multi.green
       gc[2] = c.multi.blue
       gc[3] = c.multi.alpha
-    gl.blendFunc(src, gl.ONE_MINUS_SRC_ALPHA)
+
+    switch factory.blendMode
+      when "add"
+        gl.blendFunc(src, gl.ONE)
+      else
+        gl.blendFunc(src, gl.ONE_MINUS_SRC_ALPHA)
+
     gl.uniform4fv(factory.uColor, gc)
 
-    gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, @context.texture)
     gl.uniform1i(factory.uTexture, 0)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @context.trianglesBuffer)
-    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
     return
 

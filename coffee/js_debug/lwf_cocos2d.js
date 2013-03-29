@@ -2554,7 +2554,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     Button.prototype.setHandlers = function(handler) {
-      this.handler = handler;
+      if (this.handler != null) {
+        this.handler.concat(handler);
+      } else {
+        this.handler = handler;
+      }
     };
 
     Button.prototype.exec = function(matrixId, colorTransformId) {
@@ -2663,6 +2667,75 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.lwf.playAnimation(c.animationId, this.parent, this);
         }
       }
+    };
+
+    Button.prototype.addEventHandler = function(e, eventHandler) {
+      switch (e) {
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          this.lwf.interactive = true;
+          if (this.handler == null) {
+            this.setHandlers(new ButtonEventHandlers());
+          }
+          this.handler.addHandler(e, eventHandler);
+      }
+    };
+
+    Button.prototype.removeEventHandler = function(e, eventHandler) {
+      switch (e) {
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          if (this.handler != null) {
+            this.handler.removeHandler(e, eventHandler);
+          }
+      }
+    };
+
+    Button.prototype.clearEventHandler = function(e) {
+      if (e == null) {
+        e = null;
+      }
+      switch (e) {
+        case null:
+          if (this.handler != null) {
+            this.handler.clear();
+          }
+          break;
+        case "load":
+        case "unload":
+        case "enterFrame":
+        case "update":
+        case "render":
+        case "press":
+        case "release":
+        case "rollOver":
+        case "rollOut":
+        case "keyPress":
+          if (this.handler != null) {
+            this.handler.clear(e);
+          }
+      }
+    };
+
+    Button.prototype.setEventHandler = function(e, eventHandler) {
+      this.clearEventHandler(e);
+      this.addEventHandler(e, eventHandler);
     };
 
     return Button;
@@ -3004,7 +3077,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.setHandlers = function(handler) {
-      this.handler = handler;
+      if (this.handler != null) {
+        this.handler.concat(handler);
+      } else {
+        this.handler = handler;
+      }
     };
 
     Movie.prototype.play = function() {
@@ -4461,6 +4538,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
+    EventHandlers.prototype.concat = function(handlers) {
+      var h, handler, type, _i, _j, _len, _len1, _ref;
+      _ref = this.types;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        type = _ref[_i];
+        handler = handlers[type];
+        for (_j = 0, _len1 = handler.length; _j < _len1; _j++) {
+          h = handler[_j];
+          this[type].push(h);
+        }
+      }
+    };
+
     EventHandlers.prototype.addHandler = function(type, handler) {
       if (handler != null) {
         this[type].push(handler);
@@ -4665,6 +4755,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     LWF.prototype.scaleForWidth = function(stageWidth) {
       Utility.scaleForWidth(this, stageWidth);
+    };
+
+    LWF.prototype.getStageSize = function() {
+      var h, w, _ref;
+      _ref = this.rendererFactory.getStageSize(), w = _ref[0], h = _ref[1];
+      return {
+        width: w,
+        height: h
+      };
     };
 
     LWF.prototype.renderOffset = function() {
@@ -5351,9 +5450,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.movieEventHandlers[instId] = h;
         }
         movie = this.searchMovieInstanceByInstanceId(instId);
-        if (movie != null) {
-          movie.setHandlers(h);
-        }
       } else {
         if (instanceName.indexOf(".") === -1) {
           return;
@@ -5367,29 +5463,37 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.movieEventHandlersByFullName[instanceName] = h;
         }
         movie = this.searchMovieInstance(instanceName);
-        if (movie != null) {
-          movie.setHandlers(h);
-        }
       }
       h.add(handlers);
+      if (movie != null) {
+        movie.setHandlers(h);
+      }
     };
 
     LWF.prototype.removeMovieEventHandler = function(instanceName, handlers) {
-      var h;
+      var h, movie;
       h = this.getMovieEventHandlers(instanceName);
       if (h != null) {
         h.remove(handlers);
       }
+      movie = this.searchMovieInstance(instanceName);
+      if ((movie != null ? movie.handler : void 0) != null) {
+        movie.handler.remove(handlers);
+      }
     };
 
     LWF.prototype.clearMovieEventHandler = function(instanceName, type) {
-      var h;
+      var h, movie;
       if (type == null) {
         type = null;
       }
       h = this.getMovieEventHandlers(instanceName);
       if (h != null) {
         h.clear(type);
+      }
+      movie = this.searchMovieInstance(instanceName);
+      if ((movie != null ? movie.handler : void 0) != null) {
+        movie.handler.clear(type);
       }
     };
 
@@ -5435,9 +5539,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.buttonEventHandlers[instId] = h;
         }
         button = this.searchButtonInstanceByInstanceId(instId);
-        if (button != null) {
-          button.setHandlers(h);
-        }
       } else {
         if (instanceName.indexOf(".") === -1) {
           return;
@@ -5451,29 +5552,37 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.buttonEventHandlersByFullName[instanceName] = h;
         }
         button = this.searchButtonInstance(instanceName);
-        if (typeof movie !== "undefined" && movie !== null) {
-          button.setHandlers(h);
-        }
       }
       h.add(handlers);
+      if (button != null) {
+        button.setHandlers(h);
+      }
     };
 
     LWF.prototype.removeButtonEventHandler = function(instanceName, handlers) {
-      var h;
+      var button, h;
       h = this.getButtonEventHandlers(instanceName);
       if (h != null) {
         h.remove(handlers);
       }
+      button = this.searchButtonInstance(instanceName);
+      if ((button != null ? button.handler : void 0) != null) {
+        button.handler.remove(handlers);
+      }
     };
 
     LWF.prototype.clearButtonEventHandler = function(instanceName, type) {
-      var h;
+      var button, h;
       if (type == null) {
         type = null;
       }
       h = this.getButtonEventHandlers(instanceName);
       if (h != null) {
         h.clear(type);
+      }
+      button = this.searchButtonInstance(instanceName);
+      if ((typeof buffon !== "undefined" && buffon !== null ? buffon.handler : void 0) != null) {
+        button.handler.clear(type);
       }
     };
 
@@ -5893,6 +6002,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["forceExecWithoutProgress"] = LWF.prototype.forceExecWithoutProgress;
 
+  LWF.prototype["getStageSize"] = LWF.prototype.getStageSize;
+
   LWF.prototype["getStringId"] = LWF.prototype.getStringId;
 
   LWF.prototype["init"] = LWF.prototype.init;
@@ -5966,6 +6077,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Data.prototype["name"] = Data.prototype.name;
 
   IObject.prototype["getFullName"] = IObject.prototype.getFullName;
+
+  Button.prototype["addEventHandler"] = Button.prototype.addEventHandler;
+
+  Button.prototype["addEventListener"] = Button.prototype.addEventHandler;
+
+  Button.prototype["clearEventHandler"] = Button.prototype.clearEventHandler;
+
+  Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler;
+
+  Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent;
+
+  Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler;
+
+  Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler;
+
+  Button.prototype["setEventHandler"] = Button.prototype.setEventHandler;
+
+  Button.prototype["setEventListener"] = Button.prototype.setEventHandler;
 
   Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler;
 
@@ -7750,7 +7879,7 @@ TWEENLWF.Tween = function ( movie ) {
 	this.object = movie;
 	this.valuesStart = {};
 	this.valuesEnd = {};
-	this.duration = 1;
+	this.duration = 0;
 	this.delayTime = 0;
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
@@ -7934,7 +8063,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 		}
 
-		var elapsed = ( time - this.startTime ) / this.duration;
+		var duration = this.duration <= 0 ? this.lwf.tick : this.duration;
+
+		var elapsed = ( time - this.startTime ) / duration;
 		elapsed = elapsed > 1 ? 1 : elapsed;
 
 		var value = this.easingFunction( elapsed );
@@ -8393,6 +8524,9 @@ lwfPrototype[ "stopTweens" ] = lwfPrototype.stopTweens;
 
 TWEENLWF._tweenUpdater = function() {
 
+	if ( this._tweens === null )
+		return;
+
 	var i = 0;
 	var num_tweens = this._tweens.length;
 	var time = this.time;
@@ -8422,7 +8556,7 @@ TWEENLWF._tweenUpdater = function() {
 
 TWEENLWF._tweenExecHandler = function() {
 
-	TWEENLWF._tweenUpdater();
+	TWEENLWF._tweenUpdater.call( this );
 
 };
 

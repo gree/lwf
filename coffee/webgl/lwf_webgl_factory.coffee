@@ -31,13 +31,17 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @stage.height = data.header.height
     @w = @stage.width
     @h = @stage.height
+    @blendMode = "normal"
+    @maskMode = "normal"
 
     gl = @stageContext
+    gl.enable(gl.BLEND)
+    gl.disable(gl.DEPTH_TEST)
+    gl.disable(gl.DITHER)
+    gl.disable(gl.SCISSOR_TEST)
+    gl.activeTexture(gl.TEXTURE0)
     gl.viewport(0, 0, @w, @h)
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
-    gl.enable(gl.DEPTH_TEST)
-    gl.depthFunc(gl.LEQUAL)
-    gl.enable(gl.BLEND)
 
     if WebGLRendererFactory.shaderProgram?
       shaderProgram = WebGLRendererFactory.shaderProgram
@@ -127,6 +131,7 @@ void main() {
     return shader
 
   destruct: ->
+    @deleteMask()
     gl = @stageContext
     gl.bindTexture(gl.TEXTURE_2D, null)
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
@@ -138,10 +143,145 @@ void main() {
 
   beginRender:(lwf) ->
     gl = @stageContext
-    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
+    gl.clear(gl.COLOR_BUFFER_BIT)
     return
 
   endRender:(lwf) ->
+    if @maskMode isnt "normal"
+      if @maskMode is "layer"
+        @renderMask()
+      else
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      @maskMode = "normal"
+    return
+
+  setBlendMode:(@blendMode) ->
+
+  setMaskMode:(maskMode) ->
+    return if @maskMode is maskMode
+
+    @generateMask()
+
+    gl = @stageContext
+    switch maskMode
+      when "erase"
+        gl.bindFramebuffer(gl.FRAMEBUFFER, @eraseFrameBuffer)
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+      when "layer"
+        gl.bindFramebuffer(gl.FRAMEBUFFER, @layerFrameBuffer)
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+      else
+        if @maskMode is "layer"
+          @renderMask()
+        else
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    @maskMode = maskMode
+    return
+
+  generateMask: ->
+    return if @eraseTexture?
+
+    @maskMatrix = new Float32Array([1,0,0,0,0,-1,0,0,0,0,1,0,0,@h,0,1])
+    @maskColor = new Float32Array([1,1,1,1])
+
+    gl = @stageContext
+    @eraseTexture = gl.createTexture()
+    @layerTexture = gl.createTexture()
+    textures = [@eraseTexture, @layerTexture]
+    @eraseFrameBuffer = gl.createFramebuffer()
+    @layerFrameBuffer = gl.createFramebuffer()
+    framebuffers = [@eraseFrameBuffer, @layerFrameBuffer]
+
+    for i in [0...2]
+      texture = textures[i]
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0,
+        gl.RGBA, @w, @h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+
+      framebuffer = framebuffers[i]
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+      gl.framebufferTexture2D(gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+    vertices = new Float32Array([
+      @w, @h, 0,
+      @w,  0, 0,
+       0, @h, 0,
+       0,  0, 0,
+    ])
+    @maskVertexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, @maskVertexBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+
+    uv = new Float32Array([
+      1, 1,
+      1, 0,
+      0, 1,
+      0, 0,
+    ])
+    @maskUVBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, @maskUVBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW)
+
+    triangles = new Uint8Array([
+      0, 1, 2,
+      2, 1, 3,
+    ])
+    @maskTrianglesBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskTrianglesBuffer)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, triangles, gl.STATIC_DRAW)
+    return
+
+  deleteMask: ->
+    return unless @eraseTexture?
+
+    gl = @stageContext
+    gl.deleteBuffer(@maskVertexBuffer)
+    gl.deleteBuffer(@maskUVBuffer)
+    gl.deleteBuffer(@maskTrianglesBuffer)
+
+    gl.deleteFramebuffer(@eraseFrameBuffer)
+    gl.deleteFramebuffer(@layerFrameBuffer)
+    @eraseFrameBuffer = null
+    @layerFrameBuffer = null
+
+    gl.deleteTexture(@eraseTexture)
+    gl.deleteTexture(@layerTexture)
+    @eraseTexture = null
+    @layerTexture = null
+    return
+
+  renderMask: ->
+    gl = @stageContext
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, @maskVertexBuffer)
+    gl.vertexAttribPointer(@aVertexPosition, 3, gl.FLOAT, false, 0, 0)
+    gl.bindBuffer(gl.ARRAY_BUFFER, @maskUVBuffer)
+    gl.vertexAttribPointer(@aTextureCoord, 2, gl.FLOAT, false, 0, 0)
+
+    gl.uniformMatrix4fv(@uMatrix, false, @maskMatrix)
+    gl.uniform4fv(@uColor, @maskColor)
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskTrianglesBuffer)
+  
+    gl.bindFramebuffer(gl.FRAMEBUFFER, @eraseFrameBuffer)
+    gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ZERO)
+    gl.bindTexture(gl.TEXTURE_2D, @layerTexture)
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
+  
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.bindTexture(gl.TEXTURE_2D, @eraseTexture)
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
+    return
 
   constructBitmap:(lwf, objectId, bitmap) ->
     context = @bitmapContexts[objectId]
@@ -160,11 +300,8 @@ void main() {
     particleData = lwf.data.particleDatas[particle.particleDataId]
     ctor(lwf, lwf.data.strings[particleData.stringId]) if ctor?
 
-  setBackgroundColor:(lwf) ->
-    bgColor = lwf.data.header.backgroundColor
-    r = ((bgColor >> 16) & 0xff) / 255.0
-    g = ((bgColor >>  8) & 0xff) / 255.0
-    b = ((bgColor >>  0) & 0xff) / 255.0
+  setBackgroundColor:(v) ->
+    [r, g, b, a] = @parseBackgroundColor(v)
     gl = @stageContext
-    gl.clearColor(r, g, b, 1.0)
+    gl.clearColor(r / 255, g / 255, b / 255, a / 255)
     return
