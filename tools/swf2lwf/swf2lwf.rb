@@ -2847,6 +2847,19 @@ def parse_fla(lwfbasedir)
   end
 end
 
+def check_texturename(name)
+  if name =~ /(.*)_rgb_[0-9a-f]{6}(.*)/ or
+      name =~ /(.*)_rgb_\d+,\d+,\d+(.*)/ or
+      name =~ /(.*)_rgba_[0-9a-f]{8}(.*)/ or
+      name =~ /(.*)_rgba_\d+,\d+,\d+,\d+(.*)/ or
+      name =~ /(.*)_add_[0-9a-f]{6}(.*)/ or
+      name =~ /(.*)_add_\d+,\d+,\d+(.*)/
+    return $1 + $2
+  else
+    return nil
+  end
+end
+
 def add_lwfbutton(button)
   conditionId = nil
   conditions = 0
@@ -2978,8 +2991,8 @@ def swf2lwf(*args)
     warn "bitmap #{texture.filename} conflicts #{names[name]}" if names[name]
     names[name] = texture.filename
 
-    if texture.name =~ /(.*)_rgb_[0-9a-f]{6}(.*)/
-      origName = $1 + $2
+    origName = check_texturename(texture.name)
+    unless origName.nil?
       tinfo = nil
       @textureatlasdicts.each do |textureatlasdict|
         tinfo = textureatlasdict["frames"][origName]
@@ -3003,8 +3016,8 @@ def swf2lwf(*args)
   end
 
   @textures.each do |texture|
-    if texture.name =~ /(.*)_rgb_[0-9a-f]{6}(.*)/
-      basename = $1 + $2
+    basename = check_texturename(texture.name)
+    unless basename.nil?
       unless basename =~ /\.[^\.]+_atlas_.+_info_.+(_.+){6}/
         name = File.basename(basename, '.*')
         if texturenamemap[name.downcase].nil?
@@ -3658,6 +3671,10 @@ global.LWF.Script["#{lwfname}"] = function() {
 		} else {
 			throw Error("unknown fscommand");
 		}
+	};
+
+	var trace = function(msg) {
+		console.log(msg);
 	};
 
 	var Script = (function() {function Script() {}

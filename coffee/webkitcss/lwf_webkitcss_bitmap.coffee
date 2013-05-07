@@ -68,10 +68,12 @@ class WebkitCSSBitmapContext
     @node.style.pointerEvents = "none"
     @node.style.position = "absolute"
     @node.style.webkitTransformOrigin = "0px 0px"
+    @width = sw
+    @height = sh
     @cache = []
 
   destruct: ->
-    @factory.stage.removeChild(node) for node in @cache
+    node.parentNode.removeChild(node) for node in @cache
     return
 
 class WebkitCSSBitmapRenderer
@@ -125,12 +127,21 @@ class WebkitCSSBitmapRenderer
       else
         m = @matrix
 
+    maskMode = @context.factory.maskMode
+
     return if !matrixChanged and
       @alpha is c.multi.alpha and
-      @zIndex is renderingIndex
+      @zIndex is renderingIndex and
+      maskMode is "normal" and
+      @node.parentNode is @context.factory.stage
 
     @alpha = c.multi.alpha
     @zIndex = renderingIndex
-    @context.factory.commands.push({isBitmap:true, renderer:@, matrix:m})
+    @context.factory.addCommand(renderingIndex, {
+      isBitmap:true
+      renderer:@
+      matrix:m
+      maskMode:maskMode
+    })
     return
 

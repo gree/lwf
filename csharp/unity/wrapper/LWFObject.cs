@@ -39,6 +39,7 @@ using ButtonKeyPressHandler = System.Action<LWF.Button, int>;
 using MovieCommand = System.Action<LWF.Movie>;
 using ProgramObjectConstructor =
 	System.Func<LWF.ProgramObject, int, int, int, LWF.Renderer>;
+using LWFObjectAttachHandler = System.Action<LWFObject>;
 using LWFObjectDetachHandler = System.Func<LWFObject, bool>;
 using RendererFactoryConstructor =
 	System.Func<RendererFactoryArguments, LWF.UnityRenderer.Factory>;
@@ -341,6 +342,7 @@ public class LWFObject : MonoBehaviour
 
 	public void AttachLWF(string instanceName, LWFObject lwfObject,
 		string attachName, int attachDepth = -1, bool reorder = false,
+		LWFObjectAttachHandler attachHandler = null,
 		LWFObjectDetachHandler detachHandler = null)
 	{
 		AddLoadCallback((o) => {
@@ -356,6 +358,8 @@ public class LWFObject : MonoBehaviour
 								Destroy(lwfObject.gameObject);
 						}
 					});
+					if (attachHandler != null)
+						attachHandler(lwfObject);
 				});
 
 				lwfObject.callUpdate = false;
@@ -369,14 +373,6 @@ public class LWFObject : MonoBehaviour
 		});
 	}
 
-	public void DetachLWF(LWF.Movie movie, string attachName)
-	{
-		if (movie == null)
-			return;
-
-		movie.DetachLWF(attachName);
-	}
-
 	public void DetachLWF(string instanceName, string attachName)
 	{
 		AddMovieLoadHandler(instanceName, (m) => {
@@ -384,27 +380,11 @@ public class LWFObject : MonoBehaviour
 		});
 	}
 
-	public void DetachLWF(LWF.Movie movie, LWFObject lwfObject)
-	{
-		if (movie == null)
-			return;
-
-		movie.DetachLWF(lwfObject.lwf);
-	}
-
 	public void DetachLWF(string instanceName, LWFObject lwfObject)
 	{
 		AddMovieLoadHandler(instanceName, (m) => {
 			m.DetachLWF(lwfObject.lwf);
 		});
-	}
-
-	public void DetachAllLWFs(LWF.Movie movie)
-	{
-		if (movie == null)
-			return;
-
-		movie.DetachAllLWFs();
 	}
 
 	public void DetachAllLWFs(string instanceName)

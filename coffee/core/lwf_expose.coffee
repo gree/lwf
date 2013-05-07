@@ -92,6 +92,7 @@ LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
 LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand
 LWF.prototype["setMovieEventHandler"] = LWF.prototype.setMovieEventHandler
 LWF.prototype["setMovieEventListener"] = LWF.prototype.setMovieEventHandler
+LWF.prototype["setPreferredFrameRate"] = LWF.prototype.setPreferredFrameRate
 LWF.prototype["setProgramObjectConstructor"] =
   LWF.prototype.setProgramObjectConstructor
 LWF.prototype["setRendererFactory"] = LWF.prototype.setRendererFactory
@@ -125,6 +126,7 @@ Movie.prototype["detachMovie"] = Movie.prototype.detachMovie
 Movie.prototype["dispatchEvent"] = Movie.prototype.dispatchEvent
 Movie.prototype["getAttachedLWF"] = Movie.prototype.getAttachedLWF
 Movie.prototype["getAttachedMovie"] = Movie.prototype.getAttachedMovie
+Movie.prototype["getBounds"] = Movie.prototype.getBounds
 Movie.prototype["globalToLocal"] = Movie.prototype.globalToLocal
 Movie.prototype["gotoAndPlay"] = Movie.prototype.gotoAndPlay
 Movie.prototype["gotoAndStop"] = Movie.prototype.gotoAndStop
@@ -141,6 +143,8 @@ Movie.prototype["prevFrame"] = Movie.prototype.prevFrame
 Movie.prototype["removeEventHandler"] = Movie.prototype.removeEventHandler
 Movie.prototype["removeEventListener"] = Movie.prototype.removeEventHandler
 Movie.prototype["removeMovieClip"] = Movie.prototype.removeMovieClip
+Movie.prototype["requestCalculateBounds"] =
+  Movie.prototype.requestCalculateBounds
 Movie.prototype["rotate"] = Movie.prototype.rotate
 Movie.prototype["rotateTo"] = Movie.prototype.rotateTo
 Movie.prototype["scale"] = Movie.prototype.scale

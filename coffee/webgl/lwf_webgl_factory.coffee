@@ -29,8 +29,6 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     if @stage.width is 0 and @stage.height is 0
       @stage.width = data.header.width
       @stage.height = data.header.height
-    @w = @stage.width
-    @h = @stage.height
     @blendMode = "normal"
     @maskMode = "normal"
 
@@ -40,8 +38,13 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl.disable(gl.DITHER)
     gl.disable(gl.SCISSOR_TEST)
     gl.activeTexture(gl.TEXTURE0)
-    gl.viewport(0, 0, @w, @h)
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
+
+    r = @stage.getBoundingClientRect()
+    dpr = devicePixelRatio
+    @w = Math.round(r.width * dpr)
+    @h = Math.round(r.height * dpr)
+    gl.viewport(0, 0, @w, @h)
 
     if WebGLRendererFactory.shaderProgram?
       shaderProgram = WebGLRendererFactory.shaderProgram
@@ -121,6 +124,8 @@ void main() {
     for text in data.texts
       @textContexts.push new WebGLTextContext(@, data, text)
 
+    @initCommands()
+
   loadShader:(gl, type, program) ->
     shader = gl.createShader(type)
     gl.shaderSource(shader, program)
@@ -146,53 +151,79 @@ void main() {
     gl.clear(gl.COLOR_BUFFER_BIT)
     return
 
+  render:(gl, cmd, rIndex) ->
+    if @renderMaskMode isnt cmd.maskMode
+      @generateMask()
+      switch cmd.maskMode
+        when "erase", "mask"
+          @renderMasked = true
+          @srcFactor = if cmd.maskMode is "erase" then \
+            gl.ONE_MINUS_DST_ALPHA else gl.DST_ALPHA
+          gl.bindFramebuffer(gl.FRAMEBUFFER, @maskFrameBuffer)
+          gl.clearColor(0, 0, 0, 0)
+          gl.clear(gl.COLOR_BUFFER_BIT)
+        when "layer"
+          if @renderMasked
+            gl.bindFramebuffer(gl.FRAMEBUFFER, @layerFrameBuffer)
+            gl.clearColor(0, 0, 0, 0)
+            gl.clear(gl.COLOR_BUFFER_BIT)
+          else
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+        else
+          if @renderMaskMode is "layer" and @renderMasked
+            @renderMask()
+          else
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      @renderMaskMode = cmd.maskMode
+
+    cmd.renderer.renderCommand(
+      cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode)
+    return
+
   endRender:(lwf) ->
-    if @maskMode isnt "normal"
-      if @maskMode is "layer"
+    if lwf.parent?
+      f = lwf.parent.lwf.rendererFactory
+      f.addCommand(parseInt(rIndex, 10), cmd) for rIndex, cmd of @commands
+      @initCommands()
+      return
+
+    @renderMaskMode = "normal"
+    @renderMasked = false
+    gl = @stageContext
+    for rIndex in @commandsKeys
+      cmd = @commands[rIndex]
+      if cmd.subCommandsKeys?
+        for srIndex in cmd.subCommandsKeys
+          scmd = cmd.subCommands[srIndex]
+          @render(gl, scmd, srIndex)
+      @render(gl, cmd, rIndex)
+
+    if @renderMaskMode isnt "normal"
+      if @renderMaskMode is "layer" and @renderMasked
         @renderMask()
       else
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-      @maskMode = "normal"
+
+    @initCommands()
     return
 
   setBlendMode:(@blendMode) ->
 
-  setMaskMode:(maskMode) ->
-    return if @maskMode is maskMode
-
-    @generateMask()
-
-    gl = @stageContext
-    switch maskMode
-      when "erase"
-        gl.bindFramebuffer(gl.FRAMEBUFFER, @eraseFrameBuffer)
-        gl.clearColor(0, 0, 0, 0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
-      when "layer"
-        gl.bindFramebuffer(gl.FRAMEBUFFER, @layerFrameBuffer)
-        gl.clearColor(0, 0, 0, 0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
-      else
-        if @maskMode is "layer"
-          @renderMask()
-        else
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    @maskMode = maskMode
-    return
+  setMaskMode:(@maskMode) ->
 
   generateMask: ->
-    return if @eraseTexture?
+    return if @maskTexture?
 
     @maskMatrix = new Float32Array([1,0,0,0,0,-1,0,0,0,0,1,0,0,@h,0,1])
     @maskColor = new Float32Array([1,1,1,1])
 
     gl = @stageContext
-    @eraseTexture = gl.createTexture()
+    @maskTexture = gl.createTexture()
     @layerTexture = gl.createTexture()
-    textures = [@eraseTexture, @layerTexture]
-    @eraseFrameBuffer = gl.createFramebuffer()
+    textures = [@maskTexture, @layerTexture]
+    @maskFrameBuffer = gl.createFramebuffer()
     @layerFrameBuffer = gl.createFramebuffer()
-    framebuffers = [@eraseFrameBuffer, @layerFrameBuffer]
+    framebuffers = [@maskFrameBuffer, @layerFrameBuffer]
 
     for i in [0...2]
       texture = textures[i]
@@ -241,21 +272,21 @@ void main() {
     return
 
   deleteMask: ->
-    return unless @eraseTexture?
+    return unless @maskTexture?
 
     gl = @stageContext
     gl.deleteBuffer(@maskVertexBuffer)
     gl.deleteBuffer(@maskUVBuffer)
     gl.deleteBuffer(@maskTrianglesBuffer)
 
-    gl.deleteFramebuffer(@eraseFrameBuffer)
+    gl.deleteFramebuffer(@maskFrameBuffer)
     gl.deleteFramebuffer(@layerFrameBuffer)
-    @eraseFrameBuffer = null
+    @maskFrameBuffer = null
     @layerFrameBuffer = null
 
-    gl.deleteTexture(@eraseTexture)
+    gl.deleteTexture(@maskTexture)
     gl.deleteTexture(@layerTexture)
-    @eraseTexture = null
+    @maskTexture = null
     @layerTexture = null
     return
 
@@ -272,14 +303,14 @@ void main() {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskTrianglesBuffer)
   
-    gl.bindFramebuffer(gl.FRAMEBUFFER, @eraseFrameBuffer)
-    gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ZERO)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, @maskFrameBuffer)
+    gl.blendFunc(@srcFactor, gl.ZERO)
     gl.bindTexture(gl.TEXTURE_2D, @layerTexture)
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.bindTexture(gl.TEXTURE_2D, @eraseTexture)
+    gl.bindTexture(gl.TEXTURE_2D, @maskTexture)
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
     return
 
@@ -299,6 +330,11 @@ void main() {
     ctor = @resourceCache.particleConstructor
     particleData = lwf.data.particleDatas[particle.particleDataId]
     ctor(lwf, lwf.data.strings[particleData.stringId]) if ctor?
+
+  getStageSize: ->
+    r = @stage.getBoundingClientRect()
+    dpr = devicePixelRatio
+    return [r.width * dpr, r.height * dpr]
 
   setBackgroundColor:(v) ->
     [r, g, b, a] = @parseBackgroundColor(v)

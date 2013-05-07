@@ -164,14 +164,14 @@ public class Utility
 	public static float GetAlpha(Movie movie)
 	{
 		int colorTransformId = movie.colorTransformId;
-		ColorTransform colorTransform;
 		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
 			AlphaTransform alphaTransform =
 				movie.lwf.data.alphaTransforms[colorTransformId];
 			return alphaTransform.alpha;
 		} else {
 			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
-			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			ColorTransform colorTransform =
+				movie.lwf.data.colorTransforms[colorTransformId];
 			return colorTransform.multi.alpha;
 		}
 	}
@@ -179,12 +179,12 @@ public class Utility
 	public static float GetRed(Movie movie)
 	{
 		int colorTransformId = movie.colorTransformId;
-		ColorTransform colorTransform;
 		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
 			return 1;
 		} else {
 			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
-			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			ColorTransform colorTransform =
+				movie.lwf.data.colorTransforms[colorTransformId];
 			return colorTransform.multi.red;
 		}
 	}
@@ -192,12 +192,12 @@ public class Utility
 	public static float GetGreen(Movie movie)
 	{
 		int colorTransformId = movie.colorTransformId;
-		ColorTransform colorTransform;
 		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
 			return 1;
 		} else {
 			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
-			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			ColorTransform colorTransform =
+				movie.lwf.data.colorTransforms[colorTransformId];
 			return colorTransform.multi.green;
 		}
 	}
@@ -205,12 +205,12 @@ public class Utility
 	public static float GetBlue(Movie movie)
 	{
 		int colorTransformId = movie.colorTransformId;
-		ColorTransform colorTransform;
 		if ((colorTransformId & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
 			return 1;
 		} else {
 			colorTransformId &= ~(int)Constant.COLORTRANSFORM_FLAG;
-			colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
+			ColorTransform colorTransform =
+				movie.lwf.data.colorTransforms[colorTransformId];
 			return colorTransform.multi.blue;
 		}
 	}
@@ -327,8 +327,6 @@ public class Utility
 	public static ColorTransform CalcColorTransform(LWF lwf,
 		ColorTransform dst, ColorTransform src0, int src1Id)
 	{
-		ColorTransform src1 = null;
-
 		if (src1Id == 0) {
 			dst.Set(src0);
 		} else if ((src1Id & (int)Constant.COLORTRANSFORM_FLAG) == 0) {
@@ -341,9 +339,9 @@ public class Utility
 #if LWF_USE_ADDITIONALCOLOR
 			dst.add.Set(src0.add);
 #endif
-		} else  {
+		} else {
 			int colorTransformId = src1Id & ~(int)Constant.COLORTRANSFORM_FLAG;
-			src1 = lwf.data.colorTransforms[colorTransformId];
+			ColorTransform src1 = lwf.data.colorTransforms[colorTransformId];
 			CalcColorTransform(dst, src0, src1);
 		}
 		return dst;

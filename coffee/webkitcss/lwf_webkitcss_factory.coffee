@@ -20,6 +20,7 @@
 
 class WebkitCSSRendererFactory
   constructor:(data, @resourceCache, @cache, @stage, @textInSubpixel, @use3D) ->
+    @maskMode = "normal"
     @bitmapContexts = []
     for bitmap in data.bitmaps
       continue if bitmap.textureFragmentId is -1
@@ -55,9 +56,42 @@ class WebkitCSSRendererFactory
       style.width = "#{data.header.width}px"
       style.height = "#{data.header.height}px"
 
-    @commands = []
+    @initCommands()
+
+  initCommands: ->
+    @commands = {}
+    @commandsKeys = Utility.newIntArray()
+    @subCommands = null
+    @subCommandsKeys = null
+    return
+
+  isMask:(cmd) ->
+    switch cmd.maskMode
+      when "erase", "mask"
+        return true
+    return false
+
+  isLayer:(cmd) ->
+    cmd.maskMode is "layer"
+
+  addCommand:(rIndex, cmd) ->
+    if @isMask(cmd)
+      if @subCommands?
+        @subCommands[rIndex] = cmd
+        Utility.insertIntArray(@subCommandsKeys, rIndex)
+    else
+      if @isLayer(cmd) and @commandMaskMode isnt cmd.maskMode
+        cmd.subCommands = {}
+        cmd.subCommandsKeys = Utility.newIntArray()
+        @subCommands = cmd.subCommands
+        @subCommandsKeys = cmd.subCommandsKeys
+      @commands[rIndex] = cmd
+      Utility.insertIntArray(@commandsKeys, rIndex)
+    @commandMaskMode = cmd.maskMode
+    return
 
   destruct: ->
+    @stage.removeChild(@mask) if @mask?
     context.destruct() for context in @bitmapContexts
     context.destruct() for context in @bitmapExContexts
     context.destruct() for context in @textContexts
@@ -84,35 +118,92 @@ class WebkitCSSRendererFactory
 
   beginRender:(lwf) ->
 
-  endRender:(lwf) ->
-    for command in @commands
-      renderer = command.renderer
-      style = renderer.node.style
-      style.zIndex = renderer.zIndex
-      style.opacity = renderer.alpha
-      m = command.matrix
-      scaleX = m.scaleX.toFixed(12)
-      scaleY = m.scaleY.toFixed(12)
-      skew1 = m.skew1.toFixed(12)
-      skew0 = m.skew0.toFixed(12)
-      translateX = m.translateX.toFixed(12)
-      translateY = m.translateY.toFixed(12)
-      if @use3D
-        style.webkitTransform = "matrix3d(" +
-          "#{scaleX},#{skew1},0,0," +
-          "#{skew0},#{scaleY},0,0," +
-          "0,0,1,0," +
-          "#{translateX},#{translateY},0,1)"
-      else
-        style.webkitTransform = "matrix(" +
-          "#{scaleX},#{skew1},#{skew0},#{scaleY},#{translateX},#{translateY})"
+  render:(cmd) ->
+    renderer = cmd.renderer
+    node = renderer.node
+    style = node.style
+    style.zIndex = renderer.zIndex
+    m = cmd.matrix
 
-    @commands = []
+    switch cmd.maskMode
+      when "mask"
+        @renderMasked = true
+        style.opacity = 0
+        if @renderMaskMode isnt "mask"
+          if @mask?
+            style = @mask.style
+          else
+            @mask = document.createElement("div")
+            style = @mask.style
+            style.display = "block"
+            style.position = "absolute"
+            style.overflow = "hidden"
+            style.webkitUserSelect = "none"
+            style.webkitTransformOrigin = "0px 0px"
+            @stage.appendChild(@mask)
+          style.width = node.style.width
+          style.height = node.style.height
+          unless @maskMatrix?
+            @maskMatrix = new Matrix()
+            @maskedMatrix = new Matrix()
+          Utility.invertMatrix(@maskMatrix, m)
+        else
+          return
+
+      when "layer"
+        if @renderMasked
+          if @renderMaskMode isnt cmd.maskMode
+            @mask.style.zIndex = renderer.zIndex
+          if node.parentNode isnt @mask
+            node.parentNode.removeChild(node)
+            @mask.appendChild(node)
+          m = Utility.calcMatrix(@maskedMatrix, @maskMatrix, m)
+        else
+          if node.parentNode isnt @stage
+            node.parentNode.removeChild(node)
+            @stage.appendChild(node)
+
+      else
+        if node.parentNode isnt @stage
+          node.parentNode.removeChild(node)
+          @stage.appendChild(node)
+    @renderMaskMode = cmd.maskMode
+
+    style.opacity = renderer.alpha
+    scaleX = m.scaleX.toFixed(12)
+    scaleY = m.scaleY.toFixed(12)
+    skew1 = m.skew1.toFixed(12)
+    skew0 = m.skew0.toFixed(12)
+    translateX = m.translateX.toFixed(12)
+    translateY = m.translateY.toFixed(12)
+    if @use3D
+      style.webkitTransform = "matrix3d(" +
+        "#{scaleX},#{skew1},0,0," +
+        "#{skew0},#{scaleY},0,0," +
+        "0,0,1,0," +
+        "#{translateX},#{translateY},0,1)"
+    else
+      style.webkitTransform = "matrix(" +
+        "#{scaleX},#{skew1},#{skew0},#{scaleY},#{translateX},#{translateY})"
+    return
+
+  endRender:(lwf) ->
+    @renderMaskMode = "normal"
+    @renderMasked = false
+    for rIndex in @commandsKeys
+      cmd = @commands[rIndex]
+      if cmd.subCommandsKeys?
+        for srIndex in cmd.subCommandsKeys
+          scmd = cmd.subCommands[srIndex]
+          @render(scmd)
+      @render(cmd)
+
+    @initCommands()
     return
 
   setBlendMode:(blendMode) ->
 
-  setMaskMode:(maskMode) ->
+  setMaskMode:(@maskMode) ->
 
   constructBitmap:(lwf, objectId, bitmap) ->
     context = @bitmapContexts[objectId]
@@ -266,7 +357,7 @@ class WebkitCSSRendererFactory
         offsetY = (canvas.height - h) / 2
       else
         offsetY = 0
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvas.width + 1, canvas.height + 1)
     ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
 
     useStroke = false

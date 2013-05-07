@@ -150,8 +150,8 @@ public partial class LWF
 	{
 		m_data = lwfData;
 
-		interactive = lwfData.buttonConditions.Length > 0;
-		m_frameRate = @data.header.frameRate;
+		interactive = m_data.buttonConditions.Length > 0;
+		m_frameRate = m_data.header.frameRate;
 		m_execLimit = 3;
 		m_tick = 1.0f / m_frameRate;
 		m_roundOffTick = m_tick * ROUND_OFF_TICK_RATE;

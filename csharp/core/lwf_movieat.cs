@@ -47,6 +47,7 @@ public partial class Movie : IObject
 	private void ReorderAttachedMovieList(bool reorder, int index, Movie movie)
 	{
 		m_attachedMovieList[index] = movie;
+		m_attachedMovieDescendingList[index] = index;
 		if (reorder) {
 			AttachedMovieList list = m_attachedMovieList;
 			m_attachedMovieList = new AttachedMovieList();
@@ -96,8 +97,16 @@ public partial class Movie : IObject
 				DeleteAttachedMovie(this, attachedMovie);
 
 		movie.m_attachName = attachName;
-		movie.depth = attachDepth >= 0 ? attachDepth :
-			m_attachedMovieDescendingList.Keys.GetEnumerator().Current + 1;
+		if (attachDepth >= 0) {
+			movie.depth = attachDepth;
+		} else {
+			AttachedMovieDescendingList.KeyCollection.Enumerator e =
+				m_attachedMovieDescendingList.Keys.GetEnumerator();
+			if (e.MoveNext())
+				movie.depth = e.Current + 1;
+			else
+				movie.depth = 0;
+		}
 		movie.m_name = attachName;
 		m_attachedMovies[attachName] = movie;
 		ReorderAttachedMovieList(reorder, movie.depth, movie);
@@ -235,6 +244,7 @@ public partial class Movie : IObject
 		bool reorder, int index, LWFContainer lwfContainer)
 	{
 		m_attachedLWFList[index] = lwfContainer;
+		m_attachedLWFDescendingList[index] = index;
 		if (reorder) {
 			AttachedLWFList list = m_attachedLWFList;
 			m_attachedLWFList = new AttachedLWFList();
@@ -287,10 +297,9 @@ public partial class Movie : IObject
 			attachLWF.parent.m_attachedLWFs.TryGetValue(
 				attachLWF.attachName, out lwfContainer);
 			DeleteAttachedLWF(attachLWF.parent, lwfContainer, false);
-		} else {
-			if (m_attachedLWFs.TryGetValue(attachName, out lwfContainer))
-				DeleteAttachedLWF(this, lwfContainer);
 		}
+		if (m_attachedLWFs.TryGetValue(attachName, out lwfContainer))
+			DeleteAttachedLWF(this, lwfContainer);
 
 		if (!reorder && attachDepth >= 0)
 			if (m_attachedLWFList.TryGetValue(attachDepth, out lwfContainer))
@@ -303,8 +312,16 @@ public partial class Movie : IObject
 		attachLWF.parent = this;
 		attachLWF.detachHandler = detachHandler;
 		attachLWF.attachName = attachName;
-		attachLWF.depth = attachDepth >= 0 ? attachDepth :
-			m_attachedLWFDescendingList.Keys.GetEnumerator().Current + 1;
+		if (attachDepth >= 0) {
+			attachLWF.depth = attachDepth;
+		} else {
+			AttachedLWFDescendingList.KeyCollection.Enumerator e =
+				m_attachedLWFDescendingList.Keys.GetEnumerator();
+			if (e.MoveNext())
+				attachLWF.depth = e.Current + 1;
+			else
+				attachLWF.depth = 0;
+		}
 		m_attachedLWFs[attachName] = lwfContainer;
 		ReorderAttachedLWFList(reorder, attachLWF.depth, lwfContainer);
 

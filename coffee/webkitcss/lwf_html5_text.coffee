@@ -41,47 +41,9 @@ class HTML5TextRenderer
     @str = String(@str) if @str?
     @matrixForScale = new Matrix()
     @color = new Color
-    scale = @lwf.scaleByStage
-    property = @context.textProperty
-    @leading = property.leading * scale
-    @fontHeight = property.fontHeight * scale
-    leftMargin = property.leftMargin / @fontHeight
-    rightMargin = property.rightMargin / @fontHeight
-    lm = 0
-    rm = 0
-    if @context.strokeColor?
-      lm = rm = property.strokeWidth / 2 * scale
-    if @context.shadowColor?
-      sw = (property.shadowBlur - property.shadowOffsetX) * scale
-      lm = sw if sw > lm
-      sw = (property.shadowOffsetX + property.shadowBlur) * scale
-      rm = sw if sw > rm
-    leftMargin += lm
-    rightMargin += rm
-
-    text = @context.text
-    switch (property.align & Align.ALIGN_MASK)
-      when Align.RIGHT
-        align = "right"
-        @offsetX = text.width - rightMargin
-      when Align.CENTER
-        align = "center"
-        @offsetX = text.width / 2
-      else # Align.LEFT
-        align = "left"
-        @offsetX = leftMargin
-
-    canvas = document.createElement("canvas")
-    canvas.width = @context.text.width * scale
-    canvas.height = @context.text.height * scale
-    @maxWidth = canvas.width - (leftMargin + rightMargin)
-    ctx = canvas.getContext("2d")
-    ctx.font = "#{@fontHeight}px #{@context.fontName}"
-    ctx.textAlign = align
-    ctx.textBaseline = "bottom"
-    @canvas = canvas
-    @canvasContext = ctx
     @textRendered = false
+    @scaleByStage = @lwf.scaleByStage;
+    @initCanvas();
 
   destruct: ->
 
@@ -162,13 +124,15 @@ class HTML5TextRenderer
       when Align.VERTICAL_MIDDLE
         len = lines.length + 1
         h = (@fontHeight * len + @leading * (len - 1)) * 96 / 72
-        offsetY = (canvas.height - h) / 2
+        offsetY = (canvas.height - h) / 2 + @fontHeight
       else
         offsetY = 0
     offsetY += @fontHeight * 1.2
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvas.width + 1, canvas.height + 1)
     ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
+    ctx.lineCap = "round"
+    ctx.lineJoin = "round"
 
     useStroke = false
     if context.strokeColor?
@@ -186,11 +150,11 @@ class HTML5TextRenderer
       line = lines[i]
       x = @offsetX * scale
       y = offsetY + (@fontHeight + @leading) * i * 96 / 72
-      ctx.shadowColor = shadowColor if context.shadowColor?
-      ctx.fillText(line, x, y)
       if useStroke
         ctx.shadowColor = "rgba(0, 0, 0, 0)" if context.shadowColor?
         ctx.strokeText(line, x, y)
+      ctx.shadowColor = shadowColor if context.shadowColor?
+      ctx.fillText(line, x, y)
 
     return
 
@@ -217,6 +181,53 @@ class HTML5TextRenderer
       strChanged = true
       @str = str
 
-    @renderText(c) if !@textRendered or colorChanged or strChanged
+    scaleChanged = false
+    if @scaleByStage isnt @lwf.scaleByStage
+      scaleChanged = true
+      @initCanvas()
+      @scaleByStage = @lwf.scaleByStage
+
+    @renderText(c) if !@textRendered or colorChanged or strChanged or scaleChanged
     return
 
+  initCanvas: ->
+    scale = @lwf.scaleByStage
+    property = @context.textProperty
+    @leading = property.leading * scale
+    @fontHeight = property.fontHeight * scale
+    leftMargin = property.leftMargin / @fontHeight
+    rightMargin = property.rightMargin / @fontHeight
+    lm = 0
+    rm = 0
+    if @context.strokeColor?
+      lm = rm = property.strokeWidth / 2 * scale
+    if @context.shadowColor?
+      sw = (property.shadowBlur - property.shadowOffsetX) * scale
+      lm = sw if sw > lm
+      sw = (property.shadowOffsetX + property.shadowBlur) * scale
+      rm = sw if sw > rm
+    leftMargin += lm
+    rightMargin += rm
+
+    text = @context.text
+    switch (property.align & Align.ALIGN_MASK)
+      when Align.RIGHT
+        align = "right"
+        @offsetX = text.width - rightMargin
+      when Align.CENTER
+        align = "center"
+        @offsetX = text.width / 2
+      else # Align.LEFT
+        align = "left"
+        @offsetX = leftMargin
+
+    canvas = document.createElement("canvas")
+    canvas.width = @context.text.width * scale
+    canvas.height = @context.text.height * scale
+    @maxWidth = canvas.width - (leftMargin + rightMargin)
+    ctx = canvas.getContext("2d")
+    ctx.font = "#{@fontHeight}px #{@context.fontName}"
+    ctx.textAlign = align
+    ctx.textBaseline = "bottom"
+    @canvas = canvas
+    @canvasContext = ctx

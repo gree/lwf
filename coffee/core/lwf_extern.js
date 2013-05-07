@@ -93,6 +93,7 @@ Movie.prototype.data;
 Movie.prototype.depth;
 Movie.prototype.lwf;
 Movie.prototype.playing;
+Movie.prototype.postLoaded;
 Movie.prototype.property;
 Movie.prototype.rotation;
 Movie.prototype.scaleX;

@@ -137,6 +137,17 @@ class WebGLBitmapRenderer
     return unless visible
 
     factory = @context.factory
+    factory.addCommand(renderingIndex,
+      renderer:@
+      matrix:m
+      colorTransform:c
+      blendMode:factory.blendMode
+      maskMode:factory.maskMode
+    )
+    return
+
+  renderCommand:(m, c, renderingIndex, blendMode) ->
+    factory = @context.factory
     gl = factory.stageContext
 
     gl.bindBuffer(gl.ARRAY_BUFFER, @context.verticesBuffer)
@@ -169,12 +180,8 @@ class WebGLBitmapRenderer
       gc[2] = c.multi.blue
       gc[3] = c.multi.alpha
 
-    switch factory.blendMode
-      when "add"
-        gl.blendFunc(src, gl.ONE)
-      else
-        gl.blendFunc(src, gl.ONE_MINUS_SRC_ALPHA)
-
+    gl.blendFunc(src,
+      if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA)
     gl.uniform4fv(factory.uColor, gc)
 
     gl.bindTexture(gl.TEXTURE_2D, @context.texture)

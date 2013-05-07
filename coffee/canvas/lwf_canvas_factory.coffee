@@ -53,15 +53,6 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
 
     @initCommands()
 
-  initCommands: ->
-    @commands = {}
-    @commandsKeys = Utility.newIntArray()
-
-  addCommand:(rIndex, cmd) ->
-    @commands[rIndex] = cmd
-    Utility.insertIntArray(@commandsKeys, rIndex)
-    return
-
   destruct: ->
     context.destruct() for context in @bitmapContexts
     context.destruct() for context in @bitmapExContexts
@@ -69,19 +60,93 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     return
 
   beginRender:(lwf) ->
+    @commandMaskMode = "normal"
+    return
 
   renderMask: ->
-    ctx = @eraseCanvas.getContext('2d')
+    ctx = @maskCanvas.getContext('2d')
     ctx.globalAlpha = 1
-    ctx.globalCompositeOperation = "source-out"
+    ctx.globalCompositeOperation = @maskComposition
     ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.drawImage(@layerCanvas, 0, 0)
+    ctx.drawImage(@layerCanvas,
+      0, 0, @layerCanvas.width, @layerCanvas.height,
+      0, 0, @layerCanvas.width, @layerCanvas.height)
 
     ctx = @stageContext
     ctx.globalAlpha = 1
     ctx.globalCompositeOperation = "source-over"
     ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.drawImage(@eraseCanvas, 0, 0)
+    ctx.drawImage(@maskCanvas,
+      0, 0, @maskCanvas.width, @maskCanvas.height,
+      0, 0, @maskCanvas.width, @maskCanvas.height)
+    return
+
+  render:(ctx, cmd) ->
+    if @renderMaskMode isnt cmd.maskMode
+      switch cmd.maskMode
+        when "erase", "mask"
+          @renderMasked = true
+          @maskComposition =
+            if cmd.maskMode is "erase" then "source-out" else "source-in"
+          unless @maskCanvas?
+            @maskCanvas = document.createElement('canvas')
+            @maskCanvas.width = @stage.width
+            @maskCanvas.height = @stage.height
+            cleared = true
+          else
+            cleared = false
+          ctx = @maskCanvas.getContext('2d')
+          ctx.globalAlpha = 1
+          ctx.globalCompositeOperation = "source-over"
+          @renderBlendMode = "normal"
+          unless cleared
+            ctx.setTransform(1, 0, 0, 1, 0, 0)
+            ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+        when "layer"
+          if @renderMasked
+            unless @layerCanvas?
+              @layerCanvas = document.createElement('canvas')
+              @layerCanvas.width = @stage.width
+              @layerCanvas.height = @stage.height
+              cleared = true
+            else
+              cleared = false
+            ctx = @layerCanvas.getContext('2d')
+            ctx.globalAlpha = 1
+            ctx.globalCompositeOperation = "source-over"
+            @renderBlendMode = "normal"
+            unless cleared
+              ctx.setTransform(1, 0, 0, 1, 0, 0)
+              ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+          else
+            ctx = @stageContext
+            ctx.globalAlpha = 1
+            ctx.globalCompositeOperation = "source-over"
+            @renderBlendMode = "normal"
+        when "normal"
+          ctx = @stageContext
+          ctx.globalAlpha = 1
+          ctx.globalCompositeOperation = "source-over"
+          @renderBlendMode = "normal"
+          @renderMask() if @renderMaskMode is "layer" and @renderMasked
+      @renderMaskMode = cmd.maskMode
+    if @renderBlendMode isnt cmd.blendMode
+      @renderBlendMode = cmd.blendMode
+      switch @renderBlendMode
+        when "add"
+          ctx.globalCompositeOperation = "lighter"
+        when "normal"
+          ctx.globalCompositeOperation = "source-over"
+    ctx.globalAlpha = cmd.alpha
+    m = cmd.matrix
+    ctx.setTransform(
+      m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+    u = cmd.u
+    v = cmd.v
+    w = cmd.w
+    h = cmd.h
+    ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
+    return ctx
 
   endRender:(lwf) ->
     ctx = @stageContext
@@ -95,74 +160,29 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       if @clearColor?
         if @clearColor[3] is 'a'
-          ctx.clearRect(0, 0, @stage.width, @stage.height)
+          ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
         ctx.fillStyle = @clearColor
         ctx.fillRect(0, 0, @stage.width, @stage.height)
       else
-        ctx.clearRect(0, 0, @stage.width, @stage.height)
+        ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
 
-    blendMode = "normal"
-    maskMode = "normal"
+    @renderBlendMode = "normal"
+    @renderMaskMode = "normal"
+    @renderMasked = false
     for rIndex in @commandsKeys
       cmd = @commands[rIndex]
-      ctx.globalAlpha = cmd.alpha
-      if maskMode isnt cmd.maskMode
-        switch cmd.maskMode
-          when "erase"
-            unless @eraseCanvas?
-              @eraseCanvas = document.createElement('canvas')
-              @eraseCanvas.width = @stage.width
-              @eraseCanvas.height = @stage.height
-              cleared = true
-            else
-              cleared = false
-            ctx = @eraseCanvas.getContext('2d')
-            ctx.globalAlpha = 1
-            ctx.globalCompositeOperation = "source-over"
-            blendMode = "normal"
-            unless cleared
-              ctx.setTransform(1, 0, 0, 1, 0, 0)
-              ctx.clearRect(0, 0, @stage.width, @stage.height)
-          when "layer"
-            unless @layerCanvas?
-              @layerCanvas = document.createElement('canvas')
-              @layerCanvas.width = @stage.width
-              @layerCanvas.height = @stage.height
-              cleared = true
-            else
-              cleared = false
-            ctx = @layerCanvas.getContext('2d')
-            ctx.globalAlpha = 1
-            ctx.globalCompositeOperation = "source-over"
-            blendMode = "normal"
-            unless cleared
-              ctx.setTransform(1, 0, 0, 1, 0, 0)
-              ctx.clearRect(0, 0, @stage.width, @stage.height)
-          when "normal"
-            ctx = @stageContext
-            ctx.globalAlpha = 1
-            ctx.globalCompositeOperation = "source-over"
-            blendMode = "normal"
-            @renderMask() if maskMode is "layer"
-        maskMode = cmd.maskMode
-      if blendMode isnt cmd.blendMode
-        blendMode = cmd.blendMode
-        switch blendMode
-          when "add"
-            ctx.globalCompositeOperation = "lighter"
-          when "normal"
-            ctx.globalCompositeOperation = "source-over"
-      m = cmd.matrix
-      ctx.setTransform(
-        m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
-      u = cmd.u
-      v = cmd.v
-      w = cmd.w
-      h = cmd.h
-      ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
-    ctx.globalAlpha = 1
-    ctx.globalCompositeOperation = "source-over"
-    @renderMask() if maskMode is "layer"
+      if cmd.subCommandsKeys?
+        for srIndex in cmd.subCommandsKeys
+          scmd = cmd.subCommands[srIndex]
+          ctx = @render(ctx, scmd)
+      ctx = @render(ctx, cmd)
+
+    if @renderMaskMode is "layer" and @renderMasked
+      @renderMask()
+    else
+      ctx.globalAlpha = 1
+      ctx.globalCompositeOperation = "source-over"
+
     @initCommands()
     return
 

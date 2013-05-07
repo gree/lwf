@@ -90,10 +90,11 @@ class LWF
     return if frameRate is 0
     @frameRate = frameRate
     @tick = 1.0 / @frameRate
+    @rootMovie.setFrameRate(frameRate) if @isLWFAttached
     return
 
   setPreferredFrameRate:(preferredFrameRate, execLimit = 2) ->
-    return if frameRate is 0
+    return if preferredFrameRate is 0
     @execLimit = Math.ceil(@frameRate / preferredFrameRate) + execLimit
     return
 
@@ -568,14 +569,14 @@ class LWF
     h = @getMovieEventHandlers(instanceName)
     h.remove(handlers) if h?
     movie = @searchMovieInstance(instanceName)
-    movie.handler.remove(handlers) if movie?.handler?
+    movie.handler.remove(handlers) if movie?
     return
 
   clearMovieEventHandler:(instanceName, type = null) ->
     h = @getMovieEventHandlers(instanceName)
     h.clear(type) if h?
     movie = @searchMovieInstance(instanceName)
-    movie.handler.clear(type) if movie?.handler?
+    movie.handler.clear(type) if movie?
     return
 
   setMovieEventHandler:(instanceName, handlers) ->

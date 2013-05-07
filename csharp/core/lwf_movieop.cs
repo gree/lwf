@@ -25,80 +25,93 @@ namespace LWF {
 
 public partial class Movie : IObject
 {
-	public void Play()
+	public Movie Play()
 	{
 		m_playing = true;
+		return this;
 	}
 
-	public void Stop()
+	public Movie Stop()
 	{
 		m_playing = false;
+		return this;
 	}
 
-	public void NextFrame()
+	public Movie NextFrame()
 	{
 		m_jumped = true;
 		Stop();
 		++m_currentFrameInternal;
+		return this;
 	}
 
-	public void PrevFrame()
+	public Movie PrevFrame()
 	{
 		m_jumped = true;
 		Stop();
 		--m_currentFrameInternal;
+		return this;
 	}
 
-	public void GotoFrame(int frameNo)
+	public Movie GotoFrame(int frameNo)
 	{
 		GotoFrameInternal(frameNo - 1);
+		return this;
 	}
 
-	public void GotoFrameInternal(int frameNo)
+	public Movie GotoFrameInternal(int frameNo)
 	{
 		m_jumped = true;
 		Stop();
 		m_currentFrameInternal = frameNo;
+		return this;
 	}
 
-	public void SetVisible(bool visible)
+	public Movie SetVisible(bool visible)
 	{
 		m_visible = visible;
 		m_lwf.SetPropertyDirty();
+		return this;
 	}
 
-	public void GotoLabel(string label)
+	public Movie GotoLabel(string label)
 	{
 		GotoLabel(m_lwf.GetStringId(label));
+		return this;
 	}
 
-	public void GotoLabel(int stringId)
+	public Movie GotoLabel(int stringId)
 	{
 		GotoFrame(m_lwf.SearchFrame(this, stringId));
+		return this;
 	}
 
-	public void GotoAndStop(string label)
+	public Movie GotoAndStop(string label)
 	{
 		GotoFrame(m_lwf.SearchFrame(this, m_lwf.GetStringId(label)));
 		Stop();
+		return this;
 	}
 
-	public void GotoAndStop(int frameNo)
+	public Movie GotoAndStop(int frameNo)
 	{
 		GotoFrame(frameNo);
 		Stop();
+		return this;
 	}
 
-	public void GotoAndPlay(string label)
+	public Movie GotoAndPlay(string label)
 	{
 		GotoFrame(m_lwf.SearchFrame(this, m_lwf.GetStringId(label)));
 		Play();
+		return this;
 	}
 
-	public void GotoAndPlay(int frameNo)
+	public Movie GotoAndPlay(int frameNo)
 	{
 		GotoFrame(frameNo);
 		Play();
+		return this;
 	}
 
 	public Movie Move(float vx, float vy)

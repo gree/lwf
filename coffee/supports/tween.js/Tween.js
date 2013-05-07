@@ -142,7 +142,7 @@ TWEENLWF.Tween = function ( movie ) {
 
 			if ( this.lwf._tweens.length == 0 ) {
 
-				this.stopTweens();
+				this.lwf.stopTweens();
 
 			}
 
@@ -216,6 +216,12 @@ TWEENLWF.Tween = function ( movie ) {
 		if ( time < this.startTime ) {
 
 			return true;
+
+		}
+
+		if ( this.object[ "property" ] === null ) {
+
+			return false;
 
 		}
 

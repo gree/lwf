@@ -107,8 +107,10 @@ class Movie extends IObject
     @loadFunc.call(@) if @loadFunc?
     @playAnimation(ClipEvent.LOAD)
 
-    @handler = if handler? then handler else lwf.getMovieEventHandlers(@)
-    @handler.call("load", @) if @handler?
+    @handler = new MovieEventHandlers
+    @handler.concat(lwf.getMovieEventHandlers(@))
+    @handler.concat(handler)
+    @handler.call("load", @) unless @handler.empty
     lwf.execMovieCommand()
 
   getMovieFunctions: ->
@@ -117,10 +119,7 @@ class Movie extends IObject
     return
 
   setHandlers:(handler) ->
-    if @handler?
-      @handler.concat(handler)
-    else
-      @handler = handler
+    @handler.concat(handler)
     return
 
   play: ->
@@ -157,13 +156,23 @@ class Movie extends IObject
     return @
 
   globalToLocal:(point) ->
+    if @property.hasMatrix
+      m = new Matrix()
+      m = Utility.calcMatrix(m, @matrix, @property.matrix)
+    else
+      m = @matrix
     invert = new Matrix()
-    Utility.invertMatrix(invert, @matrix)
+    Utility.invertMatrix(invert, m)
     [x, y] = Utility.calcMatrixToPoint(point.x, point.y, invert)
     return new Point(x, y)
 
   localToGlobal:(point) ->
-    [x, y] = Utility.calcMatrixToPoint(point.x, point.y, @matrix)
+    if @property.hasMatrix
+      m = new Matrix()
+      m = Utility.calcMatrix(m, @matrix, @property.matrix)
+    else
+      m = @matrix
+    [x, y] = Utility.calcMatrixToPoint(point.x, point.y, m)
     return new Point(x, y)
 
   getDepth:(keys) ->
@@ -197,17 +206,11 @@ class Movie extends IObject
 
   attachMovie:(linkageName, attachName, options = null) ->
     if linkageName instanceof LWF
-      return attachLWF(linkageName, attachName, options)
+      return @attachLWF(linkageName, attachName, options)
 
     options ?= {}
     depth = options["depth"]
     reorder = options["reorder"] ? false
-    load = options["load"]
-    postLoad = options["postLoad"]
-    unload = options["unload"]
-    enterFrame = options["enterFrame"]
-    update = options["update"]
-    render = options["render"]
 
     if linkageName instanceof Movie and linkageName.lwf is @lwf
       movie = linkageName
@@ -231,10 +234,10 @@ class Movie extends IObject
       attachedMovie = @attachedMovieList[depth]
       @deleteAttachedMovie(@, attachedMovie) if attachedMovie?
 
-    handlers = new MovieEventHandlers(
-      load, postLoad, unload, enterFrame, update, render)
+    handlers = new MovieEventHandlers()
+    handlers.add(options)
     if movie?
-      movie.setHandlers(handler)
+      movie.setHandlers(handlers)
     else
       movie = new Movie(@lwf, @, movieId, -1, 0, 0, true, handlers)
       movie.exec() if @attachMovieExeced
@@ -294,15 +297,16 @@ class Movie extends IObject
 
   detachMovie:(arg) ->
     if @detachedMovies?
-      switch typeof(arg)
-        when "string"
-          @detachedMovies[arg] = true
-        when "number"
-          attachedMovie = @attachedMovieList?[arg]
-          if attachedMovie?.attachName?
-            @detachedMovies[attachedMovie.attachName] = true
-        when typeof(Movie)
-          @detachedMovies[arg.attachName] = true if arg?.attachName?
+      if arg instanceof Movie
+        @detachedMovies[arg.attachName] = true if arg?.attachName?
+      else
+        switch typeof(arg)
+          when "string"
+            @detachedMovies[arg] = true
+          when "number"
+            attachedMovie = @attachedMovieList?[arg]
+            if attachedMovie?.attachName?
+              @detachedMovies[attachedMovie.attachName] = true
     return
 
   detachFromParent: ->
@@ -316,7 +320,7 @@ class Movie extends IObject
     if @attachName?
       @parent.detachMovie(@) if @parent?
     else if @lwf.attachName?
-      @parent.detachLWF(@) if @parent?
+      @lwf.parent.detachLWF(@lwf) if @lwf.parent?
     return
 
   execDetachHandler:(lwfContainer) ->
@@ -442,15 +446,16 @@ class Movie extends IObject
 
   detachLWF:(arg) ->
     if @detachedLWFs?
-      switch typeof(arg)
-        when "string"
-          @detachedLWFs[arg] = true
-        when "number"
-          attachedLWF = @attachedLWFList?[arg]
-          if attachedLWF?.child?.attachName?
-            @detachedLWFs[attachedLWF.child.attachName] = true
-        when typeof(LWF)
-          @detachedLWFs[arg.attachName] = true if arg?.attachName?
+      if arg instanceof LWF
+        @detachedLWFs[arg.attachName] = true if arg?.attachName?
+      else
+        switch typeof(arg)
+          when "string"
+            @detachedLWFs[arg] = true
+          when "number"
+            attachedLWF = @attachedLWFList?[arg]
+            if attachedLWF?.child?.attachName?
+              @detachedLWFs[attachedLWF.child.attachName] = true
     return
 
   detachAllLWFs: ->
@@ -646,7 +651,7 @@ class Movie extends IObject
       unless @postLoaded
         @postLoaded = true
         @postLoadFunc.call(@) if @postLoadFunc?
-        @handler.call("postLoad", @) if @handler?
+        @handler.call("postLoad", @) unless @handler.empty
 
       if controlAnimationOffset isnt -1 and
           @execedFrame is @currentFrameInternal
@@ -662,7 +667,7 @@ class Movie extends IObject
 
     @enterFrameFunc.call(@) if @enterFrameFunc?
     @playAnimation(ClipEvent.ENTERFRAME)
-    @handler.call("enterFrame", @) if @handler?
+    @handler.call("enterFrame", @) unless @handler.empty
     @postExecCount = @lwf.execCount
     return
 
@@ -694,7 +699,7 @@ class Movie extends IObject
       matrixChanged = @matrix.setWithComparing(m)
       colorTransformChanged = @colorTransform.setWithComparing(c)
 
-    @handler.call("update", @) if @handler?
+    @handler.call("update", @) unless @handler.empty
 
     if @property.hasMatrix
       matrixChanged = true
@@ -728,6 +733,55 @@ class Movie extends IObject
         for k in @attachedLWFListKeys
           lwfContainer = @attachedLWFList[k]
           @lwf.renderObject(lwfContainer.child.exec(@lwf.thisTick, m, c))
+
+    if @requestedCalculateBounds
+      @xMin = 0
+      @xMax = 0
+      @yMin = 0
+      @yMax = 0
+      inspector = (o, h, d, r) => @calculateBounds(o)
+      @inspect(inspector, 0, 0)
+      @bounds =
+        "xMin":@xMin
+        "xMax":@xMax
+        "yMin":@yMin
+        "yMax":@yMax
+      @requestedCalculateBounds = false
+
+    return
+
+  calculateBounds:(o) ->
+    tfId = null
+    switch o.type
+      when Type.BITMAP, Type.BITMAPEX
+        if o.type is Type.BITMAP
+          tfId = o.lwf.data.bitmaps[o.objectId].textureFragmentId
+        else
+          tfId = o.lwf.data.bitmapExs[o.objectId].textureFragmentId
+        if tfId? and tfId >= 0
+          tf = o.lwf.data.textureFragments[tfId]
+          @updateBounds(o.matrix, tf.x, tf.x + tf.w, tf.y, tf.y + tf.h)
+      when Type.BUTTON
+        @updateBounds(o.matrix, 0, o.width, 0, o.height)
+      when Type.TEXT
+        text = o.lwf.data.texts[o.objectId]
+        @updateBounds(o.matrix, 0, text.width, 0, text.height)
+      when Type.PROGRAMOBJECT
+        pobj = o.lwf.data.programObjects[o.objectId]
+        @updateBounds(o.matrix, 0, pobj.width, 0, pobj.height)
+    return
+
+  updateBounds:(matrix, xmin, xmax, ymin, ymax) ->
+    for p in [[xmin, ymin], [xmin, ymax], [xmax, ymin], [xmax, ymax]]
+      [x, y] = Utility.calcMatrixToPoint(p[0], p[1], matrix)
+      if x < @xMin
+        @xMin = x
+      else if x > @xMax
+        @xMax = x
+      if y < @yMin
+        @yMin = y
+      else if y > @yMax
+        @yMax = y
     return
 
   linkButton:() ->
@@ -762,11 +816,11 @@ class Movie extends IObject
         when "add"
           @lwf.beginBlendMode(@blendMode)
           useBlendMode = true
-        when "erase", "layer"
+        when "erase", "layer", "mask"
           @lwf.beginMaskMode(@blendMode)
           useMaskMode = true
 
-    @handler.call("render", @) if @handler?
+    @handler.call("render", @) unless @handler.empty
 
     if @property.hasRenderingOffset
       @lwf.renderOffset()
@@ -843,7 +897,7 @@ class Movie extends IObject
     @unloadFunc.call(@) if @unloadFunc?
     @playAnimation(ClipEvent.UNLOAD)
 
-    @handler.call("unload", @) if @handler?
+    @handler.call("unload", @) unless @handler.empty
 
     @instanceHead = null
     @instanceTail = null
@@ -864,7 +918,7 @@ class Movie extends IObject
   dispatchEvent:(e) ->
     switch e
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
-        @handler.call(e, @) if @handler?
+        @handler.call(e, @) unless @handler.empty
       else
         handlers = @eventHandlers[e]
         return false unless handlers?
@@ -876,7 +930,6 @@ class Movie extends IObject
   addEventHandler:(e, eventHandler) ->
     switch e
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
-        @setHandlers(new MovieEventHandlers()) unless @handler?
         @handler.addHandler(e, eventHandler)
       else
         @eventHandlers[e] ?= []
@@ -886,7 +939,7 @@ class Movie extends IObject
   removeEventHandler:(e, eventHandler) ->
     switch e
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
-        @handler.removeHandler(e, eventHandler) if @handler?
+        @handler.removeHandler(e, eventHandler)
       else
         handlers = @eventHandlers[e]
         return unless handlers?
@@ -902,10 +955,10 @@ class Movie extends IObject
   clearEventHandler:(e = null) ->
     switch e
       when null
-        @handler.clear() if @handler?
+        @handler.clear()
         @eventHandlers = {}
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
-        @handler.clear(e) if @handler?
+        @handler.clear(e)
       else
         delete @eventHandlers[e]
     return
@@ -1101,3 +1154,29 @@ class Movie extends IObject
     Utility.syncColorTransform(@) unless @property.hasColorTransform
     @property.setAlpha(v)
     return
+
+  requestCalculateBounds: ->
+    @requestedCalculateBounds = true
+    return
+
+  getBounds: ->
+    return @bounds
+
+  setFrameRate:(frameRate) ->
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        movie.setFrameRate(frameRate)
+
+    if @attachedLWFs?
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        lwfContainer.child.setFrameRate(frameRate)
+
+    instance = @instanceHead
+    while instance isnt null
+      if instance.isMovie
+        instance.setFrameRate(frameRate)
+      instance = instance.linkInstance
+    return
+

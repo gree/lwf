@@ -199,7 +199,7 @@ rule ".js" => lambda{|o| DEPENDS[o]} do |t|
   js = f.read
   f.close
   f = File.open(t.name, "wb")
-  f.puts "// Copyright (c) 2012 GREE, Inc - http://git.io/uvS3hQ"
+  f.puts "// Copyright (c) 2012-2013 GREE, Inc - http://git.io/uvS3hQ"
   f.puts "// Copyright (c) 2010-2012 Tween.js authors - http://git.io/tiDrNw"
   f.puts "// Copyright (c) 2001 Robert Penner - http://goo.gl/Qjqc0"
   f.puts "// Copyright (c) 2012 imaya - http://git.io/SKEzIQ http://git.io/cC8gDw"

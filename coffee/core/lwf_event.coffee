@@ -27,22 +27,30 @@ class EventHandlers
       @[type] = [] if @[type]?
     else
       @[type] = [] for type in @types
+    @empty = true
     return
 
   add:(handlers) ->
+    return unless handlers?
     for type in @types
       handler = handlers[type]
       @[type].push(handler) if handler?
+    @updateEmpty()
     return
 
   concat:(handlers) ->
+    return unless handlers?
+    return if handlers.empty
     for type in @types
       handler = handlers[type]
       @[type].push(h) for h in handler
+    @updateEmpty()
     return
 
   addHandler:(type, handler) ->
-    @[type].push(handler) if handler?
+    if handler?
+      @[type].push(handler)
+      @empty = false
     return
 
   removeInternal:(array, handler) ->
@@ -58,10 +66,12 @@ class EventHandlers
     for type in @types
       handler = handlers[type]
       @removeInternal(@[type], handler) if handler?
+    @updateEmpty()
     return
 
   removeHandler:(type, handler) ->
     @removeInternal(@[type], handler) if handler?
+    @updateEmpty()
     return
 
   call:(type, target) ->
@@ -69,5 +79,13 @@ class EventHandlers
     if handlers? and handlers.length > 0
       handlers = (handler for handler in handlers)
       handler.call(target) for handler in handlers
+    return
+
+  updateEmpty: ->
+    for type in @types
+      if @[type]?.length > 0
+        @empty = false
+        return
+    @empty = true
     return
 

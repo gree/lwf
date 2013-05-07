@@ -127,8 +127,8 @@ public partial class Movie : IObject
 		PlayAnimation(ClipEvent.LOAD);
 
 		m_eventHandlers = new EventHandlerDictionary();
-		m_handler = (handler != null ?
-			handler : lwf.GetMovieEventHandlers(this));
+		m_handler.Add(lwf.GetMovieEventHandlers(this));
+		m_handler.Add(handler);
 		if (m_handler != null)
 			m_handler.Call(EventType.LOAD, this);
 

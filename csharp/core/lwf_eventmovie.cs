@@ -76,6 +76,16 @@ public class MovieEventHandlers
 		}
 	}
 
+	public void Add(MovieEventHandlers handlers)
+	{
+		handlers.load.ForEach(h => load.Add(h));
+		handlers.postLoad.ForEach(h => postLoad.Add(h));
+		handlers.unload.ForEach(h => unload.Add(h));
+		handlers.enterFrame.ForEach(h => enterFrame.Add(h));
+		handlers.update.ForEach(h => update.Add(h));
+		handlers.render.ForEach(h => render.Add(h));
+	}
+
 	public void Add(
 		MovieEventHandler l = null, MovieEventHandler p = null,
 		MovieEventHandler u = null, MovieEventHandler e = null,

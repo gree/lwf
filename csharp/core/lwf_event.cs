@@ -91,7 +91,7 @@ public partial class LWF
 	{
 		int eventId = SearchEventId(eventName);
 		if (eventId >= 0 && eventId < m_data.events.Length) {
-			RemoveEventHandler(SearchEventId(eventName), eventHandler);
+			RemoveEventHandler(eventId, eventHandler);
 		} else {
 			EventHandlerList list = m_genericEventHandlerDictionary[eventName];
 			if (list == null)
@@ -114,7 +114,7 @@ public partial class LWF
 	{
 		int eventId = SearchEventId(eventName);
 		if (eventId >= 0 && eventId < m_data.events.Length) {
-			ClearEventHandler(SearchEventId(eventName));
+			ClearEventHandler(eventId);
 		} else {
 			m_genericEventHandlerDictionary.Remove(eventName);
 		}

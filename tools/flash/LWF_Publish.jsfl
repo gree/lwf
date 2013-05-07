@@ -69,8 +69,10 @@ function Init()
 
 		BitmapDirName = FlaDirName + FileID + ".bitmap/";
 
+		fl.showIdleMessage(false);
 		CheckVersion();
 		CheckLibraryAndElement();
+		fl.showIdleMessage(true);
 
 		StartPublish();
 

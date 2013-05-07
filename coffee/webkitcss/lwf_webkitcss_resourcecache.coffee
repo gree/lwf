@@ -49,15 +49,68 @@ class WebkitCSSResourceCache
 
   checkTextures:(settings, data) ->
     settings._alphaMap = {}
-    settings._rgbMap = {}
+    settings._colorMap = {}
     settings._textures = []
 
     re = new RegExp("_atlas_(.*)_info_" +
       "([0-9])_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)", "i")
 
+    re_rgb = new RegExp("(.*)_rgb_([0-9a-f]{6})(.*)$", "i")
+    re_rgb10 = new RegExp("(.*)_rgb_([0-9]*),([0-9]*),([0-9]*)(.*)$", "i")
+    re_rgba = new RegExp("(.*)_rgba_([0-9a-f]{8})(.*)$", "i")
+    re_rgba10 = new RegExp(
+      "(.*)_rgba_([0-9]*),([0-9]*),([0-9]*),([0-9]*)(.*)$", "i")
+    re_add = new RegExp("(.*)_add_([0-9a-f]{6})(.*)$", "i")
+    re_add10 = new RegExp("(.*)_add_([0-9]*),([0-9]*),([0-9]*)(.*)$", "i")
+
     for texture in data.textures
-      m = texture.filename.match(/^(.*)_rgb_([0-9a-f]{6})(.*)$/i)
-      if m?
+      orig = null
+      if (m = texture.filename.match(re_rgb))?
+        orig = m[1] + m[3]
+        colorOp = "rgb"
+        colorValue = m[2]
+      else if (m = texture.filename.match(re_rgb10))?
+        orig = m[1] + m[5]
+        colorOp = "rgb"
+        r = parseInt(m[2], 10).toString(16)
+        g = parseInt(m[3], 10).toString(16)
+        b = parseInt(m[4], 10).toString(16)
+        colorValue =
+          (if r.length is 1 then "0" else "") + r +
+          (if g.length is 1 then "0" else "") + g +
+          (if b.length is 1 then "0" else "") + b
+      else if (m = texture.filename.match(re_rgba))?
+        orig = m[1] + m[3]
+        colorOp = "rgba"
+        colorValue = m[2]
+      else if (m = texture.filename.match(re_rgba10))?
+        orig = m[1] + m[6]
+        colorOp = "rgba"
+        r = parseInt(m[2], 10).toString(16)
+        g = parseInt(m[3], 10).toString(16)
+        b = parseInt(m[4], 10).toString(16)
+        a = parseInt(m[5], 10).toString(16)
+        colorValue =
+          (if r.length is 1 then "0" else "") + r +
+          (if g.length is 1 then "0" else "") + g +
+          (if b.length is 1 then "0" else "") + b +
+          (if a.length is 1 then "0" else "") + a
+      else if (m = texture.filename.match(re_add))?
+        orig = m[1] + m[3]
+        colorOp = "add"
+        colorValue = m[2]
+      else if (m = texture.filename.match(re_add10))?
+        orig = m[1] + m[5]
+        colorOp = "add"
+        r = parseInt(m[2], 10).toString(16)
+        g = parseInt(m[3], 10).toString(16)
+        b = parseInt(m[4], 10).toString(16)
+        colorValue =
+          (if r.length is 1 then "0" else "") + r +
+          (if g.length is 1 then "0" else "") + g +
+          (if b.length is 1 then "0" else "") + b
+
+      if orig?
         ma = texture.filename.match(re)
         if ma?
           orig = ma[1]
@@ -69,7 +122,6 @@ class WebkitCSSResourceCache
           x = parseInt(ma[7], 10)
           y = parseInt(ma[8], 10)
         else
-          orig = m[1] + m[3]
           rotated = false
           u = 0
           v = 0
@@ -77,11 +129,11 @@ class WebkitCSSResourceCache
           h = null
           x = 0
           y = 0
-        rgb = m[2]
-        settings._rgbMap[orig] ?= []
-        settings._rgbMap[orig].push(
+        settings._colorMap[orig] ?= []
+        settings._colorMap[orig].push(
           filename: texture.filename
-          rgb: rgb
+          colorOp: colorOp
+          colorValue: colorValue
           rotated:rotated
           u:u
           v:v
@@ -315,7 +367,7 @@ class WebkitCSSResourceCache
       settings.loadedCount, settings.total) if settings["onprogress"]?
     if settings.loadedCount is settings.total
       delete settings._alphaMap
-      delete settings._rgbMap
+      delete settings._colorMap
       delete settings._textures
       if settings.error.length > 0
         delete @cache[settings["lwf"]]
@@ -324,8 +376,35 @@ class WebkitCSSResourceCache
         @newLWF(settings, imageCache, data)
     return
 
+  drawImage:(ctx, image, o, x, y, u, v, h, iw, ih) ->
+    if o.rotated
+      m = new Matrix()
+      Utility.rotateMatrix(m, new Matrix(), 1, x, y + h)
+      ctx.setTransform(
+        m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+    else if x isnt 0 or y isnt 0
+      m = new Matrix()
+      Utility.scaleMatrix(m, new Matrix(), 1, x, y)
+      ctx.setTransform(
+        m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+    ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih)
+    return
+
+  createCanvas:(filename, w, h) ->
+    if @.constructor is WebkitCSSResourceCache
+      name = "canvas_" + filename.replace(/[\.,-]/g, "_")
+      ctx = document.getCSSCanvasContext("2d", name, w, h)
+      canvas = ctx.canvas
+      canvas.name = name
+    else
+      canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      ctx = canvas.getContext('2d')
+    return [canvas, ctx]
+
   generateImages:(settings, imageCache, texture, image) ->
-    d = settings._rgbMap[texture.filename]
+    d = settings._colorMap[texture.filename]
     if d?
       scale = image.width / texture.width
       for o in d
@@ -333,39 +412,46 @@ class WebkitCSSResourceCache
         y = Math.round(o.y * scale)
         u = Math.round(o.u * scale)
         v = Math.round(o.v * scale)
-        w = Math.round((o.w ? image.width) * scale)
-        h = Math.round((o.h ? image.height) * scale)
+        w = Math.round((o.w ? texture.width) * scale)
+        h = Math.round((o.h ? texture.height) * scale)
         if o.rotated
           iw = h
           ih = w
         else
           iw = w
           ih = h
-        if @.constructor is WebkitCSSResourceCache
-          name = "canvas_" + o.filename.replace(/[\.-]/g, "_")
-          ctx = document.getCSSCanvasContext(
-            "2d", name, w, h)
-          canvas = ctx.canvas
-          canvas.name = name
-        else
-          canvas = document.createElement('canvas')
-          canvas.width = w
-          canvas.height = h
-          ctx = canvas.getContext('2d')
-        ctx.fillStyle = "##{o.rgb}"
-        ctx.fillRect(0, 0, w, h)
-        ctx.globalCompositeOperation = 'destination-in'
-        if o.rotated
-          m = new Matrix()
-          Utility.rotateMatrix(m, new Matrix(), 1, x, y + h)
-          ctx.setTransform(
-            m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
-        else if x isnt 0 or y isnt 0
-          m = new Matrix()
-          Utility.scaleMatrix(m, new Matrix(), 1, x, yy)
-          ctx.setTransform(
-            m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
-        ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih)
+
+        [canvas, ctx] = @createCanvas(o.filename, w, h)
+
+        switch o.colorOp
+          when "rgb"
+            ctx.fillStyle = "##{o.colorValue}"
+            ctx.fillRect(0, 0, w, h)
+            ctx.globalCompositeOperation = 'destination-in'
+            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+          when "rgba"
+            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+            ctx.globalCompositeOperation = 'source-atop'
+            val = o.colorValue
+            r = parseInt(val.substr(0, 2), 16)
+            g = parseInt(val.substr(2, 2), 16)
+            b = parseInt(val.substr(4, 2), 16)
+            a = parseInt(val.substr(6, 2), 16) / 255
+            ctx.fillStyle = "rgba(#{r}, #{g}, #{b}, #{a})"
+            ctx.fillRect(0, 0, w, h)
+          when "add"
+            canvasAdd = document.createElement('canvas')
+            canvasAdd.width = w
+            canvasAdd.height = h
+            ctxAdd = canvasAdd.getContext('2d')
+            ctxAdd.fillStyle = "##{o.colorValue}"
+            ctxAdd.fillRect(0, 0, w, h)
+            ctxAdd.globalCompositeOperation = 'destination-in'
+            @drawImage(ctxAdd, image, o, x, y, u, v, h, iw, ih)
+            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+            ctx.globalCompositeOperation = 'lighter'
+            ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height,
+              0, 0, canvasAdd.width, canvasAdd.height)
         ctx.globalCompositeOperation = 'source-over'
         imageCache[o.filename] = canvas
     return
@@ -398,20 +484,15 @@ class WebkitCSSResourceCache
             jpgImg = imageCache[jpg.filename]
             alphaImg = imageCache[alpha.filename]
             if jpgImg? and alphaImg?
-              if @.constructor is WebkitCSSResourceCache
-                name = "canvas_" + jpg.filename.replace(/[\.-]/g, "_")
-                ctx = document.getCSSCanvasContext(
-                  "2d", name, jpgImg.width, jpgImg.height)
-                canvas = ctx.canvas
-                canvas.name = name
-              else
-                canvas = document.createElement('canvas')
-                canvas.width = jpgImg.width
-                canvas.height = jpgImg.height
-                ctx = canvas.getContext('2d')
-              ctx.drawImage(jpgImg, 0, 0, jpgImg.width, jpgImg.height)
+              [canvas, ctx] =
+                @createCanvas(jpg.filename, jpgImg.width, jpgImg.height)
+              ctx.drawImage(jpgImg,
+                0, 0, jpgImg.width, jpgImg.height,
+                0, 0, jpgImg.width, jpgImg.height)
               ctx.globalCompositeOperation = 'destination-in'
-              ctx.drawImage(alphaImg, 0, 0, jpgImg.width, jpgImg.height)
+              ctx.drawImage(alphaImg,
+                0, 0, alphaImg.width, alphaImg.height,
+                0, 0, jpgImg.width, jpgImg.height)
               ctx.globalCompositeOperation = 'source-over'
               delete imageCache[jpg.filename]
               delete imageCache[alpha.filename]

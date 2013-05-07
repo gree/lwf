@@ -28,18 +28,14 @@ class CanvasResourceCache extends WebkitCSSResourceCache
     if m?
       w = image.width + 2
       h = image.height + 2
-      if @.constructor is WebkitCSSResourceCache
-        name = "canvas_" + texture.filename.replace(/[\.-]/g, "_")
-        ctx = document.getCSSCanvasContext("2d", name, w, h)
-        canvas = ctx.canvas
-        canvas.name = name
-      else
-        canvas = document.createElement('canvas')
-        canvas.width = w
-        canvas.height = h
-        ctx = canvas.getContext('2d')
+      canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      ctx = canvas.getContext('2d')
       canvas.withPadding = true
-      ctx.drawImage(image, 1, 1, image.width, image.height)
+      ctx.drawImage(image,
+        0, 0, image.width, image.height,
+        1, 1, image.width, image.height)
       imageCache[texture.filename] = canvas
 
     super
