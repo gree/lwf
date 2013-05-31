@@ -127,9 +127,10 @@ public partial class Movie : IObject
 		PlayAnimation(ClipEvent.LOAD);
 
 		m_eventHandlers = new EventHandlerDictionary();
+		m_handler = new MovieEventHandlers();
 		m_handler.Add(lwf.GetMovieEventHandlers(this));
 		m_handler.Add(handler);
-		if (m_handler != null)
+		if (!m_handler.Empty())
 			m_handler.Call(EventType.LOAD, this);
 
 		lwf.ExecMovieCommand();
@@ -152,7 +153,7 @@ public partial class Movie : IObject
 
 	public void SetHandlers(MovieEventHandlers handler)
 	{
-		m_handler = handler;
+		m_handler.Add(handler);
 	}
 
 	public Point GlobalToLocal(Point point)
@@ -435,7 +436,7 @@ public partial class Movie : IObject
 
 			if (!m_postLoaded) {
 				m_postLoaded = true;
-				if (m_handler != null)
+				if (!m_handler.Empty())
 					m_handler.Call(EventType.POSTLOAD, this);
 			}
 
@@ -459,7 +460,7 @@ public partial class Movie : IObject
 		}
 
 		PlayAnimation(ClipEvent.ENTERFRAME);
-		if (m_handler != null)
+		if (!m_handler.Empty())
 			m_handler.Call(EventType.ENTERFRAME, this);
 		m_postExecCount = m_lwf.execCount;
 	}
@@ -504,7 +505,7 @@ public partial class Movie : IObject
 			colorTransformChanged = m_colorTransform.SetWithComparing(c);
 		}
 
-		if (m_handler != null)
+		if (!m_handler.Empty())
 			m_handler.Call(EventType.UPDATE, this);
 
 		if (m_property.hasMatrix) {
@@ -590,7 +591,7 @@ public partial class Movie : IObject
 		if (!m_visible || !m_active)
 			v = false;
 
-		if (v && m_handler != null)
+		if (v && !m_handler.Empty())
 			m_handler.Call(EventType.RENDER, this);
 
 		if (m_property.hasRenderingOffset) {
@@ -715,7 +716,7 @@ public partial class Movie : IObject
 
 		PlayAnimation(ClipEvent.UNLOAD);
 
-		if (m_handler != null)
+		if (!m_handler.Empty())
 			m_handler.Call(EventType.UNLOAD, this);
 
 		m_displayList = null;

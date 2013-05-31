@@ -370,8 +370,8 @@ class Movie extends IObject
 
     lwfContainer = new LWFContainer(@, attachLWF)
 
-    @lwf.interactive = true if attachLWF.interactive
-    attachLWF.parent = @
+    @lwf.setInteractive() if attachLWF.interactive
+    attachLWF.setParent(@)
     attachLWF.rootMovie.parent = @
     attachLWF.detachHandler = detachHandler
     attachLWF.attachName = attachName
@@ -735,12 +735,21 @@ class Movie extends IObject
           @lwf.renderObject(lwfContainer.child.exec(@lwf.thisTick, m, c))
 
     if @requestedCalculateBounds
-      @xMin = 0
-      @xMax = 0
-      @yMin = 0
-      @yMax = 0
+      @xMin = Number.MAX_VALUE
+      @xMax = -Number.MAX_VALUE
+      @yMin = Number.MAX_VALUE
+      @yMax = -Number.MAX_VALUE
       inspector = (o, h, d, r) => @calculateBounds(o)
       @inspect(inspector, 0, 0)
+      if @lwf.property.hasMatrix
+        invert = new Matrix()
+        Utility.invertMatrix(invert, @lwf.property.matrix)
+        p = Utility.calcMatrixToPoint(@xMin, @yMin, invert)
+        @xMin = p[0]
+        @yMin = p[1]
+        p = Utility.calcMatrixToPoint(@xMax, @yMax, invert)
+        @xMax = p[0]
+        @yMax = p[1]
       @bounds =
         "xMin":@xMin
         "xMax":@xMax
@@ -753,6 +762,8 @@ class Movie extends IObject
   calculateBounds:(o) ->
     tfId = null
     switch o.type
+      when Type.GRAPHIC
+        @calculateBounds(obj) for obj in o.displayList
       when Type.BITMAP, Type.BITMAPEX
         if o.type is Type.BITMAP
           tfId = o.lwf.data.bitmaps[o.objectId].textureFragmentId
@@ -930,6 +941,7 @@ class Movie extends IObject
   addEventHandler:(e, eventHandler) ->
     switch e
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
+        @lwf.enableExec()
         @handler.addHandler(e, eventHandler)
       else
         @eventHandlers[e] ?= []

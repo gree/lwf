@@ -354,9 +354,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }).call(this);
 
     Format.Font = (function() {
-      function Font(stringId, letterspacing) {
+      function Font(stringId, letterSpacing) {
         this.stringId = stringId;
-        this.letterspacing = letterspacing;
+        this.letterSpacing = letterSpacing;
       }
 
       return Font;
@@ -385,14 +385,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       })();
 
-      function TextProperty(maxLength, fontId, fontHeight, align, leftMargin, rightMargin, indent, leading, strokeColorId, strokeWidth, shadowColorId, shadowOffsetX, shadowOffsetY, shadowBlur) {
+      function TextProperty(maxLength, fontId, fontHeight, align, leftMargin, rightMargin, letterSpacing, leading, strokeColorId, strokeWidth, shadowColorId, shadowOffsetX, shadowOffsetY, shadowBlur) {
         this.maxLength = maxLength;
         this.fontId = fontId;
         this.fontHeight = fontHeight;
         this.align = align;
         this.leftMargin = leftMargin;
         this.rightMargin = rightMargin;
-        this.indent = indent;
+        this.letterSpacing = letterSpacing;
         this.leading = leading;
         this.strokeColorId = strokeColorId;
         this.strokeWidth = strokeWidth;
@@ -1095,11 +1095,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWFLoader.prototype.loadFont = function() {
-      return new Format.Font(this.readInt32(), this.readInt32());
+      return new Format.Font(this.readInt32(), this.readSingle());
     };
 
     LWFLoader.prototype.loadTextProperty = function() {
-      return new Format.TextProperty(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
+      return new Format.TextProperty(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readSingle(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
     };
 
     LWFLoader.prototype.loadText = function() {
@@ -2700,7 +2700,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         case "rollOver":
         case "rollOut":
         case "keyPress":
-          this.lwf.interactive = true;
+          this.lwf.setInteractive();
+          this.lwf.enableExec();
           if (this.handler == null) {
             this.setHandlers(new ButtonEventHandlers());
           }
@@ -3473,9 +3474,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       lwfContainer = new LWFContainer(this, attachLWF);
       if (attachLWF.interactive) {
-        this.lwf.interactive = true;
+        this.lwf.setInteractive();
       }
-      attachLWF.parent = this;
+      attachLWF.setParent(this);
       attachLWF.rootMovie.parent = this;
       attachLWF.detachHandler = detachHandler;
       attachLWF.attachName = attachName;
@@ -3892,7 +3893,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.update = function(m, c) {
-      var attachName, colorTransformChanged, depth, inspector, k, lwfContainer, matrixChanged, movie, obj, v, _i, _j, _k, _len, _len1, _ref1, _ref2, _ref3, _ref4,
+      var attachName, colorTransformChanged, depth, inspector, invert, k, lwfContainer, matrixChanged, movie, obj, p, v, _i, _j, _k, _len, _len1, _ref1, _ref2, _ref3, _ref4,
         _this = this;
 
       if (!this.active) {
@@ -3954,14 +3955,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
       }
       if (this.requestedCalculateBounds) {
-        this.xMin = 0;
-        this.xMax = 0;
-        this.yMin = 0;
-        this.yMax = 0;
+        this.xMin = Number.MAX_VALUE;
+        this.xMax = -Number.MAX_VALUE;
+        this.yMin = Number.MAX_VALUE;
+        this.yMax = -Number.MAX_VALUE;
         inspector = function(o, h, d, r) {
           return _this.calculateBounds(o);
         };
         this.inspect(inspector, 0, 0);
+        if (this.lwf.property.hasMatrix) {
+          invert = new Matrix();
+          Utility.invertMatrix(invert, this.lwf.property.matrix);
+          p = Utility.calcMatrixToPoint(this.xMin, this.yMin, invert);
+          this.xMin = p[0];
+          this.yMin = p[1];
+          p = Utility.calcMatrixToPoint(this.xMax, this.yMax, invert);
+          this.xMax = p[0];
+          this.yMax = p[1];
+        }
         this.bounds = {
           "xMin": this.xMin,
           "xMax": this.xMax,
@@ -3973,10 +3984,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.calculateBounds = function(o) {
-      var pobj, text, tf, tfId;
+      var obj, pobj, text, tf, tfId, _i, _len, _ref1;
 
       tfId = null;
       switch (o.type) {
+        case Type.GRAPHIC:
+          _ref1 = o.displayList;
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            obj = _ref1[_i];
+            this.calculateBounds(obj);
+          }
+          break;
         case Type.BITMAP:
         case Type.BITMAPEX:
           if (o.type === Type.BITMAP) {
@@ -4267,6 +4285,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         case "enterFrame":
         case "update":
         case "render":
+          this.lwf.enableExec();
           this.handler.addHandler(e, eventHandler);
           break;
         default:
@@ -4862,6 +4881,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.url = null;
       this.lwfInstanceId = null;
       this.frameRate = this.data.header.frameRate;
+      this.active = true;
       this.execLimit = 3;
       this.tick = 1.0 / this.frameRate;
       this.roundOffTick = this.tick * ROUND_OFF_TICK_RATE;
@@ -5079,11 +5099,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (colorTransform == null) {
         colorTransform = null;
       }
-      if (this.rootMovie == null) {
+      if (!((this.rootMovie != null) && this.active)) {
         return;
       }
       execed = false;
       currentProgress = this.progress;
+      this.thisTick = tick;
       if (this.isExecDisabled && this._tweens === null) {
         if (!this.executedForExecDisabled) {
           ++this.execCount;
@@ -5094,7 +5115,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
       } else {
         progressing = true;
-        this.thisTick = tick;
         if (tick === 0) {
           this.progress = this.tick;
         } else if (tick < 0) {
@@ -5182,7 +5202,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.renderingIndexOffsetted = 0;
       this.rootMovie.update(m, c);
       this.renderingCount = this.renderingIndex;
-      this.thisTick = 0;
       this.isPropertyDirty = false;
     };
 
@@ -5198,7 +5217,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (rOffset == null) {
         rOffset = Number.MIN_VALUE;
       }
-      if (this.rootMovie == null) {
+      if (!((this.rootMovie != null) && this.active)) {
         return;
       }
       renderingCountBackup = this.renderingCount;
@@ -5757,7 +5776,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     LWF.prototype.addButtonEventHandler = function(instanceName, handlers) {
       var button, h, instId, _ref1;
 
-      this.interactive = true;
+      this.setInteractive();
       instId = this.searchInstanceId(this.getStringId(instanceName));
       if (instId >= 0 && instId < this.data.instanceNames.length) {
         h = this.buttonEventHandlers[instId];
@@ -5952,6 +5971,28 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.isPropertyDirty = true;
       if (this.parent != null) {
         this.parent.lwf.setPropertyDirty();
+      }
+    };
+
+    LWF.prototype.setParent = function(parent) {
+      var func, _ref1;
+
+      this.active = true;
+      this.parent = parent;
+      func = (_ref1 = this.functions) != null ? _ref1['init'] : void 0;
+      if (func != null) {
+        func.call(this);
+      }
+    };
+
+    LWF.prototype.setInteractive = function() {
+      var lwf;
+
+      this.interactive = true;
+      lwf = this;
+      while (lwf.parent != null) {
+        lwf = lwf.parent.lwf;
+        lwf.interactive = true;
       }
     };
 
@@ -6568,9 +6609,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebkitCSSRendererFactory.prototype.destruct = function() {
       var context, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4;
 
-      if (this.mask != null) {
-        this.stage.removeChild(this.mask);
-      }
       _ref2 = this.bitmapContexts;
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         context = _ref2[_i];
@@ -6643,10 +6681,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.renderMasked = true;
           style.opacity = 0;
           if (this.renderMaskMode !== "mask") {
-            if (this.mask != null) {
+            if (node.mask != null) {
+              this.mask = node.mask;
               style = this.mask.style;
             } else {
-              this.mask = document.createElement("div");
+              this.mask = node.mask = document.createElement("div");
               style = this.mask.style;
               style.display = "block";
               style.position = "absolute";
@@ -7712,6 +7751,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         embeddedScript = (_ref2 = global["LWF"]) != null ? (_ref3 = _ref2["Script"]) != null ? _ref3[data.name()] : void 0 : void 0;
       }
       lwf = new LWF(data, factory, embeddedScript, settings["privateData"]);
+      if (settings["active"] != null) {
+        lwf.active = settings["active"];
+      }
       lwf.url = settings["lwf"];
       lwf.lwfInstanceId = ++this.lwfInstanceIndex;
       if ((_ref4 = cache.instances) == null) {
@@ -7979,6 +8021,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebGLRendererFactory.prototype.beginRender = function(lwf) {
       var gl;
 
+      WebGLRendererFactory.__super__.beginRender.apply(this, arguments);
+      if (lwf.parent != null) {
+        return;
+      }
       gl = this.stageContext;
       gl.clear(gl.COLOR_BUFFER_BIT);
     };
@@ -7989,6 +8035,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         switch (cmd.maskMode) {
           case "erase":
           case "mask":
+            if (this.renderMaskMode === "layer" && this.renderMasked) {
+              this.renderMask();
+            }
             this.renderMasked = true;
             this.srcFactor = cmd.maskMode === "erase" ? gl.ONE_MINUS_DST_ALPHA : gl.DST_ALPHA;
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.maskFrameBuffer);
@@ -8403,7 +8452,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.textProperty.shadowColorId !== -1) {
         this.shadowColor = this.data.colors[this.textProperty.shadowColorId];
       }
-      this.fontName = "\"" + this.data.strings[font.stringId] + "\",sans-serif";
+      this.fontName = "" + this.data.strings[font.stringId] + ",sans-serif";
+      this.letterSpacing = font.letterSpacing + this.textProperty.letterSpacing;
     }
 
     HTML5TextContext.prototype.destruct = function() {};
@@ -8432,6 +8482,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     HTML5TextRenderer.prototype.destruct = function() {};
 
+    HTML5TextRenderer.prototype.measureText = function(str) {
+      var swidth;
+
+      swidth = str.length <= 1 ? 0 : (str.length - 1) * this.letterSpacing;
+      return this.canvasContext.measureText(str).width + swidth;
+    };
+
     HTML5TextRenderer.prototype.fitText = function(line, words, lineStart, imin, imax) {
       var imid, start, str, w;
 
@@ -8441,7 +8498,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       imid = ((imin + imax) / 2) >> 0;
       start = lineStart === 0 ? 0 : words[lineStart - 1];
       str = line.slice(start, words[imid]);
-      w = this.canvasContext.measureText(str).width;
+      w = this.measureText(str);
       if (w <= this.maxWidth) {
         if (w > this.lineWidth) {
           this.index = imid;
@@ -8471,7 +8528,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             line += word;
           }
         }
-        if (this.canvasContext.measureText(line).width > this.maxWidth) {
+        if (this.measureText(line) > this.maxWidth) {
           words = [];
           prev = 0;
           for (i = _k = 1, _ref3 = line.length; 1 <= _ref3 ? _k < _ref3 : _k > _ref3; i = 1 <= _ref3 ? ++_k : --_k) {
@@ -8504,7 +8561,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             newlines.push(str);
             start = to + (line.charCodeAt(to) === 0x20 ? 1 : 0);
             str = line.slice(start);
-            if (this.canvasContext.measureText(str).width <= this.maxWidth) {
+            if (this.measureText(str) <= this.maxWidth) {
               line = str;
               break;
             }
@@ -8517,7 +8574,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     HTML5TextRenderer.prototype.renderText = function(textColor) {
-      var canvas, context, ctx, h, i, len, line, lines, offsetY, property, scale, shadowColor, useStroke, x, y, _i, _ref3;
+      var c, canvas, context, ctx, h, i, j, len, line, lines, offset, offsetY, property, scale, shadowColor, useStroke, x, y, _i, _j, _k, _ref3, _ref4, _ref5;
 
       this.textRendered = true;
       context = this.context;
@@ -8533,9 +8590,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           offsetY = canvas.height - h;
           break;
         case Align.VERTICAL_MIDDLE:
-          len = lines.length + 1;
+          len = lines.length;
           h = (this.fontHeight * len + this.leading * (len - 1)) * 96 / 72;
-          offsetY = (canvas.height - h) / 2 + this.fontHeight;
+          offsetY = (canvas.height - h) / 2;
           break;
         default:
           offsetY = 0;
@@ -8560,17 +8617,44 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       for (i = _i = 0, _ref3 = lines.length; 0 <= _ref3 ? _i < _ref3 : _i > _ref3; i = 0 <= _ref3 ? ++_i : --_i) {
         line = lines[i];
         x = this.offsetX * scale;
+        if (this.letterSpacing !== 0) {
+          switch (this.context.textProperty.align & Align.ALIGN_MASK) {
+            case Align.RIGHT:
+              x -= this.measureText(line);
+              break;
+            case Align.CENTER:
+              x -= this.measureText(line) / 2;
+          }
+        }
         y = offsetY + (this.fontHeight + this.leading) * i * 96 / 72;
         if (useStroke) {
           if (context.shadowColor != null) {
             ctx.shadowColor = "rgba(0, 0, 0, 0)";
           }
-          ctx.strokeText(line, x, y);
+          if (this.letterSpacing === 0) {
+            ctx.strokeText(line, x, y);
+          } else {
+            offset = 0;
+            for (j = _j = 0, _ref4 = line.length; 0 <= _ref4 ? _j < _ref4 : _j > _ref4; j = 0 <= _ref4 ? ++_j : --_j) {
+              c = line[j];
+              ctx.strokeText(c, x + offset, y);
+              offset += this.canvasContext.measureText(c).width + this.letterSpacing;
+            }
+          }
         }
         if (context.shadowColor != null) {
           ctx.shadowColor = shadowColor;
         }
-        ctx.fillText(line, x, y);
+        if (this.letterSpacing === 0) {
+          ctx.fillText(line, x, y);
+        } else {
+          offset = 0;
+          for (j = _k = 0, _ref5 = line.length; 0 <= _ref5 ? _k < _ref5 : _k > _ref5; j = 0 <= _ref5 ? ++_k : --_k) {
+            c = line[j];
+            ctx.fillText(c, x + offset, y);
+            offset += this.canvasContext.measureText(c).width + this.letterSpacing;
+          }
+        }
       }
     };
 
@@ -8661,7 +8745,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       ctx.textAlign = align;
       ctx.textBaseline = "bottom";
       this.canvas = canvas;
-      return this.canvasContext = ctx;
+      this.canvasContext = ctx;
+      return this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
     };
 
     return HTML5TextRenderer;
@@ -8863,6 +8948,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
  * @author lechecacharro
  * @author Josh Faul / http://jocafa.com/
  * @author egraether / http://egraether.com/
+ * @author endel / http://endel.me
  * @author GREE, Inc.
  *
  * The MIT License
@@ -8896,13 +8982,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
 var TWEENLWF = {};
 
+TWEENLWF.REVISION = '10';
+
 TWEENLWF.Tween = function ( movie ) {
 
 	this.lwf = movie.lwf;
 	this.object = movie;
 	this.valuesStart = {};
 	this.valuesEnd = {};
+	this.valuesStartRepeat = {};
 	this.duration = 0;
+	this.repeat = 0;
 	this.delayTime = 0;
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
@@ -8981,6 +9071,12 @@ TWEENLWF.Tween = function ( movie ) {
 
 			this.valuesStart[ property ] = this.object[ property ];
 
+			if( ( this.valuesStart[ property ] instanceof Array ) === false ) {
+				this.valuesStart[ property ] *= 1.0; // Ensures we're using numbers, not strings
+			}
+
+			this.valuesStartRepeat[ property ] = this.valuesStart[ property ] || 0;
+
 		}
 
 		return this;
@@ -9010,6 +9106,13 @@ TWEENLWF.Tween = function ( movie ) {
 	this.delay = function ( amount ) {
 
 		this.delayTime = amount * this.lwf.tick;
+		return this;
+
+	};
+
+	this.repeat = function ( times ) {
+
+		this.repeat = times;
 		return this;
 
 	};
@@ -9099,9 +9202,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 		var value = this.easingFunction( elapsed );
 
-		for ( var property in this.valuesStart ) {
+		for ( var property in this.valuesEnd ) {
 
-			var start = this.valuesStart[ property ];
+			var start = this.valuesStart[ property ] || 0;
 			var end = this.valuesEnd[ property ];
 
 			if ( end instanceof Array ) {
@@ -9109,6 +9212,10 @@ TWEENLWF.Tween = function ( movie ) {
 				this.object[ property ] = this.interpolationFunction( end, value );
 
 			} else {
+
+				if ( typeof(end) === "string" ) {
+					end = start + parseFloat(end, 10);
+				}
 
 				this.object[ property ] = start + ( end - start ) * value;
 
@@ -9124,19 +9231,44 @@ TWEENLWF.Tween = function ( movie ) {
 
 		if ( elapsed == 1 ) {
 
-			if ( this.onCompleteCallback !== null ) {
+			if ( this.repeat > 0 ) {
 
-				this.onCompleteCallback.call( this.object );
+				if( isFinite( this.repeat ) ) {
+					this.repeat--;
+				}
+
+				// reassign starting values, restart by making startTime = now
+				for( var property in this.valuesStartRepeat ) {
+
+					if ( typeof( this.valuesEnd[ property ] ) === "string" ) {
+						this.valuesStartRepeat[ property ] = this.valuesStartRepeat[ property ] + parseFloat(this.valuesEnd[ property ], 10);
+					}
+
+					this.valuesStart[ property ] = this.valuesStartRepeat[ property ];
+
+				}
+
+				this.startTime = time + this.delayTime;
+
+				return true;
+
+			} else {
+
+				if ( this.onCompleteCallback !== null ) {
+
+					this.onCompleteCallback.call( this.object );
+
+				}
+
+				for ( var i = 0, l = this.chainedTweens.length; i < l; i ++ ) {
+
+					this.chainedTweens[ i ].start( time );
+
+				}
+
+				return false;
 
 			}
-
-			for ( var i = 0, l = this.chainedTweens.length; i < l; i ++ ) {
-
-				this.chainedTweens[ i ].start( time );
-
-			}
-
-			return false;
 
 		}
 
@@ -9621,7 +9753,7 @@ moviePrototype[ "stopTweens" ] = function() {
 
 	while ( i < num_tweens ) {
 
-		if ( tweens[ i ]._object === this ) {
+		if ( tweens[ i ].object === this ) {
 
 			tweens.splice( i, 1 );
 			num_tweens --;

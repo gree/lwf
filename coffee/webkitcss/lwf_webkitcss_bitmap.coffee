@@ -73,7 +73,10 @@ class WebkitCSSBitmapContext
     @cache = []
 
   destruct: ->
-    node.parentNode.removeChild(node) for node in @cache
+    for node in @cache
+      if node.mask?
+        node.mask.parentNode.removeChild(node.mask)
+      node.parentNode.removeChild(node)
     return
 
 class WebkitCSSBitmapRenderer

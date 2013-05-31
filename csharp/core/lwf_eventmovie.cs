@@ -43,6 +43,7 @@ public class MovieEventHandlers
 	MovieEventHandlerList enterFrame;
 	MovieEventHandlerList update;
 	MovieEventHandlerList render;
+	bool empty;
 
 	public MovieEventHandlers()
 	{
@@ -52,6 +53,7 @@ public class MovieEventHandlers
 		enterFrame = new MovieEventHandlerList();
 		update = new MovieEventHandlerList();
 		render = new MovieEventHandlerList();
+		empty = true;
 	}
 
 	public void Clear()
@@ -62,6 +64,7 @@ public class MovieEventHandlers
 		enterFrame.Clear();
 		update.Clear();
 		render.Clear();
+		empty = true;
 	}
 
 	public void Clear(Type type)
@@ -74,16 +77,21 @@ public class MovieEventHandlers
 		case Type.UPDATE: update.Clear(); break;
 		case Type.RENDER: render.Clear(); break;
 		}
+		UpdateEmpty();
 	}
 
 	public void Add(MovieEventHandlers handlers)
 	{
+		if (handlers == null)
+			return;
+
 		handlers.load.ForEach(h => load.Add(h));
 		handlers.postLoad.ForEach(h => postLoad.Add(h));
 		handlers.unload.ForEach(h => unload.Add(h));
 		handlers.enterFrame.ForEach(h => enterFrame.Add(h));
 		handlers.update.ForEach(h => update.Add(h));
 		handlers.render.ForEach(h => render.Add(h));
+		UpdateEmpty();
 	}
 
 	public void Add(
@@ -103,6 +111,7 @@ public class MovieEventHandlers
 			update.Add(up);
 		if (r != null)
 			render.Add(r);
+		UpdateEmpty();
 	}
 
 	public void Remove(
@@ -122,6 +131,7 @@ public class MovieEventHandlers
 			update.RemoveAll(h => h == up);
 		if (r != null)
 			render.RemoveAll(h => h == r);
+		UpdateEmpty();
 	}
 
 	public void Call(Type type, Movie target)
@@ -139,6 +149,40 @@ public class MovieEventHandlers
 			list = new MovieEventHandlerList(list);
 			list.ForEach(h => h(target));
 		}
+	}
+
+	private void UpdateEmpty()
+	{
+		empty = true;
+		if (load.Count > 0) {
+			empty = false;
+			return;
+		}
+		if (postLoad.Count > 0) {
+			empty = false;
+			return;
+		}
+		if (unload.Count > 0) {
+			empty = false;
+			return;
+		}
+		if (enterFrame.Count > 0) {
+			empty = false;
+			return;
+		}
+		if (update.Count > 0) {
+			empty = false;
+			return;
+		}
+		if (render.Count > 0) {
+			empty = false;
+			return;
+		}
+	}
+
+	public bool Empty()
+	{
+		return empty;
 	}
 }
 

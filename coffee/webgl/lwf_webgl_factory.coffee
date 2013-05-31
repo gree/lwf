@@ -147,6 +147,8 @@ void main() {
     return
 
   beginRender:(lwf) ->
+    super
+    return if lwf.parent?
     gl = @stageContext
     gl.clear(gl.COLOR_BUFFER_BIT)
     return
@@ -156,6 +158,7 @@ void main() {
       @generateMask()
       switch cmd.maskMode
         when "erase", "mask"
+          @renderMask() if @renderMaskMode is "layer" and @renderMasked
           @renderMasked = true
           @srcFactor = if cmd.maskMode is "erase" then \
             gl.ONE_MINUS_DST_ALPHA else gl.DST_ALPHA

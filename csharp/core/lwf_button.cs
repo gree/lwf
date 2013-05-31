@@ -71,7 +71,10 @@ public partial class Button : IObject
 
 	public void SetHandlers(ButtonEventHandlers handler)
 	{
-		m_handler = handler;
+		if (m_handler != null)
+			m_handler.Add(handler);
+		else
+			m_handler = handler;
 	}
 
 	public override void Exec(int matrixId = 0, int colorTransformId = 0)

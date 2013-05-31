@@ -59,10 +59,6 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     context.destruct() for context in @textContexts
     return
 
-  beginRender:(lwf) ->
-    @commandMaskMode = "normal"
-    return
-
   renderMask: ->
     ctx = @maskCanvas.getContext('2d')
     ctx.globalAlpha = 1
@@ -85,6 +81,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     if @renderMaskMode isnt cmd.maskMode
       switch cmd.maskMode
         when "erase", "mask"
+          @renderMask() if @renderMaskMode is "layer" and @renderMasked
           @renderMasked = true
           @maskComposition =
             if cmd.maskMode is "erase" then "source-out" else "source-in"

@@ -530,6 +530,7 @@ class WebkitCSSResourceCache
     factory = @newFactory(settings, imageCache, data)
     embeddedScript = global["LWF"]?["Script"]?[data.name()] if data.useScript
     lwf = new LWF(data, factory, embeddedScript, settings["privateData"])
+    lwf.active = settings["active"] if settings["active"]?
     lwf.url = settings["lwf"]
     lwf.lwfInstanceId = ++@lwfInstanceIndex
     cache.instances ?= {}

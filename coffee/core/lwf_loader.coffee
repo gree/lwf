@@ -116,7 +116,7 @@ class LWFLoader
   loadFont: ->
     return new Format.Font(
       @readInt32(),
-      @readInt32())
+      @readSingle())
 
   loadTextProperty: ->
     return new Format.TextProperty(
@@ -126,7 +126,7 @@ class LWFLoader
       @readInt32(),
       @readInt32(),
       @readInt32(),
-      @readInt32(),
+      @readSingle(),
       @readInt32(),
       @readInt32(),
       @readInt32(),

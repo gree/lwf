@@ -91,7 +91,6 @@ class WebkitCSSRendererFactory
     return
 
   destruct: ->
-    @stage.removeChild(@mask) if @mask?
     context.destruct() for context in @bitmapContexts
     context.destruct() for context in @bitmapExContexts
     context.destruct() for context in @textContexts
@@ -130,10 +129,11 @@ class WebkitCSSRendererFactory
         @renderMasked = true
         style.opacity = 0
         if @renderMaskMode isnt "mask"
-          if @mask?
+          if node.mask?
+            @mask = node.mask
             style = @mask.style
           else
-            @mask = document.createElement("div")
+            @mask = node.mask = document.createElement("div")
             style = @mask.style
             style.display = "block"
             style.position = "absolute"

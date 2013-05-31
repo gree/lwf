@@ -8,6 +8,7 @@
  * @author lechecacharro
  * @author Josh Faul / http://jocafa.com/
  * @author egraether / http://egraether.com/
+ * @author endel / http://endel.me
  * @author GREE, Inc.
  *
  * The MIT License
@@ -41,13 +42,17 @@
 
 var TWEENLWF = {};
 
+TWEENLWF.REVISION = '10';
+
 TWEENLWF.Tween = function ( movie ) {
 
 	this.lwf = movie.lwf;
 	this.object = movie;
 	this.valuesStart = {};
 	this.valuesEnd = {};
+	this.valuesStartRepeat = {};
 	this.duration = 0;
+	this.repeat = 0;
 	this.delayTime = 0;
 	this.startTime = null;
 	this.easingFunction = TWEENLWF.Easing.Linear.None;
@@ -126,6 +131,12 @@ TWEENLWF.Tween = function ( movie ) {
 
 			this.valuesStart[ property ] = this.object[ property ];
 
+			if( ( this.valuesStart[ property ] instanceof Array ) === false ) {
+				this.valuesStart[ property ] *= 1.0; // Ensures we're using numbers, not strings
+			}
+
+			this.valuesStartRepeat[ property ] = this.valuesStart[ property ] || 0;
+
 		}
 
 		return this;
@@ -155,6 +166,13 @@ TWEENLWF.Tween = function ( movie ) {
 	this.delay = function ( amount ) {
 
 		this.delayTime = amount * this.lwf.tick;
+		return this;
+
+	};
+
+	this.repeat = function ( times ) {
+
+		this.repeat = times;
 		return this;
 
 	};
@@ -244,9 +262,9 @@ TWEENLWF.Tween = function ( movie ) {
 
 		var value = this.easingFunction( elapsed );
 
-		for ( var property in this.valuesStart ) {
+		for ( var property in this.valuesEnd ) {
 
-			var start = this.valuesStart[ property ];
+			var start = this.valuesStart[ property ] || 0;
 			var end = this.valuesEnd[ property ];
 
 			if ( end instanceof Array ) {
@@ -254,6 +272,10 @@ TWEENLWF.Tween = function ( movie ) {
 				this.object[ property ] = this.interpolationFunction( end, value );
 
 			} else {
+
+				if ( typeof(end) === "string" ) {
+					end = start + parseFloat(end, 10);
+				}
 
 				this.object[ property ] = start + ( end - start ) * value;
 
@@ -269,19 +291,44 @@ TWEENLWF.Tween = function ( movie ) {
 
 		if ( elapsed == 1 ) {
 
-			if ( this.onCompleteCallback !== null ) {
+			if ( this.repeat > 0 ) {
 
-				this.onCompleteCallback.call( this.object );
+				if( isFinite( this.repeat ) ) {
+					this.repeat--;
+				}
+
+				// reassign starting values, restart by making startTime = now
+				for( var property in this.valuesStartRepeat ) {
+
+					if ( typeof( this.valuesEnd[ property ] ) === "string" ) {
+						this.valuesStartRepeat[ property ] = this.valuesStartRepeat[ property ] + parseFloat(this.valuesEnd[ property ], 10);
+					}
+
+					this.valuesStart[ property ] = this.valuesStartRepeat[ property ];
+
+				}
+
+				this.startTime = time + this.delayTime;
+
+				return true;
+
+			} else {
+
+				if ( this.onCompleteCallback !== null ) {
+
+					this.onCompleteCallback.call( this.object );
+
+				}
+
+				for ( var i = 0, l = this.chainedTweens.length; i < l; i ++ ) {
+
+					this.chainedTweens[ i ].start( time );
+
+				}
+
+				return false;
 
 			}
-
-			for ( var i = 0, l = this.chainedTweens.length; i < l; i ++ ) {
-
-				this.chainedTweens[ i ].start( time );
-
-			}
-
-			return false;
 
 		}
 
@@ -766,7 +813,7 @@ moviePrototype[ "stopTweens" ] = function() {
 
 	while ( i < num_tweens ) {
 
-		if ( tweens[ i ]._object === this ) {
+		if ( tweens[ i ].object === this ) {
 
 			tweens.splice( i, 1 );
 			num_tweens --;

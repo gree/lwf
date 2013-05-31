@@ -126,7 +126,8 @@ class Button extends IObject
     switch e
       when "load", "unload", "enterFrame", "update", "render", \
           "press", "release", "rollOver", "rollOut", "keyPress"
-        @lwf.interactive = true
+        @lwf.setInteractive()
+        @lwf.enableExec()
         @setHandlers(new ButtonEventHandlers()) unless @handler?
         @handler.addHandler(e, eventHandler)
     return

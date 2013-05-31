@@ -31,7 +31,8 @@ class HTML5TextContext
     if @textProperty.shadowColorId isnt -1
       @shadowColor = @data.colors[@textProperty.shadowColorId]
 
-    @fontName = "\"#{@data.strings[font.stringId]}\",sans-serif"
+    @fontName = "#{@data.strings[font.stringId]},sans-serif"
+    @letterSpacing = font.letterSpacing + @textProperty.letterSpacing
 
   destruct: ->
 
@@ -42,17 +43,21 @@ class HTML5TextRenderer
     @matrixForScale = new Matrix()
     @color = new Color
     @textRendered = false
-    @scaleByStage = @lwf.scaleByStage;
-    @initCanvas();
+    @scaleByStage = @lwf.scaleByStage
+    @initCanvas()
 
   destruct: ->
+
+  measureText:(str) ->
+    swidth = if str.length <= 1 then 0 else (str.length - 1) * @letterSpacing
+    return @canvasContext.measureText(str).width + swidth
 
   fitText:(line, words, lineStart, imin, imax) ->
     return if imax < imin
     imid = ((imin + imax) / 2) >> 0
     start = if lineStart is 0 then 0 else words[lineStart - 1]
     str = line.slice(start, words[imid])
-    w = @canvasContext.measureText(str).width
+    w = @measureText(str)
     if w <= @maxWidth
       if w > @lineWidth
         @index = imid
@@ -71,7 +76,7 @@ class HTML5TextRenderer
           line += " " if line.length > 0
           line += word
 
-      if @canvasContext.measureText(line).width > @maxWidth
+      if @measureText(line) > @maxWidth
         words = []
         prev = 0
         for i in [1...line.length]
@@ -97,7 +102,7 @@ class HTML5TextRenderer
           newlines.push(str)
           start = to + if line.charCodeAt(to) is 0x20 then 1 else 0
           str = line.slice(start)
-          if @canvasContext.measureText(str).width <= @maxWidth
+          if @measureText(str) <= @maxWidth
             line = str
             break
           imin = @index + 1
@@ -122,9 +127,9 @@ class HTML5TextRenderer
         h = (@fontHeight * len + @leading * (len - 1)) * 96 / 72
         offsetY = canvas.height - h
       when Align.VERTICAL_MIDDLE
-        len = lines.length + 1
+        len = lines.length
         h = (@fontHeight * len + @leading * (len - 1)) * 96 / 72
-        offsetY = (canvas.height - h) / 2 + @fontHeight
+        offsetY = (canvas.height - h) / 2
       else
         offsetY = 0
     offsetY += @fontHeight * 1.2
@@ -149,13 +154,32 @@ class HTML5TextRenderer
     for i in [0...lines.length]
       line = lines[i]
       x = @offsetX * scale
+      if @letterSpacing isnt 0
+        switch (@context.textProperty.align & Align.ALIGN_MASK)
+          when Align.RIGHT
+            x -= @measureText(line)
+          when Align.CENTER
+            x -= @measureText(line) / 2
       y = offsetY + (@fontHeight + @leading) * i * 96 / 72
       if useStroke
         ctx.shadowColor = "rgba(0, 0, 0, 0)" if context.shadowColor?
-        ctx.strokeText(line, x, y)
+        if @letterSpacing is 0
+          ctx.strokeText(line, x, y)
+        else
+          offset = 0
+          for j in [0...line.length]
+            c = line[j]
+            ctx.strokeText(c, x + offset, y)
+            offset += @canvasContext.measureText(c).width + @letterSpacing
       ctx.shadowColor = shadowColor if context.shadowColor?
-      ctx.fillText(line, x, y)
-
+      if @letterSpacing is 0
+        ctx.fillText(line, x, y)
+      else
+        offset = 0
+        for j in [0...line.length]
+          c = line[j]
+          ctx.fillText(c, x + offset, y)
+          offset += @canvasContext.measureText(c).width + @letterSpacing
     return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
@@ -187,7 +211,8 @@ class HTML5TextRenderer
       @initCanvas()
       @scaleByStage = @lwf.scaleByStage
 
-    @renderText(c) if !@textRendered or colorChanged or strChanged or scaleChanged
+    @renderText(c) if !@textRendered or
+      colorChanged or strChanged or scaleChanged
     return
 
   initCanvas: ->
@@ -231,3 +256,5 @@ class HTML5TextRenderer
     ctx.textBaseline = "bottom"
     @canvas = canvas
     @canvasContext = ctx
+    @letterSpacing = ctx.measureText('M').width * @context.letterSpacing
+

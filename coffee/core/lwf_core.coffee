@@ -33,6 +33,7 @@ class LWF
     @url = null
     @lwfInstanceId = null
     @frameRate = @data.header.frameRate
+    @active = true
     @execLimit = 3
     @tick = 1.0 / @frameRate
     @roundOffTick = @tick * ROUND_OFF_TICK_RATE
@@ -209,9 +210,10 @@ class LWF
     return c
 
   exec:(tick = 0, matrix = null, colorTransform = null) ->
-    return unless @rootMovie?
+    return unless @rootMovie? and @active
     execed = false
     currentProgress = @progress
+    @thisTick = tick
 
     if @isExecDisabled and @_tweens is null
       unless @executedForExecDisabled
@@ -222,7 +224,6 @@ class LWF
         execed = true
     else
       progressing = true
-      @thisTick = tick
       if tick is 0
         @progress = @tick
       else if tick < 0
@@ -279,12 +280,11 @@ class LWF
     @renderingIndexOffsetted = 0
     @rootMovie.update(m, c)
     @renderingCount = @renderingIndex
-    @thisTick = 0
     @isPropertyDirty = false
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
-    return unless @rootMovie?
+    return unless @rootMovie? and @active
     renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
@@ -602,7 +602,7 @@ class LWF
     return @buttonEventHandlers[m.instanceId]
 
   addButtonEventHandler:(instanceName, handlers) ->
-    @interactive = true
+    @setInteractive()
     instId = @searchInstanceId(@getStringId(instanceName))
     if instId >= 0 and instId < @data.instanceNames.length
       h = @buttonEventHandlers[instId]
@@ -731,6 +731,21 @@ class LWF
   setPropertyDirty: ->
     @isPropertyDirty = true
     @parent.lwf.setPropertyDirty() if @parent?
+    return
+
+  setParent:(parent) ->
+    @active = true
+    @parent = parent
+    func = @functions?['init']
+    func.call(@) if func?
+    return
+
+  setInteractive: ->
+    @interactive = true
+    lwf = @
+    while lwf.parent?
+      lwf = lwf.parent.lwf
+      lwf.interactive = true
     return
 
   getMovieFunctions:(movieId) ->

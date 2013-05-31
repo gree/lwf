@@ -322,6 +322,7 @@ public partial class LWF
 	{
 		bool execed = false;
 		float currentProgress = m_progress;
+		m_thisTick = tick;
 
 		if (m_execDisabled && tweens == null) {
 			if (!m_executedForExecDisabled) {
@@ -333,7 +334,6 @@ public partial class LWF
 			}
 		} else {
 			bool progressing = true;
-			m_thisTick = tick;
 			if (tick == 0) {
 				m_progress = m_tick;
 			} else if (tick < 0) {
@@ -407,7 +407,6 @@ public partial class LWF
 		m_renderingIndexOffsetted = 0;
 		m_rootMovie.Update(m, c);
 		m_renderingCount = m_renderingIndex;
-		m_thisTick = 0;
 		m_propertyDirty = false;
 	}
 

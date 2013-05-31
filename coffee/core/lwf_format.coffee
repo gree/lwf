@@ -71,7 +71,7 @@ class Format
     constructor:(@matrixId, @textureFragmentId, @attribute, @u, @v, @w, @h) ->
 
   class @Font
-    constructor:(@stringId, @letterspacing) ->
+    constructor:(@stringId, @letterSpacing) ->
 
   class @TextProperty
     class @Align
@@ -84,7 +84,7 @@ class Format
       @VERTICAL_MASK = 0xc
 
     constructor:(@maxLength, @fontId, @fontHeight, @align, \
-        @leftMargin, @rightMargin, @indent, @leading, \
+        @leftMargin, @rightMargin, @letterSpacing, @leading, \
         @strokeColorId, @strokeWidth, \
         @shadowColorId, @shadowOffsetX, @shadowOffsetY, @shadowBlur) ->
 

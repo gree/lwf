@@ -126,7 +126,7 @@ public partial class BitmapEx
 public partial class Font
 {
 	public int stringId;
-	public int letterspacing;
+	public float letterspacing;
 }
 
 public partial class TextProperty
@@ -148,7 +148,7 @@ public partial class TextProperty
 	public int align;
 	public int leftMargin;
 	public int rightMargin;
-	public int indent;
+	public float letterSpacing;
 	public int leading;
 	public int strokeColorId;
 	public int strokeWidth;

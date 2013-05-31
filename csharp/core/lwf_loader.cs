@@ -154,7 +154,7 @@ public partial class Font
 	public Font(BinaryReader br)
 	{
 		stringId = br.ReadInt32();
-		letterspacing = br.ReadInt32();
+		letterspacing = br.ReadSingle();
 	}
 }
 
@@ -169,7 +169,7 @@ public partial class TextProperty
 		align = br.ReadInt32();
 		leftMargin = br.ReadInt32();
 		rightMargin = br.ReadInt32();
-		indent = br.ReadInt32();
+		letterSpacing = br.ReadSingle();
 		leading = br.ReadInt32();
 		strokeColorId = br.ReadInt32();
 		strokeWidth = br.ReadInt32();

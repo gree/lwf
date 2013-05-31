@@ -96,7 +96,24 @@ public class ButtonEventHandlers
 		case Type.ROLLOUT: rollOut.Clear(); break;
 		case Type.KEYPRESS: keyPress.Clear(); break;
 		}
-	}    
+	}
+
+	public void Add(ButtonEventHandlers handlers)
+	{
+		if (handlers == null)
+			return;
+
+		handlers.load.ForEach(h => load.Add(h));
+		handlers.unload.ForEach(h => unload.Add(h));
+		handlers.enterFrame.ForEach(h => enterFrame.Add(h));
+		handlers.update.ForEach(h => update.Add(h));
+		handlers.render.ForEach(h => render.Add(h));
+		handlers.press.ForEach(h => press.Add(h));
+		handlers.release.ForEach(h => release.Add(h));
+		handlers.rollOver.ForEach(h => rollOver.Add(h));
+		handlers.rollOut.ForEach(h => rollOut.Add(h));
+		handlers.keyPress.ForEach(h => keyPress.Add(h));
+	}
 
 	public void Add(
 		ButtonEventHandler l = null, ButtonEventHandler u = null,

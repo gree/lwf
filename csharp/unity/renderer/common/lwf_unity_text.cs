@@ -228,7 +228,7 @@ public class TextContext
 		float width = (float)text.width;
 		float height = (float)text.height;
 		float lineSpacing = 1.0f + (float)textProperty.leading / fontHeight;
-		float letterSpacing = (float)fontProperty.letterspacing / fontHeight;
+		float letterSpacing = fontProperty.letterspacing;
 		float tabSpacing = 4.0f;
 		float leftMargin = textProperty.leftMargin / fontHeight;
 		float rightMargin = textProperty.rightMargin / fontHeight;
