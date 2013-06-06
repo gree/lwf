@@ -49,7 +49,6 @@ class Graphic extends LObject
     return
 
   render:(v, rOffset) ->
-    return unless v
     obj.render(v, rOffset) for obj in @displayList
     return
 

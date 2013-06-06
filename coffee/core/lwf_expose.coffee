@@ -89,6 +89,7 @@ LWF.prototype["setButtonEventListener"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler
 LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler
 LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
+LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip
 LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand
 LWF.prototype["setMovieEventHandler"] = LWF.prototype.setMovieEventHandler
 LWF.prototype["setMovieEventListener"] = LWF.prototype.setMovieEventHandler

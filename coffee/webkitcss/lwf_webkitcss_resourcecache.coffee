@@ -26,6 +26,7 @@ class WebkitCSSResourceCache
   constructor: ->
     @cache = {}
     @lwfInstanceIndex = 0
+    @canvasIndex = 0
 
   clear: ->
     for k, cache of @cache
@@ -392,7 +393,7 @@ class WebkitCSSResourceCache
 
   createCanvas:(filename, w, h) ->
     if @.constructor is WebkitCSSResourceCache
-      name = "canvas_" + filename.replace(/[\.,-]/g, "_")
+      name = "canvas_" + ++@canvasIndex
       ctx = document.getCSSCanvasContext("2d", name, w, h)
       canvas = ctx.canvas
       canvas.name = name

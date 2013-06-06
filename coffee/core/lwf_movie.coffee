@@ -326,7 +326,11 @@ class Movie extends IObject
   execDetachHandler:(lwfContainer) ->
     lwf = lwfContainer.child
     if lwf.detachHandler?
-      lwf.destroy() if lwf.detachHandler(lwf)
+      if lwf.detachHandler(lwf)
+        lwf.destroy()
+      else
+        lwf.setAttachVisible(false)
+        lwf.render()
     else
       lwf.destroy()
     lwf.parent = null

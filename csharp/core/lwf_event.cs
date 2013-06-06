@@ -199,11 +199,11 @@ public partial class LWF
 			m_movieEventHandlersByFullName[instanceName] = handlers;
 		}
 
+		handlers.Add(load, postLoad, unload, enterFrame, update, render);
+
 		Movie movie = SearchMovieInstance(instId);
 		if (movie != null)
 			movie.SetHandlers(handlers);
-
-		handlers.Add(load, postLoad, unload, enterFrame, update, render);
 	}
 
 	public void AddMovieEventHandler(int instId,
@@ -220,11 +220,11 @@ public partial class LWF
 			m_movieEventHandlers[instId] = handlers;
 		}
 
+		handlers.Add(load, postLoad, unload, enterFrame, update, render);
+
 		Movie movie = SearchMovieInstanceByInstanceId(instId);
 		if (movie != null)
 			movie.SetHandlers(handlers);
-
-		handlers.Add(load, postLoad, unload, enterFrame, update, render);
 	}
 
 	public void RemoveMovieEventHandler(string instanceName,
@@ -400,12 +400,12 @@ public partial class LWF
 			m_buttonEventHandlersByFullName[instanceName] = handlers;
 		}
 
+		handlers.Add(load, unload, enterFrame, update, render,
+			press, release, rollOver, rollOut, keyPress);
+
 		Button button = SearchButtonInstance(instId);
 		if (button != null)
 			button.SetHandlers(handlers);
-
-		handlers.Add(load, unload, enterFrame, update, render,
-			press, release, rollOver, rollOut, keyPress);
 	}
 
 	public void AddButtonEventHandler(int instId,
@@ -427,12 +427,12 @@ public partial class LWF
 			m_buttonEventHandlers[instId] = handlers;
 		}
 
+		handlers.Add(load, unload, enterFrame, update, render,
+			press, release, rollOver, rollOut, keyPress);
+
 		Button button = SearchButtonInstanceByInstanceId(instId);
 		if (button != null)
 			button.SetHandlers(handlers);
-
-		handlers.Add(load, unload, enterFrame, update, render,
-			press, release, rollOver, rollOut, keyPress);
 	}
 
 	public void RemoveButtonEventHandler(string instanceName,

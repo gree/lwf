@@ -34,6 +34,7 @@ class LWF
     @lwfInstanceId = null
     @frameRate = @data.header.frameRate
     @active = true
+    @frameSkip = true
     @execLimit = 3
     @tick = 1.0 / @frameRate
     @roundOffTick = @tick * ROUND_OFF_TICK_RATE
@@ -250,6 +251,7 @@ class LWF
         @rootMovie.exec()
         @rootMovie.postExec(progressing)
         execed = true
+        break unless @frameSkip
 
       if @progress < @roundOffTick
         @progress = 0
@@ -742,10 +744,13 @@ class LWF
 
   setInteractive: ->
     @interactive = true
-    lwf = @
-    while lwf.parent?
-      lwf = lwf.parent.lwf
-      lwf.interactive = true
+    @parent.lwf.setInteractive() if @parent?
+    return
+
+  setFrameSkip:(frameSkip) ->
+    @frameSkip = frameSkip
+    @progress = 0
+    @parent.lwf.setFrameSkip(frameSkip) if @parent?
     return
 
   getMovieFunctions:(movieId) ->

@@ -2354,9 +2354,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Graphic.prototype.render = function(v, rOffset) {
       var obj, _i, _len, _ref1;
 
-      if (!v) {
-        return;
-      }
       _ref1 = this.displayList;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         obj = _ref1[_i];
@@ -3408,6 +3405,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (lwf.detachHandler != null) {
         if (lwf.detachHandler(lwf)) {
           lwf.destroy();
+        } else {
+          lwf.setAttachVisible(false);
+          lwf.render();
         }
       } else {
         lwf.destroy();
@@ -4882,6 +4882,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.lwfInstanceId = null;
       this.frameRate = this.data.header.frameRate;
       this.active = true;
+      this.frameSkip = true;
       this.execLimit = 3;
       this.tick = 1.0 / this.frameRate;
       this.roundOffTick = this.tick * ROUND_OFF_TICK_RATE;
@@ -5147,6 +5148,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.rootMovie.exec();
           this.rootMovie.postExec(progressing);
           execed = true;
+          if (!this.frameSkip) {
+            break;
+          }
         }
         if (this.progress < this.roundOffTick) {
           this.progress = 0;
@@ -5986,13 +5990,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.setInteractive = function() {
-      var lwf;
-
       this.interactive = true;
-      lwf = this;
-      while (lwf.parent != null) {
-        lwf = lwf.parent.lwf;
-        lwf.interactive = true;
+      if (this.parent != null) {
+        this.parent.lwf.setInteractive();
+      }
+    };
+
+    LWF.prototype.setFrameSkip = function(frameSkip) {
+      this.frameSkip = frameSkip;
+      this.progress = 0;
+      if (this.parent != null) {
+        this.parent.lwf.setFrameSkip(frameSkip);
       }
     };
 
@@ -6342,6 +6350,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler;
 
   LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate;
+
+  LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip;
 
   LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand;
 
@@ -7111,6 +7121,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     function WebkitCSSResourceCache() {
       this.cache = {};
       this.lwfInstanceIndex = 0;
+      this.canvasIndex = 0;
     }
 
     WebkitCSSResourceCache.prototype.clear = function() {
@@ -7580,7 +7591,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var canvas, ctx, name;
 
       if (this.constructor === WebkitCSSResourceCache) {
-        name = "canvas_" + filename.replace(/[\.,-]/g, "_");
+        name = "canvas_" + ++this.canvasIndex;
         ctx = document.getCSSCanvasContext("2d", name, w, h);
         canvas = ctx.canvas;
         canvas.name = name;
