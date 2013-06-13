@@ -44,7 +44,6 @@ class WebkitCSSRendererFactory
 
     style = @stage.style
     style.display = "block"
-    style.position = "absolute"
     style.overflow = "hidden"
     style.webkitUserSelect = "none"
     if @use3D

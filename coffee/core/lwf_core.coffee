@@ -56,7 +56,14 @@ class LWF
     @maskModes = []
     @_tweens = null
 
-    @disableExec() if !@interactive and @data.frames.length is 1
+    if !@interactive and @data.frames.length is 1
+      if !@functions or !(@functions['_root_load'] or
+                          @functions['_root_postLoad'] or
+                          @functions['_root_unload'] or
+                          @functions['_root_enterFrame'] or
+                          @functions['_root_update'] or
+                          @functions['_root_render'])
+        @disableExec()
 
     @property = new Property(@)
     @instances = []

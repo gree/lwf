@@ -1249,7 +1249,7 @@ def get_string
     break if c == 0
     str += c.chr
   end
-  str.toutf8
+  str.force_encoding("UTF-8") if RUBY_VERSION >= "1.9.0"
 end
 
 def get_data(length)

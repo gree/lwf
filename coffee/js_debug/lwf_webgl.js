@@ -4904,7 +4904,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.maskModes = [];
       this._tweens = null;
       if (!this.interactive && this.data.frames.length === 1) {
-        this.disableExec();
+        if (!this.functions || !(this.functions['_root_load'] || this.functions['_root_postLoad'] || this.functions['_root_unload'] || this.functions['_root_enterFrame'] || this.functions['_root_update'] || this.functions['_root_render'])) {
+          this.disableExec();
+        }
       }
       this.property = new Property(this);
       this.instances = [];
@@ -6562,7 +6564,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       style = this.stage.style;
       style.display = "block";
-      style.position = "absolute";
       style.overflow = "hidden";
       style.webkitUserSelect = "none";
       if (this.use3D) {

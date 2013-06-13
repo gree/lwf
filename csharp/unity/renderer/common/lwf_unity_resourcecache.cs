@@ -99,6 +99,8 @@ public class ResourceCache
 	private ShaderCache m_shaderCache;
 	private RenderedMeshCache m_renderedMeshCache;
 
+	public TextureCache textureCache {get {return m_textureCache;}}
+
 	public static ResourceCache SharedInstance()
 	{
 		if (s_instance == null)

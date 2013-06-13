@@ -11,10 +11,12 @@ var files;
 var directories;
 
 var log = '';
+var warningNum = 0;
 
 var includeData;
 var type = ['load', 'postLoad', 'enterFrame', 'unload'];
 var suffix = ['_load', '_postLoad', '_enterFrame', '_unload'];
+var isRoot = false;
 
 
 init();
@@ -38,6 +40,7 @@ function init(){
 }
 
 function start(){
+    trace('----------------------------------------');
     trace('include JavaScript for LWF');
     trace('');
 
@@ -101,9 +104,9 @@ function createFilesObject(param){
         obj.option = deleteFileExtention(param[2]);
     }
     obj.script = getScriptFile(obj.fileName);
-    // obj.script = addScriptIndent(obj.script);
     if(obj.script === ''){
-        obj.traceName[0] += '\n   [Warning] not found or empty';
+        obj.traceName[0] += '\n -> [Warning] not found or empty';
+        warningNum++;
     }
     return obj;
 }
@@ -200,12 +203,6 @@ function addScriptFooter(){
     return '\n\n*/';
 }
 
-// function addScriptIndent(str){
-//     var indent = '    ';
-//     var newStr = str.replace(/^(.+?)$/mg, '    $1');
-//     return newStr;
-// }
-
 function includeScriptFile(){
     var lgh = items.length;
     for(var i = 0; i < lgh; i++){
@@ -217,7 +214,10 @@ function includeScriptFile(){
         }
     }
     var rootData = searchIncludeData('root');
-    if(rootData.length > 0) addData(rootData);
+    if(rootData.length > 0){
+        isRoot = true;
+        addData(rootData);
+    }
 }
 
 function searchIncludeData(mcName){
@@ -284,15 +284,11 @@ function addScript(layer, data){
 }
 
 function complete(){
-    trace('');
-    trace('');
-    trace('include complete!');
+    fl.showIdleMessage(true);
 
-    lib.editItem('root');
+    if(isRoot === false) lib.editItem('root');
 
     doc.save();
-    // doc.publish();
-
     releaseLog();
 }
 
@@ -306,5 +302,17 @@ function trace(msg){
 }
 
 function releaseLog(){
+    if(warningNum > 0){
+        fl.trace('Please check');
+        if(warningNum === 1){
+            fl.trace('Warning ' + warningNum + ' file');
+        }else{
+            fl.trace('Warning ' + warningNum + ' files');
+        }
+    }else{
+        fl.trace('Congratulations! No error!');
+    }
+
+    fl.trace('');
     fl.trace(log);
 }
