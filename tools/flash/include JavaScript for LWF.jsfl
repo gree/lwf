@@ -72,43 +72,8 @@ function createFilesData(){
     var lgh = files.length;
     for(var i = 0; i < lgh; i++){
         var obj = createFilesObject(files[i]);
-        includeData.push(obj);
+        if(typeof obj !== 'undefined') includeData.push(obj);
     }
-}
-
-function createFilesObject(param){
-    var obj = {};
-    if(typeof param === 'string'){
-        var ary = deleteFileExtention(param).split('_');
-        obj.fileName = param;
-        obj.traceName = [param];
-        obj.itemName = ary[0];
-        obj.frame = Number(ary[1]);
-        obj.type = checkType(ary[2]);
-        obj.layerName = 'js';
-        if(obj.type !== null) obj.layerName += suffix[obj.type];
-        if(typeof ary[3] !== 'undefined'){
-            obj.option = ary[3];
-        }else{
-            obj.option = null;
-        }
-    }else if(param instanceof Array){
-        var frameAndType = param[1].split('_');
-        obj.fileName = param.join('/');
-        obj.traceName = [obj.fileName];
-        obj.itemName = param[0];
-        obj.frame = Number(frameAndType[0]);
-        obj.type = checkType(frameAndType[1]);
-        obj.layerName = 'js';
-        if(obj.type !== null) obj.layerName += suffix[obj.type];
-        obj.option = deleteFileExtention(param[2]);
-    }
-    obj.script = getScriptFile(obj.fileName);
-    if(obj.script === ''){
-        obj.traceName[0] += '\n -> [Warning] not found or empty';
-        warningNum++;
-    }
-    return obj;
 }
 
 function createDirectoriesData(){
@@ -132,10 +97,47 @@ function createDirectoriesData(){
             lgh3 = jsFiles.length;
             for(n = 0; n < lgh3; n++){
                 var obj = createFilesObject([directories[i], frameDirectories[j], jsFiles[n]]);
-                includeData.push(obj);
+                if(typeof obj !== 'undefined') includeData.push(obj);
             }
         }
     }
+}
+
+function createFilesObject(param){
+    var obj = {};
+    if(typeof param === 'string'){
+        if(checkFileExtention(param) === false) return undefined;
+        var ary = deleteFileExtention(param).split('_');
+        obj.fileName = param;
+        obj.traceName = [param];
+        obj.itemName = ary[0];
+        obj.frame = Number(ary[1]);
+        obj.type = checkType(ary[2]);
+        obj.layerName = 'js';
+        if(obj.type !== null) obj.layerName += suffix[obj.type];
+        if(typeof ary[3] !== 'undefined'){
+            obj.option = ary[3];
+        }else{
+            obj.option = null;
+        }
+    }else if(param instanceof Array){
+        obj.fileName = param.join('/');
+        if(checkFileExtention(obj.fileName) === false) return undefined;
+        var frameAndType = param[1].split('_');
+        obj.traceName = [obj.fileName];
+        obj.itemName = param[0];
+        obj.frame = Number(frameAndType[0]);
+        obj.type = checkType(frameAndType[1]);
+        obj.layerName = 'js';
+        if(obj.type !== null) obj.layerName += suffix[obj.type];
+        obj.option = deleteFileExtention(param[2]);
+    }
+    obj.script = getScriptFile(obj.fileName);
+    if(obj.script === ''){
+        obj.traceName[0] += '\n -> [Warning] not found or empty';
+        warningNum++;
+    }
+    return obj;
 }
 
 function deleteFileExtention(str){
@@ -158,6 +160,22 @@ function checkType(str){
         }
     }
     return null;
+}
+
+function checkFileExtention(str){
+    var bool = false;
+    if (!str) {
+        return bool;
+    }
+    var fileTypes = str.split(".");
+    var length = fileTypes.length;
+    if (length === 0) {
+        return bool;
+    }
+    if(fileTypes[length - 1] === 'js'){
+        bool = true;
+    }
+    return bool;
 }
 
 function getScriptFile(fileName){

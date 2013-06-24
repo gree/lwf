@@ -2598,12 +2598,12 @@ LWFObjects = [
 ]
 
 def create_instance_name(x, y)
-  "x" + x.to_s.sub(/\.0$/, '').sub(/\./, "_") +
-    "_y" + y.to_s.sub(/\.0$/, '').sub(/\./, "_")
+  "x" + x.to_s.sub(/\.0$/, '').sub(/\./, "_").gsub(/-/, "_") +
+    "_y" + y.to_s.sub(/\.0$/, '').sub(/\./, "_").gsub(/-/, "_")
 end
 
 def parse_xflxml(xml, isRootMovie = false)
-  return unless xml =~ /\/\*\s*js/
+  return unless xml =~ /\/\*\s*(js|lua)/
   if defined?(LibXML)
     doc = LibXML::XML::Document.string(xml)
     entries = doc.find('//xfl:script', 'xfl'=>'http://ns.adobe.com/xfl/2008/')
@@ -2660,7 +2660,6 @@ def parse_xflxml(xml, isRootMovie = false)
           if script_index.nil?
             case s
             when /^(\/\*\s*)(js|js_load|js_postLoad|js_enterFrame|js_unload)(\s*\001|\s+)/i
-              lang = :JavaScript
               case $2.downcase
               when "js"
                 type = "frame"
@@ -2682,6 +2681,28 @@ def parse_xflxml(xml, isRootMovie = false)
                 skip += $2.length + $3.length
                 script_nest = nest
               end
+            when /^(\/\*\s*)(lua|lua_load|lua_postLoad|lua_enterFrame|lua_unload)(\s*\001|\s+)/i
+              case $2.downcase
+              when "lua"
+                type = "frame"
+              when "lua_load"
+                type = "load"
+              when "lua_postload"
+                type = "postLoad"
+              when "lua_enterframe"
+                type = "enterFrame"
+              when "lua_unload"
+                type = "unload"
+              end
+              if type != "frame" and index != 0
+                error "#{name}:frame #{index+1}: " +
+                  "lua_#{type} should be in the first frame of the movie"
+              else
+                lang = :Lua
+                script_index = i + $1.length + $2.length + $3.length
+                skip += $2.length + $3.length
+                script_nest = nest
+              end
             end
           end
           nest += 1
@@ -2689,29 +2710,34 @@ def parse_xflxml(xml, isRootMovie = false)
           skip += $1.length
           nest -= 1
           if !script_index.nil? and nest == script_nest
-            scripts[type] ||= ""
+            scripts[lang] ||= {}
+            scripts[lang][type] ||= ""
             tmp = text[script_index, i - script_index]
             tmp.sub!(/^[\s\001]*\001/, '')
             tmp.sub!(/[\s\001]+$/, '')
             tmp.gsub!(/\001/, "\n")
-            scripts[type] += tmp
+            scripts[lang][type] += tmp
             script_index = nil
           end
         end
         i += skip
       end
 
-      scripts.each do |type, script|
-        if script =~ /\W/
-          if type == "frame"
-            @script_map[name] ||= Hash.new
-            @script_map[name][index] ||= Hash.new
-            funcname = "#{name}_#{index}_#{depth}"
-            @script_map[name][index][depth] = funcname
-            @script_funcname_map[funcname] = {:lang => lang, :script => script}
-          else
-            @using_script_funcname_map["#{name}_#{type}"] =
-              {:lang => lang, :script => script}
+      scripts.each do |lang, types|
+        types.each do |type, script|
+          if script =~ /\W/
+            if type == "frame"
+              @script_map[name] ||= Hash.new
+              @script_map[name][index] ||= Hash.new
+              funcname = "#{name}_#{index}_#{depth}"
+              @script_map[name][index][depth] = funcname
+              @script_funcname_map[funcname] ||= {}
+              @script_funcname_map[funcname][lang] = script
+            else
+              funcname = "#{name}_#{type}"
+              @using_script_funcname_map[funcname] ||= {}
+              @using_script_funcname_map[funcname][lang] = script
+            end
           end
         end
       end
@@ -2747,7 +2773,7 @@ def parse_xflxml(xml, isRootMovie = false)
 
       event = nil
       event_nest = 0
-      script = ""
+      scripts = {}
       script_index = nil
       script_nest = 0
       i = 0
@@ -2777,22 +2803,24 @@ def parse_xflxml(xml, isRootMovie = false)
           skip += $1.length
           event_nest -= 1
           if event_nest == 0
-            if script =~ /\W/
-              if event == "keyPress"
-                error "doesn't support script in keyPress event"
-              else
-                script_name =
-                  "#{name}_#{index}_#{instance_linkage_name}_#{instance_name}"
-                funcname = "#{script_name}_#{event}"
-                @instance_script_map[script_name] ||= Hash.new
-                @instance_script_map[script_name][event] ||= Hash.new
-                @instance_script_map[script_name][event] = funcname
-                @script_funcname_map[funcname] =
-                  {:lang => lang, :script => script}
+            scripts.each do |lang, script|
+              if script =~ /\W/
+                if event == "keyPress"
+                  error "doesn't support script in keyPress event"
+                else
+                  script_name =
+                    "#{name}_#{index}_#{instance_linkage_name}_#{instance_name}"
+                  funcname = "#{script_name}_#{event}"
+                  @instance_script_map[script_name] ||= Hash.new
+                  @instance_script_map[script_name][event] ||= Hash.new
+                  @instance_script_map[script_name][event] = funcname
+                  @script_funcname_map[funcname] ||= {}
+                  @script_funcname_map[funcname][lang] = script
+                end
               end
             end
             event = nil
-            script = ""
+            scripts = {}
           end
         when /^(\/\*\s*)/
           skip += $1.length
@@ -2800,6 +2828,11 @@ def parse_xflxml(xml, isRootMovie = false)
             case s
             when /^(\/\*\s*)(js)(\s*\001|\s+)/i
               lang = :JavaScript
+              script_index = i + $1.length + $2.length + $3.length
+              skip += $2.length + $3.length
+              script_nest = nest
+            when /^(\/\*\s*)(lua)(\s*\001|\s+)/i
+              lang = :Lua
               script_index = i + $1.length + $2.length + $3.length
               skip += $2.length + $3.length
               script_nest = nest
@@ -2814,7 +2847,8 @@ def parse_xflxml(xml, isRootMovie = false)
             tmp.sub!(/^[\s\001]*\001/, '')
             tmp.sub!(/[\s\001]+$/, '')
             tmp.gsub!(/\001/, "\n")
-            script += tmp
+            scripts[lang] ||= ""
+            scripts[lang] += tmp
             script_index = nil
           end
         end
@@ -2926,11 +2960,11 @@ def swf2lwf(*args)
   @script_funcname_map = Hash.new
   @using_script_funcname_map = Hash.new
   @event_map = Hash.new
-  parse_fla(lwfbasedir) unless @fla.nil?
   @lwfpath = lwfbasedir + lwfname
   @logfile = File.open(@lwfpath + '.txt', 'wb')
   @logfile.sync = true
   @logfile.puts Time.now.ctime
+  parse_fla(lwfbasedir) unless @fla.nil?
   @option = 0
   @objects = Hash.new
   @button_map = Hash.new
@@ -3670,8 +3704,8 @@ def swf2lwf(*args)
   f.close
 
   unless @using_script_funcname_map.empty?
-    f = File.open(@lwfpath + ".js", "wb")
-    f.write <<-EOL
+    js = File.open(@lwfpath + ".js", "wb")
+    js.write <<-EOL
 global.LWF.Script = global.LWF.Script || {};
 global.LWF.Script["#{lwfname}"] = function() {
 	var LWF = global.LWF.LWF;
@@ -3710,44 +3744,75 @@ global.LWF.Script["#{lwfname}"] = function() {
 		_root = null;
 	};
     EOL
-    @using_script_funcname_map.sort{|a,b| a[0] <=> b[0]}.each do |k, v|
-      next if v[:lang] != :JavaScript
-      f.write <<-EOL
+
+    lua = File.open(@lwfpath + ".lua", "wb")
+    lua.write <<-EOL
+if not LWF then LWF={} end
+if not LWF.Script then LWF.Script={} end
+if not LWF.Script.#{lwfname} then LWF.Script.#{lwfname}={} end
+local _root
+    EOL
+
+    @using_script_funcname_map["_root_load"] ||= {}
+    @using_script_funcname_map["_root_load"][:Lua] ||= ""
+
+    @using_script_funcname_map.sort{|a,b| a <=> b}.each do |k, scripts|
+      scripts.each do |lang, script|
+        case lang
+        when :JavaScript
+          js.write <<-EOL
 
 	Script.prototype["#{k}"] = function() {
-      EOL
-      script = v[:script]
-      offset = 0
-      RKelly::Tokenizer.new.raw_tokens(script).each do |token|
-        next if token.name != :RAW_IDENT and token.name != :SINGLE_CHAR
-        case token.value
-        when /^@([a-zA-Z_])/
-          script[token.offset + offset, 2] = "this.#{$1}"
-          offset += 4
-        when /^@\[/
-          script[token.offset + offset, 2] = "this["
-          offset += 3
-        when /^@$/
-          script[token.offset + offset, 1] = "this"
-          offset += 3
-        when /^\$([a-zA-Z_])/
-          script[token.offset + offset, 2] = "_root.#{$1}"
-          offset += 5
-        when /^\$\[/
-          script[token.offset + offset, 2] = "_root["
-          offset += 4
-        when /^\$$/
-          script[token.offset + offset, 1] = "_root"
-          offset += 4
+          EOL
+          offset = 0
+          RKelly::Tokenizer.new.raw_tokens(script).each do |token|
+            next if token.name != :RAW_IDENT and token.name != :SINGLE_CHAR
+            case token.value
+            when /^@([a-zA-Z_])/
+              script[token.offset + offset, 2] = "this.#{$1}"
+              offset += 4
+            when /^@\[/
+              script[token.offset + offset, 2] = "this["
+              offset += 3
+            when /^@$/
+              script[token.offset + offset, 1] = "this"
+              offset += 3
+            when /^\$([a-zA-Z_])/
+              script[token.offset + offset, 2] = "_root.#{$1}"
+              offset += 5
+            when /^\$\[/
+              script[token.offset + offset, 2] = "_root["
+              offset += 4
+            when /^\$$/
+              script[token.offset + offset, 1] = "_root"
+              offset += 4
+            end
+          end
+          js.write script.gsub(/^/, "\t\t")
+          js.write "\n"
+          js.write <<-EOL
+	};
+        EOL
+        when :Lua
+          lua.write <<-EOL
+
+LWF.Script.#{lwfname}.#{k} = function(self)
+          EOL
+          if k == "_root_load"
+            lua.write <<-EOL
+	_root = self
+            EOL
+          end
+          lua.write script.gsub(/^/, "\t")
+          lua.write "\n"
+          lua.write <<-EOL
+end
+        EOL
         end
       end
-      f.write script.gsub(/^/, "\t\t")
-      f.write "\n"
-      f.write <<-EOL
-	};
-      EOL
     end
-    f.write <<-EOL
+  
+    js.write <<-EOL
 
 	return Script;
 
@@ -3756,7 +3821,11 @@ global.LWF.Script["#{lwfname}"] = function() {
 	return new Script();
 };
     EOL
-    f.close
+    js.close
+  
+    lua.write <<-EOL
+    EOL
+    lua.close
   end
 
   unless @disable_exporting_png

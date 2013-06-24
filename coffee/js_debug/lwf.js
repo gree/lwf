@@ -2923,7 +2923,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Movie = (function(_super) {
     __extends(Movie, _super);
 
-    function Movie(lwf, parent, objId, instId, matrixId, colorTransformId, attached, handler) {
+    function Movie(lwf, parent, objId, instId, matrixId, colorTransformId, attached, handler, n) {
       var func, type, _ref1;
 
       if (matrixId == null) {
@@ -2938,8 +2938,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (handler == null) {
         handler = null;
       }
+      if (n == null) {
+        n = null;
+      }
       type = attached ? Type.ATTACHEDMOVIE : Type.MOVIE;
       Movie.__super__.constructor.call(this, lwf, parent, type, objId, instId);
+      if (n != null) {
+        this.name = n;
+      }
       this.matrixId = matrixId;
       this.colorTransformId = colorTransformId;
       this.data = lwf.data.movies[objId];
@@ -3262,9 +3268,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       handlers = new MovieEventHandlers();
       handlers.add(options);
       if (movie != null) {
+        movie.parent = this;
         movie.setHandlers(handlers);
       } else {
-        movie = new Movie(this.lwf, this, movieId, -1, 0, 0, true, handlers);
+        movie = new Movie(this.lwf, this, movieId, -1, 0, 0, true, handlers, attachName);
         if (this.attachMovieExeced) {
           movie.exec();
         }
@@ -3277,7 +3284,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         depth = this.getDepth(this.attachedMovieListKeys);
       }
       movie.depth = depth;
-      movie.name = attachName;
       this.attachedMovies[attachName] = movie;
       this.attachedMovieList = this.reorderList(reorder, this.attachedMovieListKeys, this.attachedMovieList, movie.depth, movie, function(o, i) {
         return o.depth = i;

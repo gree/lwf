@@ -20,9 +20,10 @@
 
 class Movie extends IObject
   constructor:(lwf, parent, objId, instId, matrixId = null,
-      colorTransformId = null, attached = false, handler = null) ->
+      colorTransformId = null, attached = false, handler = null, n = null) ->
     type = if attached then Type.ATTACHEDMOVIE else Type.MOVIE
     super(lwf, parent, type, objId, instId)
+    @name = n if n?
     @matrixId = matrixId
     @colorTransformId = colorTransformId
     @data = lwf.data.movies[objId]
@@ -237,15 +238,15 @@ class Movie extends IObject
     handlers = new MovieEventHandlers()
     handlers.add(options)
     if movie?
+      movie.parent = @
       movie.setHandlers(handlers)
     else
-      movie = new Movie(@lwf, @, movieId, -1, 0, 0, true, handlers)
+      movie = new Movie(@lwf, @, movieId, -1, 0, 0, true, handlers, attachName)
       movie.exec() if @attachMovieExeced
       movie.postExec(true) if @attachMoviePostExeced
     movie.attachName = attachName
     depth = @getDepth(@attachedMovieListKeys) unless depth?
     movie.depth = depth
-    movie.name = attachName
     @attachedMovies[attachName] = movie
     @attachedMovieList = @reorderList(reorder, @attachedMovieListKeys,
       @attachedMovieList, movie.depth, movie, (o, i) -> o.depth = i)

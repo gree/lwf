@@ -10,11 +10,11 @@
  * freely, subject to the following restrictions:
  * 
  * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
+ *	  claim that you wrote the original software. If you use this software
+ *	  in a product, an acknowledgment in the product documentation would be
+ *	  appreciated but is not required.
  * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
+ *	  misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
@@ -84,7 +84,7 @@ function Init()
 
 function CheckVersion()
 {
-	var allStr = doc.exportPublishProfileString().split(lineBreak + '    ').join(lineBreak);
+	var allStr = doc.exportPublishProfileString().split(lineBreak + '	 ').join(lineBreak);
 	var xmlArray = allStr.split(lineBreak);
 
 	for (var i=0, il = xmlArray.length; i < il; i++) {
@@ -116,7 +116,7 @@ function CheckVersion()
 		}
 	}
 
-	doc.importPublishProfileString(xmlArray.join(lineBreak))
+	doc.importPublishProfileString(xmlArray.join(lineBreak));
 }
 
 function createBitmapDir()
@@ -294,11 +294,12 @@ function CheckPngLinkage(lib, item, name)
 			}
 		}
 
+		name = name.replace(/(_rgb_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_add_[0-9]+,[0-9]+,[0-9]+)\/([^\/]+)\.(jpg|jpeg|png)$/i, '$2$1.$3');
 		name = name.split("/").join("_");
 		setLinkageName(lib, name);
 
 		if (ExportBitmaps) {
-			m = name.match(/_rgb_[0-9a-f]{6}/i);
+			m = name.match(/(_rgb_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]|_add_[0-9]+,[0-9]+,[0-9]+)\.(jpg|jpeg|png)$/i);
 			if (m === null)
 				item.exportToFile(BitmapDirName + name);
 		}
