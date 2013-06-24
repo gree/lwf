@@ -202,6 +202,7 @@ public class BitmapRenderer : Renderer
 		material.color = m_colorMult;
 		material.SetPass(0);
 		Graphics.DrawMeshNow(m_context.mesh, m_renderMatrix);
+		Material.Destroy(material);
 	}
 #endif
 }
