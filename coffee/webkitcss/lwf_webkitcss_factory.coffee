@@ -56,6 +56,7 @@ class WebkitCSSRendererFactory
       style.height = "#{data.header.height}px"
 
     @initCommands()
+    @destructedRenderers = []
 
   initCommands: ->
     @commands = {}
@@ -90,6 +91,7 @@ class WebkitCSSRendererFactory
     return
 
   destruct: ->
+    @callRendererDestructor() if @destructedRenderers?
     context.destruct() for context in @bitmapContexts
     context.destruct() for context in @bitmapExContexts
     context.destruct() for context in @textContexts
@@ -114,7 +116,19 @@ class WebkitCSSRendererFactory
             new WebkitCSSDomElementRenderer(@, domElement)
           )
 
+  destructRenderer:(renderer) ->
+    @destructedRenderers.push(renderer)
+    return
+
+  callRendererDestructor: ->
+    for renderer in @destructedRenderers
+      renderer.destructor()
+    @destructedRenderers = []
+    return
+
   beginRender:(lwf) ->
+    @callRendererDestructor() if @destructedRenderers?
+    return
 
   render:(cmd) ->
     renderer = cmd.renderer
@@ -198,6 +212,8 @@ class WebkitCSSRendererFactory
       @render(cmd)
 
     @initCommands()
+
+    @callRendererDestructor() if @destructedRenderers?
     return
 
   setBlendMode:(blendMode) ->

@@ -29,16 +29,12 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
     @zIndex = -1
     @visible = false
 
-    @node = @canvas
-    @node.style.display = "block"
-    @node.style.pointerEvents = "none"
-    @node.style.position = "absolute"
-    @node.style.webkitTransformOrigin = "0px 0px"
-    @node.style.visibility = "hidden"
-    @context.factory.stage.appendChild(@node)
+  destructor: ->
+    @node.parentNode.removeChild(@node) if @node?
+    return
 
   destruct: ->
-    @node.parentNode.removeChild(@node)
+    @context.factory.destructRenderer(@)
     return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
@@ -47,11 +43,19 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
     else
       @visible = visible
       if visible is false
-        @node.style.visibility = "hidden"
+        @node.style.visibility = "hidden" if @node?
         return
       else
-        @node.style.visibility = "visible"
+        @node.style.visibility = "visible" if @node?
 
+    unless @node?
+      @node = @canvas
+      @node.style.display = "block"
+      @node.style.pointerEvents = "none"
+      @node.style.position = "absolute"
+      @node.style.webkitTransformOrigin = "0px 0px"
+      @node.style.visibility = "hidden"
+      @context.factory.stage.appendChild(@node)
     super
 
     matrixChanged = @matrixForRender.setWithComparing(@matrix)

@@ -20,17 +20,19 @@
 
 class WebkitCSSDomElementRenderer
   constructor:(@factory, @node) ->
-    @node.style.position = "absolute"
-    @node.style.webkitTransformOrigin = "0px 0px"
-    @node.style.display = "block"
-    @factory.stage.parentNode.appendChild(@node)
+    @appended = false
+    @node.style.visibility = "hidden"
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
     @alpha = -1
     @zIndex = -1
     @visible = true
 
+  destructor: ->
+    @factory.stage.parentNode.removeChild(@node) if @appended
+    return
+
   destruct: ->
-    @factory.stage.parentNode.removeChild(@node)
+    @context.factory.destructRenderer(@)
     return
 
   update:(m, c) ->
@@ -45,6 +47,13 @@ class WebkitCSSDomElementRenderer
         return
       else
         @node.style.visibility = "visible"
+
+    unless @appended
+      @appended = true
+      @node.style.position = "absolute"
+      @node.style.webkitTransformOrigin = "0px 0px"
+      @node.style.display = "block"
+      @factory.stage.parentNode.appendChild(@node)
 
     matrixChanged = @matrix.setWithComparing(m)
     return if !matrixChanged and

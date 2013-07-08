@@ -22,7 +22,10 @@ function LWF() {}
 LWF.prototype.backgroundColor;
 LWF.prototype.data;
 LWF.prototype.depth;
+LWF.prototype.fastForward;
+LWF.prototype.fastForwardTimeout;
 LWF.prototype.frameRate;
+LWF.prototype.frameSkip;
 LWF.prototype.height;
 LWF.prototype.interactive;
 LWF.prototype.name;

@@ -81,13 +81,6 @@ class WebkitCSSBitmapContext
 
 class WebkitCSSBitmapRenderer
   constructor:(@context) ->
-    if @context.cache.length > 0
-      @node = @context.cache.pop()
-      @node.style.visibility = "visible"
-    else
-      @node = @context.node.cloneNode(true)
-      @context.factory.stage.appendChild(@node)
-
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
     @alpha = -1
     @zIndex = -1
@@ -97,9 +90,14 @@ class WebkitCSSBitmapRenderer
     @matrixForAtlas = new Matrix() if fragment.rotated or
       @context.x isnt 0 or @context.y isnt 0 or @context.scale isnt 1
 
+  destructor: ->
+    if @node?
+      @node.style.visibility = "hidden"
+      @context.cache.push(@node)
+    return
+
   destruct: ->
-    @node.style.visibility = "hidden"
-    @context.cache.push(@node)
+    @context.factory.destructRenderer(@)
     return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
@@ -108,10 +106,18 @@ class WebkitCSSBitmapRenderer
     else
       @visible = visible
       if visible is false
-        @node.style.visibility = "hidden"
+        @node.style.visibility = "hidden" if @node?
         return
       else
+        @node.style.visibility = "visible" if @node?
+
+    unless @node?
+      if @context.cache.length > 0
+        @node = @context.cache.pop()
         @node.style.visibility = "visible"
+      else
+        @node = @context.node.cloneNode(true)
+        @context.factory.stage.appendChild(@node)
 
     matrixChanged = @matrix.setWithComparing(m)
     if matrixChanged

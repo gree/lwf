@@ -19,7 +19,17 @@
 #
 
 class Text extends LObject
-  constructor:(lwf, parent, objId) ->
+  constructor:(lwf, parent, objId, instId = -1) ->
     super(lwf, parent, Type.TEXT, objId)
-    @dataMatrixId = lwf.data.texts[objId].matrixId
+    text = lwf.data.texts[objId]
+    @dataMatrixId = text.matrixId
+
+    if text.nameStringId isnt -1
+      @name = lwf.data.strings[text.nameStringId]
+    else
+      if instId >= 0 and instId < lwf.data.instanceNames.length
+        stringId = lwf.getInstanceNameStringId(instId)
+        if stringId isnt -1
+          @name = lwf.data.strings[stringId]
+
     @renderer = lwf.rendererFactory.constructText(lwf, objId, @)

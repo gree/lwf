@@ -2405,9 +2405,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Text = (function(_super) {
     __extends(Text, _super);
 
-    function Text(lwf, parent, objId) {
+    function Text(lwf, parent, objId, instId) {
+      var stringId, text;
+
+      if (instId == null) {
+        instId = -1;
+      }
       Text.__super__.constructor.call(this, lwf, parent, Type.TEXT, objId);
-      this.dataMatrixId = lwf.data.texts[objId].matrixId;
+      text = lwf.data.texts[objId];
+      this.dataMatrixId = text.matrixId;
+      if (text.nameStringId !== -1) {
+        this.name = lwf.data.strings[text.nameStringId];
+      } else {
+        if (instId >= 0 && instId < lwf.data.instanceNames.length) {
+          stringId = lwf.getInstanceNameStringId(instId);
+          if (stringId !== -1) {
+            this.name = lwf.data.strings[stringId];
+          }
+        }
+      }
       this.renderer = lwf.rendererFactory.constructText(lwf, objId, this);
     }
 
@@ -3292,6 +3308,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       return movie;
     };
 
+    Movie.prototype.attachEmptyMovie = function(attachName, options) {
+      if (options == null) {
+        options = null;
+      }
+      return this.attachMovie("_empty", attachName, options);
+    };
+
     Movie.prototype.swapAttachedMovieDepth = function(depth0, depth1) {
       var attachedMovie0, attachedMovie1;
 
@@ -3654,7 +3677,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             obj = new BitmapEx(this.lwf, this, dataObjectId);
             break;
           case Type.TEXT:
-            obj = new Text(this.lwf, this, dataObjectId);
+            obj = new Text(this.lwf, this, dataObjectId, instId);
             break;
           case Type.PARTICLE:
             obj = new Particle(this.lwf, this, dataObjectId);
@@ -4243,8 +4266,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.dispatchEvent = function(e) {
-      var handler, handlers, _i, _len;
+      var handler, handlers, param, _i, _len;
 
+      if (typeof e === "object") {
+        param = e["param"];
+        e = e["type"];
+      } else {
+        param = null;
+      }
       switch (e) {
         case "load":
         case "postLoad":
@@ -4274,7 +4303,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           for (_i = 0, _len = handlers.length; _i < _len; _i++) {
             handler = handlers[_i];
             if (handler != null) {
-              handler.call(this);
+              handler.call(this, {
+                "type": e,
+                "param": param
+              });
             }
           }
       }
@@ -4888,6 +4920,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.lwfInstanceId = null;
       this.frameRate = this.data.header.frameRate;
       this.active = true;
+      this.fastForwardTimeout = 15;
+      this.fastForward = false;
       this.frameSkip = true;
       this.execLimit = 3;
       this.tick = 1.0 / this.frameRate;
@@ -5096,20 +5130,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       return c;
     };
 
-    LWF.prototype.exec = function(tick, matrix, colorTransform) {
-      var currentProgress, execLimit, execed, handler, handlers, progressing, _i, _len;
+    LWF.prototype.execInternal = function(tick, matrix, colorTransform) {
+      var currentProgress, execLimit, execed, handler, handlers, needUpdate, progressing, _i, _len;
 
-      if (tick == null) {
-        tick = 0;
-      }
-      if (matrix == null) {
-        matrix = null;
-      }
-      if (colorTransform == null) {
-        colorTransform = null;
-      }
       if (!((this.rootMovie != null) && this.active)) {
-        return;
+        return 0;
       }
       execed = false;
       currentProgress = this.progress;
@@ -5168,7 +5193,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.rootMovie.linkButton();
         }
       }
-      if (execed || this.isLWFAttached || this.isPropertyDirty || (matrix != null) || (colorTransform != null)) {
+      needUpdate = this.isLWFAttached;
+      if (!this.fastForward) {
+        if (execed || this.isPropertyDirty || (matrix != null) || (colorTransform != null)) {
+          needUpdate = true;
+        }
+      }
+      if (needUpdate) {
         this.update(matrix, colorTransform);
       }
       if (!this.execDisabled) {
@@ -5177,6 +5208,38 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
       }
       return this.renderingCount;
+    };
+
+    LWF.prototype.exec = function(tick, matrix, colorTransform) {
+      var renderingCount, startTime;
+
+      if (tick == null) {
+        tick = 0;
+      }
+      if (matrix == null) {
+        matrix = null;
+      }
+      if (colorTransform == null) {
+        colorTransform = null;
+      }
+      if (this.parent == null) {
+        this.fastForwardCurrent = this.fastForward;
+        if (this.fastForwardCurrent) {
+          tick = this.tick;
+          startTime = Date.now();
+        }
+      }
+      while (true) {
+        renderingCount = this.execInternal(tick, matrix, colorTransform);
+        if (this.fastForwardCurrent && this.fastForward && (this.parent == null)) {
+          if (Date.now() - startTime >= this.fastForwardTimeout) {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+      return renderingCount;
     };
 
     LWF.prototype.forceExec = function(matrix, colorTransform) {
@@ -5229,7 +5292,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (rOffset == null) {
         rOffset = Number.MIN_VALUE;
       }
-      if (!((this.rootMovie != null) && this.active)) {
+      if ((this.rootMovie == null) || !this.active || this.fastForwardCurrent) {
         return;
       }
       renderingCountBackup = this.renderingCount;
@@ -6012,6 +6075,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
+    LWF.prototype.setFastForwardTimeout = function(fastForwardTimeout) {
+      this.fastForwardTimeout = fastForwardTimeout;
+    };
+
+    LWF.prototype.setFastForward = function(fastForward) {
+      this.fastForward = fastForward;
+      if (this.parent != null) {
+        this.parent.lwf.setFastForward(fastForward);
+      }
+    };
+
     LWF.prototype.getMovieFunctions = function(movieId) {
       var enterFrameFunc, linkageName, loadFunc, postLoadFunc, unloadFunc, _ref1, _ref2, _ref3, _ref4;
 
@@ -6357,6 +6431,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler;
 
+  LWF.prototype["setFastForward"] = LWF.prototype.setFastForward;
+
+  LWF.prototype["setFastForwardTimeout"] = LWF.prototype.setFastForwardTimeout;
+
   LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate;
 
   LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip;
@@ -6402,6 +6480,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler;
 
   Movie.prototype["addEventListener"] = Movie.prototype.addEventHandler;
+
+  Movie.prototype["attachEmptyMovie"] = Movie.prototype.attachEmptyMovie;
 
   Movie.prototype["attachLWF"] = Movie.prototype.attachLWF;
 
@@ -6531,18 +6611,22 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     function WebkitCSSDomElementRenderer(factory, node) {
       this.factory = factory;
       this.node = node;
-      this.node.style.position = "absolute";
-      this.node.style.webkitTransformOrigin = "0px 0px";
-      this.node.style.display = "block";
-      this.factory.stage.parentNode.appendChild(this.node);
+      this.appended = false;
+      this.node.style.visibility = "hidden";
       this.matrix = new Matrix(0, 0, 0, 0, 0, 0);
       this.alpha = -1;
       this.zIndex = -1;
       this.visible = true;
     }
 
+    WebkitCSSDomElementRenderer.prototype.destructor = function() {
+      if (this.appended) {
+        this.factory.stage.parentNode.removeChild(this.node);
+      }
+    };
+
     WebkitCSSDomElementRenderer.prototype.destruct = function() {
-      this.factory.stage.parentNode.removeChild(this.node);
+      this.context.factory.destructRenderer(this);
     };
 
     WebkitCSSDomElementRenderer.prototype.update = function(m, c) {};
@@ -6562,6 +6646,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         } else {
           this.node.style.visibility = "visible";
         }
+      }
+      if (!this.appended) {
+        this.appended = true;
+        this.node.style.position = "absolute";
+        this.node.style.webkitTransformOrigin = "0px 0px";
+        this.node.style.display = "block";
+        this.factory.stage.parentNode.appendChild(this.node);
       }
       matrixChanged = this.matrix.setWithComparing(m);
       if (!matrixChanged && this.alpha === c.multi.alpha && this.zIndex === renderingIndex) {

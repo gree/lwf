@@ -34,6 +34,8 @@ class LWF
     @lwfInstanceId = null
     @frameRate = @data.header.frameRate
     @active = true
+    @fastForwardTimeout = 15
+    @fastForward = false
     @frameSkip = true
     @execLimit = 3
     @tick = 1.0 / @frameRate
@@ -217,8 +219,8 @@ class LWF
       c = colorTransform ? @colorTransformIdentity
     return c
 
-  exec:(tick = 0, matrix = null, colorTransform = null) ->
-    return unless @rootMovie? and @active
+  execInternal:(tick, matrix, colorTransform) ->
+    return 0 unless @rootMovie? and @active
     execed = false
     currentProgress = @progress
     @thisTick = tick
@@ -266,15 +268,31 @@ class LWF
       @buttonHead = null
       @rootMovie.linkButton() if @interactive and @rootMovie.hasButton
 
-    if execed or @isLWFAttached or @isPropertyDirty or
-        matrix? or colorTransform?
-      @update(matrix, colorTransform)
+    needUpdate = @isLWFAttached
+    unless @fastForward
+      if execed or @isPropertyDirty or matrix? or colorTransform?
+        needUpdate = true
+    @update(matrix, colorTransform) if needUpdate
 
     unless @execDisabled
       if tick < 0
         @progress = currentProgress
 
     return @renderingCount
+
+  exec:(tick = 0, matrix = null, colorTransform = null) ->
+    unless @parent?
+      @fastForwardCurrent = @fastForward
+      if @fastForwardCurrent
+        tick = @tick
+        startTime = Date.now()
+    loop
+      renderingCount = @execInternal(tick, matrix, colorTransform)
+      if @fastForwardCurrent and @fastForward and !@parent?
+        break if Date.now() - startTime >= @fastForwardTimeout
+      else
+        break
+    return renderingCount
 
   forceExec:(matrix = null, colorTransform = null) ->
     return @exec(0, matrix, colorTransform)
@@ -293,7 +311,7 @@ class LWF
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
-    return unless @rootMovie? and @active
+    return if !@rootMovie? or !@active or @fastForwardCurrent
     renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
@@ -758,6 +776,15 @@ class LWF
     @frameSkip = frameSkip
     @progress = 0
     @parent.lwf.setFrameSkip(frameSkip) if @parent?
+    return
+
+  setFastForwardTimeout:(fastForwardTimeout) ->
+    @fastForwardTimeout = fastForwardTimeout
+    return
+
+  setFastForward:(fastForward) ->
+    @fastForward = fastForward
+    @parent.lwf.setFastForward(fastForward) if @parent?
     return
 
   getMovieFunctions:(movieId) ->

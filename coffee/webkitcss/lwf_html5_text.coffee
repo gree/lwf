@@ -24,7 +24,6 @@ class HTML5TextContext
     @textProperty = @data.textProperties[@text.textPropertyId]
     font = @data.fonts[@textProperty.fontId]
     @textColor = @data.colors[@text.colorId]
-    @name = @data.strings[@text.nameStringId]
 
     if @textProperty.strokeColorId isnt -1
       @strokeColor = @data.colors[@textProperty.strokeColorId]
@@ -38,7 +37,7 @@ class HTML5TextContext
 
 class HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
-    @str = @textObject.parent[@context.name] ? @context.str
+    @str = @textObject.parent[@textObject.name] ? @context.str
     @str = String(@str) if @str?
     @matrixForScale = new Matrix()
     @color = new Color
@@ -199,7 +198,7 @@ class HTML5TextRenderer
       colorChanged = true
 
     strChanged = false
-    str = @textObject.parent[@context.name]
+    str = @textObject.parent[@textObject.name]
     str = String(str) if str?
     if str? and str isnt @str
       strChanged = true

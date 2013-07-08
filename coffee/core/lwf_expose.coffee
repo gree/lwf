@@ -88,6 +88,8 @@ LWF.prototype["setButtonEventHandler"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setButtonEventListener"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler
 LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler
+LWF.prototype["setFastForward"] = LWF.prototype.setFastForward
+LWF.prototype["setFastForwardTimeout"] = LWF.prototype.setFastForwardTimeout
 LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
 LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip
 LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand
@@ -117,6 +119,7 @@ Button.prototype["setEventListener"] = Button.prototype.setEventHandler
 
 Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler
 Movie.prototype["addEventListener"] = Movie.prototype.addEventHandler
+Movie.prototype["attachEmptyMovie"] = Movie.prototype.attachEmptyMovie
 Movie.prototype["attachLWF"] = Movie.prototype.attachLWF
 Movie.prototype["attachMovie"] = Movie.prototype.attachMovie
 Movie.prototype["clearEventHandler"] = Movie.prototype.clearEventHandler

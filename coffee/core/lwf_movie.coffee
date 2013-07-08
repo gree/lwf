@@ -253,6 +253,9 @@ class Movie extends IObject
     @[attachName] = movie
     return movie
 
+  attachEmptyMovie:(attachName, options = null) ->
+    return @attachMovie("_empty", attachName, options)
+
   swapAttachedMovieDepth:(depth0, depth1) ->
     return if !@attachedMovies? or depth0 is depth1
     attachedMovie0 = @attachedMovieList[depth0]
@@ -498,7 +501,7 @@ class Movie extends IObject
         when Type.BITMAPEX
           obj = new BitmapEx(@lwf, @, dataObjectId)
         when Type.TEXT
-          obj = new Text(@lwf, @, dataObjectId)
+          obj = new Text(@lwf, @, dataObjectId, instId)
         when Type.PARTICLE
           obj = new Particle(@lwf, @, dataObjectId)
         when Type.PROGRAMOBJECT
@@ -932,6 +935,11 @@ class Movie extends IObject
     return
 
   dispatchEvent:(e) ->
+    if typeof e is "object"
+      param = e["param"]
+      e = e["type"]
+    else
+      param = null
     switch e
       when "load", "postLoad", "unload", "enterFrame", "update", "render"
         @handler.call(e, @) unless @handler.empty
@@ -940,7 +948,7 @@ class Movie extends IObject
         return false unless handlers?
         handlers = (handler for handler in handlers)
         for handler in handlers
-          handler.call(@) if handler?
+          handler.call(@, {"type":e, "param":param}) if handler?
     return true
 
   addEventHandler:(e, eventHandler) ->
