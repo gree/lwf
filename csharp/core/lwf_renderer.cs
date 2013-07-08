@@ -36,11 +36,17 @@ public class Renderer
 #endif
 }
 
+public class TextRenderer : Renderer
+{
+	public TextRenderer(LWF lwf) : base(lwf) {}
+	public virtual void SetText(string text) {}
+}
+
 public interface IRendererFactory
 {
 	Renderer ConstructBitmap(LWF lwf, int objId, Bitmap bitmap);
 	Renderer ConstructBitmapEx(LWF lwf, int objId, BitmapEx bitmapEx);
-	Renderer ConstructText(LWF lwf, int objId, Text text);
+	TextRenderer ConstructText(LWF lwf, int objId, Text text);
 	Renderer ConstructParticle(LWF lwf, int objId, Particle particle);
 	void Init(LWF lwf);
 	void BeginRender(LWF lwf);
@@ -54,7 +60,7 @@ public class NullRendererFactory : IRendererFactory
 		{return null;}
 	public Renderer ConstructBitmapEx(LWF lwf, int objId, BitmapEx bitmapEx)
 		{return null;}
-	public Renderer ConstructText(LWF lwf, int objId, Text text)
+	public TextRenderer ConstructText(LWF lwf, int objId, Text text)
 		{return null;}
 	public Renderer ConstructParticle(LWF lwf, int objId, Particle particle)
 		{return null;}

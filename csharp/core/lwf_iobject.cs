@@ -24,10 +24,12 @@ using Type = Format.Object.Type;
 
 public class IObject : Object {
 	protected int m_instanceId;
+	protected int m_iObjectId;
 	protected string m_name;
 	protected IObject m_prevInstance;
 	protected IObject m_nextInstance;
 	protected IObject m_linkInstance;
+	protected bool m_alive;
 
 	public IObject nextInstance {get {return m_nextInstance;}}
 	public IObject linkInstance {
@@ -35,6 +37,7 @@ public class IObject : Object {
 		set {m_linkInstance = value;}
 	}
 	public int instanceId {get {return m_instanceId;}}
+	public int iObjectId {get {return m_iObjectId;}}
 	public string name {get {return m_name;}}
 
 	public IObject() {}
@@ -46,12 +49,14 @@ public class IObject : Object {
 			Movie parent, Type type, int objId, int instId)
 		: base(lwf, parent, type, objId)
 	{
+		m_alive = true;
 		m_prevInstance = null;
 		m_nextInstance = null;
 		m_linkInstance = null;
 
 		m_instanceId =
 			(instId >= lwf.data.instanceNames.Length) ? -1 : (int)instId;
+		m_iObjectId = lwf.GetIObjectOffset();
 
 		if (m_instanceId >= 0) {
 			int stringId = lwf.GetInstanceNameStringId(m_instanceId);
@@ -78,6 +83,7 @@ public class IObject : Object {
 		}
 
 		base.Destroy();
+		m_alive = false;
 	}
 
 	public virtual void LinkButton()

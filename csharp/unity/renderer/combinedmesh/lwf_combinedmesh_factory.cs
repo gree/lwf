@@ -102,7 +102,6 @@ public partial class Factory : UnityRenderer.Factory
 		buffer = new CombinedMeshBuffer();
 
 		CreateBitmapContexts(data);
-		CreateTextContexts(data);
 	}
 
 	public override void Destruct()
@@ -186,10 +185,9 @@ public partial class Factory : UnityRenderer.Factory
 		return new BitmapRenderer(lwf, m_bitmapExContexts[objectId]);
 	}
 
-	public override Renderer ConstructText(LWF lwf, int objectId, Text text)
+	public override TextRenderer ConstructText(LWF lwf, int objectId, Text text)
 	{
-		return new UnityRenderer.TextRenderer(
-			lwf, GetTextContext(objectId, text));
+		return new UnityRenderer.UnityTextRenderer(lwf, objectId);
 	}
 }
 

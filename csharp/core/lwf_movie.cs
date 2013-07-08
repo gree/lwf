@@ -37,6 +37,7 @@ using AttachedLWFList = SortedDictionary<int, LWFContainer>;
 using AttachedLWFDescendingList = SortedDictionary<int, int>;
 using DetachDict = Dictionary<string, bool>;
 using Inspector = System.Action<Object, int, int, int>;
+using Texts = Dictionary<string, bool>;
 
 public partial class Movie : IObject
 {
@@ -54,6 +55,7 @@ public partial class Movie : IObject
 	private AttachedLWFList m_attachedLWFList;
 	private AttachedLWFDescendingList m_attachedLWFDescendingList;
 	private DetachDict m_detachedLWFs;
+	private Texts m_texts;
 	private string m_attachName;
 	private int m_totalFrames;
 	private int m_currentFrameInternal;
@@ -86,7 +88,7 @@ public partial class Movie : IObject
 
 	public Movie(LWF lwf, Movie parent, int objId,
 			int instId, int matrixId = 0, int colorTransformId = 0,
-			bool attached = false, MovieEventHandlers handler = null)
+			bool attached = false, MovieEventHandlers handler = null, string m = null)
 		: base(lwf, parent,
 			attached ? Type.ATTACHEDMOVIE : Type.MOVIE, objId, instId)
 	{
@@ -94,6 +96,9 @@ public partial class Movie : IObject
 		m_matrixId = matrixId;
 		m_colorTransformId = colorTransformId;
 		m_totalFrames = m_data.frames;
+
+		if (!String.IsNullOrEmpty(m))
+			m_name = name;
 		m_instanceHead = null;
 		m_instanceTail = null;
 		m_currentFrameInternal = -1;
@@ -188,6 +193,8 @@ public partial class Movie : IObject
 		if (obj != null && (obj.type != (Type)dataObject.objectType ||
 				obj.objectId != dataObjectId || (obj.IsMovie() &&
 				((IObject)obj).instanceId != instId))) {
+			if (m_texts != null && obj.IsText())
+				EraseText(obj.objectId);
 			obj.Destroy();
 			obj = null;
 		}
@@ -217,7 +224,7 @@ public partial class Movie : IObject
 				break;
 
 			case Type.TEXT:
-				obj = new Text(m_lwf, this, dataObjectId);
+				obj = new Text(m_lwf, this, dataObjectId, instId);
 				break;
 
 			case Type.PARTICLE:
@@ -241,6 +248,9 @@ public partial class Movie : IObject
 			if (obj.IsButton())
 				m_hasButton = true;
 		}
+
+		if (m_texts != null && obj.IsText())
+			InsertText(obj.objectId);
 
 		m_displayList[dlDepth] = obj;
 		obj.execCount = m_movieExecCount;
@@ -389,6 +399,8 @@ public partial class Movie : IObject
 				for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
 					Object obj = m_displayList[dlDepth];
 					if (obj != null && obj.execCount != m_movieExecCount) {
+						if (m_texts != null && obj.IsText())
+							EraseText(obj.objectId);
 						obj.Destroy();
 						m_displayList[dlDepth] = null;
 					}
@@ -747,6 +759,9 @@ public partial class Movie : IObject
 
 	public Movie SearchMovieInstance(int stringId, bool recursive = true)
 	{
+		if (stringId == -1)
+			return null;
+
 		for (IObject instance = m_instanceHead; instance != null;
 				instance = instance.linkInstance) {
 			if (instance.IsMovie() && m_lwf.GetInstanceNameStringId(
@@ -790,6 +805,9 @@ public partial class Movie : IObject
 
 	public Button SearchButtonInstance(int stringId, bool recursive = true)
 	{
+		if (stringId == -1)
+			return null;
+
 		for (IObject instance = m_instanceHead; instance != null;
 				instance = instance.linkInstance) {
 			if (instance.IsButton() && m_lwf.GetInstanceNameStringId(
@@ -825,6 +843,37 @@ public partial class Movie : IObject
 			}
 		}
 		return null;
+	}
+
+	public void InsertText(int objId)
+	{
+		Format.Text text = lwf.data.texts[objId];
+		if (text.nameStringId != -1)
+			m_texts[lwf.data.strings[text.nameStringId]] = true;
+	}
+
+	public void EraseText(int objId)
+	{
+		Format.Text text = lwf.data.texts[objId];
+		if (text.nameStringId != -1)
+			m_texts.Remove(lwf.data.strings[text.nameStringId]);
+	}
+
+	public bool SearchText(string textName)
+	{
+		if (m_texts != null) {
+			m_texts = new Texts();
+			for (int dlDepth = 0; dlDepth < data.depths; ++dlDepth) {
+				Object obj = m_displayList[dlDepth];
+				if (obj != null && obj.IsText())
+					InsertText(obj.objectId);
+			}
+		}
+
+		bool v;
+		if (m_texts.TryGetValue(textName, out v))
+			return true;
+		return false;
 	}
 
 	public void AddEventHandler(string eventName, EventHandler eventHandler)

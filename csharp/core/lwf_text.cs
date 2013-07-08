@@ -22,11 +22,40 @@ namespace LWF {
 
 public class Text : Object
 {
-	public Text(LWF lwf, Movie parent, int objId)
-		: base(lwf, parent, Format.Object.Type.TEXT, objId)
+	protected string m_name;
+	public string name {get {return m_name;}}
+
+	public Text(LWF lwf, Movie p, int objId, int instId = -1)
+		: base(lwf, p, Format.Object.Type.TEXT, objId)
 	{
-		m_dataMatrixId = lwf.data.texts[objId].matrixId;
-		m_renderer = lwf.rendererFactory.ConstructText(lwf, objId, this);
+		Format.Text text = lwf.data.texts[objId];
+		m_dataMatrixId = text.matrixId;
+
+		if (text.nameStringId != -1) {
+			m_name = lwf.data.strings[text.nameStringId];
+		} else {
+			if (instId >= 0 && instId < lwf.data.instanceNames.Length) {
+				int stringId = lwf.GetInstanceNameStringId(instId);
+				if (stringId != -1)
+					m_name = lwf.data.strings[stringId];
+			}
+		}
+
+		TextRenderer textRenderer =
+			lwf.rendererFactory.ConstructText(lwf, objId, this);
+
+		string t = null;
+		if (text.stringId != -1)
+			t = lwf.data.strings[text.stringId];
+
+		if (text.nameStringId == -1 && string.IsNullOrEmpty(name)) {
+			if (text.stringId != -1)
+				textRenderer.SetText(t);
+		} else {
+			lwf.SetTextRenderer(p.GetFullName(), name, t, textRenderer);
+		}
+
+		m_renderer = textRenderer;
 	}
 }
 

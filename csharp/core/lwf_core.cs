@@ -34,6 +34,23 @@ using AllowButtonList = Dictionary<int, bool>;
 using DenyButtonList = Dictionary<int, bool>;
 using ExecHandler = Action<LWF>;
 using ExecHandlerList = List<Action<LWF>>;
+using EventFunctions = Dictionary<int, bool>;
+using TextDictionary = Dictionary<string, TextDictionaryItem>;
+
+public class TextDictionaryItem
+{
+	public string text;
+	public TextRenderer renderer;
+
+	public TextDictionaryItem(string t) {
+		text = t;
+	}
+
+	public TextDictionaryItem(string t, TextRenderer r) {
+		text = t;
+		renderer = r;
+	}
+}
 
 public partial class LWF
 {
@@ -42,6 +59,8 @@ public partial class LWF
 		LWF,
 	}
 
+	private static int m_instanceOffset = 0;
+	private static int m_iObjectOffset = 0;
 	private static float ROUND_OFF_TICK_RATE = 0.05f;
 
 	private Data m_data;
@@ -59,6 +78,7 @@ public partial class LWF
 	private AllowButtonList m_allowButtonList;
 	private DenyButtonList m_denyButtonList;
 	private ExecHandlerList m_execHandlers;
+	private TextDictionary m_textDictionary;
 	private int m_frameRate;
 	private int m_execLimit;
 	private int m_renderingIndex;
@@ -67,6 +87,7 @@ public partial class LWF
 	private int m_depth;
 	private int m_execCount;
 	private int m_updateCount;
+	private int m_instanceId;
 	private double m_time;
 	private float m_progress;
 	private float m_tick;
@@ -87,6 +108,8 @@ public partial class LWF
 	private Matrix m_matrixIdentity;
 	private ColorTransform m_colorTransform;
 	private ColorTransform m_colorTransformIdentity;
+	private bool m_alive;
+	private int m_eventOffset;
 
 	public Data data {get {return m_data;}}
 	public bool interactive {get; set;}
@@ -117,11 +140,13 @@ public partial class LWF
 	public int renderingCount {get {return m_renderingCount;}}
 	public int execCount {get {return m_execCount;}}
 	public int updateCount {get {return m_updateCount;}}
+	public int instanceId {get {return m_instanceId;}}
 	public float width {get {return m_data.header.width;}}
 	public float height {get {return m_data.header.height;}}
 	public double time {get {return m_time;}}
 	public float tick {get {return m_tick;}}
 	public float thisTick {get {return m_thisTick;}}
+	public bool alive {get {return m_alive;}}
 	public Movie parent {
 		get {return m_parent;}
 		set {m_parent = value;}
@@ -146,7 +171,7 @@ public partial class LWF
 	}
 	public bool intercepted {get {return interactive && m_intercepted;}}
 
-	public LWF(Data lwfData, IRendererFactory rendererFactory = null)
+	public LWF(Data lwfData, IRendererFactory r)
 	{
 		m_data = lwfData;
 
@@ -162,6 +187,8 @@ public partial class LWF
 		m_pointX = Single.MinValue;
 		m_pointY = Single.MinValue;
 		m_pressing = false;
+		m_instanceId = ++m_instanceOffset;
+		m_alive = true;
 
 		if (!interactive && m_data.frames.Length == 1)
 			DisableExec();
@@ -172,6 +199,7 @@ public partial class LWF
 		m_movieCommands = new MovieCommands();
 		m_programObjectConstructors =
 			new ProgramObjectConstructor[m_data.programObjects.Length];
+		m_textDictionary = new TextDictionary();
 
 		m_matrix = new Matrix();
 		m_matrixIdentity = new Matrix();
@@ -180,7 +208,7 @@ public partial class LWF
 
 		Init();
 
-		SetRendererFactory(rendererFactory);
+		SetRendererFactory(r);
 	}
 
 	public void SetRendererFactory(IRendererFactory rendererFactory = null)
@@ -458,6 +486,12 @@ public partial class LWF
 	public void Destroy()
 	{
 		m_rootMovie.Destroy();
+		m_alive = false;
+	}
+
+	public int GetIObjectOffset()
+	{
+		return ++m_iObjectOffset;
 	}
 
 	public Movie SearchMovieInstance(int stringId)
@@ -739,6 +773,65 @@ public partial class LWF
 	{
 		ClearExecHandler();
 		AddExecHandler(execHandler);
+	}
+
+	public void SetText(string textName, string text)
+	{
+		TextDictionaryItem item;
+		if (!m_textDictionary.TryGetValue(textName, out item)) {
+			m_textDictionary[textName] = new TextDictionaryItem(text);
+		} else {
+			if (item.renderer != null)
+				item.renderer.SetText(text);
+			item.text = text;
+		}
+	}
+
+	public string GetText(string textName)
+	{
+		TextDictionaryItem item;
+		if (m_textDictionary.TryGetValue(textName, out item))
+			return item.text;
+		return null;
+	}
+
+	public void SetTextRenderer(string fullPath,
+		string textName, string text, TextRenderer textRenderer)
+	{
+		bool setText = false;
+		string fullName = fullPath + "." + textName;
+		TextDictionaryItem item;
+		if (m_textDictionary.TryGetValue(fullName, out item)) {
+			item.renderer = textRenderer;
+			if (!String.IsNullOrEmpty(item.text)) {
+				textRenderer.SetText(item.text);
+				setText = true;
+			}
+		} else {
+			m_textDictionary[fullName] =
+				new TextDictionaryItem(text, textRenderer);
+		}
+
+		if (m_textDictionary.TryGetValue(textName, out item)) {
+			item.renderer = textRenderer;
+			if (!setText && !String.IsNullOrEmpty(item.text)) {
+				textRenderer.SetText(item.text);
+				setText = true;
+			}
+		} else {
+			m_textDictionary[textName] =
+				new TextDictionaryItem(text, textRenderer);
+		}
+
+		if (!setText)
+			textRenderer.SetText(text);
+	}
+
+	public void ClearTextRenderer(string textName)
+	{
+		TextDictionaryItem item;
+		if (!m_textDictionary.TryGetValue(textName, out item))
+			item.renderer = null;
 	}
 }
 
