@@ -88,7 +88,7 @@ public partial class Movie : IObject
 
 	public Movie(LWF lwf, Movie parent, int objId,
 			int instId, int matrixId = 0, int colorTransformId = 0,
-			bool attached = false, MovieEventHandlers handler = null, string m = null)
+			bool attached = false, MovieEventHandlers handler = null, string n = null)
 		: base(lwf, parent,
 			attached ? Type.ATTACHEDMOVIE : Type.MOVIE, objId, instId)
 	{
@@ -97,8 +97,8 @@ public partial class Movie : IObject
 		m_colorTransformId = colorTransformId;
 		m_totalFrames = m_data.frames;
 
-		if (!String.IsNullOrEmpty(m))
-			m_name = name;
+		if (!String.IsNullOrEmpty(n))
+			m_name = n;
 		m_instanceHead = null;
 		m_instanceTail = null;
 		m_currentFrameInternal = -1;
