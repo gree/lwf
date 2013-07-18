@@ -4075,25 +4075,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (!this.visible || !this.active || !this.hasButton) {
         return;
       }
-      if (this.attachedLWFs != null) {
-        _ref1 = this.attachedLWFListKeys;
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          k = _ref1[_i];
-          lwfContainer = this.attachedLWFList[k];
-          lwfContainer.linkButton();
-        }
-      }
-      if (this.attachedMovies != null) {
-        _ref2 = this.attachedMovieListKeys;
-        for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-          k = _ref2[_j];
-          movie = this.attachedMovieList[k];
-          if (movie.hasButton) {
-            movie.linkButton();
-          }
-        }
-      }
-      for (depth = _k = 0, _ref3 = this.data.depths; 0 <= _ref3 ? _k < _ref3 : _k > _ref3; depth = 0 <= _ref3 ? ++_k : --_k) {
+      for (depth = _i = 0, _ref1 = this.data.depths; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; depth = 0 <= _ref1 ? ++_i : --_i) {
         obj = this.displayList[depth];
         if (obj != null) {
           if (obj.isButton) {
@@ -4103,6 +4085,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               obj.linkButton();
             }
           }
+        }
+      }
+      if (this.attachedMovies != null) {
+        _ref2 = this.attachedMovieListKeys;
+        for (_j = 0, _len = _ref2.length; _j < _len; _j++) {
+          k = _ref2[_j];
+          movie = this.attachedMovieList[k];
+          if (movie.hasButton) {
+            movie.linkButton();
+          }
+        }
+      }
+      if (this.attachedLWFs != null) {
+        _ref3 = this.attachedLWFListKeys;
+        for (_k = 0, _len1 = _ref3.length; _k < _len1; _k++) {
+          k = _ref3[_k];
+          lwfContainer = this.attachedLWFList[k];
+          lwfContainer.linkButton();
         }
       }
     };
@@ -6467,8 +6467,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler;
 
-  Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent;
-
   Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler;
 
   Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler;
@@ -7403,7 +7401,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.fitText(line, words, lineStart, imid + 1, imax);
       }
       if (w >= this.lineWidth) {
-        return this.fitText(line, words, lineStart, imin, imid - 1);
+        this.fitText(line, words, lineStart, imin, imid - 1);
       }
     };
 
@@ -7642,7 +7640,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       ctx.textBaseline = "bottom";
       this.canvas = canvas;
       this.canvasContext = ctx;
-      return this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
+      this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
     };
 
     return HTML5TextRenderer;
@@ -7711,7 +7709,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.node.style.pointerEvents = "none";
         this.node.style.position = "absolute";
         this.node.style.webkitTransformOrigin = "0px 0px";
-        this.node.style.visibility = "hidden";
+        this.node.style.visibility = "visible";
         this.context.factory.stage.appendChild(this.node);
       }
       WebkitCSSTextRenderer.__super__.render.apply(this, arguments);
@@ -8565,6 +8563,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     global["LWF"]["useWebkitCSSRenderer"] = function() {
       return global["LWF"]["ResourceCache"] = WebkitCSSResourceCache;
     };
+    global["LWF"]["LWF"]["useWebkitCSSRenderer"] = global["LWF"]["useWebkitCSSRenderer"];
   }
 
   WebkitCSSRendererFactory.prototype["convertColor"] = WebkitCSSRendererFactory.prototype.convertColor;
@@ -9078,7 +9077,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     CanvasResourceCache.prototype.newFactory = function(settings, cache, data) {
       var _ref6, _ref7;
 
-      return new CanvasRendererFactory(data, this, cache, settings.stage, (_ref6 = settings.textInSubpixel) != null ? _ref6 : false, (_ref7 = settings.canvasNeedsClear) != null ? _ref7 : true);
+      return new CanvasRendererFactory(data, this, cache, settings.stage, (_ref6 = settings["textInSubpixel"]) != null ? _ref6 : false, (_ref7 = settings["needsClear"]) != null ? _ref7 : true);
     };
 
     CanvasResourceCache.prototype.generateImages = function(settings, imageCache, texture, image) {
@@ -9109,6 +9108,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     global["LWF"]["useCanvasRenderer"] = function() {
       return global["LWF"]["ResourceCache"] = CanvasResourceCache;
     };
+    global["LWF"]["LWF"]["useCanvasRenderer"] = global["LWF"]["useCanvasRenderer"];
   }
 
   CanvasRendererFactory.prototype["convertColor"] = CanvasRendererFactory.prototype.convertColor;

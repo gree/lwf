@@ -20,5 +20,6 @@
 
 class WebGLResourceCache extends WebkitCSSResourceCache
   newFactory:(settings, cache, data) ->
-    return new WebGLRendererFactory(
-      data, @, cache, settings.stage, settings.textInSubpixel ? false)
+    return new WebGLRendererFactory(data, @, cache, settings.stage,
+      settings["textInSubpixel"] ? false, settings["needsClear"] ? true)
+

@@ -24,6 +24,7 @@ if typeof global isnt "undefined"
 
   global["LWF"]["useWebGLRenderer"] = ->
     global["LWF"]["ResourceCache"] = WebGLResourceCache
+  global["LWF"]["LWF"]["useWebGLRenderer"] = global["LWF"]["useWebGLRenderer"]
 
 WebGLRendererFactory.prototype["convertColor"] =
   WebGLRendererFactory.prototype.convertColor

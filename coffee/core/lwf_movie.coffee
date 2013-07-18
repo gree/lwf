@@ -806,16 +806,6 @@ class Movie extends IObject
   linkButton:() ->
     return if !@visible or !@active or !@hasButton
 
-    if @attachedLWFs?
-      for k in @attachedLWFListKeys
-        lwfContainer = @attachedLWFList[k]
-        lwfContainer.linkButton()
-
-    if @attachedMovies?
-      for k in @attachedMovieListKeys
-        movie = @attachedMovieList[k]
-        movie.linkButton() if movie.hasButton
-
     for depth in [0...@data.depths]
       obj = @displayList[depth]
       if obj?
@@ -823,6 +813,16 @@ class Movie extends IObject
           obj.linkButton()
         else if obj.isMovie
           obj.linkButton() if obj.hasButton
+
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        movie.linkButton() if movie.hasButton
+
+    if @attachedLWFs?
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        lwfContainer.linkButton()
     return
 
   render:(v, rOffset) ->

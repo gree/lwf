@@ -34,6 +34,7 @@ class HTML5TextContext
     @letterSpacing = font.letterSpacing + @textProperty.letterSpacing
 
   destruct: ->
+    return
 
 class HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
@@ -46,6 +47,7 @@ class HTML5TextRenderer
     @initCanvas()
 
   destruct: ->
+    return
 
   measureText:(str) ->
     swidth = if str.length <= 1 then 0 else (str.length - 1) * @letterSpacing
@@ -64,6 +66,7 @@ class HTML5TextRenderer
       @fitText(line, words, lineStart, imid + 1, imax)
     if w >= @lineWidth
       @fitText(line, words, lineStart, imin, imid - 1)
+    return
 
   adjustText:(lines) ->
     newlines = []
@@ -256,4 +259,5 @@ class HTML5TextRenderer
     @canvas = canvas
     @canvasContext = ctx
     @letterSpacing = ctx.measureText('M').width * @context.letterSpacing
+    return
 

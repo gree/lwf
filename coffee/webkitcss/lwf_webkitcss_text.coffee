@@ -54,8 +54,9 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
       @node.style.pointerEvents = "none"
       @node.style.position = "absolute"
       @node.style.webkitTransformOrigin = "0px 0px"
-      @node.style.visibility = "hidden"
+      @node.style.visibility = "visible"
       @context.factory.stage.appendChild(@node)
+
     super
 
     matrixChanged = @matrixForRender.setWithComparing(@matrix)

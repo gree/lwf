@@ -21,7 +21,7 @@
 class CanvasResourceCache extends WebkitCSSResourceCache
   newFactory:(settings, cache, data) ->
     return new CanvasRendererFactory(data, @, cache, settings.stage,
-      settings.textInSubpixel ? false, settings.canvasNeedsClear ? true)
+      settings["textInSubpixel"] ? false, settings["needsClear"] ? true)
 
   generateImages:(settings, imageCache, texture, image) ->
     m = texture.filename.match(/_withpadding/)

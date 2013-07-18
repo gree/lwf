@@ -4075,25 +4075,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (!this.visible || !this.active || !this.hasButton) {
         return;
       }
-      if (this.attachedLWFs != null) {
-        _ref1 = this.attachedLWFListKeys;
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          k = _ref1[_i];
-          lwfContainer = this.attachedLWFList[k];
-          lwfContainer.linkButton();
-        }
-      }
-      if (this.attachedMovies != null) {
-        _ref2 = this.attachedMovieListKeys;
-        for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-          k = _ref2[_j];
-          movie = this.attachedMovieList[k];
-          if (movie.hasButton) {
-            movie.linkButton();
-          }
-        }
-      }
-      for (depth = _k = 0, _ref3 = this.data.depths; 0 <= _ref3 ? _k < _ref3 : _k > _ref3; depth = 0 <= _ref3 ? ++_k : --_k) {
+      for (depth = _i = 0, _ref1 = this.data.depths; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; depth = 0 <= _ref1 ? ++_i : --_i) {
         obj = this.displayList[depth];
         if (obj != null) {
           if (obj.isButton) {
@@ -4103,6 +4085,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               obj.linkButton();
             }
           }
+        }
+      }
+      if (this.attachedMovies != null) {
+        _ref2 = this.attachedMovieListKeys;
+        for (_j = 0, _len = _ref2.length; _j < _len; _j++) {
+          k = _ref2[_j];
+          movie = this.attachedMovieList[k];
+          if (movie.hasButton) {
+            movie.linkButton();
+          }
+        }
+      }
+      if (this.attachedLWFs != null) {
+        _ref3 = this.attachedLWFListKeys;
+        for (_k = 0, _len1 = _ref3.length; _k < _len1; _k++) {
+          k = _ref3[_k];
+          lwfContainer = this.attachedLWFList[k];
+          lwfContainer.linkButton();
         }
       }
     };
@@ -6467,8 +6467,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler;
 
-  Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent;
-
   Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler;
 
   Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler;
@@ -8021,66 +8019,98 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     WebGLRendererFactory.shaderProgram = null;
 
-    function WebGLRendererFactory(data, resourceCache, cache, stage, textInSubpixel) {
-      var bitmap, bitmapEx, depth, dpr, fn, fragmentShader, gl, params, pmatrix, r, rl, shaderProgram, tb, text, vertexShader, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4, _ref5;
+    WebGLRendererFactory.prototype.setupGL = function() {
+      var gl;
 
-      this.resourceCache = resourceCache;
-      this.cache = cache;
-      this.stage = stage;
-      this.textInSubpixel = textInSubpixel;
-      params = {
-        premultipliedAlpha: false
-      };
-      this.stage.style.webkitUserSelect = "none";
-      this.stageContext = (_ref2 = this.stage.getContext("webgl", params)) != null ? _ref2 : this.stage.getContext("experimental-webgl", params);
-      if (this.stage.width === 0 && this.stage.height === 0) {
-        this.stage.width = data.header.width;
-        this.stage.height = data.header.height;
-      }
-      this.blendMode = "normal";
-      this.maskMode = "normal";
       gl = this.stageContext;
       gl.enable(gl.BLEND);
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.DITHER);
       gl.disable(gl.SCISSOR_TEST);
       gl.activeTexture(gl.TEXTURE0);
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.useProgram(this.shaderProgram);
+    };
+
+    WebGLRendererFactory.prototype.setTexParameter = function(gl) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    };
+
+    WebGLRendererFactory.prototype.setViewport = function(gl, lwf) {
+      var bottom, changed, dpr, far, left, near, pmatrix, r, right, top;
+
       r = this.stage.getBoundingClientRect();
-      dpr = devicePixelRatio;
-      this.w = Math.round(r.width * dpr);
-      this.h = Math.round(r.height * dpr);
-      gl.viewport(0, 0, this.w, this.h);
+      changed = this.clientRect !== r;
+      changed |= this.propertyMatrix.setWithComparing(lwf.property.matrix);
+      if (changed) {
+        this.clientRect = r;
+        dpr = devicePixelRatio;
+        this.w = Math.round(r.width * dpr);
+        this.h = Math.round(r.height * dpr);
+        gl.viewport(0, 0, this.w, this.h);
+        right = this.w;
+        left = 0;
+        top = 0;
+        bottom = this.h;
+        far = 1;
+        near = -1;
+        pmatrix = [2 / (right - left), 0, 0, 0, 0, 2 / (top - bottom), 0, 0, 0, 0, -2 / (far - near), 0, -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1];
+        return gl.uniformMatrix4fv(this.uPMatrix, false, new Float32Array(pmatrix));
+      }
+    };
+
+    function WebGLRendererFactory(data, resourceCache, cache, stage, textInSubpixel, needsClear) {
+      var bitmap, bitmapEx, fragmentShader, gl, params, text, vertexShader, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4, _ref5;
+
+      this.data = data;
+      this.resourceCache = resourceCache;
+      this.cache = cache;
+      this.stage = stage;
+      this.textInSubpixel = textInSubpixel;
+      this.needsClear = needsClear;
+      params = {
+        premultipliedAlpha: false
+      };
+      this.drawCalls = 0;
+      this.stage.style.webkitUserSelect = "none";
+      this.stageContext = (_ref2 = this.stage.getContext("webgl", params)) != null ? _ref2 : this.stage.getContext("experimental-webgl", params);
+      if (this.stage.width === 0 && this.stage.height === 0) {
+        this.stage.width = this.data.header.width;
+        this.stage.height = this.data.header.height;
+      }
+      this.blendMode = "normal";
+      this.maskMode = "normal";
+      this.clientRect = null;
+      this.propertyMatrix = new Matrix;
+      gl = this.stageContext;
+      this.vertexBufferSize = 3 * 4 + 2 * 4 + 4 * 4;
+      this.vertexBuffer = gl.createBuffer();
+      this.indexBuffer = gl.createBuffer();
+      this.matrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
       if (WebGLRendererFactory.shaderProgram != null) {
-        shaderProgram = WebGLRendererFactory.shaderProgram;
+        this.shaderProgram = WebGLRendererFactory.shaderProgram;
       } else {
-        vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, "attribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nuniform mat4 uPMatrix;\nuniform mat4 uMatrix;\nvarying mediump vec2 vTextureCoord;\nvoid main() {\n  vTextureCoord = aTextureCoord;\n  gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 1.0);\n}");
-        fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, "varying mediump vec2 vTextureCoord;\nuniform lowp vec4 uColor;\nuniform sampler2D uTexture;\nvoid main() {\n  gl_FragColor = texture2D(uTexture, vTextureCoord) * uColor;\n}");
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, "attribute vec4 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec4 aColor;\nuniform mat4 uPMatrix;\nuniform mat4 uMatrix;\nvarying lowp vec2 vTextureCoord;\nvarying lowp vec4 vColor;\nvoid main() {\n  gl_Position = uPMatrix * uMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n  vColor = aColor;\n}");
+        fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, "varying lowp vec2 vTextureCoord;\nvarying lowp vec4 vColor;\nuniform sampler2D uTexture;\nvoid main() {\n  gl_FragColor = vColor * texture2D(uTexture, vTextureCoord);\n}");
+        this.shaderProgram = gl.createProgram();
+        gl.attachShader(this.shaderProgram, vertexShader);
+        gl.attachShader(this.shaderProgram, fragmentShader);
+        gl.linkProgram(this.shaderProgram);
+        if (!gl.getProgramParameter(this.shaderProgram, gl.LINK_STATUS)) {
           alert("Unable to initialize the shader program.");
         }
-        WebGLRendererFactory.shaderProgram = shaderProgram;
+        WebGLRendererFactory.shaderProgram = this.shaderProgram;
       }
-      gl.useProgram(shaderProgram);
-      this.aVertexPosition = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-      gl.enableVertexAttribArray(this.aVertexPosition);
-      this.aTextureCoord = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-      gl.enableVertexAttribArray(this.aTextureCoord);
-      this.uPMatrix = gl.getUniformLocation(shaderProgram, "uPMatrix");
-      this.uMatrix = gl.getUniformLocation(shaderProgram, "uMatrix");
-      this.uColor = gl.getUniformLocation(shaderProgram, "uColor");
-      this.uTexture = gl.getUniformLocation(shaderProgram, "uTexture");
-      depth = 1024;
-      this.farZ = -(depth - 1);
-      rl = this.w;
-      tb = -this.h;
-      fn = depth * 2;
-      pmatrix = [2 / rl, 0, 0, 0, 0, 2 / tb, 0, 0, 0, 0, -2 / fn, 0, -1, 1, 0, 1];
-      gl.uniformMatrix4fv(this.uPMatrix, false, new Float32Array(pmatrix));
+      this.aVertexPosition = gl.getAttribLocation(this.shaderProgram, "aVertexPosition");
+      this.aTextureCoord = gl.getAttribLocation(this.shaderProgram, "aTextureCoord");
+      this.aColor = gl.getAttribLocation(this.shaderProgram, "aColor");
+      this.uPMatrix = gl.getUniformLocation(this.shaderProgram, "uPMatrix");
+      this.uMatrix = gl.getUniformLocation(this.shaderProgram, "uMatrix");
+      this.uTexture = gl.getUniformLocation(this.shaderProgram, "uTexture");
+      this.setupGL();
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
       this.textures = {};
       this.bitmapContexts = [];
       _ref3 = data.bitmaps;
@@ -8129,26 +8159,30 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebGLRendererFactory.prototype.destruct = function() {
-      var context, gl, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4;
+      var context, d, gl, k, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref2, _ref3, _ref4, _ref5;
 
-      this.deleteMask();
       gl = this.stageContext;
-      gl.bindTexture(gl.TEXTURE_2D, null);
-      gl.bindBuffer(gl.ARRAY_BUFFER, null);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-      _ref2 = this.bitmapContexts;
-      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-        context = _ref2[_i];
-        context.destruct();
+      this.deleteMask(gl);
+      gl.deleteBuffer(this.indexBuffer);
+      gl.deleteBuffer(this.vertexBuffer);
+      _ref2 = this.textures;
+      for (d = _i = 0, _len = _ref2.length; _i < _len; d = ++_i) {
+        k = _ref2[d];
+        gl.deleteTexture(d[0]);
       }
-      _ref3 = this.bitmapExContexts;
+      _ref3 = this.bitmapContexts;
       for (_j = 0, _len1 = _ref3.length; _j < _len1; _j++) {
         context = _ref3[_j];
         context.destruct();
       }
-      _ref4 = this.textContexts;
+      _ref4 = this.bitmapExContexts;
       for (_k = 0, _len2 = _ref4.length; _k < _len2; _k++) {
         context = _ref4[_k];
+        context.destruct();
+      }
+      _ref5 = this.textContexts;
+      for (_l = 0, _len3 = _ref5.length; _l < _len3; _l++) {
+        context = _ref5[_l];
         context.destruct();
       }
     };
@@ -8157,47 +8191,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var gl;
 
       WebGLRendererFactory.__super__.beginRender.apply(this, arguments);
+      this.drawCalls = 0;
       if (lwf.parent != null) {
         return;
       }
+      this.currentTexture = null;
+      this.currentBlendMode = "normal";
+      this.mesh = [];
       gl = this.stageContext;
-      gl.clear(gl.COLOR_BUFFER_BIT);
-    };
-
-    WebGLRendererFactory.prototype.render = function(gl, cmd, rIndex) {
-      if (this.renderMaskMode !== cmd.maskMode) {
-        this.generateMask();
-        switch (cmd.maskMode) {
-          case "erase":
-          case "mask":
-            if (this.renderMaskMode === "layer" && this.renderMasked) {
-              this.renderMask();
-            }
-            this.renderMasked = true;
-            this.srcFactor = cmd.maskMode === "erase" ? gl.ONE_MINUS_DST_ALPHA : gl.DST_ALPHA;
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.maskFrameBuffer);
-            gl.clearColor(0, 0, 0, 0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-            break;
-          case "layer":
-            if (this.renderMasked) {
-              gl.bindFramebuffer(gl.FRAMEBUFFER, this.layerFrameBuffer);
-              gl.clearColor(0, 0, 0, 0);
-              gl.clear(gl.COLOR_BUFFER_BIT);
-            } else {
-              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            }
-            break;
-          default:
-            if (this.renderMaskMode === "layer" && this.renderMasked) {
-              this.renderMask();
-            } else {
-              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            }
-        }
-        this.renderMaskMode = cmd.maskMode;
+      this.setViewport(gl, lwf);
+      if (this.needsClear) {
+        gl.clear(gl.COLOR_BUFFER_BIT);
       }
-      cmd.renderer.renderCommand(cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode);
     };
 
     WebGLRendererFactory.prototype.endRender = function(lwf) {
@@ -8230,14 +8235,146 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         this.render(gl, cmd, rIndex);
       }
+      this.renderMesh(gl);
       if (this.renderMaskMode !== "normal") {
         if (this.renderMaskMode === "layer" && this.renderMasked) {
-          this.renderMask();
+          this.renderMask(gl);
         } else {
           gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
       }
       this.initCommands();
+    };
+
+    WebGLRendererFactory.prototype.render = function(gl, cmd, rIndex) {
+      if (this.renderMaskMode !== cmd.maskMode) {
+        this.renderMesh(gl);
+        this.generateMask(gl);
+        switch (cmd.maskMode) {
+          case "erase":
+          case "mask":
+            if (this.renderMaskMode === "layer" && this.renderMasked) {
+              this.renderMask(gl);
+            }
+            this.renderMasked = true;
+            this.maskSrcFactor = cmd.maskMode === "erase" ? gl.ONE_MINUS_DST_ALPHA : gl.DST_ALPHA;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.maskFrameBuffer);
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            break;
+          case "layer":
+            if (this.renderMasked) {
+              gl.bindFramebuffer(gl.FRAMEBUFFER, this.layerFrameBuffer);
+              gl.clearColor(0, 0, 0, 0);
+              gl.clear(gl.COLOR_BUFFER_BIT);
+            } else {
+              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+            break;
+          default:
+            if (this.renderMaskMode === "layer" && this.renderMasked) {
+              this.renderMask(gl);
+            } else {
+              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+        }
+        this.renderMaskMode = cmd.maskMode;
+      }
+      if (cmd.renderer === null) {
+        this.updateMesh(gl, cmd.context, cmd.texture, cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode);
+      } else {
+        cmd.renderer.renderCommand(cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode);
+      }
+    };
+
+    WebGLRendererFactory.prototype.updateMesh = function(gl, context, texture, m, c, renderingIndex, blendMode) {
+      var alpha, blue, green, i, px, py, pz, red, scaleX, scaleY, skew0, skew1, translateX, translateY, translateZ, uv, vertices, x, y, _i;
+
+      if (texture !== this.currentTexture || blendMode !== this.currentBlendMode) {
+        this.renderMesh(gl);
+        this.currentTexture = texture;
+        this.currentBlendMode = blendMode;
+        this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
+        this.blendDstFactor = blendMode === "add" ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA;
+        this.mesh = [];
+      }
+      red = c.multi.red;
+      green = c.multi.green;
+      blue = c.multi.blue;
+      alpha = c.multi.alpha;
+      if (context.preMultipliedAlpha) {
+        red *= alpha;
+        green *= alpha;
+        blue *= alpha;
+      }
+      scaleX = m.scaleX;
+      skew0 = m.skew0;
+      translateX = m.translateX;
+      skew1 = m.skew1;
+      scaleY = m.scaleY;
+      translateY = m.translateY;
+      translateZ = 0;
+      vertices = context.vertices;
+      uv = context.uv;
+      for (i = _i = 0; _i < 4; i = ++_i) {
+        x = vertices[i].x;
+        y = vertices[i].y;
+        px = x * scaleX + y * skew0 + translateX;
+        py = x * skew1 + y * scaleY + translateY;
+        pz = translateZ;
+        this.mesh.push([px, py, pz, uv[i].u, uv[i].v, red, green, blue, alpha]);
+      }
+    };
+
+    WebGLRendererFactory.prototype.renderMesh = function(gl) {
+      var faces, i, indexOffset, indices, m, offset, size, v, vertices, _i, _j, _k, _len, _len1, _ref2;
+
+      if (this.currentTexture === null || this.mesh.length === 0) {
+        return;
+      }
+      size = this.mesh.length * 9;
+      vertices = new Float32Array(size);
+      i = 0;
+      _ref2 = this.mesh;
+      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+        m = _ref2[_i];
+        for (_j = 0, _len1 = m.length; _j < _len1; _j++) {
+          v = m[_j];
+          vertices[i++] = v;
+        }
+      }
+      faces = this.mesh.length / 4;
+      size = faces * 6;
+      indices = new Int16Array(size);
+      indexOffset = 0;
+      for (i = _k = 0; 0 <= faces ? _k < faces : _k > faces; i = 0 <= faces ? ++_k : --_k) {
+        offset = i * 6;
+        indices[offset + 0] = indexOffset + 0;
+        indices[offset + 1] = indexOffset + 1;
+        indices[offset + 2] = indexOffset + 2;
+        indices[offset + 3] = indexOffset + 2;
+        indices[offset + 4] = indexOffset + 1;
+        indices[offset + 5] = indexOffset + 3;
+        indexOffset += 4;
+      }
+      gl.bindTexture(gl.TEXTURE_2D, this.currentTexture);
+      gl.blendFunc(this.blendSrcFactor, this.blendDstFactor);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(this.aVertexPosition, 3, gl.FLOAT, false, this.vertexBufferSize, 0);
+      gl.vertexAttribPointer(this.aTextureCoord, 2, gl.FLOAT, false, this.vertexBufferSize, 12);
+      gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, this.vertexBufferSize, 20);
+      gl.enableVertexAttribArray(this.aVertexPosition);
+      gl.enableVertexAttribArray(this.aTextureCoord);
+      gl.enableVertexAttribArray(this.aColor);
+      gl.uniformMatrix4fv(this.uMatrix, false, this.matrix);
+      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+      ++this.drawCalls;
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+      this.mesh = [];
     };
 
     WebGLRendererFactory.prototype.setBlendMode = function(blendMode) {
@@ -8248,16 +8385,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.maskMode = maskMode;
     };
 
-    WebGLRendererFactory.prototype.generateMask = function() {
-      var framebuffer, framebuffers, gl, i, texture, textures, triangles, uv, vertices, _i;
+    WebGLRendererFactory.prototype.generateMask = function(gl) {
+      var buffer, framebuffer, framebuffers, i, indices, texture, textures, _i;
 
-      if (this.maskTexture != null) {
+      if ((this.maskTexture != null) && this.maskTextureWidth === this.w && this.maskTextureHeight === this.h) {
         return;
       }
       this.maskMatrix = new Float32Array([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, this.h, 0, 1]);
-      this.maskColor = new Float32Array([1, 1, 1, 1]);
-      gl = this.stageContext;
       this.maskTexture = gl.createTexture();
+      this.maskTextureWidth = this.w;
+      this.maskTextureHeight = this.h;
       this.layerTexture = gl.createTexture();
       textures = [this.maskTexture, this.layerTexture];
       this.maskFrameBuffer = gl.createFramebuffer();
@@ -8267,40 +8404,28 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         texture = textures[i];
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.w, this.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        this.setTexParameter(gl);
         framebuffer = framebuffers[i];
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       }
-      vertices = new Float32Array([this.w, this.h, 0, this.w, 0, 0, 0, this.h, 0, 0, 0, 0]);
+      buffer = new Float32Array([this.w, this.h, 0, 1, 1, 1, 1, 1, 1, this.w, 0, 0, 1, 0, 1, 1, 1, 1, 0, this.h, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1]);
       this.maskVertexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, this.maskVertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-      uv = new Float32Array([1, 1, 1, 0, 0, 1, 0, 0]);
-      this.maskUVBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.maskUVBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
-      triangles = new Uint8Array([0, 1, 2, 2, 1, 3]);
-      this.maskTrianglesBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.maskTrianglesBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, triangles, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+      indices = new Uint8Array([0, 1, 2, 2, 1, 3]);
+      this.maskIndexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.maskIndexBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     };
 
-    WebGLRendererFactory.prototype.deleteMask = function() {
-      var gl;
-
+    WebGLRendererFactory.prototype.deleteMask = function(gl) {
       if (this.maskTexture == null) {
         return;
       }
-      gl = this.stageContext;
       gl.deleteBuffer(this.maskVertexBuffer);
-      gl.deleteBuffer(this.maskUVBuffer);
-      gl.deleteBuffer(this.maskTrianglesBuffer);
+      gl.deleteBuffer(this.maskIndexBuffer);
       gl.deleteFramebuffer(this.maskFrameBuffer);
       gl.deleteFramebuffer(this.layerFrameBuffer);
       this.maskFrameBuffer = null;
@@ -8311,25 +8436,26 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.layerTexture = null;
     };
 
-    WebGLRendererFactory.prototype.renderMask = function() {
-      var gl;
-
-      gl = this.stageContext;
+    WebGLRendererFactory.prototype.renderMask = function(gl) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.maskVertexBuffer);
-      gl.vertexAttribPointer(this.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.maskUVBuffer);
-      gl.vertexAttribPointer(this.aTextureCoord, 2, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(this.aVertexPosition, 3, gl.FLOAT, false, this.vertexBufferSize, 0);
+      gl.vertexAttribPointer(this.aTextureCoord, 2, gl.FLOAT, false, this.vertexBufferSize, 12);
+      gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, this.vertexBufferSize, 20);
+      gl.enableVertexAttribArray(this.aVertexPosition);
+      gl.enableVertexAttribArray(this.aTextureCoord);
+      gl.enableVertexAttribArray(this.aColor);
       gl.uniformMatrix4fv(this.uMatrix, false, this.maskMatrix);
-      gl.uniform4fv(this.uColor, this.maskColor);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.maskTrianglesBuffer);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.maskIndexBuffer);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.maskFrameBuffer);
-      gl.blendFunc(this.srcFactor, gl.ZERO);
+      gl.blendFunc(this.maskSrcFactor, gl.ZERO);
       gl.bindTexture(gl.TEXTURE_2D, this.layerTexture);
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+      ++this.drawCalls;
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.bindTexture(gl.TEXTURE_2D, this.maskTexture);
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+      ++this.drawCalls;
     };
 
     WebGLRendererFactory.prototype.constructBitmap = function(lwf, objectId, bitmap) {
@@ -8391,11 +8517,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   WebGLBitmapContext = (function() {
     function WebGLBitmapContext(factory, data, bitmapEx) {
-      var bh, bu, bv, bw, d, dh, dw, filename, fragment, gl, h, height, image, scale, texdata, th, triangles, tw, u, u0, u1, uv, v, v0, v1, vertices, w, x, x0, x1, y, y0, y1;
+      var bh, bu, bv, bw, d, dh, dw, filename, fragment, gl, h, image, scale, texdata, th, tw, u, u0, u1, v, v0, v1, w, x, x0, x1, y, y0, y1;
 
       this.factory = factory;
       this.data = data;
-      gl = this.factory.stageContext;
       fragment = data.textureFragments[bitmapEx.textureFragmentId];
       texdata = data.textures[fragment.textureId];
       this.preMultipliedAlpha = texdata.format === Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA;
@@ -8406,14 +8531,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       } else {
         image = this.factory.cache[filename];
         scale = 1 / texdata.scale;
+        gl = this.factory.stageContext;
         this.texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        this.factory.setTexParameter(gl);
         this.factory.textures[filename] = [this.texture, scale];
       }
       tw = texdata.width;
@@ -8434,15 +8556,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       v += bv;
       w *= bw;
       h *= bh;
-      height = h;
       x0 = x * scale;
       y0 = y * scale;
       x1 = (x + w) * scale;
       y1 = (y + h) * scale;
-      vertices = new Float32Array([x1, y1, 0, x1, y0, 0, x0, y1, 0, x0, y0, 0]);
-      this.verticesBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      this.vertices = [
+        {
+          x: x1,
+          y: y1
+        }, {
+          x: x1,
+          y: y0
+        }, {
+          x: x0,
+          y: y1
+        }, {
+          x: x0,
+          y: y0
+        }
+      ];
       dw = 2.0 * tw;
       dh = 2.0 * th;
       if (fragment.rotated === 0) {
@@ -8450,32 +8582,45 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         v0 = (2 * v + 1) / dh;
         u1 = u0 + (w * 2 - 2) / dw;
         v1 = v0 + (h * 2 - 1) / dh;
-        uv = new Float32Array([u1, v1, u1, v0, u0, v1, u0, v0]);
+        this.uv = [
+          {
+            u: u1,
+            v: v1
+          }, {
+            u: u1,
+            v: v0
+          }, {
+            u: u0,
+            v: v1
+          }, {
+            u: u0,
+            v: v0
+          }
+        ];
       } else {
         u0 = (2 * u + 1) / dw;
         v0 = (2 * v + 1) / dh;
         u1 = u0 + (h * 2 - 2) / dw;
         v1 = v0 + (w * 2 - 1) / dh;
-        uv = new Float32Array([u0, v1, u1, v1, u0, v0, u1, v0]);
+        this.uv = [
+          {
+            u: u0,
+            v: v1
+          }, {
+            u: u1,
+            v: v1
+          }, {
+            u: u0,
+            v: v0
+          }, {
+            u: u1,
+            v: v0
+          }
+        ];
       }
-      this.uvBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
-      triangles = new Uint8Array([0, 1, 2, 2, 1, 3]);
-      this.trianglesBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.trianglesBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, triangles, gl.STATIC_DRAW);
     }
 
-    WebGLBitmapContext.prototype.destruct = function() {
-      var gl;
-
-      gl = this.factory.stageContext;
-      gl.deleteTexture(this.texture);
-      gl.deleteBuffer(this.verticesBuffer);
-      gl.deleteBuffer(this.uvBuffer);
-      gl.deleteBuffer(this.trianglesBuffer);
-    };
+    WebGLBitmapContext.prototype.destruct = function() {};
 
     return WebGLBitmapContext;
 
@@ -8484,8 +8629,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   WebGLBitmapRenderer = (function() {
     function WebGLBitmapRenderer(context) {
       this.context = context;
-      this.matrix = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-      this.color = new Float32Array([0, 0, 0, 0]);
     }
 
     WebGLBitmapRenderer.prototype.destruct = function() {};
@@ -8493,58 +8636,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebGLBitmapRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
       var factory;
 
-      if (!visible) {
+      if (!visible || c.multi.alpha === 0) {
         return;
       }
       factory = this.context.factory;
       factory.addCommand(renderingIndex, {
-        renderer: this,
+        renderer: null,
+        context: this.context,
+        texture: this.context.texture,
         matrix: m,
         colorTransform: c,
         blendMode: factory.blendMode,
         maskMode: factory.maskMode
       });
-    };
-
-    WebGLBitmapRenderer.prototype.renderCommand = function(m, c, renderingIndex, blendMode) {
-      var alpha, factory, gc, gl, gm, src;
-
-      factory = this.context.factory;
-      gl = factory.stageContext;
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.context.verticesBuffer);
-      gl.vertexAttribPointer(factory.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.context.uvBuffer);
-      gl.vertexAttribPointer(factory.aTextureCoord, 2, gl.FLOAT, false, 0, 0);
-      gm = this.matrix;
-      gm[0] = m.scaleX;
-      gm[1] = m.skew1;
-      gm[4] = m.skew0;
-      gm[5] = m.scaleY;
-      gm[12] = m.translateX;
-      gm[13] = m.translateY;
-      gm[14] = factory.farZ + renderingIndex;
-      gl.uniformMatrix4fv(factory.uMatrix, false, gm);
-      gc = this.color;
-      if (this.context.preMultipliedAlpha) {
-        src = gl.ONE;
-        alpha = c.multi.alpha;
-        gc[0] = c.multi.red * alpha;
-        gc[1] = c.multi.green * alpha;
-        gc[2] = c.multi.blue * alpha;
-        gc[3] = alpha;
-      } else {
-        src = gl.SRC_ALPHA;
-        gc[0] = c.multi.red;
-        gc[1] = c.multi.green;
-        gc[2] = c.multi.blue;
-        gc[3] = c.multi.alpha;
-      }
-      gl.blendFunc(src, blendMode === "add" ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA);
-      gl.uniform4fv(factory.uColor, gc);
-      gl.bindTexture(gl.TEXTURE_2D, this.context.texture);
-      gl.uniform1i(factory.uTexture, 0);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.context.trianglesBuffer);
-      gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
     };
 
     return WebGLBitmapRenderer;
@@ -8560,9 +8664,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     WebGLResourceCache.prototype.newFactory = function(settings, cache, data) {
-      var _ref3;
+      var _ref3, _ref4;
 
-      return new WebGLRendererFactory(data, this, cache, settings.stage, (_ref3 = settings.textInSubpixel) != null ? _ref3 : false);
+      return new WebGLRendererFactory(data, this, cache, settings.stage, (_ref3 = settings["textInSubpixel"]) != null ? _ref3 : false, (_ref4 = settings["needsClear"]) != null ? _ref4 : true);
     };
 
     return WebGLResourceCache;
@@ -8641,7 +8745,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.fitText(line, words, lineStart, imid + 1, imax);
       }
       if (w >= this.lineWidth) {
-        return this.fitText(line, words, lineStart, imin, imid - 1);
+        this.fitText(line, words, lineStart, imin, imid - 1);
       }
     };
 
@@ -8880,7 +8984,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       ctx.textBaseline = "bottom";
       this.canvas = canvas;
       this.canvasContext = ctx;
-      return this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
+      this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
     };
 
     return HTML5TextRenderer;
@@ -8891,52 +8995,56 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     __extends(WebGLTextContext, _super);
 
     function WebGLTextContext(factory, data, text) {
-      var dh, dw, gl, h, th, triangles, tw, u, u0, u1, uv, v, v0, v1, vertices, w, x, x0, x1, y, y0, y1;
+      var dh, dw, th, tw, u0, u1, v0, v1, x0, x1, y0, y1;
 
       this.factory = factory;
       this.data = data;
       this.text = text;
       WebGLTextContext.__super__.constructor.apply(this, arguments);
-      gl = this.factory.stageContext;
+      this.preMultipliedAlpha = false;
       tw = this.text.width;
       th = this.text.height;
-      x = 0;
-      y = 0;
-      u = 0;
-      v = 0;
-      w = tw;
-      h = th;
-      x0 = x;
-      y0 = y;
-      x1 = x + w;
-      y1 = y + h;
-      vertices = new Float32Array([x1, y1, 0, x1, y0, 0, x0, y1, 0, x0, y0, 0]);
-      this.verticesBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      x0 = 0;
+      y0 = 0;
+      x1 = tw;
+      y1 = th;
+      this.vertices = [
+        {
+          x: x1,
+          y: y1
+        }, {
+          x: x1,
+          y: y0
+        }, {
+          x: x0,
+          y: y1
+        }, {
+          x: x0,
+          y: y0
+        }
+      ];
       dw = 2.0 * tw;
       dh = 2.0 * th;
-      u0 = (2 * u + 1) / dw;
-      v0 = (2 * v + 1) / dh;
-      u1 = u0 + (w * 2 - 2) / dw;
-      v1 = v0 + (h * 2 - 1) / dh;
-      uv = new Float32Array([u1, v1, u1, v0, u0, v1, u0, v0]);
-      this.uvBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
-      triangles = new Uint16Array([0, 1, 2, 2, 1, 3]);
-      this.trianglesBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.trianglesBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, triangles, gl.STATIC_DRAW);
+      u0 = 1 / dw;
+      v0 = 1 / dh;
+      u1 = u0 + (tw * 2 - 2) / dw;
+      v1 = v0 + (th * 2 - 1) / dh;
+      this.uv = [
+        {
+          u: u1,
+          v: v1
+        }, {
+          u: u1,
+          v: v0
+        }, {
+          u: u0,
+          v: v1
+        }, {
+          u: u0,
+          v: v0
+        }
+      ];
     }
-
-    WebGLTextContext.prototype.destruct = function() {
-      gl.bindBuffer(gl.ARRAY_BUFFER, null);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-      gl.deleteBuffer(this.verticesBuffer);
-      gl.deleteBuffer(this.uvBuffer);
-      gl.deleteBuffer(this.trianglesBuffer);
-    };
 
     return WebGLTextContext;
 
@@ -8950,8 +9058,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.context = context;
       this.textObject = textObject;
       WebGLTextRenderer.__super__.constructor.apply(this, arguments);
-      this.glMatrix = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-      this.glColor = new Float32Array([0, 0, 0, 0]);
     }
 
     WebGLTextRenderer.prototype.destruct = function() {
@@ -8973,7 +9079,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       WebGLTextRenderer.__super__.render.apply(this, arguments);
       factory = this.context.factory;
       factory.addCommand(renderingIndex, {
-        renderer: this,
+        renderer: null,
+        context: this.context,
+        texture: this.texture,
         matrix: m,
         colorTransform: c,
         blendMode: factory.blendMode,
@@ -8981,56 +9089,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       });
     };
 
-    WebGLTextRenderer.prototype.renderCommand = function(m, c, renderingIndex, blendMode) {
-      var factory, gc, gl, gm, src, textInSubpixel;
-
-      factory = this.context.factory;
-      gl = factory.stageContext;
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.context.verticesBuffer);
-      gl.vertexAttribPointer(factory.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.context.uvBuffer);
-      gl.vertexAttribPointer(factory.aTextureCoord, 2, gl.FLOAT, false, 0, 0);
-      textInSubpixel = factory.textInSubpixel;
-      gm = this.glMatrix;
-      gm[0] = m.scaleX;
-      gm[1] = m.skew1;
-      gm[4] = m.skew0;
-      gm[5] = m.scaleY;
-      gm[12] = textInSubpixel ? m.translateX : Math.round(m.translateX);
-      gm[13] = textInSubpixel ? m.translateY : Math.round(m.translateY);
-      gm[14] = factory.farZ + renderingIndex;
-      gl.uniformMatrix4fv(factory.uMatrix, false, gm);
-      gc = this.glColor;
-      src = gl.SRC_ALPHA;
-      gc[0] = c.multi.red;
-      gc[1] = c.multi.green;
-      gc[2] = c.multi.blue;
-      gc[3] = c.multi.alpha;
-      gl.blendFunc(src, blendMode === "add" ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA);
-      gl.uniform4fv(factory.uColor, gc);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, this.texture);
-      gl.uniform1i(factory.uTexture, 0);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.context.trianglesBuffer);
-      gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-    };
-
     WebGLTextRenderer.prototype.renderText = function(textColor) {
       var gl;
 
       WebGLTextRenderer.__super__.renderText.apply(this, arguments);
       gl = this.context.factory.stageContext;
-      if (this.texture) {
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.deleteTexture(this.texture);
+      if (this.texture == null) {
+        this.texture = gl.createTexture();
       }
-      this.texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.canvas);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.context.factory.setTexParameter(gl);
     };
 
     return WebGLTextRenderer;
@@ -9043,6 +9112,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     global["LWF"]["useWebGLRenderer"] = function() {
       return global["LWF"]["ResourceCache"] = WebGLResourceCache;
     };
+    global["LWF"]["LWF"]["useWebGLRenderer"] = global["LWF"]["useWebGLRenderer"];
   }
 
   WebGLRendererFactory.prototype["convertColor"] = WebGLRendererFactory.prototype.convertColor;

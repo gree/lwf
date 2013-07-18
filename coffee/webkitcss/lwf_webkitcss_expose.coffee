@@ -24,6 +24,8 @@ if typeof global isnt "undefined"
 
   global["LWF"]["useWebkitCSSRenderer"] = ->
     global["LWF"]["ResourceCache"] = WebkitCSSResourceCache
+  global["LWF"]["LWF"]["useWebkitCSSRenderer"] =
+    global["LWF"]["useWebkitCSSRenderer"]
 
 WebkitCSSRendererFactory.prototype["convertColor"] =
   WebkitCSSRendererFactory.prototype.convertColor

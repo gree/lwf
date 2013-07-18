@@ -111,7 +111,6 @@ Button.prototype["addEventHandler"] = Button.prototype.addEventHandler
 Button.prototype["addEventListener"] = Button.prototype.addEventHandler
 Button.prototype["clearEventHandler"] = Button.prototype.clearEventHandler
 Button.prototype["clearEventListener"] = Button.prototype.clearEventHandler
-Button.prototype["dispatchEvent"] = Button.prototype.dispatchEvent
 Button.prototype["removeEventHandler"] = Button.prototype.removeEventHandler
 Button.prototype["removeEventListener"] = Button.prototype.removeEventHandler
 Button.prototype["setEventHandler"] = Button.prototype.setEventHandler

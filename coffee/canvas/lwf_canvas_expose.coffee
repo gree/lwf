@@ -24,6 +24,7 @@ if typeof global isnt "undefined"
 
   global["LWF"]["useCanvasRenderer"] = ->
     global["LWF"]["ResourceCache"] = CanvasResourceCache
+  global["LWF"]["LWF"]["useCanvasRenderer"] = global["LWF"]["useCanvasRenderer"]
 
 CanvasRendererFactory.prototype["convertColor"] =
   CanvasRendererFactory.prototype.convertColor
