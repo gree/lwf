@@ -68,6 +68,94 @@ function getDirectories(){
     directories = FLfile.listFolder(folderPath, 'directories');
 }
 
+function getAllFiles(path, prefix){
+    var files = FLfile.listFolder(path, 'files');
+    var directories = FLfile.listFolder(path, 'directories');
+    var lgh = directories.length;
+    for(var i = 0; i < lgh; i++){
+        var _prefix = directories[i] + '/';
+        var folderPath = path + '/' + directories[i];
+        files = files.concat(getAllFiles(folderPath, _prefix));
+    }
+    if(typeof prefix !== 'undefined'){
+        lgh = files.length;
+        for(i = 0; i < lgh; i++){
+            files[i] = prefix + files[i];
+        }
+    }
+    return files;
+}
+
+function applyIncludeConf(files, confText){
+    fl.trace('applyIncludeConf');
+    var lgh = files.length;
+    for(var i = 0; i < lgh; i++){
+        switch(files[i]){
+            case '_exclude.conf':
+                confText = '_exclude.conf,' + confText;
+                break;
+            case '_first_include.conf':
+                confText = '_first_include.conf,' + confText;
+                break;
+            default:
+                break;
+        }
+    }
+    files = confText.split(',');
+    return files;
+}
+
+function applyExcludeConf(files, confText){
+    fl.trace('applyExcludeConf');
+    var exclude = confText.split(',');
+    var lgh = exclude.length;
+    for(var i = 0; i < lgh; i++){
+        var lgh2 = files.length;
+        for(var j = 0; j < lgh2; j++){
+            fl.trace(files[j]);
+            if(exclude[i] === files[j]){
+                files.splice(j, 1);
+                j--;
+                lgh2--;
+            }
+        }
+    }
+    return files;
+}
+
+function applyFirstIncludeConf(files, confText){
+    fl.trace('applyFirstIncludeConf');
+    var firstInclude = confText.split(',');
+    var firstFiles = [];
+    var lgh = firstInclude.length;
+    for(var i = 0; i < lgh; i++){
+        var lgh2 = files.length;
+        for(var j = 0; j < lgh2; j++){
+            if(firstInclude[i] === files[j]){
+                files[j];
+                firstFiles.push(files[j]);
+                files.splice(j, 1);
+                j--;
+                lgh2--;
+            }
+        }
+    }
+    files = firstFiles.concat(files);
+    return files;
+}
+
+function checkConfFile(files, conf, directory, func){
+    var lgh = files.length;
+    for(var i = 0; i < lgh; i++){
+        if(files[i] === conf){
+            var confText = getScriptFile(directory + conf);
+            confText = deleteNewline(confText);
+            files = func(files, confText);
+        }
+    }
+    return files;
+}
+
 function createFilesData(){
     var lgh = files.length;
     for(var i = 0; i < lgh; i++){
@@ -84,17 +172,15 @@ function createDirectoriesData(){
         var lgh2 = frameDirectories.length;
         for(var j = 0; j < lgh2; j++){
             var framePath = mcPath + '/' + frameDirectories[j];
-            var jsFiles = FLfile.listFolder(framePath, 'files');
+            var jsFiles = getAllFiles(framePath);
+            var directory = [directories[i], frameDirectories[j]].join('/') + '/';
+            jsFiles = checkConfFile(jsFiles, '_include.conf', directory, applyIncludeConf);
+            fl.trace(jsFiles);
+            jsFiles = checkConfFile(jsFiles, '_exclude.conf', directory, applyExcludeConf);
+            fl.trace(jsFiles);
+            jsFiles = checkConfFile(jsFiles, '_first_include.conf', directory, applyFirstIncludeConf);
+            fl.trace(jsFiles);
             var lgh3 = jsFiles.length;
-            for(var n = 0; n < lgh3; n++){
-                if(jsFiles[n] === '_include.conf'){
-                    var directory = [directories[i], frameDirectories[j]].join('/');
-                    var conf = getScriptFile(directory + '/_include.conf');
-                    conf = deleteNewline(conf);
-                    jsFiles = conf.split(',');
-                }
-            }
-            lgh3 = jsFiles.length;
             for(n = 0; n < lgh3; n++){
                 var obj = createFilesObject([directories[i], frameDirectories[j], jsFiles[n]]);
                 if(typeof obj !== 'undefined') includeData.push(obj);
@@ -132,6 +218,7 @@ function createFilesObject(param){
         if(obj.type !== null) obj.layerName += suffix[obj.type];
         obj.option = deleteFileExtention(param[2]);
     }
+    obj.fileName = deleteNewline(obj.fileName);
     obj.script = getScriptFile(obj.fileName);
     if(obj.script === ''){
         obj.traceName[0] += '\n -> [Warning] not found or empty';
@@ -146,7 +233,7 @@ function deleteFileExtention(str){
 }
 
 function deleteNewline(str){
-   var newStr = str.replace(/\r\n/g, "");
+   var newStr = str.replace(/(\r)*\n/g, "");
    return newStr;
  }
 
