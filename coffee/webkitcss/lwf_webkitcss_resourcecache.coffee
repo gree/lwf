@@ -388,6 +388,8 @@ class WebkitCSSResourceCache
       Utility.scaleMatrix(m, new Matrix(), 1, x, y)
       ctx.setTransform(
         m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
+    else
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih)
     return
 
@@ -409,8 +411,8 @@ class WebkitCSSResourceCache
     if d?
       scale = image.width / texture.width
       for o in d
-        x = Math.round(o.x * scale)
-        y = Math.round(o.y * scale)
+        x = 0
+        y = 0
         u = Math.round(o.u * scale)
         v = Math.round(o.v * scale)
         w = Math.round((o.w ? texture.width) * scale)
@@ -451,6 +453,7 @@ class WebkitCSSResourceCache
             @drawImage(ctxAdd, image, o, x, y, u, v, h, iw, ih)
             @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
             ctx.globalCompositeOperation = 'lighter'
+            ctx.setTransform(1, 0, 0, 1, 0, 0)
             ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height,
               0, 0, canvasAdd.width, canvasAdd.height)
         ctx.globalCompositeOperation = 'source-over'

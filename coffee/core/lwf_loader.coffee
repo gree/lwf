@@ -500,7 +500,16 @@ class LWFLoader
       labelMap.push map
 
     t.setFilename(data) for t in data.textures
-    t.setFilename(data) for t in data.textureFragments
+
+    bitmapMap = data.bitmapMap
+    for i in [0...data.textureFragments.length]
+      t = data.textureFragments[i]
+      t.setFilename(data)
+      filename = t.filename
+      m = filename.match(/(.+)_atlas_.+_info_.+(_.+){6}/)
+      filename = m[1] if m?
+      bitmapMap[filename] = data.bitmaps.length
+      data.bitmaps.push(new Format.Bitmap(0, i))
 
     return data
 

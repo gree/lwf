@@ -65,7 +65,7 @@ class WebGLBitmapContext
     x1 = (x + w) * scale
     y1 = (y + h) * scale
 
-    @vertices = [
+    @vertexData = [
       {x:x1, y:y1},
       {x:x1, y:y0},
       {x:x0, y:y1},
@@ -101,21 +101,28 @@ class WebGLBitmapContext
 
 class WebGLBitmapRenderer
   constructor:(@context) ->
+    @matrixForRender = new Matrix(0, 0, 0, 0, 0, 0)
+    @meshCache = new Float32Array(4 * 9)
+    @cmd = {}
 
   destruct: ->
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
 
+    matrixChanged = @matrixForRender.setWithComparing(m)
+
     factory = @context.factory
-    factory.addCommand(renderingIndex,
-      renderer:null
-      context:@context
-      texture:@context.texture
-      matrix:m
-      colorTransform:c
-      blendMode:factory.blendMode
-      maskMode:factory.maskMode
-    )
+    cmd = @cmd
+    cmd.renderer = null
+    cmd.context = @context
+    cmd.texture = @context.texture
+    cmd.matrix = m
+    cmd.colorTransform = c
+    cmd.blendMode = factory.blendMode
+    cmd.maskMode = factory.maskMode
+    cmd.meshCache = @meshCache
+    cmd.useMeshCache = !matrixChanged
+    factory.addCommand(renderingIndex, cmd)
     return
 

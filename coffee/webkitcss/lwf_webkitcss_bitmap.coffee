@@ -89,6 +89,7 @@ class WebkitCSSBitmapRenderer
     fragment = @context.fragment
     @matrixForAtlas = new Matrix() if fragment.rotated or
       @context.x isnt 0 or @context.y isnt 0 or @context.scale isnt 1
+    @cmd = {}
 
   destructor: ->
     if @node?
@@ -146,11 +147,11 @@ class WebkitCSSBitmapRenderer
 
     @alpha = c.multi.alpha
     @zIndex = renderingIndex
-    @context.factory.addCommand(renderingIndex, {
-      isBitmap:true
-      renderer:@
-      matrix:m
-      maskMode:maskMode
-    })
+    cmd = @cmd
+    cmd.isBitmap = true
+    cmd.renderer = @
+    cmd.matrix = m
+    cmd.maskMode = maskMode
+    @context.factory.addCommand(renderingIndex, cmd)
     return
 

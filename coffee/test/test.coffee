@@ -194,10 +194,7 @@ window.onload = ->
 
   if window.location.search.match(/renderer=(canvas|webgl)/)
     renderer = RegExp.$1
-    if renderer is "webgl"
-      loadScript("lwf_webgl.js", -> startGame("webgl"))
-    else
-      loadScript("lwf.js", -> startGame("canvas"))
+    loadScript("lwf.js", -> startGame(renderer))
     stage = document.createElement("canvas")
     stage.style.position = "absolute"
     stage.width = 0

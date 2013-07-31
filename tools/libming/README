@@ -1,0 +1,37 @@
+
+MING THE MODULE
+
+Last updated 14th January 2008.
+
+Ming is a Flash (SWF) output library.  It can be used from PHP, Perl,
+Ruby, Python, C, C++, Java, and probably more on the way.
+
+It comprises a lot of Flash functionality, including features of Flash 8.
+
+Specifically, it lets you create: shapes (including morphs), text, sprites
+(aka movie clips), buttons, and actions in flash movies, plus more.
+
+The goal for Ming is to abstract away all of the mundane specifics of the
+SWF file format.
+
+Ming also includes a PHP wrapper which wraps Ming objects in PHP objects.
+Pretty cool.
+
+The Python wrapper has been updated to mirror the functionality of the PHP
+interface, so you should be able to use the PHP documentation without
+getting terribly confused now.
+
+There's a Perl wrapper now, feedback about it (and enhancements) are most
+welcome.
+
+The C++ wrapper is just one big header file.  But it seems to work pretty
+well.  Check the examples directory.
+
+Ming is released under the LGPL. See file LICENSE for the gory details.
+The command-line actionscript compiler is released under the GPL. See
+file LICENSE_GPL2 for details.
+
+For installation instructions, see the INSTALL text file.
+
+The Ming Development Team
+http://www.libming.org

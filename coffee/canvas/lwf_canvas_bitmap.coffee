@@ -76,6 +76,7 @@ class CanvasBitmapRenderer
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
     @matrixForAtlas = new Matrix() if fragment.rotated or
       @context.x isnt 0 or @context.y isnt 0 or @context.scale isnt 1
+    @cmd = {}
 
   destruct: ->
 
@@ -99,16 +100,16 @@ class CanvasBitmapRenderer
     @alpha = c.multi.alpha
 
     fragment = @context.fragment
-    @context.factory.addCommand(renderingIndex, {
-      alpha:@alpha,
-      blendMode:@context.factory.blendMode,
-      maskMode:@context.factory.maskMode,
-      matrix:m,
-      image:@context.image,
-      u:@context.u,
-      v:@context.v,
-      w:@context.w,
-      h:@context.h
-    })
+    cmd = @cmd
+    cmd.alpha = @alpha
+    cmd.blendMode = @context.factory.blendMode
+    cmd.maskMode = @context.factory.maskMode
+    cmd.matrix = m
+    cmd.image = @context.image
+    cmd.u = @context.u
+    cmd.v = @context.v
+    cmd.w = @context.w
+    cmd.h = @context.h
+    @context.factory.addCommand(renderingIndex, cmd)
     return
 

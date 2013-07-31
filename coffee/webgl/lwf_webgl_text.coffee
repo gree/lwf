@@ -32,7 +32,7 @@ class WebGLTextContext extends HTML5TextContext
     x1 = tw
     y1 = th
 
-    @vertices = [
+    @vertexData = [
       {x:x1, y:y1},
       {x:x1, y:y0},
       {x:x0, y:y1},
@@ -56,11 +56,16 @@ class WebGLTextContext extends HTML5TextContext
 class WebGLTextRenderer extends HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
     super
+    @meshCache = new Float32Array(4 * 9)
+    @cmd = {}
 
   destruct: ->
     gl = @context.factory.stageContext
     gl.deleteTexture(@texture) if @texture
     return
+
+  needsScale: ->
+    return false
 
   render:(m, c, renderingIndex, @renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
@@ -68,15 +73,17 @@ class WebGLTextRenderer extends HTML5TextRenderer
     super
 
     factory = @context.factory
-    factory.addCommand(renderingIndex,
-      renderer:null
-      context:@context
-      texture:@texture
-      matrix:m
-      colorTransform:c
-      blendMode:factory.blendMode
-      maskMode:factory.maskMode
-    )
+    cmd = @cmd
+    cmd.renderer = null
+    cmd.context = @context
+    cmd.texture = @texture
+    cmd.matrix = @matrix
+    cmd.colorTransform = c
+    cmd.blendMode = factory.blendMode
+    cmd.maskMode = factory.maskMode
+    cmd.meshCache = @meshCache
+    cmd.useMeshCache = !@matrixChanged
+    factory.addCommand(renderingIndex, cmd)
     return
 
   renderText:(textColor) ->

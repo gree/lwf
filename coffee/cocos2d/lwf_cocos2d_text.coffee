@@ -55,7 +55,7 @@ class Cocos2dTextRenderer
       else # Align.VERTICAL_TOP
         verticalAlign = cc.VERTICAL_TEXT_ALIGNMENT_TOP
 
-    scale = @lwf.scaleByStage
+    scale = @lwf.textScale
     @label = cc.LWFLabel.create("", @context.fontName,
       @context.textProperty.fontHeight * scale,
       cc.size(@context.text.width * scale, @context.text.height * scale),
@@ -106,7 +106,7 @@ class Cocos2dTextRenderer
 
     if @matrix.setWithComparing(m)
       m = Utility.scaleMatrix(
-        @matrixForScale, @matrix, 1 / @lwf.scaleByStage, 0, 0)
+        @matrixForScale, @matrix, 1 / @lwf.textScale, 0, 0)
       unless @context.factory.textInSubpixel
         m.translateX = Math.round(m.translateX)
         m.translateY = Math.round(m.translateY)

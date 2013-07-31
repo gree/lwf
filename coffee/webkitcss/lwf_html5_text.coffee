@@ -40,10 +40,11 @@ class HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
     @str = @textObject.parent[@textObject.name] ? @context.str
     @str = String(@str) if @str?
-    @matrixForScale = new Matrix()
+    @matrixForCheck = new Matrix(0, 0, 0, 0, 0, 0)
+    @matrix = new Matrix()
     @color = new Color
     @textRendered = false
-    @scaleByStage = @lwf.scaleByStage
+    @textScale = @lwf.textScale
     @initCanvas()
 
   destruct: ->
@@ -118,7 +119,7 @@ class HTML5TextRenderer
     context = @context
     canvas = @canvas
     ctx = @canvasContext
-    scale = @lwf.scaleByStage
+    scale = @lwf.textScale
     lines = @adjustText(@str.split("\n"))
 
     property = context.textProperty
@@ -184,12 +185,19 @@ class HTML5TextRenderer
           offset += @canvasContext.measureText(c).width + @letterSpacing
     return
 
+  needsScale: ->
+    return true
+
   render:(m, c, renderingIndex, renderingCount, visible) ->
-    m = Utility.scaleMatrix(@matrixForScale, m, 1 / @lwf.scaleByStage, 0, 0)
-    unless @context.factory.textInSubpixel
-      m.translateX = Math.round(m.translateX)
-      m.translateY = Math.round(m.translateY)
-    @matrix = m
+    @matrixChanged = @matrixForCheck.setWithComparing(m)
+    if @matrixChanged
+      if @needsScale()
+        m = Utility.scaleMatrix(@matrix, m, 1 / @lwf.textScale, 0, 0)
+      else
+        m = Utility.copyMatrix(@matrix, m)
+      unless @context.factory.textInSubpixel
+        m.translateX = Math.round(m.translateX)
+        m.translateY = Math.round(m.translateY)
 
     red = @color.red
     green = @color.green
@@ -208,17 +216,17 @@ class HTML5TextRenderer
       @str = str
 
     scaleChanged = false
-    if @scaleByStage isnt @lwf.scaleByStage
+    if @textScale isnt @lwf.textScale
       scaleChanged = true
       @initCanvas()
-      @scaleByStage = @lwf.scaleByStage
+      @textScale = @lwf.textScale
 
     @renderText(c) if !@textRendered or
       colorChanged or strChanged or scaleChanged
     return
 
   initCanvas: ->
-    scale = @lwf.scaleByStage
+    scale = @lwf.textScale
     property = @context.textProperty
     @leading = property.leading * scale
     @fontHeight = property.fontHeight * scale

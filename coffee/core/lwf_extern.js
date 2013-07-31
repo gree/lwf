@@ -110,6 +110,20 @@ function Button() {}
 Button.prototype.hitX;
 Button.prototype.hitY;
 
+function BitmapClip() {}
+BitmapClip.prototype.alpha;
+BitmapClip.prototype.depth;
+BitmapClip.prototype.height;
+BitmapClip.prototype.lwf;
+BitmapClip.prototype.regX;
+BitmapClip.prototype.regY;
+BitmapClip.prototype.rotation;
+BitmapClip.prototype.scaleX;
+BitmapClip.prototype.scaleY;
+BitmapClip.prototype.width;
+BitmapClip.prototype.x;
+BitmapClip.prototype.y;
+
 function Point() {}
 Point.prototype.x;
 Point.prototype.y;

@@ -1,0 +1,5 @@
+Makefile
+lex.swf4.c
+swf4compiler.tab.c
+swf4compiler.tab.h
+*.o

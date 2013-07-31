@@ -18,88 +18,253 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
+class TypedArray
+  @available: typeof Float32Array isnt 'undefined'
+
 class Point
   constructor:(@x = 0, @y = 0) ->
 
 class Translate
-  constructor:(@translateX = 0, @translateY = 0) ->
+  constructor:(translateX = 0, translateY = 0) ->
+    @_ = if TypedArray.available then new Float32Array(2) else []
+    @_[0] = translateX
+    @_[1] = translateY
+
+  getTranslateX: ->
+    return @_[0]
+
+  setTranslateX:(v) ->
+    @_[0] = v
+    return
+
+  getTranslateY: ->
+    return @_[1]
+
+  setTranslateY:(v) ->
+    @_[1] = v
+    return
+
+if typeof(Translate.prototype.__defineGetter__) isnt "undefined"
+  Translate.prototype.__defineGetter__("translateX", -> @getTranslateX())
+  Translate.prototype.__defineSetter__("translateX", (v) -> @setTranslateX(v))
+  Translate.prototype.__defineGetter__("translateY", -> @getTranslateY())
+  Translate.prototype.__defineSetter__("translateY", (v) -> @setTranslateY(v))
+else if typeof(Object.defineProperty) isnt "undefined"
+  Object.defineProperty(Translate.prototype, "translateX",
+    get: -> @getTranslateX()
+    set: (v) -> @setTranslateX(v))
+  Object.defineProperty(Translate.prototype, "translateY",
+    get: -> @getTranslateY()
+    set: (v) -> @setTranslateY(v))
 
 class Matrix
-  constructor:(@scaleX, @scaleY, @skew0, @skew1, @translateX, @translateY) ->
-    @clear() unless @scaleX?
+  constructor:(scaleX, scaleY, skew0, skew1, translateX, translateY) ->
+    @_ = if TypedArray.available then new Float32Array(6) else []
+    if scaleX?
+      @_[0] = scaleX
+      @_[1] = skew1
+      @_[2] = skew0
+      @_[3] = scaleY
+      @_[4] = translateX
+      @_[5] = translateY
+    else
+      @clear()
 
   clear: ->
-    @scaleX = 1
-    @scaleY = 1
-    @skew0 = 0
-    @skew1 = 0
-    @translateX = 0
-    @translateY = 0
+    @_[0] = 1 # scaleX
+    @_[1] = 0 # skew1
+    @_[2] = 0 # skew0
+    @_[3] = 1 # scaleY
+    @_[4] = 0 # translateX
+    @_[5] = 0 # translateX
     return
 
   set:(m) ->
-    @scaleX = m.scaleX
-    @scaleY = m.scaleY
-    @skew0 = m.skew0
-    @skew1 = m.skew1
-    @translateX = m.translateX
-    @translateY = m.translateY
+    for i in [0...6]
+      @_[i] = m._[i]
     return @
 
   setWithComparing:(m) ->
     return false if m is null
 
-    scaleX = m.scaleX
-    scaleY = m.scaleY
-    skew0 = m.skew0
-    skew1 = m.skew1
-    translateX = m.translateX
-    translateY = m.translateY
     changed = false
-    if @scaleX isnt scaleX
-      @scaleX = scaleX
-      changed = true
-    if @scaleY isnt scaleY
-      @scaleY = scaleY
-      changed = true
-    if @skew0 isnt skew0
-      @skew0 = skew0
-      changed = true
-    if @skew1 isnt skew1
-      @skew1 = skew1
-      changed = true
-    if @translateX isnt translateX
-      @translateX = translateX
-      changed = true
-    if @translateY isnt translateY
-      @translateY = translateY
-      changed = true
+    for i in [0...6]
+      if @_[i] isnt m._[i]
+        @_[i] = m._[i]
+        changed = true
     return changed
 
+  getScaleX: ->
+    return @_[0]
+
+  setScaleX:(v) ->
+    @_[0] = v
+    return
+
+  getSkew1: ->
+    return @_[1]
+
+  setSkew1:(v) ->
+    @_[1] = v
+    return
+
+  getSkew0: ->
+    return @_[2]
+
+  setSkew0:(v) ->
+    @_[2] = v
+    return
+
+  getScaleY: ->
+    return @_[3]
+
+  setScaleY:(v) ->
+    @_[3] = v
+    return
+
+  getTranslateX: ->
+    return @_[4]
+
+  setTranslateX:(v) ->
+    @_[4] = v
+    return
+
+  getTranslateY: ->
+    return @_[5]
+
+  setTranslateY:(v) ->
+    @_[5] = v
+    return
+
+if typeof(Matrix.prototype.__defineGetter__) isnt "undefined"
+  Matrix.prototype.__defineGetter__("scaleX", -> @getScaleX())
+  Matrix.prototype.__defineSetter__("scaleX", (v) -> @setScaleX(v))
+  Matrix.prototype.__defineGetter__("scaleY", -> @getScaleY())
+  Matrix.prototype.__defineSetter__("scaleY", (v) -> @setScaleY(v))
+  Matrix.prototype.__defineGetter__("skew0", -> @getSkew0())
+  Matrix.prototype.__defineSetter__("skew0", (v) -> @setSkew0(v))
+  Matrix.prototype.__defineGetter__("skew1", -> @getSkew1())
+  Matrix.prototype.__defineSetter__("skew1", (v) -> @setSkew1(v))
+  Matrix.prototype.__defineGetter__("translateX", -> @getTranslateX())
+  Matrix.prototype.__defineSetter__("translateX", (v) -> @setTranslateX(v))
+  Matrix.prototype.__defineGetter__("translateY", -> @getTranslateY())
+  Matrix.prototype.__defineSetter__("translateY", (v) -> @setTranslateY(v))
+else if typeof(Object.defineProperty) isnt "undefined"
+  Object.defineProperty(Matrix.prototype, "scaleX",
+    get: -> @getScaleX()
+    set: (v) -> @setScaleX(v))
+  Object.defineProperty(Matrix.prototype, "scaleY",
+    get: -> @getScaleY()
+    set: (v) -> @setScaleY(v))
+  Object.defineProperty(Matrix.prototype, "skew0",
+    get: -> @getSkew0()
+    set: (v) -> @setSkew0(v))
+  Object.defineProperty(Matrix.prototype, "skew1",
+    get: -> @getSkew1()
+    set: (v) -> @setSkew1(v))
+  Object.defineProperty(Matrix.prototype, "translateX",
+    get: -> @getTranslateX()
+    set: (v) -> @setTranslateX(v))
+  Object.defineProperty(Matrix.prototype, "translateY",
+    get: -> @getTranslateY()
+    set: (v) -> @setTranslateY(v))
+
 class Color
-  constructor:(@red, @green, @blue, @alpha) ->
-    unless @red?
-      @red = 0
-      @green = 0
-      @blue = 0
-      @alpha = 0
+  constructor:(red, green, blue, alpha) ->
+    @_ = if TypedArray.available then new Float32Array(4) else []
+    if red?
+      @_[0] = red
+      @_[1] = green
+      @_[2] = blue
+      @_[3] = alpha
+    else
+      @_[0] = 0
+      @_[1] = 0
+      @_[2] = 0
+      @_[3] = 0
 
   set:(r, g, b, a) ->
     if typeof r is "object"
       c = r
-      @red = c.red
-      @green = c.green
-      @blue = c.blue
-      @alpha = c.alpha
+      for i in [0...4]
+        @_[i] = c._[i]
     else
-      @red = r
-      @green = g
-      @blue = b
-      @alpha = a
+      @_[0] = r
+      @_[1] = g
+      @_[2] = b
+      @_[3] = a
     return
 
+  getRed: ->
+    return @_[0]
+
+  setRed:(v) ->
+    @_[0] = v
+    return
+
+  getGreen: ->
+    return @_[1]
+
+  setGreen:(v) ->
+    @_[1] = v
+    return
+
+  getBlue: ->
+    return @_[2]
+
+  setBlue:(v) ->
+    @_[2] = v
+    return
+
+  getAlpha: ->
+    return @_[3]
+
+  setAlpha:(v) ->
+    @_[3] = v
+    return
+
+if typeof(Color.prototype.__defineGetter__) isnt "undefined"
+  Color.prototype.__defineGetter__("red", -> @getRed())
+  Color.prototype.__defineSetter__("red", (v) -> @setRed(v))
+  Color.prototype.__defineGetter__("green", -> @getGreen())
+  Color.prototype.__defineSetter__("green", (v) -> @setGreen(v))
+  Color.prototype.__defineGetter__("blue", -> @getBlue())
+  Color.prototype.__defineSetter__("blue", (v) -> @setBlue(v))
+  Color.prototype.__defineGetter__("alpha", -> @getAlpha())
+  Color.prototype.__defineSetter__("alpha", (v) -> @setAlpha(v))
+else if typeof(Object.defineProperty) isnt "undefined"
+  Object.defineProperty(Color.prototype, "red",
+    get: -> @getRed()
+    set: (v) -> @setRed(v))
+  Object.defineProperty(Color.prototype, "green",
+    get: -> @getGreen()
+    set: (v) -> @setGreen(v))
+  Object.defineProperty(Color.prototype, "blue",
+    get: -> @getBlue()
+    set: (v) -> @setBlue(v))
+  Object.defineProperty(Color.prototype, "alpha",
+    get: -> @getAlpha()
+    set: (v) -> @setAlpha(v))
+
 class AlphaTransform
-  constructor:(@alpha) ->
+  constructor:(alpha) ->
+    @_ = if TypedArray.available then new Float32Array(1) else []
+    @_[0] = alpha
+
+  getAlpha: ->
+    return @_[0]
+
+  setAlpha:(v) ->
+    @_[0] = v
+    return
+
+if typeof(AlphaTransform.prototype.__defineGetter__) isnt "undefined"
+  AlphaTransform.prototype.__defineGetter__("alpha", -> @getAlpha())
+  AlphaTransform.prototype.__defineSetter__("alpha", (v) -> @setAlpha(v))
+else if typeof(Object.defineProperty) isnt "undefined"
+  Object.defineProperty(AlphaTransform.prototype, "alpha",
+    get: -> @getAlpha()
+    set: (v) -> @setAlpha(v))
 
 class ColorTransform
   constructor:(mr, mg, mb, ma, ar, ag, ab, aa) ->
@@ -120,24 +285,12 @@ class ColorTransform
   setWithComparing:(c) ->
     return false if c is null
 
-    cm = c.multi
-    red = cm.red
-    green = cm.green
-    blue = cm.blue
-    alpha = cm.alpha
     changed = false
+    cm = c.multi
     m = @multi
-    if m.red isnt red
-      m.red = red
-      changed = true
-    if m.green isnt green
-      m.green = green
-      changed = true
-    if m.blue isnt blue
-      m.blue = blue
-      changed = true
-    if m.alpha isnt alpha
-      m.alpha = alpha
-      changed = true
+    for i in [0...4]
+      if m._[i] isnt cm._[i]
+        m._[i] = cm._[i]
+        changed = true
     return changed
 

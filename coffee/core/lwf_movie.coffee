@@ -52,42 +52,6 @@ class Movie extends IObject
 
     @property = new Property(lwf)
 
-    if typeof(@.__defineGetter__) isnt "undefined"
-      @.__defineGetter__("x", -> @getX())
-      @.__defineSetter__("x", (v) -> @setX(v))
-      @.__defineGetter__("y", -> @getY())
-      @.__defineSetter__("y", (v) -> @setY(v))
-      @.__defineGetter__("scaleX", -> @getScaleX())
-      @.__defineSetter__("scaleX", (v) -> @setScaleX(v))
-      @.__defineGetter__("scaleY", -> @getScaleY())
-      @.__defineSetter__("scaleY", (v) -> @setScaleY(v))
-      @.__defineGetter__("rotation", -> @getRotation())
-      @.__defineSetter__("rotation", (v) -> @setRotation(v))
-      @.__defineGetter__("alpha", -> @getAlphaProperty())
-      @.__defineSetter__("alpha", (v) -> @setAlphaProperty(v))
-      @.__defineGetter__("currentFrame", -> @currentFrameInternal + 1)
-    else if typeof(Object.defineProperty) isnt "undefined"
-      Object.defineProperty(@, "x",
-        get: -> @getX()
-        set: (v) -> @setX(v))
-      Object.defineProperty(@, "y",
-        get: -> @getY()
-        set: (v) -> @setY(v))
-      Object.defineProperty(@, "scaleX",
-        get: -> @getScaleX()
-        set: (v) -> @setScaleX(v))
-      Object.defineProperty(@, "scaleY",
-        get: -> @getScaleY()
-        set: (v) -> @setScaleY(v))
-      Object.defineProperty(@, "rotation",
-        get: -> @getRotation()
-        set: (v) -> @setRotation(v))
-      Object.defineProperty(@, "alpha",
-        get: -> @getAlphaProperty()
-        set: (v) -> @setAlphaProperty(v))
-      Object.defineProperty(@, "currentFrame",
-        get: -> @currentFrameInternal + 1)
-
     @matrix0 = new Matrix
     @matrix1 = new Matrix
     @colorTransform0 = new ColorTransform
@@ -134,13 +98,13 @@ class Movie extends IObject
   nextFrame: ->
     @jumped = true
     @stop()
-    ++@currentFrameInternal
+    ++@currentFrameInternal if @currentFrameInternal < @totalFrames - 1
     return @
 
   prevFrame: ->
     @jumped = true
     @stop()
-    --@currentFrameInternal
+    --@currentFrameInternal if @currentFrameInternal > 0
     return @
 
   gotoFrame:(frameNo) ->
@@ -325,6 +289,30 @@ class Movie extends IObject
       @parent.detachMovie(@) if @parent?
     else if @lwf.attachName?
       @lwf.parent.detachLWF(@lwf) if @lwf.parent?
+    return
+
+  attachBitmap:(linkageName, depth) ->
+    bitmapId = @lwf.data.bitmapMap[linkageName]
+    return null unless bitmapId?
+    bitmap = new BitmapClip(@lwf, @, bitmapId)
+    if @bitmapClips?
+      @detachBitmap(depth)
+    else
+      @bitmapClips = []
+    @bitmapClips[depth] = bitmap
+    bitmap.depth = depth
+    return bitmap
+
+  getAttachedBitmap:(depth) ->
+    return null unless @bitmapClips?
+    return @bitmapClips[depth]
+
+  detachBitmap:(depth) ->
+    return unless @bitmapClips?
+    bitmapClip = @bitmapClips[depth]
+    return unless bitmapClip?
+    bitmapClip.destroy()
+    @bitmapClips[depth] = null
     return
 
   execDetachHandler:(lwfContainer) ->
@@ -726,6 +714,14 @@ class Movie extends IObject
       obj = @displayList[depth]
       @updateObject(obj, m, c, matrixChanged, colorTransformChanged) if obj?
 
+    if @bitmapClips?
+      for bitmapClip in @bitmapClips
+        if bitmapClip?
+          if matrixChanged or bitmapClip.dirtyMatrix
+            bitmapClip.updateMatrix(m)
+          if colorTransformChanged or bitmapClip.dirtyColorTransform
+            bitmapClip.updateColorTransform(c)
+
     if @attachedMovies? or @attachedLWFs?
       if @attachedMovies?
         for k in @attachedMovieListKeys
@@ -851,6 +847,10 @@ class Movie extends IObject
       obj = @displayList[depth]
       obj.render(v, rOffset) if obj?
 
+    if @bitmapClips?
+      for bitmapClip in @bitmapClips
+        bitmapClip.render(v, rOffset) if bitmapClip?
+
     if @attachedMovies?
       for k in @attachedMovieListKeys
         attachedMovie = @attachedMovieList[k]
@@ -883,6 +883,10 @@ class Movie extends IObject
       obj = @displayList[d]
       obj.inspect(inspector, hierarchy, d, rOffset) if obj?
 
+    if @bitmapClips?
+      for bitmapClip in @bitmapClips
+        bitmapClip.inspect(inspector, hierarchy, d++, rOffset) if bitmapClip?
+
     if @attachedMovies?
       for k in @attachedMovieListKeys
         attachedMovie = @attachedMovieList[k]
@@ -898,6 +902,11 @@ class Movie extends IObject
   destroy: ->
     for obj in @displayList
       obj.destroy() if obj?
+
+    if @bitmapClips?
+      for bitmapClip in @bitmapClips
+        bitmapClip.destroy() if bitmapClip?
+      @bitmapClips = null
 
     if @attachedMovies?
       movie.destroy() for k, movie of @attachedMovies
@@ -1204,4 +1213,40 @@ class Movie extends IObject
         instance.setFrameRate(frameRate)
       instance = instance.linkInstance
     return
+
+if typeof(Movie.prototype.__defineGetter__) isnt "undefined"
+  Movie.prototype.__defineGetter__("x", -> @getX())
+  Movie.prototype.__defineSetter__("x", (v) -> @setX(v))
+  Movie.prototype.__defineGetter__("y", -> @getY())
+  Movie.prototype.__defineSetter__("y", (v) -> @setY(v))
+  Movie.prototype.__defineGetter__("scaleX", -> @getScaleX())
+  Movie.prototype.__defineSetter__("scaleX", (v) -> @setScaleX(v))
+  Movie.prototype.__defineGetter__("scaleY", -> @getScaleY())
+  Movie.prototype.__defineSetter__("scaleY", (v) -> @setScaleY(v))
+  Movie.prototype.__defineGetter__("rotation", -> @getRotation())
+  Movie.prototype.__defineSetter__("rotation", (v) -> @setRotation(v))
+  Movie.prototype.__defineGetter__("alpha", -> @getAlphaProperty())
+  Movie.prototype.__defineSetter__("alpha", (v) -> @setAlphaProperty(v))
+  Movie.prototype.__defineGetter__("currentFrame", -> @currentFrameInternal + 1)
+else if typeof(Object.defineProperty) isnt "undefined"
+  Object.defineProperty(Movie.prototype, "x",
+    get: -> @getX()
+    set: (v) -> @setX(v))
+  Object.defineProperty(Movie.prototype, "y",
+    get: -> @getY()
+    set: (v) -> @setY(v))
+  Object.defineProperty(Movie.prototype, "scaleX",
+    get: -> @getScaleX()
+    set: (v) -> @setScaleX(v))
+  Object.defineProperty(Movie.prototype, "scaleY",
+    get: -> @getScaleY()
+    set: (v) -> @setScaleY(v))
+  Object.defineProperty(Movie.prototype, "rotation",
+    get: -> @getRotation()
+    set: (v) -> @setRotation(v))
+  Object.defineProperty(Movie.prototype, "alpha",
+    get: -> @getAlphaProperty()
+    set: (v) -> @setAlphaProperty(v))
+  Object.defineProperty(Movie.prototype, "currentFrame",
+    get: -> @currentFrameInternal + 1)
 

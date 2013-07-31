@@ -45,7 +45,19 @@ class Graphic extends LObject
       @displayList[i] = obj
 
   update:(m, c) ->
-    obj.update(m, c) for obj in @displayList
+    matrixChanged = @matrix.setWithComparing(m)
+    colorTransformChanged = @colorTransform.setWithComparing(c)
+
+    for obj in @displayList
+      if matrixChanged or !obj.updated or obj.matrixIdChanged
+        objm = m
+      else
+        objm = null
+      if colorTransformChanged or !obj.updated or obj.colorTransformIdChanged
+        objc = c
+      else
+        objc = null
+      obj.update(objm, objc)
     return
 
   render:(v, rOffset) ->

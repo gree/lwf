@@ -21,20 +21,26 @@
 class CanvasTextContext extends HTML5TextContext
 
 class CanvasTextRenderer extends HTML5TextRenderer
+  constructor: ->
+    super
+
+    @cmd = {}
+
   render:(m, c, renderingIndex, renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
 
     super
 
-    @context.factory.addCommand(renderingIndex, {
-      alpha:c.multi.alpha,
-      blendMode:@context.factory.blendMode,
-      maskMode:@context.factory.maskMode,
-      matrix:@matrix,
-      image:@canvas,
-      u:0,
-      v:0,
-      w:@canvas.width,
-      h:@canvas.height
-    })
+    cmd = @cmd
+    cmd.alpha = c.multi.alpha
+    cmd.blendMode = @context.factory.blendMode
+    cmd.maskMode = @context.factory.maskMode
+    cmd.matrix = @matrix
+    cmd.image = @canvas
+    cmd.u = 0
+    cmd.v = 0
+    cmd.w = @canvas.width
+    cmd.h = @canvas.height
+    @context.factory.addCommand(renderingIndex, cmd)
     return
+

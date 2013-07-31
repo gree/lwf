@@ -47,6 +47,7 @@ CORE = %w|
   core/lwf_button
   core/lwf_lwfcontainer
   core/lwf_property
+  core/lwf_bitmapclip
   core/lwf_movie
   core/lwf_event
   core/lwf_eventmovie
@@ -85,6 +86,11 @@ JS["lwf"] = CORE + %w|
   canvas/lwf_canvas_text
   canvas/lwf_canvas_resourcecache
   canvas/lwf_canvas_expose
+  webgl/lwf_webgl_factory
+  webgl/lwf_webgl_bitmap
+  webgl/lwf_webgl_resourcecache
+  webgl/lwf_webgl_text
+  webgl/lwf_webgl_expose
 |
 PRELUDEJS["lwf"] = PRELUDEJSCORE
 ADDJS["lwf"] = ADDJSCORE
@@ -92,23 +98,6 @@ EXTERNS["lwf"] = %w|
   core/lwf_extern
 |
 COMPILEROPTIONS["lwf"] = "--compilation_level ADVANCED_OPTIMIZATIONS"
-
-JS["lwf_webgl"] = CORE + %w|
-  webkitcss/lwf_webkitcss_factory
-  webkitcss/lwf_webkitcss_domelement
-  webkitcss/lwf_webkitcss_resourcecache
-  webkitcss/lwf_webkitcss_worker
-  webgl/lwf_webgl_factory
-  webgl/lwf_webgl_bitmap
-  webgl/lwf_webgl_resourcecache
-  webkitcss/lwf_html5_text
-  webgl/lwf_webgl_text
-  webgl/lwf_webgl_expose
-|
-PRELUDEJS["lwf_webgl"] = PRELUDEJSCORE
-ADDJS["lwf_webgl"] = ADDJSCORE
-EXTERNS["lwf_webgl"] = EXTERNS["lwf"]
-COMPILEROPTIONS["lwf_webgl"] = "--compilation_level ADVANCED_OPTIMIZATIONS"
 
 JS["lwf_cocos2d"] = CORE + %w|
   webkitcss/lwf_webkitcss_domelement
@@ -212,9 +201,14 @@ desc "check"
 task :check do
   srcs = {}
   DEPENDS.values.each do |d|
-    d.each do |src|
-      next unless src =~ /\.coffee$/
-      srcs[src] = true
+    if d.kind_of? String
+      next unless d =~ /\.coffee$/
+      srcs[d] = true
+    elsif d.kind_of? Array
+      d.each do |src|
+        next unless src =~ /\.coffee$/
+        srcs[src] = true
+      end
     end
   end
   srcs.keys.each do |src|

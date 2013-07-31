@@ -43,15 +43,19 @@ class Property
     return
 
   move:(x, y) ->
-    @matrix.translateX += x
-    @matrix.translateY += y
+    #@matrix.translateX += x
+    @matrix._[4] += x
+    #@matrix.translateY += y
+    @matrix._[5] += y
     @hasMatrix = true
     @lwf.setPropertyDirty()
     return
 
   moveTo:(x, y) ->
-    @matrix.translateX = x
-    @matrix.translateY = y
+    #@matrix.translateX = x
+    @matrix._[4] = x
+    #@matrix.translateY = y
+    @matrix._[5] = y
     @hasMatrix = true
     @lwf.setPropertyDirty()
     return
@@ -85,10 +89,14 @@ class Property
     else
       c = Math.cos(radian)
       s = Math.sin(radian)
-    @matrix.scaleX = @scaleX * c
-    @matrix.skew0 = @scaleY * -s
-    @matrix.skew1 = @scaleX * s
-    @matrix.scaleY = @scaleY * c
+    #@matrix.scaleX = @scaleX * c
+    @matrix._[0] = @scaleX * c
+    #@matrix.skew0 = @scaleY * -s
+    @matrix._[2] = @scaleY * -s
+    #@matrix.skew1 = @scaleX * s
+    @matrix._[1] = @scaleX * s
+    #@matrix.scaleY = @scaleY * c
+    @matrix._[3] = @scaleY * c
     @hasMatrix = true
     @lwf.setPropertyDirty()
     return
@@ -100,7 +108,8 @@ class Property
     return
 
   setAlpha:(alpha) ->
-    @colorTransform.multi.alpha = alpha
+    #@colorTransform.multi.alpha = alpha
+    @colorTransform.multi._[3] = alpha
     @hasColorTransform = true
     @lwf.setPropertyDirty()
     return
@@ -120,3 +129,4 @@ class Property
     @renderingOffset = Number.MIN_VALUE
     @hasRenderingOffset = false
     return
+

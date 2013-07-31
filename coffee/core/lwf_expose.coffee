@@ -20,6 +20,7 @@
 
 if typeof global isnt "undefined"
   global["LWF"] ?= {}
+  global["LWF"]["BitmapClip"] = BitmapClip
   global["LWF"]["Color"] = Color
   global["LWF"]["ColorTransform"] = ColorTransform
   global["LWF"]["Format"] = Format
@@ -99,6 +100,7 @@ LWF.prototype["setPreferredFrameRate"] = LWF.prototype.setPreferredFrameRate
 LWF.prototype["setProgramObjectConstructor"] =
   LWF.prototype.setProgramObjectConstructor
 LWF.prototype["setRendererFactory"] = LWF.prototype.setRendererFactory
+LWF.prototype["setTextScale"] = LWF.prototype.setTextScale
 
 Loader["load"] = Loader.load
 
@@ -118,15 +120,18 @@ Button.prototype["setEventListener"] = Button.prototype.setEventHandler
 
 Movie.prototype["addEventHandler"] = Movie.prototype.addEventHandler
 Movie.prototype["addEventListener"] = Movie.prototype.addEventHandler
+Movie.prototype["attachBitmap"] = Movie.prototype.attachBitmap
 Movie.prototype["attachEmptyMovie"] = Movie.prototype.attachEmptyMovie
 Movie.prototype["attachLWF"] = Movie.prototype.attachLWF
 Movie.prototype["attachMovie"] = Movie.prototype.attachMovie
 Movie.prototype["clearEventHandler"] = Movie.prototype.clearEventHandler
 Movie.prototype["clearEventListener"] = Movie.prototype.clearEventHandler
+Movie.prototype["detachBitmap"] = Movie.prototype.detachBitmap
 Movie.prototype["detachFromParent"] = Movie.prototype.detachFromParent
 Movie.prototype["detachLWF"] = Movie.prototype.detachLWF
 Movie.prototype["detachMovie"] = Movie.prototype.detachMovie
 Movie.prototype["dispatchEvent"] = Movie.prototype.dispatchEvent
+Movie.prototype["getAttachedBitmap"] = Movie.prototype.getAttachedBitmap
 Movie.prototype["getAttachedLWF"] = Movie.prototype.getAttachedLWF
 Movie.prototype["getAttachedMovie"] = Movie.prototype.getAttachedMovie
 Movie.prototype["getBounds"] = Movie.prototype.getBounds

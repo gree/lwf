@@ -31,11 +31,13 @@ class Data
 
       d = @header
       @header = d.header
-      @translates = d.translates
-      @matrices = d.matrices
-      @colors = d.colors
-      @alphaTransforms = d.alphaTransforms
-      @colorTransforms = d.colorTransforms
+      @translates = (new Translate(t._[0], t._[1]) for t in d.translates)
+      @matrices = (new Matrix(
+        m._[0], m._[3], m._[2], m._[1], m._[4], m._[5]) for m in d.matrices)
+      @colors = (new Color(c._[0], c._[1], c._[2], c._[3]) for c in d.colors)
+      @alphaTransforms = (new AlphaTransform(a._[0]) for a in d.alphaTransforms)
+      @colorTransforms = (new ColorTransform(c.multi._[0], c.multi._[1],
+        c.multi._[2], c.multi._[3]) for c in d.colorTransforms)
       @objects = d.objects
       @textures = d.textures
       @textureFragments = d.textureFragments
@@ -72,6 +74,7 @@ class Data
       @movieLinkageNameMap = d.movieLinkageNameMap
       @programObjectMap = d.programObjectMap
       @labelMap = d.labelMap
+      @bitmapMap = d.bitmapMap
       @useScript = d.useScript
       @useTextureAtlas = d.useTextureAtlas
 
@@ -84,6 +87,7 @@ class Data
       @movieLinkageNameMap = {}
       @programObjectMap = {}
       @labelMap = []
+      @bitmapMap = {}
       if @header?
         @useScript = (@header.option & Format.Constant.OPTION_USE_SCRIPT) != 0
         @useTextureAtlas =

@@ -4,6 +4,7 @@ var folder = ',js';
 var lib;
 var items;
 var timeline;
+var symbol;
 
 var docPath;
 var folderPath;
@@ -26,6 +27,8 @@ function init(){
         alert("[ERROR] Can't open fla file.");
     } else {
         lib = doc.library;
+        timeline = doc.getTimeline();
+        symbol = timeline.libraryItem;
         items = lib.items;
 
         docPath = doc.pathURI;
@@ -87,7 +90,6 @@ function getAllFiles(path, prefix){
 }
 
 function applyIncludeConf(files, confText){
-    fl.trace('applyIncludeConf');
     var lgh = files.length;
     for(var i = 0; i < lgh; i++){
         switch(files[i]){
@@ -106,7 +108,6 @@ function applyIncludeConf(files, confText){
 }
 
 function applyExcludeConf(files, confText){
-    fl.trace('applyExcludeConf');
     var exclude = confText.split(',');
     var lgh = exclude.length;
     for(var i = 0; i < lgh; i++){
@@ -124,7 +125,6 @@ function applyExcludeConf(files, confText){
 }
 
 function applyFirstIncludeConf(files, confText){
-    fl.trace('applyFirstIncludeConf');
     var firstInclude = confText.split(',');
     var firstFiles = [];
     var lgh = firstInclude.length;
@@ -175,11 +175,8 @@ function createDirectoriesData(){
             var jsFiles = getAllFiles(framePath);
             var directory = [directories[i], frameDirectories[j]].join('/') + '/';
             jsFiles = checkConfFile(jsFiles, '_include.conf', directory, applyIncludeConf);
-            fl.trace(jsFiles);
             jsFiles = checkConfFile(jsFiles, '_exclude.conf', directory, applyExcludeConf);
-            fl.trace(jsFiles);
             jsFiles = checkConfFile(jsFiles, '_first_include.conf', directory, applyFirstIncludeConf);
-            fl.trace(jsFiles);
             var lgh3 = jsFiles.length;
             for(n = 0; n < lgh3; n++){
                 var obj = createFilesObject([directories[i], frameDirectories[j], jsFiles[n]]);
@@ -388,10 +385,16 @@ function addScript(layer, data){
     layer.frames[data.frame].actionScript = data.script;
 }
 
+
+
 function complete(){
     fl.showIdleMessage(true);
 
-    if(isRoot === false) lib.editItem('root');
+    if(symbol){
+        lib.editItem(symbol.name);
+    }else if(isRoot === false){
+        lib.editItem('root');
+    }
 
     doc.save();
     releaseLog();

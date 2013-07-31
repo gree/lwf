@@ -24,10 +24,10 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
     super
 
-    @matrixForRender = new Matrix(0, 0, 0, 0, 0, 0)
     @alpha = -1
     @zIndex = -1
     @visible = false
+    @cmd = {}
 
   destructor: ->
     @node.parentNode.removeChild(@node) if @node?
@@ -59,10 +59,9 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
 
     super
 
-    matrixChanged = @matrixForRender.setWithComparing(@matrix)
     maskMode = @context.factory.maskMode
 
-    return if !matrixChanged and
+    return if !@matrixChanged and
       @alpha is c.multi.alpha and
       @zIndex is renderingIndex and
       maskMode is "normal" and
@@ -71,11 +70,11 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
     @alpha = c.multi.alpha
     @zIndex = renderingIndex
 
-    @context.factory.addCommand(renderingIndex, {
-      isBitmap:false
-      renderer:@
-      matrix:@matrixForRender
-      maskMode:maskMode
-    })
+    cmd = @cmd
+    cmd.isBitmap = false
+    cmd.renderer = @
+    cmd.matrix = @matrix
+    cmd.maskMode = maskMode
+    @context.factory.addCommand(renderingIndex, cmd)
     return
 

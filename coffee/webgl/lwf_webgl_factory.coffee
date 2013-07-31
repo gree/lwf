@@ -69,7 +69,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
   constructor:(@data, \
       @resourceCache, @cache, @stage, @textInSubpixel, @needsClear) ->
-    params = {premultipliedAlpha:false}
+    params = {premultipliedAlpha:true}
     @drawCalls = 0
     @stage.style.webkitUserSelect = "none"
     @stageContext = @stage.getContext("webgl", params) ?
@@ -81,6 +81,8 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     @maskMode = "normal"
     @clientRect = null
     @propertyMatrix = new Matrix
+    @vertexData = new Float32Array(1)
+    @indexData = new Uint16Array(1)
 
     gl = @stageContext
     @vertexBufferSize = 3 * 4 + 2 * 4 + 4 * 4
@@ -179,14 +181,21 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
   beginRender:(lwf) ->
     super
+    @lwf = lwf
     @drawCalls = 0
     return if lwf.parent?
     @currentTexture = null
     @currentBlendMode = "normal"
-    @mesh = []
+    @faces = 0
     gl = @stageContext
     @setViewport(gl, lwf)
     gl.clear(gl.COLOR_BUFFER_BIT) if @needsClear
+    return
+
+  addCommand:(rIndex, cmd) ->
+    super
+    return if @lwf.parent?
+    ++@faces if cmd.renderer is null
     return
 
   endRender:(lwf) ->
@@ -196,9 +205,33 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @initCommands()
       return
 
+    gl = @stageContext
+
+    vertices = @faces * 4 * 9
+    @faces = 0
+    if vertices > @vertexData.length #or vertices < @vertexData.length / 6
+      vertices *= 2
+      vertices = 65532 * 9 if vertices > 65532 * 9
+      indices = vertices / (4 * 9) * 6
+      if vertices isnt @vertexData.length
+        @vertexData = new Float32Array(vertices)
+        @indexData = new Uint16Array(indices)
+        offset = 0
+        indexOffset = 0
+        for i in [0...indices / 6]
+          @indexData[offset + 0] = indexOffset + 0
+          @indexData[offset + 1] = indexOffset + 1
+          @indexData[offset + 2] = indexOffset + 2
+          @indexData[offset + 3] = indexOffset + 2
+          @indexData[offset + 4] = indexOffset + 1
+          @indexData[offset + 5] = indexOffset + 3
+          offset += 6
+          indexOffset += 4
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @indexBuffer)
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @indexData, gl.STATIC_DRAW)
+
     @renderMaskMode = "normal"
     @renderMasked = false
-    gl = @stageContext
     for rIndex in @commandsKeys
       cmd = @commands[rIndex]
       if cmd.subCommandsKeys?
@@ -245,15 +278,17 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @renderMaskMode = cmd.maskMode
 
     if cmd.renderer is null
-      @updateMesh(gl, cmd.context, cmd.texture,
-        cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode)
+      @updateMesh(gl, cmd.context, cmd.texture, cmd.matrix, cmd.colorTransform,
+        rIndex, cmd.blendMode, cmd.meshCache, cmd.useMeshCache)
     else
       cmd.renderer.renderCommand(
         cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode)
     return
 
-  updateMesh:(gl, context, texture, m, c, renderingIndex, blendMode) ->
-    if texture isnt @currentTexture or blendMode isnt @currentBlendMode
+  updateMesh:(gl, context,
+      texture, m, c, renderingIndex, blendMode, meshCache, useMeshCache) ->
+    if texture isnt @currentTexture or blendMode isnt @currentBlendMode or
+        @faces * 4 * 9 >= @vertexData.length
       @renderMesh(gl)
       @currentTexture = texture
       @currentBlendMode = blendMode
@@ -261,7 +296,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
       @blendDstFactor =
         if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA
-      @mesh = []
+      @faces = 0
 
     red = c.multi.red
     green = c.multi.green
@@ -273,61 +308,60 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       green *= alpha
       blue *= alpha
 
-    scaleX = m.scaleX
-    skew0 = m.skew0
-    translateX = m.translateX
+    if useMeshCache
+      for i in [0...4]
+        offset = i * 9
+        meshCache[offset + 5] = red
+        meshCache[offset + 6] = green
+        meshCache[offset + 7] = blue
+        meshCache[offset + 8] = alpha
+    else
+      scaleX = m.scaleX
+      skew0 = m.skew0
+      translateX = m.translateX
 
-    skew1 = m.skew1
-    scaleY = m.scaleY
-    translateY = m.translateY
+      skew1 = m.skew1
+      scaleY = m.scaleY
+      translateY = m.translateY
 
-    translateZ = 0
+      translateZ = 0
 
-    vertices = context.vertices
-    uv = context.uv
-    for i in [0...4]
-      x = vertices[i].x
-      y = vertices[i].y
+      vertexData = context.vertexData
+      uv = context.uv
+      for i in [0...4]
+        x = vertexData[i].x
+        y = vertexData[i].y
 
-      px = x * scaleX + y * skew0 + translateX
-      py = x * skew1 + y * scaleY + translateY
-      pz = translateZ
+        px = x * scaleX + y * skew0 + translateX
+        py = x * skew1 + y * scaleY + translateY
+        pz = translateZ
 
-      @mesh.push([px, py, pz, uv[i].u, uv[i].v, red, green, blue, alpha])
+        offset = i * 9
+        meshCache[offset + 0] = px
+        meshCache[offset + 1] = py
+        meshCache[offset + 2] = pz
+        meshCache[offset + 3] = uv[i].u
+        meshCache[offset + 4] = uv[i].v
+        meshCache[offset + 5] = red
+        meshCache[offset + 6] = green
+        meshCache[offset + 7] = blue
+        meshCache[offset + 8] = alpha
+
+    offset = @faces++ * 4 * 9
+    for i in [0...4 * 9]
+      @vertexData[offset + i] = meshCache[i]
     return
 
   renderMesh:(gl) ->
-    return if @currentTexture is null or @mesh.length is 0
-
-    size = @mesh.length * 9
-    vertices = new Float32Array(size)
-    i = 0
-    for m in @mesh
-      for v in m
-        vertices[i++] = v
-
-    faces = @mesh.length / 4
-    size = faces * 6
-    indices = new Int16Array(size)
-    indexOffset = 0
-    for i in [0...faces]
-      offset = i * 6
-      indices[offset + 0] = indexOffset + 0
-      indices[offset + 1] = indexOffset + 1
-      indices[offset + 2] = indexOffset + 2
-      indices[offset + 3] = indexOffset + 2
-      indices[offset + 4] = indexOffset + 1
-      indices[offset + 5] = indexOffset + 3
-      indexOffset += 4
+    return if @currentTexture is null or @faces is 0
 
     gl.bindTexture(gl.TEXTURE_2D, @currentTexture)
     gl.blendFunc(@blendSrcFactor, @blendDstFactor)
 
     gl.bindBuffer(gl.ARRAY_BUFFER, @vertexBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, @vertexData, gl.DYNAMIC_DRAW)
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @indexBuffer)
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW)
 
     gl.vertexAttribPointer(
       @aVertexPosition, 3, gl.FLOAT, false, @vertexBufferSize, 0)
@@ -342,13 +376,8 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
     gl.uniformMatrix4fv(@uMatrix, false, @matrix)
 
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0)
+    gl.drawElements(gl.TRIANGLES, @faces * 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
-
-    @mesh = []
     return
 
   setBlendMode:(@blendMode) ->
@@ -394,13 +423,13 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl.bindBuffer(gl.ARRAY_BUFFER, @maskVertexBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW)
 
-    indices = new Uint8Array([
+    indexData = new Uint8Array([
       0, 1, 2,
       2, 1, 3,
     ])
     @maskIndexBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskIndexBuffer)
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW)
     return
 
   deleteMask:(gl) ->
@@ -477,3 +506,4 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl = @stageContext
     gl.clearColor(r / 255, g / 255, b / 255, a / 255)
     return
+

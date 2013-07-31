@@ -33,6 +33,14 @@ License: Apache License 2.0
 
 -----
 Code in:
+tools/libming
+
+Ming is a Flash (SWF) output library
+URL: https://github.com/libming/libming
+License: LGPL
+
+-----
+Code in:
 tools/swf2lwf/lib/htmlparser.rb
 
 HTML parser from scrapi

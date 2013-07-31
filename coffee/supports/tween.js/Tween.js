@@ -44,10 +44,10 @@ var TWEENLWF = {};
 
 TWEENLWF.REVISION = '10';
 
-TWEENLWF.Tween = function ( movie ) {
+TWEENLWF.Tween = function ( target ) {
 
-	this.lwf = movie.lwf;
-	this.object = movie;
+	this.lwf = target.lwf;
+	this.object = target;
 	this.valuesStart = {};
 	this.valuesEnd = {};
 	this.valuesStartRepeat = {};
@@ -237,7 +237,7 @@ TWEENLWF.Tween = function ( movie ) {
 
 		}
 
-		if ( this.object[ "property" ] === null ) {
+		if ( this.object[ "lwf" ] === null ) {
 
 			return false;
 
@@ -835,6 +835,10 @@ moviePrototype[ "stopTweens" ] = function() {
 	return this;
 
 };
+
+var bitmapClipPrototype = global[ "LWF" ][ "BitmapClip" ].prototype;
+bitmapClipPrototype[ "addTween" ] = moviePrototype[ "addTween" ];
+bitmapClipPrototype[ "stopTweens" ] = moviePrototype[ "stopTweens" ];
 
 global[ "LWF" ][ "Tween" ] = TWEENLWF.Tween;
 global[ "LWF" ][ "Tween" ][ "Easing" ] = TWEENLWF.Easing;

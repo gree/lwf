@@ -49,7 +49,7 @@ class LWF
     @isLWFAttached = false
     @interceptByNotAllowOrDenyButtons = true
     @intercepted = false
-    @scaleByStage = 1
+    @textScale = 1
     @pointX = Number.MIN_VALUE
     @pointY = Number.MIN_VALUE
     @pressing = false
@@ -123,6 +123,10 @@ class LWF
 
   scaleForWidth:(stageWidth) ->
     Utility.scaleForWidth(@, stageWidth)
+    return
+
+  setTextScale:(textScale) ->
+    @textScale = textScale
     return
 
   getStageSize: ->
