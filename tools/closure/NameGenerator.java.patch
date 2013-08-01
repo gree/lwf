@@ -1,8 +1,8 @@
-Index: src/com/google/javascript/jscomp/NameGenerator.java
-===================================================================
---- src/com/google/javascript/jscomp/NameGenerator.java	(revision 2260)
-+++ src/com/google/javascript/jscomp/NameGenerator.java	(working copy)
-@@ -59,7 +59,8 @@
+diff --git a/src/com/google/javascript/jscomp/NameGenerator.java b/src/com/google/javascript/jscomp/NameGenerator.java
+index ae381bf..6e1be9f 100644
+--- a/src/com/google/javascript/jscomp/NameGenerator.java
++++ b/src/com/google/javascript/jscomp/NameGenerator.java
+@@ -106,7 +106,8 @@ final class NameGenerator {
    NameGenerator(Set<String> reservedNames, String prefix,
        @Nullable char[] reservedCharacters) {
      this.reservedNames = reservedNames;
@@ -10,5 +10,5 @@ Index: src/com/google/javascript/jscomp/NameGenerator.java
 +    //this.prefix = prefix;
 +    this.prefix = "z$" + prefix;
  
-     // build the character arrays to use
-     this.firstChars = reserveCharacters(FIRST_CHAR, reservedCharacters);
+     this.priorityLookupMap = Maps.newHashMapWithExpectedSize(
+         NONFIRST_CHAR.length);
