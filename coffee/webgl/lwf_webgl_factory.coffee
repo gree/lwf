@@ -67,9 +67,9 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       ]
       gl.uniformMatrix4fv(@uPMatrix, false, new Float32Array(pmatrix))
 
-  constructor:(@data, \
-      @resourceCache, @cache, @stage, @textInSubpixel, @needsClear) ->
-    params = {premultipliedAlpha:true}
+  constructor:(@data, @resourceCache,
+      @cache, @stage, @textInSubpixel, @needsClear, @useVertexColor) ->
+    params = {premultipliedAlpha:true, alpha:false}
     @drawCalls = 0
     @stage.style.webkitUserSelect = "none"
     @stageContext = @stage.getContext("webgl", params) ?
@@ -298,15 +298,19 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA
       @faces = 0
 
-    red = c.multi.red
-    green = c.multi.green
-    blue = c.multi.blue
     alpha = c.multi.alpha
-
-    if context.preMultipliedAlpha
-      red *= alpha
-      green *= alpha
-      blue *= alpha
+    if @useVertexColor
+      red = c.multi.red
+      green = c.multi.green
+      blue = c.multi.blue
+      if context.preMultipliedAlpha
+        red *= alpha
+        green *= alpha
+        blue *= alpha
+    else
+      red = 1
+      green = 1
+      blue = 1
 
     if useMeshCache
       for i in [0...4]

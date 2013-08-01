@@ -9659,7 +9659,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    function WebGLRendererFactory(data, resourceCache, cache, stage, textInSubpixel, needsClear) {
+    function WebGLRendererFactory(data, resourceCache, cache, stage, textInSubpixel, needsClear, useVertexColor) {
       var bitmap, bitmapEx, fragmentShader, gl, params, text, vertexShader, _i, _j, _k, _len, _len1, _len2, _ref4, _ref5, _ref6, _ref7;
       this.data = data;
       this.resourceCache = resourceCache;
@@ -9667,8 +9667,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.stage = stage;
       this.textInSubpixel = textInSubpixel;
       this.needsClear = needsClear;
+      this.useVertexColor = useVertexColor;
       params = {
-        premultipliedAlpha: true
+        premultipliedAlpha: true,
+        alpha: false
       };
       this.drawCalls = 0;
       this.stage.style.webkitUserSelect = "none";
@@ -9930,14 +9932,20 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.blendDstFactor = blendMode === "add" ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA;
         this.faces = 0;
       }
-      red = c.multi.red;
-      green = c.multi.green;
-      blue = c.multi.blue;
       alpha = c.multi.alpha;
-      if (context.preMultipliedAlpha) {
-        red *= alpha;
-        green *= alpha;
-        blue *= alpha;
+      if (this.useVertexColor) {
+        red = c.multi.red;
+        green = c.multi.green;
+        blue = c.multi.blue;
+        if (context.preMultipliedAlpha) {
+          red *= alpha;
+          green *= alpha;
+          blue *= alpha;
+        }
+      } else {
+        red = 1;
+        green = 1;
+        blue = 1;
       }
       if (useMeshCache) {
         for (i = _i = 0; _i < 4; i = ++_i) {
@@ -10285,8 +10293,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     WebGLResourceCache.prototype.newFactory = function(settings, cache, data) {
-      var _ref5, _ref6;
-      return new WebGLRendererFactory(data, this, cache, settings.stage, (_ref5 = settings["textInSubpixel"]) != null ? _ref5 : false, (_ref6 = settings["needsClear"]) != null ? _ref6 : true);
+      var _ref5, _ref6, _ref7;
+      return new WebGLRendererFactory(data, this, cache, settings.stage, (_ref5 = settings["textInSubpixel"]) != null ? _ref5 : false, (_ref6 = settings["needsClear"]) != null ? _ref6 : true, (_ref7 = settings["useVertexColor"]) != null ? _ref7 : false);
     };
 
     return WebGLResourceCache;
