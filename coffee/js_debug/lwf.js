@@ -1577,7 +1577,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWFLoader.prototype.load = function(d) {
-      var a, animationBytes, animations, bitmapMap, c, c2, c3, code, data, eventMap, filename, header, i, instanceNameMap, l, labelMap, m, map, movieLinkageMap, movieLinkageNameMap, o, programObjectMap, s, str, stringBytes, stringDatas, stringMap, t, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _s;
+      var a, animationBytes, animations, bitmapMap, c, c2, c3, c4, code, data, eventMap, filename, header, i, instanceNameMap, l, labelMap, m, map, movieLinkageMap, movieLinkageNameMap, o, programObjectMap, s, str, stringBytes, stringDatas, stringMap, t, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _n, _o, _p, _q, _r, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _s;
       this.d = d;
       this.index = 0;
       header = this.loadHeader();
@@ -1874,20 +1874,27 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         str = "";
         i = 0;
         while (i < s.length) {
-          c = s.charCodeAt(i);
+          c = s.charCodeAt(i) & 255;
           if (c < 128) {
             str += String.fromCharCode(c);
             ++i;
-          } else if (c > 191 && c < 224) {
+          } else if ((c >> 5) === 6) {
             c2 = s.charCodeAt(i + 1);
             str += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
             i += 2;
-          } else {
+          } else if ((c >> 4) === 14) {
             c2 = s.charCodeAt(i + 1);
             c3 = s.charCodeAt(i + 2);
             code = ((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63);
             str += String.fromCharCode(code);
             i += 3;
+          } else {
+            c2 = s.charCodeAt(i + 1);
+            c3 = s.charCodeAt(i + 2);
+            c4 = s.charCodeAt(i + 3);
+            code = ((c & 7) << 18) | ((c2 & 63) << 12) | ((c3 & 63) << 6) | (c4 << 63);
+            str += String.fromCharCode(code);
+            i += 4;
           }
         }
         stringMap[str] = data.strings.length;
@@ -3204,6 +3211,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this._rotation = 0;
       this._alpha = 1;
       this.depth = -1;
+      this.visible = true;
       this.dirtyMatrix = true;
       this.dirtyMatrixSR = false;
       this.dirtyColorTransform = true;
@@ -3214,7 +3222,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     BitmapClip.prototype.updateMatrix = function(m) {
-      var c, dst, radian, s;
+      var c, dst, radian, s, x, y;
       if (this.dirtyMatrixSR) {
         radian = this._rotation * Math.PI / 180;
         if (radian === 0) {
@@ -3230,13 +3238,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.mScaleY = this._scaleY * c;
         this.dirtyMatrixSR = false;
       }
+      x = this._x - this._regX;
+      y = this._y - this._regY;
       dst = this.matrix;
       dst.scaleX = m.scaleX * this.mScaleX + m.skew0 * this.mSkew1;
       dst.skew0 = m.scaleX * this.mSkew0 + m.skew0 * this.mScaleY;
-      dst.translateX = m.scaleX * this._x + m.skew0 * this._y + m.translateX + m.scaleX * this._regX + m.skew0 * this._regY + dst.scaleX * -this._regX + dst.skew0 * -this._regY;
+      dst.translateX = m.scaleX * x + m.skew0 * y + m.translateX + m.scaleX * this._regX + m.skew0 * this._regY + dst.scaleX * -this._regX + dst.skew0 * -this._regY;
       dst.skew1 = m.skew1 * this.mScaleX + m.scaleY * this.mSkew1;
       dst.scaleY = m.skew1 * this.mSkew0 + m.scaleY * this.mScaleY;
-      dst.translateY = m.skew1 * this._x + m.scaleY * this._y + m.translateY + m.skew1 * this._regX + m.scaleY * this._regY + dst.skew1 * -this._regX + dst.scaleY * -this._regY;
+      dst.translateY = m.skew1 * x + m.scaleY * y + m.translateY + m.skew1 * this._regX + m.scaleY * this._regY + dst.skew1 * -this._regX + dst.scaleY * -this._regY;
       this.dirtyMatrix = false;
     };
 
@@ -3873,7 +3883,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       this.bitmapClips[depth] = bitmap;
       bitmap.depth = depth;
+      bitmap.name = linkageName;
       return bitmap;
+    };
+
+    Movie.prototype.getAttachedBitmaps = function() {
+      return this.bitmapClips;
     };
 
     Movie.prototype.getAttachedBitmap = function(depth) {
@@ -4615,7 +4630,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         for (_j = 0, _len = _ref2.length; _j < _len; _j++) {
           bitmapClip = _ref2[_j];
           if (bitmapClip != null) {
-            bitmapClip.render(v, rOffset);
+            bitmapClip.render(v && bitmapClip.visible, rOffset);
           }
         }
       }
@@ -7035,6 +7050,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   Movie.prototype["getAttachedLWF"] = Movie.prototype.getAttachedLWF;
 
   Movie.prototype["getAttachedMovie"] = Movie.prototype.getAttachedMovie;
+
+  Movie.prototype["getAttachedBitmaps"] = Movie.prototype.getAttachedBitmaps;
 
   Movie.prototype["getBounds"] = Movie.prototype.getBounds;
 

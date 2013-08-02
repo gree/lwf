@@ -301,7 +301,11 @@ class Movie extends IObject
       @bitmapClips = []
     @bitmapClips[depth] = bitmap
     bitmap.depth = depth
+    bitmap.name = linkageName
     return bitmap
+
+  getAttachedBitmaps: ->
+    return @bitmapClips
 
   getAttachedBitmap:(depth) ->
     return null unless @bitmapClips?
@@ -849,7 +853,7 @@ class Movie extends IObject
 
     if @bitmapClips?
       for bitmapClip in @bitmapClips
-        bitmapClip.render(v, rOffset) if bitmapClip?
+        bitmapClip.render(v and bitmapClip.visible, rOffset) if bitmapClip?
 
     if @attachedMovies?
       for k in @attachedMovieListKeys

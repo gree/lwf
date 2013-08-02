@@ -37,6 +37,7 @@ class BitmapClip extends LObject
     @_rotation = 0
     @_alpha = 1
     @depth = -1
+    @visible = true
 
     @dirtyMatrix = true
     @dirtyMatrixSR = false
@@ -61,6 +62,9 @@ class BitmapClip extends LObject
       @mScaleY = @_scaleY * c
       @dirtyMatrixSR = false
 
+    x = @_x - @_regX
+    y = @_y - @_regY
+
     dst = @matrix
     dst.scaleX =
       m.scaleX * @mScaleX +
@@ -69,8 +73,8 @@ class BitmapClip extends LObject
       m.scaleX * @mSkew0 +
       m.skew0  * @mScaleY
     dst.translateX =
-      m.scaleX * @_x +
-      m.skew0  * @_y +
+      m.scaleX * x +
+      m.skew0  * y +
       m.translateX +
         m.scaleX * @_regX + m.skew0 * @_regY +
         dst.scaleX * -@_regX + dst.skew0 * -@_regY
@@ -81,8 +85,8 @@ class BitmapClip extends LObject
       m.skew1  * @mSkew0 +
       m.scaleY * @mScaleY
     dst.translateY =
-      m.skew1  * @_x +
-      m.scaleY * @_y +
+      m.skew1  * x +
+      m.scaleY * y +
       m.translateY +
         m.skew1 * @_regX + m.scaleY * @_regY +
         dst.skew1 * -@_regX + dst.scaleY * -@_regY

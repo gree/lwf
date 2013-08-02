@@ -453,20 +453,27 @@ class LWFLoader
       str = ""
       i = 0
       while i < s.length
-        c = s.charCodeAt(i)
+        c = s.charCodeAt(i) & 255;
         if c < 128
           str += String.fromCharCode(c)
           ++i
-        else if c > 191 and c < 224
+        else if (c >> 5) == 6
           c2 = s.charCodeAt(i + 1)
           str += String.fromCharCode(((c & 31) << 6)|(c2 & 63))
           i += 2
-        else
+        else if (c >> 4) == 14
           c2 = s.charCodeAt(i + 1)
           c3 = s.charCodeAt(i + 2)
           code = ((c & 15) << 12)|((c2 & 63) << 6)|(c3 & 63)
           str += String.fromCharCode(code)
           i += 3
+        else
+          c2 = s.charCodeAt(i + 1)
+          c3 = s.charCodeAt(i + 2)
+          c4 = s.charCodeAt(i + 3)
+          code = ((c & 7) << 18)|((c2 & 63) << 12)|((c3 & 63) << 6)|(c4 << 63);
+          str += String.fromCharCode(code)
+          i += 4
       stringMap[str] = data.strings.length
       data.strings.push str
 

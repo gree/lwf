@@ -134,6 +134,7 @@ Movie.prototype["dispatchEvent"] = Movie.prototype.dispatchEvent
 Movie.prototype["getAttachedBitmap"] = Movie.prototype.getAttachedBitmap
 Movie.prototype["getAttachedLWF"] = Movie.prototype.getAttachedLWF
 Movie.prototype["getAttachedMovie"] = Movie.prototype.getAttachedMovie
+Movie.prototype["getAttachedBitmaps"] = Movie.prototype.getAttachedBitmaps
 Movie.prototype["getBounds"] = Movie.prototype.getBounds
 Movie.prototype["globalToLocal"] = Movie.prototype.globalToLocal
 Movie.prototype["gotoAndPlay"] = Movie.prototype.gotoAndPlay
