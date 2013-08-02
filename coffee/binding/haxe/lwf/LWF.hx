@@ -135,4 +135,6 @@ extern class LWF
 	public function setPreferredFrameRate(preferredFrameRate:Int, ?execLimit:Int):Void;
 
 	public function setProgramObjectConstructor(name:String, ctor:Dynamic->Int->Int->Int):Renderer;
+
+	public function setTextScale(textScale:Float):Void;
 }

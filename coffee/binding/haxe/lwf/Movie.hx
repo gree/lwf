@@ -35,6 +35,8 @@ extern class Movie
 	@:overload(function(event:String, listener:Void->Void):Movie{})
 	public function addEventListener(event:String, listener:MovieEventListener):Void;
 
+	public function attachBitmap(bitmapName:String, depth:Int):BitmapClip;
+
 	public function attachEmptyMovie(attachName:String, ?options:{}):Movie;
 
 	public function attachLWF(attachLWF:LWF, attachName:String, ?options:{}):Void;
@@ -43,6 +45,8 @@ extern class Movie
 	public function attachMovie(linkageName:LWF, attachName:String, ?options:{}):Movie;
 
 	public function clearEventListener(?event:String):Void;
+
+	public function detachBitmap(depth:Int):Void;
 
 	public function detachFromParent():Void;
 
@@ -56,6 +60,10 @@ extern class Movie
 
 	@:overload(function(e:EventParams):Void{})
 	public function dispatchEvent(e:String):Void;
+
+	public function getAttachedBitmap(depth:Int):BitmapClip;
+
+	public function getAttachedBitmaps():Array<BitmapClip>;
 
 	@:overload(function(attachName:String):LWF{})
 	public function getAttachedLWF(depth:Int):LWF;
