@@ -284,13 +284,11 @@ public class ResourceCache
 				new Vector3(x0, y0, 0),
 			};
 
-			float dw = 2.0f * tw;
-			float dh = 2.0f * th;
 			if (fragment.rotated == 0) {
-				float u0 = (float)(2 * u + 1) / dw;
-				float v0 = (float)(2 * (v - h) + 1) / dh;
-				float u1 = u0 + (float)(w * 2 - 2) / dw;
-				float v1 = (float)(v * 2 - 1) / dh;
+				float u0 = u / tw;
+				float v0 = (v - h) / th;
+				float u1 = (u + w) / tw;
+				float v1 = v / th;
 				mesh.uv = new Vector2[]{
 					new Vector2(u1, v1),
 					new Vector2(u1, v0),
@@ -298,10 +296,10 @@ public class ResourceCache
 					new Vector2(u0, v0),
 				};
 			} else {
-				float u0 = (float)(2 * u + 1) / dw;
-				float v0 = (float)(2 * (v - w) + 1) / dh;
-				float u1 = u0 + (float)(h * 2 - 2) / dw;
-				float v1 = (float)(v * 2 - 1) / dh;
+				float u0 = u / tw;
+				float v0 = (v - w) / th;
+				float u1 = (u + h) / tw;
+				float v1 = v / th;
 				mesh.uv = new Vector2[]{
 					new Vector2(u1, v0),
 					new Vector2(u0, v0),

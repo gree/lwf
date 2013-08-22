@@ -107,7 +107,6 @@ public partial class Movie : IObject
 			else
 				movie.depth = 0;
 		}
-		movie.m_name = attachName;
 		m_attachedMovies[attachName] = movie;
 		ReorderAttachedMovieList(reorder, movie.depth, movie);
 
@@ -126,7 +125,8 @@ public partial class Movie : IObject
 
 		MovieEventHandlers handlers = new MovieEventHandlers();
 		handlers.Add(load, postLoad, unload, enterFrame, update, render);
-		Movie movie = new Movie(m_lwf, this, movieId, -1, 0, 0, true, handlers, attachName);
+		Movie movie = new Movie(m_lwf,
+			this, movieId, -1, 0, 0, true, handlers, attachName);
 		if (m_attachMovieExeced)
 			movie.Exec();
 		if (m_attachMoviePostExeced)
@@ -147,6 +147,7 @@ public partial class Movie : IObject
 		handlers.Add(load, postLoad, unload, enterFrame, update, render);
 		movie.SetHandlers(handlers);
 
+		movie.m_name = attachName;
 		return AttachMovieInternal(movie, attachName, attachDepth, reorder);
 	}
 
