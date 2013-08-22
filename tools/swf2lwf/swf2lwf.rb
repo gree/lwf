@@ -19,6 +19,10 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 #
+if RUBY_VERSION < "1.9.3"
+  puts "ERROR: Requires Ruby 1.9.3 or later"
+  exit
+end
 libdir = File.dirname(__FILE__) + '/lib'
 $:.unshift libdir
 require 'yaml'
@@ -266,7 +270,8 @@ def compile_as(script, funcname)
   src = @lwfpath + ".as"
   dst = @lwfpath + ".asbin"
 
-  as = script.gsub(/fscommand(\s*\(\s*")/, 'geturl1\1FSCommand:').gsub(/(?<t>tellTarget\s*\([^\(]+\)\s*)(?<p>\{(?:[^{}]|\g<p>)*\})/, '\k<t>\k<p>;') + "\n"
+  re = Regexp.new("(?<t>tellTarget\s*\([^\(]+\)\s*)(?<p>\{(?:[^{}]|\g<p>)*\})/")
+  as = script.gsub(/fscommand(\s*\(\s*")/, 'geturl1\1FSCommand:').gsub(re, '\k<t>\k<p>;') + "\n"
 
   info funcname
   info "==========================================================="
@@ -294,7 +299,7 @@ EOL
     @swf = ""
   end
   @swf += [].pack('x')
-  @swf.force_encoding("ASCII-8BIT") if RUBY_VERSION >= "1.9.0"
+  @swf.force_encoding("ASCII-8BIT")
   @pos = 0
   info "  size: #{@swf.size}"
 
@@ -1308,7 +1313,7 @@ def get_string
     break if c == 0
     str += c.chr
   end
-  str.force_encoding("UTF-8") if RUBY_VERSION >= "1.9.0"
+  str.force_encoding("UTF-8")
 end
 
 def get_data(length)
@@ -2534,15 +2539,12 @@ def load_swf(filename)
   f = File.open(@filename, 'rb')
   swf = f.read
   f.close
-  swf.force_encoding("ASCII-8BIT") if RUBY_VERSION >= "1.9.0"
+  swf.force_encoding("ASCII-8BIT")
 
   magic, @version, length = swf.unpack('a3cV')
   case @version
   when 7
   when 20
-    if RUBY_VERSION < "1.9.1"
-      error "Requires Ruby 1.9.1 or later for SWF Format Version #{@version}"
-    end
   else
     warn "SWF Format Version #{@version} is not supported"
   end
@@ -2676,11 +2678,11 @@ def add_actions(actions)
             @actions += [LWF_INSTANCE_TARGET_PARENT, 0, 0, 0]
           else
             instanceNameId = @map_instanceName[target]
-            info sprintf("      %d\n", instanceNameId)
             if instanceNameId.nil?
               error("Instance(#{target}) not found")
               instanceNameId = 0
             end
+            info sprintf("      %d\n", instanceNameId)
             @actionBytes += to_u32(instanceNameId)
             @actions += [instanceNameId, 0, 0, 0]
           end
@@ -2930,6 +2932,7 @@ def parse_xflxml(xml, isRootMovie = false)
         i += skip
       end
 
+      re = Regexp.new("on\s*\(\s*(?<c>press|release|rollOver|rollOut)\s*\)\s*(?<p>\{(?:[^{}]|\g<p>)*\})")
       scripts.each do |lang, types|
         types.each do |type, script|
           if script =~ /\W/
@@ -2938,7 +2941,7 @@ def parse_xflxml(xml, isRootMovie = false)
               frame_action = true
               if lang == :ActionScript
                 if instance_linkage_name
-                  script.gsub(/on\s*\(\s*(?<c>press|release|rollOver|rollOut)\s*\)\s*(?<p>\{(?:[^{}]|\g<p>)*\})/) do |m|
+                  script.gsub(re) do |m|
                     event = $~[:c]
                     btnscript = $~[:p]
                     btnscript = btnscript.slice(1, btnscript.length - 2)
@@ -3093,7 +3096,7 @@ end
 
 def decode_linkageName(body)
   line = body.split(/\n/)[0]
-  line.force_encoding("UTF-8") if RUBY_VERSION >= "1.9.0"
+  line.force_encoding("UTF-8")
   if line =~ /DOMSymbolItem/
     line =~ /\s+name="([^"]+)"/
     name = $1
