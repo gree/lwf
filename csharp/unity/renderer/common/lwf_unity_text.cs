@@ -239,6 +239,13 @@ public class UnityTextRenderer : TextRenderer
 		}
 	}
 
+	public override void Destruct()
+	{
+		if (m_context != null)
+			m_context.Destruct();
+		base.Destruct();
+	}
+
 	public override void SetText(string text)
 	{
 		if (m_context == null)
@@ -285,12 +292,6 @@ public class UnityTextRenderer : TextRenderer
 		m_context.RenderNow(m_renderMatrix, m_colorMult);
 	}
 #endif
-
-	public override void Destruct()
-	{
-		if (m_context != null) m_context.Destruct();
-	}
-
 }
 
 }	// namespace UnityRenderer
