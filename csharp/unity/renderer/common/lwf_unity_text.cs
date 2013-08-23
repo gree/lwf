@@ -285,6 +285,12 @@ public class UnityTextRenderer : TextRenderer
 		m_context.RenderNow(m_renderMatrix, m_colorMult);
 	}
 #endif
+
+	public override void Destruct()
+	{
+		if (m_context != null) m_context.Destruct();
+	}
+
 }
 
 }	// namespace UnityRenderer
