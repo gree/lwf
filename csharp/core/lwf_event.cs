@@ -210,7 +210,7 @@ public partial class LWF
 
 		handlers.Add(load, postLoad, unload, enterFrame, update, render);
 
-		Movie movie = SearchMovieInstance(instId);
+		Movie movie = SearchMovieInstance(instanceName);
 		if (movie != null)
 			movie.SetHandlers(handlers);
 		return ++m_eventOffset;
@@ -259,6 +259,9 @@ public partial class LWF
 			return;
 
 		handlers.Remove(load, postLoad, unload, enterFrame, update, render);
+		Movie movie = SearchMovieInstance(instanceName);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void RemoveMovieEventHandler(int instId,
@@ -274,6 +277,9 @@ public partial class LWF
 			return;
 
 		handlers.Remove(load, postLoad, unload, enterFrame, update, render);
+		Movie movie = SearchMovieInstanceByInstanceId(instId);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void ClearMovieEventHandler(string instanceName)
@@ -293,6 +299,9 @@ public partial class LWF
 			return;
 
 		handlers.Clear();
+		Movie movie = SearchMovieInstance(instanceName);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void ClearMovieEventHandler(int instId)
@@ -305,6 +314,9 @@ public partial class LWF
 			return;
 
 		handlers.Clear();
+		Movie movie = SearchMovieInstanceByInstanceId(instId);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void ClearMovieEventHandler(
@@ -325,6 +337,9 @@ public partial class LWF
 			return;
 
 		handlers.Clear(type);
+		Movie movie = SearchMovieInstance(instanceName);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void ClearMovieEventHandler(
@@ -338,6 +353,9 @@ public partial class LWF
 			return;
 
 		handlers.Clear(type);
+		Movie movie = SearchMovieInstanceByInstanceId(instId);
+		if (movie != null)
+			movie.SetHandlers(handlers);
 	}
 
 	public void SetMovieEventHandler(string instanceName,
@@ -413,7 +431,7 @@ public partial class LWF
 		handlers.Add(load, unload, enterFrame, update, render,
 			press, release, rollOver, rollOut, keyPress);
 
-		Button button = SearchButtonInstance(instId);
+		Button button = SearchButtonInstance(instanceName);
 		if (button != null)
 			button.SetHandlers(handlers);
 		return ++m_eventOffset;
@@ -473,6 +491,10 @@ public partial class LWF
 
 		handlers.Remove(load, unload, enterFrame, update, render,
 			press, release, rollOver, rollOut, keyPress);
+
+		Button button = SearchButtonInstance(instanceName);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void RemoveButtonEventHandler(int instId,
@@ -492,6 +514,10 @@ public partial class LWF
 
 		handlers.Remove(load, unload, enterFrame, update, render,
 			press, release, rollOver, rollOut, keyPress);
+
+		Button button = SearchButtonInstanceByInstanceId(instId);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void ClearButtonEventHandler(string instanceName)
@@ -511,6 +537,10 @@ public partial class LWF
 			return;
 
 		handlers.Clear();
+
+		Button button = SearchButtonInstance(instanceName);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void ClearButtonEventHandler(int instId)
@@ -523,6 +553,10 @@ public partial class LWF
 			return;
 
 		handlers.Clear();
+
+		Button button = SearchButtonInstanceByInstanceId(instId);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void ClearButtonEventHandler(
@@ -543,6 +577,10 @@ public partial class LWF
 			return;
 
 		handlers.Clear(type);
+
+		Button button = SearchButtonInstance(instanceName);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void ClearButtonEventHandler(
@@ -556,6 +594,10 @@ public partial class LWF
 			return;
 
 		handlers.Clear(type);
+
+		Button button = SearchButtonInstanceByInstanceId(instId);
+		if (button != null)
+			button.SetHandlers(handlers);
 	}
 
 	public void SetButtonEventHandler(string instanceName,

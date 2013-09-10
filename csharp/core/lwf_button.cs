@@ -64,17 +64,21 @@ public partial class Button : IObject
 			m_dataMatrixId = m_data.matrixId;
 		}
 
-		m_handler = lwf.GetButtonEventHandlers(this);
-		if (m_handler != null)
+		ButtonEventHandlers handler = lwf.GetButtonEventHandlers(this);
+		if (handler != null) {
+			m_handler = new ButtonEventHandlers();
+			m_handler.Add(handler);
 			m_handler.Call(EventType.LOAD, this);
+		}
 	}
 
 	public void SetHandlers(ButtonEventHandlers handler)
 	{
-		if (m_handler != null)
-			m_handler.Add(handler);
+		if (m_handler == null)
+			m_handler = new ButtonEventHandlers();
 		else
-			m_handler = handler;
+			m_handler.Clear();
+		m_handler.Add(handler);
 	}
 
 	public override void Exec(int matrixId = 0, int colorTransformId = 0)

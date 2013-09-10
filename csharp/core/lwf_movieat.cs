@@ -46,6 +46,7 @@ public partial class Movie : IObject
 {
 	private void ReorderAttachedMovieList(bool reorder, int index, Movie movie)
 	{
+		m_attachedMovieList = new AttachedMovieList(m_attachedMovieList);
 		m_attachedMovieList[index] = movie;
 		m_attachedMovieDescendingList[index] = index;
 		if (reorder) {
@@ -244,6 +245,7 @@ public partial class Movie : IObject
 	private void ReorderAttachedLWFList(
 		bool reorder, int index, LWFContainer lwfContainer)
 	{
+		m_attachedLWFList = new AttachedLWFList(m_attachedLWFList);
 		m_attachedLWFList[index] = lwfContainer;
 		m_attachedLWFDescendingList[index] = index;
 		if (reorder) {

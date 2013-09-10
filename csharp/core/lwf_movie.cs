@@ -86,9 +86,9 @@ public partial class Movie : IObject
 
 	private Property m_property;
 
-	public Movie(LWF lwf, Movie parent, int objId,
-			int instId, int matrixId = 0, int colorTransformId = 0,
-			bool attached = false, MovieEventHandlers handler = null, string n = null)
+	public Movie(LWF lwf, Movie parent, int objId, int instId, int matrixId = 0,
+			int colorTransformId = 0, bool attached = false,
+			MovieEventHandlers handler = null, string n = null)
 		: base(lwf, parent,
 			attached ? Type.ATTACHEDMOVIE : Type.MOVIE, objId, instId)
 	{
@@ -158,6 +158,7 @@ public partial class Movie : IObject
 
 	public void SetHandlers(MovieEventHandlers handler)
 	{
+		m_handler.Clear();
 		m_handler.Add(handler);
 	}
 
@@ -166,7 +167,14 @@ public partial class Movie : IObject
 		float px;
 		float py;
 		Matrix invert = new Matrix();
-		Utility.InvertMatrix(invert, m_matrix);
+		Matrix m;
+		if (m_property.hasMatrix) {
+			m = new Matrix();
+			m = Utility.CalcMatrix(m, m_matrix, m_property.matrix);
+		} else {
+			m = m_matrix;
+		}
+		Utility.InvertMatrix(invert, m);
 		Utility.CalcMatrixToPoint(out px, out py, point.x, point.y, invert);
 		return new Point(px, py);
 	}
@@ -175,7 +183,14 @@ public partial class Movie : IObject
 	{
 		float px;
 		float py;
-		Utility.CalcMatrixToPoint(out px, out py, point.x, point.y, m_matrix);
+		Matrix m;
+		if (m_property.hasMatrix) {
+			m = new Matrix();
+			m = Utility.CalcMatrix(m, m_matrix, m_property.matrix);
+		} else {
+			m = m_matrix;
+		}
+		Utility.CalcMatrixToPoint(out px, out py, point.x, point.y, m);
 		return new Point(px, py);
 	}
 
@@ -572,18 +587,6 @@ public partial class Movie : IObject
 		if (!m_visible || !m_active || !m_hasButton)
 			return;
 
-		if (m_attachedLWFs != null) {
-			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values)
-				if (lwfContainer != null)
-					lwfContainer.LinkButton();
-		}
-
-		if (m_attachedMovies != null) {
-			foreach (Movie movie in m_attachedMovieList.Values)
-				if (movie != null && movie.m_hasButton)
-					movie.LinkButton();
-		}
-
 		for (int dlDepth = 0; dlDepth < m_data.depths; ++dlDepth) {
 			Object obj = m_displayList[dlDepth];
 			if (obj != null) {
@@ -595,6 +598,18 @@ public partial class Movie : IObject
 						movie.LinkButton();
 				}
 			}
+		}
+
+		if (m_attachedMovies != null) {
+			foreach (Movie movie in m_attachedMovieList.Values)
+				if (movie != null && movie.m_hasButton)
+					movie.LinkButton();
+		}
+
+		if (m_attachedLWFs != null) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values)
+				if (lwfContainer != null)
+					lwfContainer.LinkButton();
 		}
 	}
 
@@ -779,12 +794,45 @@ public partial class Movie : IObject
 
 	public Movie SearchMovieInstance(string instanceName, bool recursive = true)
 	{
-		return SearchMovieInstance(m_lwf.GetStringId(instanceName), recursive);
+		int stringId = m_lwf.GetStringId(instanceName);
+		if (stringId != -1)
+			return SearchMovieInstance(stringId, recursive);
+
+		if (m_attachedMovies != null) {
+			foreach (Movie movie in m_attachedMovieList.Values) {
+				if (movie != null) {
+					if (movie.attachName == instanceName)
+						return movie;
+					else if (recursive) {
+						Movie descendant = movie.SearchMovieInstance(instanceName, recursive);
+						if (descendant != null)
+							return descendant;
+					}
+				}
+			}
+		}
+
+		if (m_attachedLWFs != null) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values) {
+				if (lwfContainer != null) {
+					LWF child = lwfContainer.child;
+					if (child.attachName == instanceName) {
+						return child.rootMovie;
+					} else if (recursive) {
+						Movie descendant = child.rootMovie.SearchMovieInstance(instanceName, recursive);
+						if (descendant != null)
+							return descendant;
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 	public Movie this[string instanceName]
 	{
-		get {return SearchMovieInstance(instanceName);}
+		get {return SearchMovieInstance(instanceName, false);}
 	}
 
 	public Movie SearchMovieInstanceByInstanceId(int instId, bool recursive)
@@ -826,7 +874,32 @@ public partial class Movie : IObject
 	public Button SearchButtonInstance(
 		string instanceName, bool recursive = true)
 	{
-		return SearchButtonInstance(m_lwf.GetStringId(instanceName), recursive);
+		int stringId = m_lwf.GetStringId(instanceName);
+		if (stringId != -1)
+			return SearchButtonInstance(stringId, recursive);
+
+		if (m_attachedMovies != null && recursive) {
+			foreach (Movie movie in m_attachedMovieList.Values) {
+				if (movie != null) {
+					Button button = movie.SearchButtonInstance(instanceName, recursive);
+					if (button != null)
+						return button;
+				}
+			}
+		}
+
+		if (m_attachedLWFs != null) {
+			foreach (LWFContainer lwfContainer in m_attachedLWFList.Values) {
+				if (lwfContainer != null) {
+					LWF child = lwfContainer.child;
+					Button button = child.rootMovie.SearchButtonInstance(instanceName, recursive);
+					if (button != null)
+						return button;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	public Button SearchButtonInstanceByInstanceId(int instId, bool recursive)

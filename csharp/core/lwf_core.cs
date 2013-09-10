@@ -34,7 +34,6 @@ using AllowButtonList = Dictionary<int, bool>;
 using DenyButtonList = Dictionary<int, bool>;
 using ExecHandler = Action<LWF>;
 using ExecHandlerList = List<Action<LWF>>;
-using EventFunctions = Dictionary<int, bool>;
 using TextDictionary = Dictionary<string, TextDictionaryItem>;
 
 public class TextDictionaryItem
@@ -516,7 +515,11 @@ public partial class LWF
 			return m;
 		}
 
-		return SearchMovieInstance(GetStringId(instanceName));
+		int stringId = GetStringId(instanceName);
+		if (stringId == -1)
+			return rootMovie.SearchMovieInstance(instanceName, true);
+
+		return SearchMovieInstance(stringId);
 	}
 
 	public Movie this[string instanceName]
@@ -563,7 +566,11 @@ public partial class LWF
 			return null;
 		}
 
-		return SearchButtonInstance(GetStringId(instanceName));
+		int stringId = GetStringId(instanceName);
+		if (stringId == -1)
+			return rootMovie.SearchButtonInstance(instanceName, true);
+
+		return SearchButtonInstance(stringId);
 	}
 
 	public Button SearchButtonInstanceByInstanceId(int instId)
