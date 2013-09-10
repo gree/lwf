@@ -88,6 +88,7 @@ Format.ProgramObject.prototype.stringId;
 Format.ProgramObject.prototype.width;
 
 function Movie() {}
+Movie.prototype.active;
 Movie.prototype.alpha;
 Movie.prototype.attachName;
 Movie.prototype.blendMode;

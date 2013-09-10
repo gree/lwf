@@ -2883,6 +2883,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Button.prototype.linkButton = function() {
+      if (this.lwf.focus === this) {
+        this.lwf.focusOnLink = true;
+      }
       this.buttonLink = this.lwf.buttonHead;
       this.lwf.buttonHead = this;
     };
@@ -3721,7 +3724,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (attachedMovie != null) {
         this.deleteAttachedMovie(this, attachedMovie);
       }
-      if (!reorder) {
+      if (!reorder && (depth != null)) {
         attachedMovie = this.attachedMovieList[depth];
         if (attachedMovie != null) {
           this.deleteAttachedMovie(this, attachedMovie);
@@ -3976,7 +3979,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (lwfContainer != null) {
         this.deleteAttachedLWF(this, lwfContainer);
       }
-      if (!reorder) {
+      if (!reorder && (depth != null)) {
         lwfContainer = this.attachedLWFList[depth];
         if (lwfContainer != null) {
           this.deleteAttachedLWF(this, lwfContainer);
@@ -5775,7 +5778,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         this.buttonHead = null;
         if (this.interactive && this.rootMovie.hasButton) {
+          this.focusOnLink = false;
           this.rootMovie.linkButton();
+          if (this.focus !== null && !this.focusOnLink) {
+            this.focus.rollOut();
+            this.focus = null;
+          }
         }
       }
       needUpdate = this.isLWFAttached;
@@ -8481,7 +8489,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.onloaddata = function(settings, data, url) {
-      var lwfUrl;
+      var lwfUrl, needsToLoadScript, _ref2, _ref3;
       if (!((data != null) && data.check())) {
         settings.error.push({
           url: url,
@@ -8492,17 +8500,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       settings["name"] = data.name();
       this.checkTextures(settings, data);
+      needsToLoadScript = data.useScript && (((_ref2 = global["LWF"]) != null ? (_ref3 = _ref2["Script"]) != null ? _ref3[data.name()] : void 0 : void 0) == null);
       lwfUrl = settings["lwf"];
       this.cache[lwfUrl].data = data;
       settings.total = settings._textures.length + 1;
-      if (data.useScript) {
+      if (needsToLoadScript) {
         settings.total++;
       }
       settings.loadedCount = 1;
       if (settings["onprogress"] != null) {
         settings["onprogress"].call(settings, settings.loadedCount, settings.total);
       }
-      if (data.useScript) {
+      if (needsToLoadScript) {
         this.loadJS(settings, data);
       } else {
         this.loadImages(settings, data);
@@ -8593,7 +8602,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.loadLWFData = function(settings, url) {
-      var head, lwfUrl, m, name, onload, script, useArrayBuffer, useWorker, useWorkerWithArrayBuffer, xhr, _base,
+      var data, head, lwfUrl, m, name, onload, script, str, useArrayBuffer, useWorker, useWorkerWithArrayBuffer, xhr, _base, _ref2, _ref3,
         _this = this;
       onload = settings["onload"];
       useWorker = false;
@@ -8607,6 +8616,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       m = url.match(/([^\/]+)\.lwf\.js/i);
       if (m != null) {
         name = m[1].toLowerCase();
+        str = (_ref2 = global["LWF"]) != null ? (_ref3 = _ref2["DataScript"]) != null ? _ref3[name] : void 0 : void 0;
+        if (str != null) {
+          data = {
+            type: "base64",
+            data: str
+          };
+          this.dispatchOnloaddata(settings, url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data);
+          return;
+        }
         head = document.getElementsByTagName('head')[0];
         script = document.createElement("script");
         script.type = "text/javascript";
@@ -8630,8 +8648,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           return onload.call(settings, null);
         };
         script.onload = function() {
-          var data, str, _ref2, _ref3;
-          str = (_ref2 = global["LWF"]) != null ? (_ref3 = _ref2["DataScript"]) != null ? _ref3[name] : void 0 : void 0;
+          var _ref4, _ref5;
+          str = (_ref4 = global["LWF"]) != null ? (_ref5 = _ref4["DataScript"]) != null ? _ref5[name] : void 0 : void 0;
           head.removeChild(script);
           script = script.onload = script.onabort = script.onerror = null;
           if (str != null) {
@@ -8683,7 +8701,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return onload.call(settings, null);
       };
       xhr.onreadystatechange = function() {
-        var data;
         if (xhr.readyState !== 4) {
           return;
         }
@@ -9297,10 +9314,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     CanvasRendererFactory.prototype.endRender = function(lwf) {
-      var cmd, ctx, f, rIndex, scmd, srIndex, _i, _j, _len, _len1, _ref2, _ref3, _ref4;
+      var cmd, ctx, f, parent, rIndex, scmd, srIndex, _i, _j, _len, _len1, _ref2, _ref3, _ref4;
       ctx = this.stageContext;
       if (lwf.parent != null) {
-        f = lwf.parent.lwf.rendererFactory;
+        parent = lwf.parent;
+        while (parent.parent != null) {
+          parent = parent.parent;
+        }
+        f = parent.lwf.rendererFactory;
         _ref2 = this.commands;
         for (rIndex in _ref2) {
           cmd = _ref2[rIndex];
@@ -9832,9 +9853,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebGLRendererFactory.prototype.endRender = function(lwf) {
-      var cmd, f, gl, i, indexOffset, indices, offset, rIndex, scmd, srIndex, vertices, _i, _j, _k, _len, _len1, _ref4, _ref5, _ref6, _ref7;
+      var cmd, f, gl, i, indexOffset, indices, offset, parent, rIndex, scmd, srIndex, vertices, _i, _j, _k, _len, _len1, _ref4, _ref5, _ref6, _ref7;
       if (lwf.parent != null) {
-        f = lwf.parent.lwf.rendererFactory;
+        parent = lwf.parent;
+        while (parent.parent != null) {
+          parent = parent.parent;
+        }
+        f = parent.lwf.rendererFactory;
         _ref4 = this.commands;
         for (rIndex in _ref4) {
           cmd = _ref4[rIndex];
@@ -10159,7 +10184,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   WebGLBitmapContext = (function() {
     function WebGLBitmapContext(factory, data, bitmapEx) {
-      var bh, bu, bv, bw, d, dh, dw, filename, fragment, gl, h, image, scale, texdata, th, tw, u, u0, u1, v, v0, v1, w, x, x0, x1, y, y0, y1;
+      var bh, bu, bv, bw, d, filename, fragment, gl, h, image, scale, texdata, th, tw, u, u0, u1, v, v0, v1, w, x, x0, x1, y, y0, y1;
       this.factory = factory;
       this.data = data;
       fragment = data.textureFragments[bitmapEx.textureFragmentId];
@@ -10216,13 +10241,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           y: y0
         }
       ];
-      dw = 2.0 * tw;
-      dh = 2.0 * th;
       if (fragment.rotated === 0) {
-        u0 = (2 * u + 1) / dw;
-        v0 = (2 * v + 1) / dh;
-        u1 = u0 + (w * 2 - 2) / dw;
-        v1 = v0 + (h * 2 - 1) / dh;
+        u0 = u / tw;
+        v0 = v / th;
+        u1 = (u + w) / tw;
+        v1 = (v + h) / th;
         this.uv = [
           {
             u: u1,
@@ -10239,10 +10262,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           }
         ];
       } else {
-        u0 = (2 * u + 1) / dw;
-        v0 = (2 * v + 1) / dh;
-        u1 = u0 + (h * 2 - 2) / dw;
-        v1 = v0 + (w * 2 - 1) / dh;
+        u0 = u / tw;
+        v0 = v / th;
+        u1 = (u + h) / tw;
+        v1 = (v + w) / th;
         this.uv = [
           {
             u: u0,

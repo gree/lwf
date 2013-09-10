@@ -200,7 +200,9 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
   endRender:(lwf) ->
     if lwf.parent?
-      f = lwf.parent.lwf.rendererFactory
+      parent = lwf.parent
+      parent = parent.parent while parent.parent?
+      f = parent.lwf.rendererFactory
       f.addCommand(parseInt(rIndex, 10), cmd) for rIndex, cmd of @commands
       @initCommands()
       return

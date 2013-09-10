@@ -165,15 +165,18 @@ class WebkitCSSResourceCache
 
     @checkTextures(settings, data)
 
+    needsToLoadScript =
+      data.useScript and !global["LWF"]?["Script"]?[data.name()]?
+
     lwfUrl = settings["lwf"]
     @cache[lwfUrl].data = data
     settings.total = settings._textures.length + 1
-    settings.total++ if data.useScript
+    settings.total++ if needsToLoadScript
     settings.loadedCount = 1
     settings["onprogress"].call(settings,
       settings.loadedCount, settings.total) if settings["onprogress"]?
 
-    if data.useScript
+    if needsToLoadScript
       @loadJS(settings, data)
     else
       @loadImages(settings, data)
@@ -256,6 +259,12 @@ class WebkitCSSResourceCache
     m = url.match(/([^\/]+)\.lwf\.js/i)
     if m?
       name = m[1].toLowerCase()
+      str = global["LWF"]?["DataScript"]?[name]
+      if str?
+        data = type:"base64", data:str
+        @dispatchOnloaddata(settings,
+          url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data)
+        return
       head = document.getElementsByTagName('head')[0]
       script = document.createElement("script")
       script.type = "text/javascript"

@@ -68,6 +68,7 @@ class Button extends IObject
     return
 
   linkButton: ->
+    @lwf.focusOnLink = true if @lwf.focus is @
     @buttonLink = @lwf.buttonHead
     @lwf.buttonHead = @
     return

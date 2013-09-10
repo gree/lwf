@@ -17,6 +17,7 @@ typedef MovieEventListener = ?EventParams->Void;
 @:native("LWF.Movie")
 extern class Movie
 {
+	public var active:Bool;
 	public var alpha:Float;
 	public var blendMode:String;
 	public var currentFrame(default,never):Int;

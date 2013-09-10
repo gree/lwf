@@ -195,7 +195,7 @@ class Movie extends IObject
     attachedMovie = @attachedMovies[attachName]
     @deleteAttachedMovie(@, attachedMovie) if attachedMovie?
 
-    unless reorder
+    if !reorder and depth?
       attachedMovie = @attachedMovieList[depth]
       @deleteAttachedMovie(@, attachedMovie) if attachedMovie?
 
@@ -364,7 +364,7 @@ class Movie extends IObject
     lwfContainer = @attachedLWFs[attachName]
     @deleteAttachedLWF(@, lwfContainer) if lwfContainer?
 
-    unless reorder
+    if !reorder and depth?
       lwfContainer = @attachedLWFList[depth]
       @deleteAttachedLWF(@, lwfContainer) if lwfContainer?
 

@@ -270,7 +270,12 @@ class LWF
         @progress = 0
 
       @buttonHead = null
-      @rootMovie.linkButton() if @interactive and @rootMovie.hasButton
+      if @interactive and @rootMovie.hasButton
+        @focusOnLink = false
+        @rootMovie.linkButton()
+        if @focus isnt null and !@focusOnLink
+          @focus.rollOut()
+          @focus = null
 
     needUpdate = @isLWFAttached
     unless @fastForward

@@ -2883,6 +2883,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Button.prototype.linkButton = function() {
+      if (this.lwf.focus === this) {
+        this.lwf.focusOnLink = true;
+      }
       this.buttonLink = this.lwf.buttonHead;
       this.lwf.buttonHead = this;
     };
@@ -3721,7 +3724,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (attachedMovie != null) {
         this.deleteAttachedMovie(this, attachedMovie);
       }
-      if (!reorder) {
+      if (!reorder && (depth != null)) {
         attachedMovie = this.attachedMovieList[depth];
         if (attachedMovie != null) {
           this.deleteAttachedMovie(this, attachedMovie);
@@ -3976,7 +3979,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (lwfContainer != null) {
         this.deleteAttachedLWF(this, lwfContainer);
       }
-      if (!reorder) {
+      if (!reorder && (depth != null)) {
         lwfContainer = this.attachedLWFList[depth];
         if (lwfContainer != null) {
           this.deleteAttachedLWF(this, lwfContainer);
@@ -5775,7 +5778,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         this.buttonHead = null;
         if (this.interactive && this.rootMovie.hasButton) {
+          this.focusOnLink = false;
           this.rootMovie.linkButton();
+          if (this.focus !== null && !this.focusOnLink) {
+            this.focus.rollOut();
+            this.focus = null;
+          }
         }
       }
       needUpdate = this.isLWFAttached;
@@ -7378,7 +7386,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.onloaddata = function(settings, data, url) {
-      var lwfUrl;
+      var lwfUrl, needsToLoadScript, _ref1, _ref2;
       if (!((data != null) && data.check())) {
         settings.error.push({
           url: url,
@@ -7389,17 +7397,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       settings["name"] = data.name();
       this.checkTextures(settings, data);
+      needsToLoadScript = data.useScript && (((_ref1 = global["LWF"]) != null ? (_ref2 = _ref1["Script"]) != null ? _ref2[data.name()] : void 0 : void 0) == null);
       lwfUrl = settings["lwf"];
       this.cache[lwfUrl].data = data;
       settings.total = settings._textures.length + 1;
-      if (data.useScript) {
+      if (needsToLoadScript) {
         settings.total++;
       }
       settings.loadedCount = 1;
       if (settings["onprogress"] != null) {
         settings["onprogress"].call(settings, settings.loadedCount, settings.total);
       }
-      if (data.useScript) {
+      if (needsToLoadScript) {
         this.loadJS(settings, data);
       } else {
         this.loadImages(settings, data);
@@ -7490,7 +7499,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.loadLWFData = function(settings, url) {
-      var head, lwfUrl, m, name, onload, script, useArrayBuffer, useWorker, useWorkerWithArrayBuffer, xhr, _base,
+      var data, head, lwfUrl, m, name, onload, script, str, useArrayBuffer, useWorker, useWorkerWithArrayBuffer, xhr, _base, _ref1, _ref2,
         _this = this;
       onload = settings["onload"];
       useWorker = false;
@@ -7504,6 +7513,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       m = url.match(/([^\/]+)\.lwf\.js/i);
       if (m != null) {
         name = m[1].toLowerCase();
+        str = (_ref1 = global["LWF"]) != null ? (_ref2 = _ref1["DataScript"]) != null ? _ref2[name] : void 0 : void 0;
+        if (str != null) {
+          data = {
+            type: "base64",
+            data: str
+          };
+          this.dispatchOnloaddata(settings, url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data);
+          return;
+        }
         head = document.getElementsByTagName('head')[0];
         script = document.createElement("script");
         script.type = "text/javascript";
@@ -7527,8 +7545,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           return onload.call(settings, null);
         };
         script.onload = function() {
-          var data, str, _ref1, _ref2;
-          str = (_ref1 = global["LWF"]) != null ? (_ref2 = _ref1["DataScript"]) != null ? _ref2[name] : void 0 : void 0;
+          var _ref3, _ref4;
+          str = (_ref3 = global["LWF"]) != null ? (_ref4 = _ref3["DataScript"]) != null ? _ref4[name] : void 0 : void 0;
           head.removeChild(script);
           script = script.onload = script.onabort = script.onerror = null;
           if (str != null) {
@@ -7580,7 +7598,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return onload.call(settings, null);
       };
       xhr.onreadystatechange = function() {
-        var data;
         if (xhr.readyState !== 4) {
           return;
         }

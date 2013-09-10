@@ -72,13 +72,11 @@ class WebGLBitmapContext
       {x:x0, y:y0}
     ]
 
-    dw = 2.0 * tw
-    dh = 2.0 * th
     if fragment.rotated is 0
-      u0 = (2 * u + 1) / dw
-      v0 = (2 * v + 1) / dh
-      u1 = u0 + (w * 2 - 2) / dw
-      v1 = v0 + (h * 2 - 1) / dh
+      u0 = u / tw
+      v0 = v / th
+      u1 = (u + w) / tw
+      v1 = (v + h) / th
       @uv = [
         {u:u1, v:v1},
         {u:u1, v:v0},
@@ -86,10 +84,10 @@ class WebGLBitmapContext
         {u:u0, v:v0}
       ]
     else
-      u0 = (2 * u + 1) / dw
-      v0 = (2 * v + 1) / dh
-      u1 = u0 + (h * 2 - 2) / dw
-      v1 = v0 + (w * 2 - 1) / dh
+      u0 = u / tw
+      v0 = v / th
+      u1 = (u + h) / tw
+      v1 = (v + w) / th
       @uv = [
         {u:u0, v:v1},
         {u:u1, v:v1},
