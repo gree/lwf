@@ -29,6 +29,7 @@ str = Base64.encode64(Zlib::Deflate.deflate(File.read(lwf), 9))
 
 f = File.open(lwf.sub(/\.lwf/, '.lwf.js'), "wb")
 f.print <<-EOL
+global['LWF'] = global['LWF'] || {};
 global['LWF']['DataScript'] = global['LWF']['DataScript'] || {};
 global['LWF']['DataScript']['#{lwfname}'] = "#{str.split.join}";
 EOL
