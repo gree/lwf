@@ -200,11 +200,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
   endRender:(lwf) ->
     if lwf.parent?
-      parent = lwf.parent
-      parent = parent.parent while parent.parent?
-      f = parent.lwf.rendererFactory
-      f.addCommand(parseInt(rIndex, 10), cmd) for rIndex, cmd of @commands
-      @initCommands()
+      @addCommandToParent(lwf)
       return
 
     gl = @stageContext
@@ -298,7 +294,6 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
       @blendDstFactor =
         if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA
-      @faces = 0
 
     alpha = c.multi.alpha
     if @useVertexColor
@@ -383,6 +378,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl.uniformMatrix4fv(@uMatrix, false, @matrix)
 
     gl.drawElements(gl.TRIANGLES, @faces * 6, gl.UNSIGNED_SHORT, 0)
+    @faces = 0
     ++@drawCalls
     return
 

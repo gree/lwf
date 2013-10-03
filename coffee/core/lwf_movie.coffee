@@ -653,6 +653,11 @@ class Movie extends IObject
         @postLoadFunc.call(@) if @postLoadFunc?
         @handler.call("postLoad", @) unless @handler.empty
 
+      if @nextEnterFrameFunctions?
+        funcs = @nextEnterFrameFunctions
+        @nextEnterFrameFunctions = null
+        func.call(@) for func in funcs
+
       if controlAnimationOffset isnt -1 and
           @execedFrame is @currentFrameInternal
         animationPlayed =
@@ -1004,6 +1009,11 @@ class Movie extends IObject
   setEventHandler:(e, eventHandler) ->
     @clearEventHandler(e)
     @addEventHandler(e, eventHandler)
+    return
+
+  nextEnterFrame:(func) ->
+    @nextEnterFrameFunctions ?= []
+    @nextEnterFrameFunctions.push(func)
     return
 
   searchFrame:(label) ->

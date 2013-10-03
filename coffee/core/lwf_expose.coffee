@@ -145,6 +145,7 @@ Movie.prototype["inspect"] = Movie.prototype.inspect
 Movie.prototype["localToGlobal"] = Movie.prototype.localToGlobal
 Movie.prototype["move"] = Movie.prototype.move
 Movie.prototype["moveTo"] = Movie.prototype.moveTo
+Movie.prototype["nextEnterFrame"] = Movie.prototype.nextEnterFrame
 Movie.prototype["nextFrame"] = Movie.prototype.nextFrame
 Movie.prototype["override"] = Movie.prototype.override
 Movie.prototype["play"] = Movie.prototype.play

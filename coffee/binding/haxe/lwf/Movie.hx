@@ -92,6 +92,8 @@ extern class Movie
 
 	public function moveTo(x:Float, y:Float):Void;
 
+	public function nextEnterFrame(func:Void->Void):Void;
+
 	public function nextFrame():Void;
 
 	public function play():Void;

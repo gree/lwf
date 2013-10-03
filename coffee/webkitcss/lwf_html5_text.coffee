@@ -137,7 +137,8 @@ class HTML5TextRenderer
         offsetY = 0
     offsetY += @fontHeight * 1.2
 
-    ctx.clearRect(0, 0, canvas.width + 1, canvas.height + 1)
+    context.factory.clearCanvasRect(canvas, ctx)
+    @initCanvasContext(ctx)
     ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
     ctx.lineCap = "round"
     ctx.lineJoin = "round"
@@ -214,6 +215,7 @@ class HTML5TextRenderer
     if str? and str isnt @str
       strChanged = true
       @str = str
+      @initCanvas() unless @context.factory.recycleTextCanvas
 
     scaleChanged = false
     if @textScale isnt @lwf.textScale
@@ -247,13 +249,13 @@ class HTML5TextRenderer
     text = @context.text
     switch (property.align & Align.ALIGN_MASK)
       when Align.RIGHT
-        align = "right"
+        @align = "right"
         @offsetX = text.width - rightMargin
       when Align.CENTER
-        align = "center"
+        @align = "center"
         @offsetX = text.width / 2
       else # Align.LEFT
-        align = "left"
+        @align = "left"
         @offsetX = leftMargin
 
     canvas = document.createElement("canvas")
@@ -261,11 +263,15 @@ class HTML5TextRenderer
     canvas.height = @context.text.height * scale
     @maxWidth = canvas.width - (leftMargin + rightMargin)
     ctx = canvas.getContext("2d")
-    ctx.font = "#{@fontHeight}px #{@context.fontName}"
-    ctx.textAlign = align
-    ctx.textBaseline = "bottom"
+    @initCanvasContext(ctx)
     @canvas = canvas
     @canvasContext = ctx
     @letterSpacing = ctx.measureText('M').width * @context.letterSpacing
+    return
+
+  initCanvasContext:(ctx) ->
+    ctx.font = "#{@fontHeight}px #{@context.fontName}"
+    ctx.textAlign = @align
+    ctx.textBaseline = "bottom"
     return
 

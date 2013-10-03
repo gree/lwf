@@ -19,7 +19,8 @@
 #
 
 class WebkitCSSRendererFactory
-  constructor:(data, @resourceCache, @cache, @stage, @textInSubpixel, @use3D) ->
+  constructor:(data, @resourceCache, @cache, \
+      @stage, @textInSubpixel, @use3D, @recycleTextCanvas, @quirkyClearRect) ->
     @maskMode = "normal"
     @bitmapContexts = []
     for bitmap in data.bitmaps
@@ -90,6 +91,23 @@ class WebkitCSSRendererFactory
     @commandMaskMode = cmd.maskMode
     return
 
+  addCommandToParent:(lwf) ->
+    parent = lwf.parent
+    parent = parent.parent while parent.parent?
+    f = parent.lwf.rendererFactory
+    for rIndex, cmd of @commands
+      subCommands = cmd.subCommands
+      subCommandsKeys = cmd.subCommandsKeys
+      cmd.subCommands = undefined
+      cmd.subCommandsKeys = undefined
+      f.addCommand(parseInt(rIndex, 10), cmd)
+      if subCommandsKeys?
+        for srIndex in subCommandsKeys
+          scmd = subCommands[srIndex]
+          f.addCommand(parseInt(srIndex, 10), scmd)
+    @initCommands()
+    return
+
   destruct: ->
     @callRendererDestructor() if @destructedRenderers?
     context.destruct() for context in @bitmapContexts
@@ -127,6 +145,11 @@ class WebkitCSSRendererFactory
     return
 
   beginRender:(lwf) ->
+    if lwf.parent?
+      f = lwf.parent.lwf.rendererFactory
+      @blendMode = f.blendMode if f.blendMode?
+      @maskMode = f.maskMode
+
     @callRendererDestructor() if @destructedRenderers?
     return
 
@@ -201,6 +224,11 @@ class WebkitCSSRendererFactory
     return
 
   endRender:(lwf) ->
+    if lwf.parent?
+      @addCommandToParent(lwf)
+      @callRendererDestructor() if @destructedRenderers?
+      return
+
     @renderMaskMode = "normal"
     @renderMasked = false
     for rIndex in @commandsKeys
@@ -296,105 +324,8 @@ class WebkitCSSRendererFactory
     @stage.style.backgroundColor = "rgba(#{r},#{g},#{b},#{a / 255})"
     return
 
-  fitText:(ctx, line, words, lineStart, imin, imax) ->
-    return if imax < imin
-    imid = ((imin + imax) / 2) >> 0
-    start = if lineStart is 0 then 0 else words[lineStart - 1]
-    str = line.slice(start, words[imid])
-    w = ctx.measureText(str).width
-    if w <= @maxWidth
-      if w > @lineWidth
-        @index = imid
-        @lineWidth = w
-      @fitText(ctx, line, words, lineStart, imid + 1, imax)
-    if w >= @lineWidth
-      @fitText(ctx, line, words, lineStart, imin, imid - 1)
-
-  adjustText:(lines, ctx, @maxWidth) ->
-    newlines = []
-    for line in lines
-      words = line.split(" ")
-      line = ""
-      for word in words
-        if word.length > 0
-          line += " " if line.length > 0
-          line += word
-
-      if ctx.measureText(line).width > @maxWidth
-        words = []
-        prev = 0
-        for i in [1...line.length]
-          c = line.charCodeAt(i)
-          words.push(i) if c is 0x20 or c >= 0x80 or prev >= 0x80
-          prev = c
-        words.push(line.length)
-
-        imin = 0
-        imax = words.length - 1
-        loop
-          @index = null
-          @lineWidth = 0
-          @fitText(ctx, line, words, imin, imin, imax)
-          break if @index is null
-          start = if imin is 0 then 0 else words[imin - 1]
-          ++start if line.charCodeAt(start) is 0x20
-          to = words[@index]
-          str = line.slice(start, to)
-          if @index is imax
-            line = str
-            break
-          newlines.push(str)
-          start = to + if line.charCodeAt(to) is 0x20 then 1 else 0
-          str = line.slice(start)
-          if ctx.measureText(str).width <= @maxWidth
-            line = str
-            break
-          imin = @index + 1
-
-      newlines.push(line)
-    return newlines
-
-  renderText:(canvas, \
-      ctx, str, maxWidth, scale, context, fontHeight, offsetX, textColor) ->
-    lines = @adjustText(str.split("\n"), ctx, maxWidth)
-
-    property = context.textProperty
-    leading = property.leading * scale
-
-    switch (property.align & Align.VERTICAL_MASK)
-      when Align.VERTICAL_BOTTOM
-        len = lines.length
-        h = (fontHeight * len + leading * (len - 1)) * 96 / 72
-        offsetY = canvas.height - h
-      when Align.VERTICAL_MIDDLE
-        len = lines.length + 1
-        h = (fontHeight * len + leading * (len - 1)) * 96 / 72
-        offsetY = (canvas.height - h) / 2
-      else
-        offsetY = 0
+  clearCanvasRect:(canvas, ctx) ->
     ctx.clearRect(0, 0, canvas.width + 1, canvas.height + 1)
-    ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
-
-    useStroke = false
-    if context.strokeColor?
-      ctx.strokeStyle = context.factory.convertRGB(context.strokeColor)
-      ctx.lineWidth = property.strokeWidth * scale
-      useStroke = true
-
-    if context.shadowColor?
-      shadowColor = context.factory.convertRGB(context.shadowColor)
-      ctx.shadowOffsetX = property.shadowOffsetX * scale
-      ctx.shadowOffsetY = property.shadowOffsetY * scale
-      ctx.shadowBlur = property.shadowBlur * scale
-
-    for i in [0...lines.length]
-      line = lines[i]
-      x = offsetX * scale
-      y = fontHeight + offsetY
-      y += (fontHeight + leading) * i * 96 / 72 if i > 0
-      ctx.shadowColor = shadowColor if context.shadowColor?
-      ctx.fillText(line, x, y)
-      if useStroke
-        ctx.shadowColor = "rgba(0, 0, 0, 0)" if context.shadowColor?
-        ctx.strokeText(line, x, y)
+    canvas.width = canvas.width if @quirkyClearRect
+    return
 

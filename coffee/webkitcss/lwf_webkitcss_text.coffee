@@ -48,7 +48,14 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
       else
         @node.style.visibility = "visible" if @node?
 
+    super
+
+    nodeChanged = false
+    if @node? and @node isnt @canvas
+      @node.parentNode.removeChild(@node)
+      @node = null
     unless @node?
+      nodeChanged = true
       @node = @canvas
       @node.style.display = "block"
       @node.style.pointerEvents = "none"
@@ -57,11 +64,9 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
       @node.style.visibility = "visible"
       @context.factory.stage.appendChild(@node)
 
-    super
-
     maskMode = @context.factory.maskMode
 
-    return if !@matrixChanged and
+    return if !nodeChanged and !@matrixChanged and
       @alpha is c.multi.alpha and
       @zIndex is renderingIndex and
       maskMode is "normal" and

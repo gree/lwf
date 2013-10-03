@@ -235,13 +235,16 @@ class WebkitCSSResourceCache
 
     unless workerJS?
       if data.type is "base64"
-        data = global["LWF"].Base64.atobArray(data.data)
-        data = (new global["LWF"].Zlib.Inflate(data)).decompress()
-        data = Loader.loadArray(data)
+        try
+          data = global["LWF"].Base64.atobArray(data.data)
+          data = global["LWF"].LZMA.decompressFile(data)
+        catch e
+          data = null
+        data = WebkitCSSLoader.loadArray(data)
       else if useArrayBuffer
-        data = Loader.loadArrayBuffer(data.data)
+        data = WebkitCSSLoader.loadArrayBuffer(data.data)
       else
-        data = Loader.load(data.data)
+        data = WebkitCSSLoader.load(data.data)
       @onloaddata(settings, data, url)
 
     return
@@ -522,7 +525,8 @@ class WebkitCSSResourceCache
   newFactory:(settings, cache, data) ->
     return new WebkitCSSRendererFactory(data,
       @, cache, settings["stage"], settings["textInSubpixel"] ? false,
-         settings["use3D"] ? true)
+      settings["use3D"] ? true, settings["recycleTextCanvas"] ? true,
+      settings["quirkyClearRect"] ? false)
 
   onloadLWF:(settings, lwf) ->
     factory = lwf.rendererFactory

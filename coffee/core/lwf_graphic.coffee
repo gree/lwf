@@ -64,6 +64,13 @@ class Graphic extends LObject
     obj.render(v, rOffset) for obj in @displayList
     return
 
+  inspect:(inspector, hierarchy, depth, rOffset) ->
+    super(inspector, hierarchy, depth, rOffset)
+    ++hierarchy
+    for obj in @displayList
+      obj.inspect(inspector, hierarchy, depth, rOffset)
+    return
+
   destroy: ->
     obj.destroy() for obj in @displayList
     @displayList = null

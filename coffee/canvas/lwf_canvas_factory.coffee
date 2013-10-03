@@ -19,8 +19,8 @@
 #
 
 class CanvasRendererFactory extends WebkitCSSRendererFactory
-  constructor:(data, \
-      @resourceCache, @cache, @stage, @textInSubpixel, @needsClear) ->
+  constructor:(data, @resourceCache, \
+      @cache, @stage, @textInSubpixel, @needsClear, @quirkyClearRect) ->
     @blendMode = "normal"
     @maskMode = "normal"
     @bitmapContexts = []
@@ -98,7 +98,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
           @renderBlendMode = "normal"
           unless cleared
             ctx.setTransform(1, 0, 0, 1, 0, 0)
-            ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+            @clearCanvasRect(@stage, ctx)
         when "layer"
           if @renderMasked
             unless @layerCanvas?
@@ -114,7 +114,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
             @renderBlendMode = "normal"
             unless cleared
               ctx.setTransform(1, 0, 0, 1, 0, 0)
-              ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+              @clearCanvasRect(@stage, ctx)
           else
             ctx = @stageContext
             ctx.globalAlpha = 1
@@ -148,22 +148,18 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
   endRender:(lwf) ->
     ctx = @stageContext
     if lwf.parent?
-      parent = lwf.parent
-      parent = parent.parent while parent.parent?
-      f = parent.lwf.rendererFactory
-      f.addCommand(parseInt(rIndex, 10), cmd) for rIndex, cmd of @commands
-      @initCommands()
+      @addCommandToParent(lwf)
       return
 
     if @needsClear
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       if @clearColor?
         if @clearColor[3] is 'a'
-          ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+          @clearCanvasRect(@stage, ctx)
         ctx.fillStyle = @clearColor
         ctx.fillRect(0, 0, @stage.width, @stage.height)
       else
-        ctx.clearRect(0, 0, @stage.width + 1, @stage.height + 1)
+        @clearCanvasRect(@stage, ctx)
 
     @renderBlendMode = "normal"
     @renderMaskMode = "normal"

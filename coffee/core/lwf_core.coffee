@@ -772,6 +772,7 @@ class LWF
   setParent:(parent) ->
     @active = true
     @parent = parent
+    @setTextScale(parent.lwf.textScale)
     func = @functions?['init']
     func.call(@) if func?
     return

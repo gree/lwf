@@ -28,8 +28,11 @@ class Format
 
     @FORMAT_TYPE = 0
 
+    @OPTION_OFFSET = 7
+
     @OPTION_USE_SCRIPT = (1 << 0)
     @OPTION_USE_TEXTUREATLAS = (1 << 1)
+    @OPTION_COMPRESSED = (1 << 2)
 
     @MATRIX_FLAG = (1 << 31)
     @COLORTRANSFORM_FLAG = (1 << 31)

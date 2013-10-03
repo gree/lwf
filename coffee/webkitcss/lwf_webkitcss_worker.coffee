@@ -23,16 +23,19 @@ if !window? and self?
   self.onmessage = (event) ->
     if typeof self.webkitPostMessage isnt "undefined" and
         typeof event.data is "object"
-      data = Loader.loadArrayBuffer(event.data)
+      data = WebkitCSSLoader.loadArrayBuffer(event.data)
       self.webkitPostMessage(data)
     else
       data = event.data
       if data[0] is 'L' and data[1] is 'W' and data[2] is 'F'
-        data = Loader.load(data)
+        data = WebkitCSSLoader.load(data)
       else
-        data = global["LWF"].Base64.atobArray(data)
-        data = (new global["LWF"].Zlib.Inflate(data)).decompress()
-        data = Loader.loadArray(data)
+        try
+          data = global["LWF"].Base64.atobArray(data)
+          data = global["LWF"].LZMA.decompressFile(data)
+        catch e
+          data = null
+        data = WebkitCSSLoader.loadArray(data)
       if typeof self.webkitPostMessage isnt "undefined"
         self.webkitPostMessage(data)
       else
