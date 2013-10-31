@@ -16,15 +16,15 @@ f.close
 
 HEADER_LENGTH = 324
 
-length = d[HEADER_LENGTH - 4, 4].unpack("i").pop
-if d.length != length
-  puts "ERROR"
-  exit 1
-end
-
-if (d[7].ord & (1 << 2)) == 1
+if (d[7].ord & (1 << 2)) != 0
   FileUtils.cp src, dst
   exit 0
+end
+
+length = d[HEADER_LENGTH - 4, 4].unpack("i").pop
+if d.length != length
+  puts "ERROR: lwf file corrupted? file:#{d.length} header:#{length}"
+  exit 1
 end
 
 d[7] = (d[7].ord | (1 << 2)).chr
