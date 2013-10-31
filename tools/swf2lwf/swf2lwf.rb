@@ -1559,64 +1559,84 @@ def parse_define_shape
         info "  LINE #{vertices.size - 1}: (#{delta_x}, #{delta_y})"
 
         if vertices.size == 4
-          x = u
-          x_min = x
-          x_max = x
-          width = 0.0
-          y = v
-          y_min = y
-          y_max = y
-          height = 0.0
-
-          ia = 1.0
-          ib = 0.0
-          ic = 0.0
-          id = 1.0
-
-          vertices.each do |vertex|
-            x += vertex.x
-            y += vertex.y
-            x_min = x if x < x_min
-            x_max = x if x > x_max
-            y_min = y if y < y_min
-            y_max = y if y > y_max
-          end
-          width = x_max - x_min
-          height = y_max - y_min
-          info "  RECT: (#{x_min}, #{y_min})-(#{x_max}, " +
-            "#{y_max}) #{width}, #{height}"
-          rect = Rect.new(width, height)
-
-          x = u
-          y = v
-          rerror = false
-          vertices.each do |vertex|
-            x += vertex.x
-            y += vertex.y
-            if ((x - x_min).abs > 0.051 and (x - x_max).abs > 0.051) or
-               ((y - y_min).abs > 0.051 and (y - y_max).abs > 0.051)
-              warn "Shape(#{obj_id}) is not rect."
-              break
-            end
-          end
-
           if (vertices[0].x * vertices[1].y -
               vertices[0].y * vertices[1].x) < 0.0
             style = fill_style0
           else
             style = fill_style1
           end
+          texture = style.is_a?(FillStyleBitmap) ? style.object : nil
 
-          if style.is_a?(FillStyleBitmap)
-            texture = style.object
-            rect.width = texture.width
-            rect.height = texture.height
-            u = 0.0
-            v = 0.0
+          if !style.nil?
+            m = style.matrix
           else
-            texture = nil
-            u = x_min
-            v = y_min
+            m = Matrix.new
+          end
+          dt = m.scale_x * m.scale_y - m.rotate_skew0 * m.rotate_skew1
+          im = Matrix.new
+          im.scale_x = m.scale_y / dt
+          im.rotate_skew0 = -m.rotate_skew0 / dt
+          im.translate_x =
+            (m.rotate_skew0 * m.translate_y - m.translate_x * m.scale_y) / dt
+          im.rotate_skew1 = -m.rotate_skew1 / dt
+          im.scale_y = m.scale_x / dt
+          im.translate_y =
+            (m.translate_x * m.rotate_skew1 - m.scale_x * m.translate_y) / dt
+
+          x = u
+          y = v
+          x_min = 0x7fffffff
+          y_min = 0x7fffffff
+          x_max = -0x7fffffff
+          y_max = -0x7fffffff
+          vertices.each do |vertex|
+            x += vertex.x
+            y += vertex.y
+            dx = im.scale_x * x + im.rotate_skew0 * y + im.translate_x
+            dy = im.rotate_skew1 * x + im.scale_y * y + im.translate_y
+            dx = (dx * 20.0).round / 20.0
+            dy = (dy * 20.0).round / 20.0
+            x_min = dx if dx < x_min
+            y_min = dy if dy < y_min
+            x_max = dx if dx > x_max
+            y_max = dy if dy > y_max
+          end
+          w = x_max - x_min
+          h = y_max - y_min
+          if !texture.nil?
+            w = texture.width if (w - texture.width).abs < 1
+            h = texture.height if (h - texture.height).abs < 1
+          end
+          u = x_min
+          v = y_min
+          rect = Rect.new(w, h)
+          info "  RECT: #{w} x #{h}"
+
+          if !texture.nil?
+            if w > texture.width
+              case texture.filename
+              when /_REPEAT_S_/, /_REPEAT_ST_/, /_REPEAT_TS_/
+                if (texture.width & (texture.width - 1)) != 0
+                  error "Using _REPEAT_S_ Bitmap with Non-power-of-two Bitmap " +
+                    "[#{texture.filename}]."
+                end
+              else
+                error "Using BitmapFill with non-_REPEAT_S_ Bitmap " +
+                  "[#{texture.filename}]."
+              end
+            end
+            if h > texture.height
+              case texture.filename
+              when /_REPEAT_T_/, /_REPEAT_ST_/, /_REPEAT_TS_/
+                if (texture.height & (texture.height - 1)) != 0
+                  error "Using _REPEAT_T_ Bitmap with Non-power-of-two Bitmap " +
+                    "[#{texture.filename}]."
+                end
+              else
+                error "Using BitmapFill with non-_REPEAT_T_ Bitmap " +
+                  "[#{texture.filename}]."
+              end
+            end
           end
 
           @current_graphic.add_graphic_object(
@@ -3217,11 +3237,11 @@ def add_bitmap(texture, matrixId, u = nil, v = nil, width = nil, height = nil)
 
   if u != 0 or v != 0 or texture.nil? or
       width != texture.width or height != texture.height
-    unless texture.nil? or texture.filename.nil?
-      warn "bitmap(#{texture.filename} " +
-        "#{texture.width}x#{texture.height}) is specified UVWH" +
-          "(#{u},#{v})-(#{width},#{height})."
-    end
+    # unless texture.nil? or texture.filename.nil?
+    #   warn "bitmap(#{texture.filename} " +
+    #     "#{texture.width}x#{texture.height}) is specified UVWH" +
+    #       "(#{u},#{v})-(#{width},#{height})."
+    # end
     attribute = 0
     if texture
       case texture.filename
