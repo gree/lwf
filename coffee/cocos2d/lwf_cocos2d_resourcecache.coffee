@@ -40,13 +40,10 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
       data, @, cache, settings["textInSubpixel"] ? false)
 
   loadLWFData:(settings, url) ->
-    if typeof XMLHttpRequest is "undefined"
-      data = cc.loadFileIntoMemory(
-        cc.FileUtils.sharedFileUtils().fullPathFromRelativePath(url))
-      data = Loader.loadArrayBuffer(data)
-      @onloaddata(settings, data, url)
-    else
-      super
+    data = cc.FileUtils.getInstance().getByteArrayFromFile(url)
+    data = Loader.loadArray(data)
+    @onloaddata(settings, data, url)
+    return
 
   onloadLWF:(settings, lwf) ->
     if settings._loadLWF?
@@ -63,6 +60,12 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
       settings["onload"].call(settings, lwfNode)
     else
       settings["onload"].call(settings, lwf)
+    return
+
+  loadJS:(settings, data) ->
+    # TODO
+    settings.loadedCount++
+    @loadImages(settings, data)
     return
 
   onLoadImage: ->
@@ -95,11 +98,7 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
       url = url.replace(/(\.png|\.jpg)$/i, suffix + "$1")
       imageCache[name] = url
       tc = cc.TextureCache.getInstance()
-      if typeof tc.addImageAsync isnt "undefined"
-        tc.addImageAsync(url, settings, @onLoadImage)
-      else
-        tc.addImage(url)
-        @onLoadImage.call(settings)
+      tc.addImageAsync(url, settings, @onLoadImage)
     return
 
   unloadLWF:(lwf) ->

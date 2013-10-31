@@ -108,10 +108,7 @@ class Cocos2dRendererFactory
       w = s.width
       h = s.height
     if w is 0 and h is 0
-      if typeof cc.Director.getInstance().winSizeInPixels isnt "undefined"
-        s = cc.Director.getInstance().winSizeInPixels()
-      else
-        s = cc.Director.getInstance().getWinSizeInPixels()
+      s = cc.Director.getInstance().getWinSizeInPixels()
       w = s.width
       h = s.height
     return [w, h]

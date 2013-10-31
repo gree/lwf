@@ -20,31 +20,30 @@
 
 if cc?
 
+  affineTransformMake = (m) ->
+    if cc.renderContextType is cc.WEBGL
+      skew0 = m.skew0
+      skew1 = m.skew1
+    else
+      skew0 = m.skew1
+      skew1 = m.skew0
+    return cc.AffineTransformMake(
+      m.scaleX, -skew1, skew0, -m.scaleY, m.translateX,
+        cc.Director.getInstance().getWinSizeInPixels().height - m.translateY)
+
   cc.LWFBitmap = cc.Sprite.extend(
-    _m_lwf_matrix:null
-
-    ctor: ->
-      cc.associateWithNative(@, cc.Sprite)
-
     initWithTexture:(texture, rect) ->
       result = @_super(texture, rect)
-      @setAnchorPoint(cc.p(0, 1))
+      @setFlippedY(true)
       return result
 
     setMatrix:(m) ->
-      if typeof @_super isnt "undefined"
-        @_super({a:m.scaleX, \
-          b:m.skew1, c:m.skew0, d:m.scaleY, tx:m.translateX, ty:m.translateY})
-      else
-        @_m_lwf_matrix = m
+      @_transform = affineTransformMake(m)
+      @setNodeDirty(true)
       return
 
-    transform:(ctx) ->
-      context = ctx ? cc.renderContext
-      m = @_m_lwf_matrix
-      context.transform(m.scaleX, m.skew1, m.skew0, m.scaleY,
-        m.translateX, m.translateY - cc.canvas.height)
-      return
+    nodeToParentTransform: ->
+      return @_transform
   )
 
   cc.LWFBitmap.lwfBitmapWithTexture = (texture, rect) ->
@@ -55,63 +54,35 @@ if cc?
       return null
 
   cc.LWFLabel = cc.LabelTTF.extend(
-    _m_lwf_matrix:null
-
-    ctor: ->
-      cc.associateWithNative(@, cc.LabelTTF)
-
-    initWithString:() -> # Multi arguments
-      if typeof @_super isnt "undefined"
-        result = @_super(arguments[0])
-      else
-        a = arguments[0]
-        result = @initWithStringFontNameFontSize(a[0], a[1], a[2])
-      @setAnchorPoint(cc.p(0, 1))
+    initWithString:(label, fontName, fontSize, dimensions, hA, vA) ->
+      result = @_super(label, fontName, fontSize, dimensions, hA, vA)
+      @setFlippedY(true)
       return result
 
     setMatrix:(m) ->
-      if typeof @_super isnt "undefined"
-        @_super({a:m.scaleX, \
-          b:m.skew1, c:m.skew0, d:m.scaleY, tx:m.translateX, ty:m.translateY})
-      else
-        @_m_lwf_matrix = m
+      @_transform = affineTransformMake(m)
+      @setNodeDirty(true)
       return
 
-    transform:(ctx) ->
-      context = ctx ? cc.renderContext
-      m = @_m_lwf_matrix
-      context.transform(m.scaleX, m.skew1, m.skew0, m.scaleY,
-        m.translateX, m.translateY - cc.canvas.height)
-      return
+    nodeToParentTransform: ->
+      return @_transform
   )
 
-  cc.LWFLabel.create = () -> # Multi arguments
+  cc.LWFLabel.create = (label, fontName, fontSize, dimensions, hA, vA) ->
     pLWFLabel = new cc.LWFLabel()
-    if pLWFLabel.initWithString(arguments)
+    if pLWFLabel.initWithString(label, fontName, fontSize, dimensions, hA, vA)
       return pLWFLabel
     else
       return null
 
   cc.LWFParticle = cc.ParticleSystem.extend(
-    _m_lwf_matrix:null
-
-    ctor: ->
-      cc.associateWithNative(@, cc.ParticleSystem)
-
     setMatrix:(m) ->
-      if typeof @_super isnt "undefined"
-        @_super({a:m.scaleX, \
-          b:m.skew1, c:m.skew0, d:m.scaleY, tx:m.translateX, ty:m.translateY})
-      else
-        @_m_lwf_matrix = m
+      @_transform = affineTransformMake(m)
+      @setNodeDirty(true)
       return
 
-    transform:(ctx) ->
-      context = ctx ? cc.renderContext
-      m = @_m_lwf_matrix
-      context.transform(m.scaleX, m.skew1, m.skew0, m.scaleY,
-        m.translateX, m.translateY - cc.canvas.height)
-      return
+    nodeToParentTransform: ->
+      return @_transform
   )
 
   cc.LWFParticle.create = (plist) ->
@@ -125,19 +96,16 @@ if cc?
     _m_lwf:null
     _m_targetedDelegateAdded:false
 
-    ctor: ->
-      cc.associateWithNative(@, cc.Node)
-
     initWithLWF:(lwf) ->
-      @init() if typeof @init isnt "undefined"
+      @init()
       lwf.rendererFactory.lwfNode = @
       @_m_lwf = lwf
       @scheduleUpdate()
       return true
 
     cleanup: ->
-      @_super()
       @_m_lwf.destroy()
+      @_super()
       return
 
     getLWF: ->
@@ -149,25 +117,18 @@ if cc?
       @_m_lwf.render()
       return
 
-    ###
-    draw:(ctx) ->
-      @_super(ctx)
-      @_m_lwf.render()
-      return
-    ###
-
     onEnter: ->
       if @_m_lwf.interactive
-        d = cc.Director.getInstance()
-        if typeof d.getTouchDispatcher isnt "undefined"
-          d.getTouchDispatcher().addTargetedDelegate(@, 0, true)
-          @_m_targetedDelegateAdded = true
-      return @_super()
+        cc.registerTargetedDelegate(0, true, @)
+        @_m_targetedDelegateAdded = true
+      @_super()
+      return
 
     onExit: ->
       if @_m_targetedDelegateAdded
-        cc.Director.getInstance().getTouchDispatcher().removeDelegate(@)
-      return @_super()
+        cc.unregisterTouchDelegate(@)
+      @_super()
+      return
 
     onTouchBegan:(touch, event) ->
       @onTouchMoved(touch, event)

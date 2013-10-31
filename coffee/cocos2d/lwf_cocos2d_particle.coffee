@@ -36,7 +36,7 @@ class Cocos2dParticleRenderer
     @z = -1
 
   destruct: ->
-    @particle.removeFromParentAndCleanup(true)
+    @particle.removeFromParent(true)
 
   update:(m, c) ->
 

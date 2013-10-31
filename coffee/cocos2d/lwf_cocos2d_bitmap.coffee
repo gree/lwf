@@ -24,10 +24,7 @@ class Cocos2dBitmapContext
     texture = data.textures[@fragment.textureId]
     filename = @factory.cache[texture.filename]
     @texture2d = cc.TextureCache.getInstance().textureForKey(filename)
-    if typeof @texture2d.getPixelsWide isnt "undefined"
-      imageScale = @texture2d.getPixelsWide() / texture.width
-    else
-      imageScale = @texture2d.width / texture.width
+    imageScale = @texture2d.getPixelsWide() / texture.width
     @scale = 1 / (texture.scale * imageScale)
     if @fragment.rotated
       w = @fragment.h
@@ -54,7 +51,8 @@ class Cocos2dBitmapRenderer
     @z = -1
 
   destruct: ->
-    @bitmap.removeFromParentAndCleanup(true)
+    @bitmap.removeFromParent(true)
+    return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
     z = renderingIndex
@@ -81,4 +79,5 @@ class Cocos2dBitmapRenderer
       @alpha = c.multi.alpha
       @visible = visible
       @bitmap.setOpacity(if @visible then @alpha * 255 else 0)
+    return
 

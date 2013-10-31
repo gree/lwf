@@ -64,7 +64,7 @@ class Cocos2dTextRenderer
     @textRendered = false
 
   destruct: ->
-    @label.removeFromParentAndCleanup(true)
+    @label.removeFromParent(true)
     return
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
