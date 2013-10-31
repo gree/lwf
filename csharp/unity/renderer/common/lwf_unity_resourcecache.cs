@@ -129,7 +129,7 @@ public class ResourceCache
 
 		if (m_lwfDataLoader == null) {
 			m_lwfDataLoader = (filename) => {
-				TextAsset asset = (TextAsset)Resources.Load(filename);
+				TextAsset asset = (TextAsset)Resources.Load(filename, typeof(TextAsset));
 				return asset.bytes;
 			};
 		}
