@@ -23,6 +23,14 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       @cache, @stage, @textInSubpixel, @needsClear, @quirkyClearRect) ->
     @blendMode = "normal"
     @maskMode = "normal"
+
+    @stage.style.webkitUserSelect = "none"
+    @stage.style.webkitTransform = "translateZ(0)"
+    @stageContext = @stage.getContext("2d")
+    if @stage.width is 0 and @stage.height is 0
+      @stage.width = data.header.width
+      @stage.height = data.header.height
+
     @bitmapContexts = []
     for bitmap in data.bitmaps
       continue if bitmap.textureFragmentId is -1
@@ -33,6 +41,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
+      bitmapEx.attribute = 0
       @bitmapContexts.push new CanvasBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []
@@ -43,13 +52,6 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     @textContexts = []
     for text in data.texts
       @textContexts.push new CanvasTextContext(@, data, text)
-
-    @stage.style.webkitUserSelect = "none"
-    @stage.style.webkitTransform = "translateZ(0)"
-    @stageContext = @stage.getContext("2d")
-    if @stage.width is 0 and @stage.height is 0
-      @stage.width = data.header.width
-      @stage.height = data.header.height
 
     @initCommands()
 
@@ -142,7 +144,13 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     v = cmd.v
     w = cmd.w
     h = cmd.h
-    ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
+    if cmd.pattern? and (w > cmd.image.width or h > cmd.image.height)
+      ctx.translate(-u, -v)
+      ctx.rect(u, v, w, h)
+      ctx.fillStyle = cmd.pattern
+      ctx.fill()
+    else
+      ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
     return ctx
 
   endRender:(lwf) ->

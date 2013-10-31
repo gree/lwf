@@ -79,13 +79,18 @@ Data.prototype.textureFragments;
 Data.prototype.textures;
 Data.prototype.translates;
 
-function Format() {};
+function Format() {}
 Format.ProgramObject = function() {};
 Format.ProgramObject.prototype.colorTransformId;
 Format.ProgramObject.prototype.height;
 Format.ProgramObject.prototype.matrixId;
 Format.ProgramObject.prototype.stringId;
 Format.ProgramObject.prototype.width;
+
+function LObject() {}
+LObject.prototype.isBitmapClip;
+LObject.prototype.isButton;
+LObject.prototype.isMovie;
 
 function Movie() {}
 Movie.prototype.active;

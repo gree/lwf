@@ -37,6 +37,7 @@ class CanvasTextRenderer extends HTML5TextRenderer
     cmd.maskMode = @context.factory.maskMode
     cmd.matrix = @matrix
     cmd.image = @canvas
+    cmd.pattern = null
     cmd.u = 0
     cmd.v = 0
     cmd.w = @canvas.width

@@ -43,6 +43,8 @@ WebGLResourceCache.prototype["clear"] =
   WebGLResourceCache.prototype.clear
 WebGLResourceCache.prototype["getCache"] =
   WebGLResourceCache.prototype.getCache
+WebGLResourceCache.prototype["getRendererName"] =
+  WebGLResourceCache.prototype.getRendererName
 WebGLResourceCache.prototype["loadLWF"] =
   WebGLResourceCache.prototype.loadLWF
 WebGLResourceCache.prototype["loadLWFs"] =

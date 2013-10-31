@@ -44,6 +44,8 @@ WebkitCSSResourceCache.prototype["clear"] =
   WebkitCSSResourceCache.prototype.clear
 WebkitCSSResourceCache.prototype["getCache"] =
   WebkitCSSResourceCache.prototype.getCache
+WebkitCSSResourceCache.prototype["getRendererName"] =
+  WebkitCSSResourceCache.prototype.getRendererName
 WebkitCSSResourceCache.prototype["loadLWF"] =
   WebkitCSSResourceCache.prototype.loadLWF
 WebkitCSSResourceCache.prototype["loadLWFs"] =

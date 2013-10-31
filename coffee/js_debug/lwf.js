@@ -2324,17 +2324,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       scale = stageWidth / lwf.width;
       lwf.setTextScale(scale);
       lwf.property.scale(scale, scale);
-      lwf.property.move(0, (stageHeight - lwf.height * scale) / 2, 0);
+      lwf.property.move(0, (stageHeight - lwf.height * scale) / 2);
     };
 
-    Utility.scaleForHeight = function(lwf, stageHeight) {
+    Utility.scaleForHeight = function(lwf, stageWidth, stageHeight) {
       var scale;
       scale = stageHeight / lwf.height;
       lwf.setTextScale(scale);
       lwf.property.scale(scale, scale);
     };
 
-    Utility.scaleForWidth = function(lwf, stageWidth) {
+    Utility.scaleForWidth = function(lwf, stageWidth, stageHeight) {
       var scale;
       scale = stageWidth / lwf.width;
       lwf.setTextScale(scale);
@@ -2500,6 +2500,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.isParticle = this.type === Type.PARTICLE;
       this.isProgramObject = this.type === Type.PROGRAMOBJECT;
       this.isText = this.type === Type.TEXT;
+      this.isBitmapClip = false;
     }
 
     LObject.prototype.exec = function(matrixId, colorTransformId) {
@@ -3217,6 +3218,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     function BitmapClip(lwf, parent, objId) {
       var data, fragment;
       BitmapClip.__super__.constructor.call(this, lwf, parent, Type.BITMAP, objId);
+      this.isBitmapClip = true;
       data = lwf.data.bitmaps[objId];
       fragment = lwf.data.textureFragments[data.textureFragmentId];
       this.width = fragment.w;
@@ -4393,12 +4395,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.jumped = false;
         }
       }
-      if (this.enterFrameFunc != null) {
-        this.enterFrameFunc.call(this);
-      }
-      this.playAnimation(ClipEvent.ENTERFRAME);
-      if (!this.handler.empty) {
-        this.handler.call("enterFrame", this);
+      if (this.postExecCount !== this.lwf.execCount) {
+        if (this.enterFrameFunc != null) {
+          this.enterFrameFunc.call(this);
+        }
+        this.playAnimation(ClipEvent.ENTERFRAME);
+        if (!this.handler.empty) {
+          this.handler.call("enterFrame", this);
+        }
       }
       this.postExecCount = this.lwf.execCount;
     };
@@ -5630,12 +5634,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       Utility.fitForWidth(this, stageWidth, stageHeight);
     };
 
-    LWF.prototype.scaleForHeight = function(stageHeight) {
-      Utility.scaleForHeight(this, stageHeight);
+    LWF.prototype.scaleForHeight = function(stageWidth, stageHeight) {
+      Utility.scaleForHeight(this, stageWidth, stageHeight);
     };
 
-    LWF.prototype.scaleForWidth = function(stageWidth) {
-      Utility.scaleForWidth(this, stageWidth);
+    LWF.prototype.scaleForWidth = function(stageWidth, stageHeight) {
+      Utility.scaleForWidth(this, stageWidth, stageHeight);
     };
 
     LWF.prototype.setTextScale = function(textScale) {
@@ -7226,6 +7230,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         bitmapEx.v = 0;
         bitmapEx.w = 1;
         bitmapEx.h = 1;
+        bitmapEx.attribute = 0;
         this.bitmapContexts.push(new WebkitCSSBitmapContext(this, data, bitmapEx));
       }
       this.bitmapExContexts = [];
@@ -7691,7 +7696,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       } else {
         this.node.style.background = "-webkit-canvas(" + image.name + ") transparent";
       }
-      this.node.style.backgroundPosition = "-" + su + "px -" + sv + "px";
+      this.node.style.backgroundPosition = "" + (-su) + "px " + (-sv) + "px";
       this.node.style.width = "" + sw + "px";
       this.node.style.height = "" + sh + "px";
       this.node.style.display = "block";
@@ -8388,6 +8393,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.canvasIndex = 0;
     }
 
+    WebkitCSSResourceCache.prototype.getRendererName = function() {
+      return "WebkitCSS";
+    };
+
     WebkitCSSResourceCache.prototype.clear = function() {
       var cache, k, kk, lwfInstance, _ref2, _ref3;
       _ref2 = this.cache;
@@ -8744,10 +8753,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return onload.call(settings, null);
       };
       xhr.onreadystatechange = function() {
+        var protocol, _ref4;
         if (xhr.readyState !== 4) {
           return;
         }
-        if (!(xhr.status === 0 || (xhr.status >= 200 && xhr.status < 300))) {
+        if (xhr.status === 0) {
+          if (url.match(/^([a-zA-Z][a-zA-Z0-9\+\-\.]*\:)./i)) {
+            protocol = RegExp.$1;
+          } else {
+            protocol = typeof global !== "undefined" && global !== null ? (_ref4 = global.location) != null ? _ref4.protocol : void 0 : void 0;
+          }
+          if (protocol === 'http:' || protocol === 'https:') {
+            settings.error.push({
+              url: url,
+              reason: "networkError"
+            });
+            xhr = xhr.onabort = xhr.onerror = xhr.onreadystatechange = null;
+            onload.call(settings, null);
+          }
+        } else if (!(xhr.status >= 200 && xhr.status < 300)) {
           settings.error.push({
             url: url,
             reason: "error"
@@ -9150,6 +9174,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   WebkitCSSResourceCache.prototype["getCache"] = WebkitCSSResourceCache.prototype.getCache;
 
+  WebkitCSSResourceCache.prototype["getRendererName"] = WebkitCSSResourceCache.prototype.getRendererName;
+
   WebkitCSSResourceCache.prototype["loadLWF"] = WebkitCSSResourceCache.prototype.loadLWF;
 
   WebkitCSSResourceCache.prototype["loadLWFs"] = WebkitCSSResourceCache.prototype.loadLWFs;
@@ -9203,6 +9229,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.quirkyClearRect = quirkyClearRect;
       this.blendMode = "normal";
       this.maskMode = "normal";
+      this.stage.style.webkitUserSelect = "none";
+      this.stage.style.webkitTransform = "translateZ(0)";
+      this.stageContext = this.stage.getContext("2d");
+      if (this.stage.width === 0 && this.stage.height === 0) {
+        this.stage.width = data.header.width;
+        this.stage.height = data.header.height;
+      }
       this.bitmapContexts = [];
       _ref2 = data.bitmaps;
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
@@ -9217,6 +9250,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         bitmapEx.v = 0;
         bitmapEx.w = 1;
         bitmapEx.h = 1;
+        bitmapEx.attribute = 0;
         this.bitmapContexts.push(new CanvasBitmapContext(this, data, bitmapEx));
       }
       this.bitmapExContexts = [];
@@ -9233,13 +9267,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       for (_k = 0, _len2 = _ref4.length; _k < _len2; _k++) {
         text = _ref4[_k];
         this.textContexts.push(new CanvasTextContext(this, data, text));
-      }
-      this.stage.style.webkitUserSelect = "none";
-      this.stage.style.webkitTransform = "translateZ(0)";
-      this.stageContext = this.stage.getContext("2d");
-      if (this.stage.width === 0 && this.stage.height === 0) {
-        this.stage.width = data.header.width;
-        this.stage.height = data.header.height;
       }
       this.initCommands();
     }
@@ -9358,7 +9385,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       v = cmd.v;
       w = cmd.w;
       h = cmd.h;
-      ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h);
+      if ((cmd.pattern != null) && (w > cmd.image.width || h > cmd.image.height)) {
+        ctx.translate(-u, -v);
+        ctx.rect(u, v, w, h);
+        ctx.fillStyle = cmd.pattern;
+        ctx.fill();
+      } else {
+        ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h);
+      }
       return ctx;
     };
 
@@ -9464,7 +9498,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   CanvasBitmapContext = (function() {
     function CanvasBitmapContext(factory, data, bitmapEx) {
-      var bh, bu, bv, bw, h, imageScale, imageWidth, texture, u, v, w, withPadding, x, y;
+      var bh, bu, bv, bw, h, imageScale, imageWidth, repeat, texture, u, v, w, withPadding, x, y;
       this.factory = factory;
       this.data = data;
       this.fragment = this.data.textureFragments[bitmapEx.textureFragmentId];
@@ -9477,6 +9511,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       imageScale = imageWidth / texture.width;
       this.scale = 1 / (texture.scale * imageScale);
+      repeat = null;
+      if ((bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_S) !== 0) {
+        repeat = "repeat-x";
+      }
+      if ((bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_T) !== 0) {
+        repeat = repeat != null ? "repeat" : "repeat-y";
+      }
+      this.pattern = repeat != null ? this.factory.stageContext.createPattern(this.image, repeat) : null;
       x = this.fragment.x;
       y = this.fragment.y;
       u = this.fragment.u;
@@ -9568,6 +9610,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       cmd.maskMode = this.context.factory.maskMode;
       cmd.matrix = m;
       cmd.image = this.context.image;
+      cmd.pattern = this.context.pattern;
       cmd.u = this.context.u;
       cmd.v = this.context.v;
       cmd.w = this.context.w;
@@ -9611,6 +9654,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       cmd.maskMode = this.context.factory.maskMode;
       cmd.matrix = this.matrix;
       cmd.image = this.canvas;
+      cmd.pattern = null;
       cmd.u = 0;
       cmd.v = 0;
       cmd.w = this.canvas.width;
@@ -9629,6 +9673,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       _ref3 = CanvasResourceCache.__super__.constructor.apply(this, arguments);
       return _ref3;
     }
+
+    CanvasResourceCache.prototype.getRendererName = function() {
+      return "Canvas";
+    };
 
     CanvasResourceCache.prototype.newFactory = function(settings, cache, data) {
       var _ref4, _ref5, _ref6;
@@ -9681,6 +9729,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   CanvasResourceCache.prototype["getCache"] = CanvasResourceCache.prototype.getCache;
 
+  CanvasResourceCache.prototype["getRendererName"] = CanvasResourceCache.prototype.getRendererName;
+
   CanvasResourceCache.prototype["loadLWF"] = CanvasResourceCache.prototype.loadLWF;
 
   CanvasResourceCache.prototype["loadLWFs"] = CanvasResourceCache.prototype.loadLWFs;
@@ -9707,11 +9757,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       gl.useProgram(this.shaderProgram);
     };
 
-    WebGLRendererFactory.prototype.setTexParameter = function(gl) {
+    WebGLRendererFactory.prototype.setTexParameter = function(gl, repeatS, repeatT) {
+      if (repeatS == null) {
+        repeatS = false;
+      }
+      if (repeatT == null) {
+        repeatT = false;
+      }
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, repeatS ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, repeatT ? gl.REPEAT : gl.CLAMP_TO_EDGE);
     };
 
     WebGLRendererFactory.prototype.setViewport = function(gl, lwf) {
@@ -9804,6 +9860,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         bitmapEx.v = 0;
         bitmapEx.w = 1;
         bitmapEx.h = 1;
+        bitmapEx.attribute = 0;
         this.bitmapContexts.push(new WebGLBitmapContext(this, data, bitmapEx));
       }
       this.bitmapExContexts = [];
@@ -10213,7 +10270,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   WebGLBitmapContext = (function() {
     function WebGLBitmapContext(factory, data, bitmapEx) {
-      var bh, bu, bv, bw, d, filename, fragment, gl, h, image, scale, texdata, th, tw, u, u0, u1, v, v0, v1, w, x, x0, x1, y, y0, y1;
+      var attribute, bh, bu, bv, bw, d, filename, fragment, gl, h, image, scale, texdata, th, tw, u, u0, u1, v, v0, v1, w, x, x0, x1, y, y0, y1;
       this.factory = factory;
       this.data = data;
       fragment = data.textureFragments[bitmapEx.textureFragmentId];
@@ -10222,7 +10279,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       filename = texdata.filename;
       d = this.factory.textures[filename];
       if (d != null) {
-        this.texture = d[0], scale = d[1];
+        this.texture = d[0], scale = d[1], attribute = d[2];
+        if (attribute !== bitmapEx.attribute) {
+          attribute = (attribute | bitmapEx.attribute) & (Format.BitmapEx.Attribute.REPEAT_S | Format.BitmapEx.Attribute.REPEAT_T);
+          this.factory.setTexParameter(this.factory.stageContext, (attribute & Format.BitmapEx.Attribute.REPEAT_S) !== 0, (attribute & Format.BitmapEx.Attribute.REPEAT_T) !== 0);
+          this.factory.textures[filename] = [this.texture, scale, attribute];
+        }
       } else {
         image = this.factory.cache[filename];
         scale = 1 / texdata.scale;
@@ -10230,8 +10292,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        this.factory.setTexParameter(gl);
-        this.factory.textures[filename] = [this.texture, scale];
+        this.factory.setTexParameter(gl, (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_S) !== 0, (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_T) !== 0);
+        this.factory.textures[filename] = [this.texture, scale, bitmapEx.attribute];
       }
       tw = texdata.width;
       th = texdata.height;
@@ -10360,6 +10422,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       _ref4 = WebGLResourceCache.__super__.constructor.apply(this, arguments);
       return _ref4;
     }
+
+    WebGLResourceCache.prototype.getRendererName = function() {
+      return "WebGL";
+    };
 
     WebGLResourceCache.prototype.newFactory = function(settings, cache, data) {
       var _ref5, _ref6, _ref7;
@@ -10513,6 +10579,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   WebGLResourceCache.prototype["clear"] = WebGLResourceCache.prototype.clear;
 
   WebGLResourceCache.prototype["getCache"] = WebGLResourceCache.prototype.getCache;
+
+  WebGLResourceCache.prototype["getRendererName"] = WebGLResourceCache.prototype.getRendererName;
 
   WebGLResourceCache.prototype["loadLWF"] = WebGLResourceCache.prototype.loadLWF;
 

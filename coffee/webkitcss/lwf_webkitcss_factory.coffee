@@ -32,6 +32,7 @@ class WebkitCSSRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
+      bitmapEx.attribute = 0
       @bitmapContexts.push new WebkitCSSBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []

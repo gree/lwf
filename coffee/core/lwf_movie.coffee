@@ -670,9 +670,10 @@ class Movie extends IObject
       @animationPlayedFrame = @currentFrameCurrent
       @jumped = false if @currentFrameCurrent is @currentFrameInternal
 
-    @enterFrameFunc.call(@) if @enterFrameFunc?
-    @playAnimation(ClipEvent.ENTERFRAME)
-    @handler.call("enterFrame", @) unless @handler.empty
+    if @postExecCount isnt @lwf.execCount
+      @enterFrameFunc.call(@) if @enterFrameFunc?
+      @playAnimation(ClipEvent.ENTERFRAME)
+      @handler.call("enterFrame", @) unless @handler.empty
     @postExecCount = @lwf.execCount
     return
 

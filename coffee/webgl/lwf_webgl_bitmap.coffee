@@ -27,7 +27,15 @@ class WebGLBitmapContext
     filename = texdata.filename
     d = @factory.textures[filename]
     if d?
-      [@texture, scale] = d
+      [@texture, scale, attribute] = d
+      if attribute isnt bitmapEx.attribute
+        attribute = (attribute|bitmapEx.attribute) &
+          (Format.BitmapEx.Attribute.REPEAT_S|
+            Format.BitmapEx.Attribute.REPEAT_T)
+        @factory.setTexParameter(@factory.stageContext,
+          (attribute & Format.BitmapEx.Attribute.REPEAT_S) isnt 0,
+          (attribute & Format.BitmapEx.Attribute.REPEAT_T) isnt 0)
+        @factory.textures[filename] = [@texture, scale, attribute]
     else
       image = @factory.cache[filename]
       scale = 1 / texdata.scale
@@ -35,8 +43,10 @@ class WebGLBitmapContext
       @texture = gl.createTexture()
       gl.bindTexture(gl.TEXTURE_2D, @texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      @factory.setTexParameter(gl)
-      @factory.textures[filename] = [@texture, scale]
+      @factory.setTexParameter(gl,
+        (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_S) isnt 0,
+        (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_T) isnt 0)
+      @factory.textures[filename] = [@texture, scale, bitmapEx.attribute]
 
     tw = texdata.width
     th = texdata.height

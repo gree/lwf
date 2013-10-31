@@ -28,6 +28,9 @@ class WebkitCSSResourceCache
     @lwfInstanceIndex = 0
     @canvasIndex = 0
 
+  getRendererName: ->
+    return "WebkitCSS"
+
   clear: ->
     for k, cache of @cache
       lwfInstance.destroy() for kk, lwfInstance of cache.instances
@@ -323,7 +326,16 @@ class WebkitCSSResourceCache
       onload.call(settings, null)
     xhr.onreadystatechange = =>
       return if xhr.readyState isnt 4
-      if !(xhr.status is 0 or (xhr.status >= 200 and xhr.status < 300))
+      if xhr.status is 0
+        if url.match(/^([a-zA-Z][a-zA-Z0-9\+\-\.]*\:)./i)
+          protocol = RegExp.$1
+        else
+          protocol = global?.location?.protocol
+        if protocol is 'http:' or protocol is 'https:'
+          settings.error.push({url:url, reason:"networkError"})
+          xhr = xhr.onabort = xhr.onerror = xhr.onreadystatechange = null
+          onload.call(settings, null)
+      else if !(xhr.status >= 200 and xhr.status < 300)
         settings.error.push({url:url, reason:"error"})
         xhr = xhr.onabort = xhr.onerror = xhr.onreadystatechange = null
         onload.call(settings, null)

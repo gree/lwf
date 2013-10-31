@@ -277,16 +277,16 @@ class Utility
     scale = stageWidth / lwf.width
     lwf.setTextScale(scale)
     lwf.property.scale(scale, scale)
-    lwf.property.move(0, (stageHeight - lwf.height * scale) / 2, 0)
+    lwf.property.move(0, (stageHeight - lwf.height * scale) / 2)
     return
 
-  @scaleForHeight:(lwf, stageHeight) ->
+  @scaleForHeight:(lwf, stageWidth, stageHeight) ->
     scale = stageHeight / lwf.height
     lwf.setTextScale(scale)
     lwf.property.scale(scale, scale)
     return
 
-  @scaleForWidth:(lwf, stageWidth) ->
+  @scaleForWidth:(lwf, stageWidth, stageHeight) ->
     scale = stageWidth / lwf.width
     lwf.setTextScale(scale)
     lwf.property.scale(scale, scale)

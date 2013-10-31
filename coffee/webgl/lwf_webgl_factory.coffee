@@ -31,11 +31,13 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     gl.useProgram(@shaderProgram)
     return
 
-  setTexParameter:(gl) ->
+  setTexParameter:(gl, repeatS = false, repeatT = false) ->
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
+      if repeatS then gl.REPEAT else gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T,
+      if repeatT then gl.REPEAT else gl.CLAMP_TO_EDGE)
     return
 
   setViewport:(gl, lwf) ->
@@ -146,6 +148,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       bitmapEx.v = 0
       bitmapEx.w = 1
       bitmapEx.h = 1
+      bitmapEx.attribute = 0
       @bitmapContexts.push new WebGLBitmapContext(@, data, bitmapEx)
 
     @bitmapExContexts = []

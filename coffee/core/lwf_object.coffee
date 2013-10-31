@@ -34,6 +34,7 @@ class LObject
     @isParticle = @type is Type.PARTICLE
     @isProgramObject = @type is Type.PROGRAMOBJECT
     @isText = @type is Type.TEXT
+    @isBitmapClip = false
 
   exec:(matrixId = 0, colorTransformId = 0) ->
     if @matrixId isnt matrixId

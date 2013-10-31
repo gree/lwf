@@ -21,6 +21,7 @@
 class BitmapClip extends LObject
   constructor:(lwf, parent, objId) ->
     super(lwf, parent, Type.BITMAP, objId)
+    @isBitmapClip = true
     data = lwf.data.bitmaps[objId]
     fragment = lwf.data.textureFragments[data.textureFragmentId]
     @width = fragment.w

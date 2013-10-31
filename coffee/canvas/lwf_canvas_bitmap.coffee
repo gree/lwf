@@ -29,6 +29,14 @@ class CanvasBitmapContext
     imageScale = imageWidth / texture.width
     @scale = 1 / (texture.scale * imageScale)
 
+    repeat = null
+    if (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_S) isnt 0
+      repeat = "repeat-x"
+    if (bitmapEx.attribute & Format.BitmapEx.Attribute.REPEAT_T) isnt 0
+      repeat = if repeat? then "repeat" else "repeat-y"
+    @pattern = if repeat? then \
+      @factory.stageContext.createPattern(@image, repeat) else null
+
     x = @fragment.x
     y = @fragment.y
     u = @fragment.u
@@ -106,6 +114,7 @@ class CanvasBitmapRenderer
     cmd.maskMode = @context.factory.maskMode
     cmd.matrix = m
     cmd.image = @context.image
+    cmd.pattern = @context.pattern
     cmd.u = @context.u
     cmd.v = @context.v
     cmd.w = @context.w

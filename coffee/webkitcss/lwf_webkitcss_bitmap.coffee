@@ -61,7 +61,7 @@ class WebkitCSSBitmapContext
       @node.style.background = "url(#{image.src}) transparent"
     else
       @node.style.background = "-webkit-canvas(#{image.name}) transparent"
-    @node.style.backgroundPosition = "-#{su}px -#{sv}px"
+    @node.style.backgroundPosition = "#{-su}px #{-sv}px"
     @node.style.width = "#{sw}px"
     @node.style.height = "#{sh}px"
     @node.style.display = "block"

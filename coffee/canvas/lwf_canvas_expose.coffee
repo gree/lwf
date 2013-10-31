@@ -43,6 +43,8 @@ CanvasResourceCache.prototype["clear"] =
   CanvasResourceCache.prototype.clear
 CanvasResourceCache.prototype["getCache"] =
   CanvasResourceCache.prototype.getCache
+CanvasResourceCache.prototype["getRendererName"] =
+  CanvasResourceCache.prototype.getRendererName
 CanvasResourceCache.prototype["loadLWF"] =
   CanvasResourceCache.prototype.loadLWF
 CanvasResourceCache.prototype["loadLWFs"] =

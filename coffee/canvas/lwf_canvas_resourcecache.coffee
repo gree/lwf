@@ -19,6 +19,9 @@
 #
 
 class CanvasResourceCache extends WebkitCSSResourceCache
+  getRendererName: ->
+    return "Canvas"
+
   newFactory:(settings, cache, data) ->
     return new CanvasRendererFactory(data, @, cache, settings.stage,
     settings["textInSubpixel"] ? false, settings["needsClear"] ? true,

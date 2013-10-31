@@ -117,12 +117,12 @@ class LWF
     Utility.fitForWidth(@, stageWidth, stageHeight)
     return
 
-  scaleForHeight:(stageHeight) ->
-    Utility.scaleForHeight(@, stageHeight)
+  scaleForHeight:(stageWidth, stageHeight) ->
+    Utility.scaleForHeight(@, stageWidth, stageHeight)
     return
 
-  scaleForWidth:(stageWidth) ->
-    Utility.scaleForWidth(@, stageWidth)
+  scaleForWidth:(stageWidth, stageHeight) ->
+    Utility.scaleForWidth(@, stageWidth, stageHeight)
     return
 
   setTextScale:(textScale) ->
