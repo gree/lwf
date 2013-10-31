@@ -9,10 +9,10 @@ License: MIT license
 
 -----
 Code in:
-coffee/supports/zlib.js
+coffee/supports/lzma-purejs
 
-compact zlib, deflate, inflate library in JavaScript
-URL: https://github.com/imaya/zlib.js
+Clean, fast LZMA encoder in Javascript
+URL: https://github.com/cscott/lzma-purejs
 License: MIT license
 
 -----
