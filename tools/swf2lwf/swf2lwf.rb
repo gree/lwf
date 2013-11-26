@@ -58,6 +58,10 @@ begin
 rescue LoadError
   require 'rexml/document'
 end
+begin
+  require 'rb-img'
+rescue LoadError
+end
 
 LWF_HEADER_SIZE = 324
 
@@ -160,40 +164,68 @@ class LosslessData
     end
     zstream.close
 
-    pixels = []
-    case @bitmap_type
-    when 3
-      @height.times do |y|
-        @width.times do |x|
-          data_index = y * width + x
-          c = colormap[data[data_index].ord]
-          pixels.push ChunkyPNG::Color.rgba(c.r, c.g, c.b, c.a)
+    unless defined? Img
+      pixels = []
+      case @bitmap_type
+      when 3
+        @height.times do |y|
+          @width.times do |x|
+            data_index = y * width + x
+            c = colormap[data[data_index].ord]
+            pixels.push ChunkyPNG::Color.rgba(c.r, c.g, c.b, c.a)
+          end
         end
-      end
-    when 4
-      @height.times do |y|
-        @width.times do |x|
-          data_index = y * width + x
-          d0 = data[data_index].ord
-          d1 = data[data_index + 1].ord
+      when 4
+        @height.times do |y|
+          @width.times do |x|
+            data_index = y * width + x
+            d0 = data[data_index].ord
+            d1 = data[data_index + 1].ord
+            pixels.push ChunkyPNG::Color.rgba(
+              (d0 & 0x78) * 255 / 0x78,
+              (((d0 & 0x03) << 4) | ((d1 & 0xc0) >> 4)) * 255 / 0x3f,
+              (d1 & 0x1e) * 255 / 0x1e,
+              (d1 & 1) ? 255 : 0)
+          end
+        end
+      when 5
+        (@width * @height).times do |i|
+          data_index = i * 4
           pixels.push ChunkyPNG::Color.rgba(
-            (d0 & 0x78) << 1,
-            ((d0 & 0x03) << 6) | ((d1 & 0xc0) >> 2),
-            (d1 & 0x1e) << 3,
-            (d1 & 1) ? 255 : 0)
+            data[data_index + 1].ord,
+            data[data_index + 2].ord,
+            data[data_index + 3].ord,
+            data[data_index + 0].ord)
         end
       end
-    when 5
-      (@width * @height).times do |i|
-        data_index = i * 4
-        pixels.push ChunkyPNG::Color.rgba(
-          data[data_index + 1].ord,
-          data[data_index + 2].ord,
-          data[data_index + 3].ord,
-          data[data_index + 0].ord)
+      ChunkyPNG::Image.new(@width, @height, pixels).save(filename)
+    else
+      fmt = 0
+      bytes = nil
+      case @bitmap_type
+      when 3
+        fmt = Img::RGBA8888
+        bytes = []
+        @height.times do |y|
+          @width.times do |x|
+            data_index = y * width + x
+            c = colormap[data[data_index].ord]
+            bytes.push(c.r)
+            bytes.push(c.g)
+            bytes.push(c.b)
+            bytes.push(c.a)
+          end
+        end
+        bytes = bytes.pack('C*')
+      when 4
+        fmt = Img::RGBA5551
+        bytes = data
+      when 5
+        fmt = Img::ARGB8888
+        bytes = data
       end
+      img = Img::save(filename, @width, @height, fmt, bytes)
     end
-    ChunkyPNG::Image.new(@width, @height, pixels).save(filename)
   end
 end
 
@@ -3308,6 +3340,9 @@ def swf2lwf(*args)
   @event_map = Hash.new
   @lwfpath = lwfbasedir + lwfname
   @logfile = File.open(@lwfpath + '.txt', 'wb')
+
+  begin  # @logfile
+
   @logfile.sync = true
   @logfile.puts Time.now.ctime
   @option = 0
@@ -3956,7 +3991,9 @@ def swf2lwf(*args)
   LWFObjects.each do |s|
     eval <<-EOF
       @header += to_u32(@offset) + to_u32(@data_#{s}.size)
-      @data_#{s}.each{|o| @bytes_#{s} += o.to_bytes}
+      arr = Array.new
+      @data_#{s}.each{|o| arr.push(o.to_bytes)}
+      @bytes_#{s} = arr.join('')
       @offset += @bytes_#{s}.size
       @data += @bytes_#{s}
       @stats += sprintf("#{s}: %d\n", @data_#{s}.size)
@@ -4166,7 +4203,10 @@ end
     @textures.map{|texture| texture.export_png(@swf)}
   end
 
+  ensure  # @logfile
   @logfile.close
+  end  # @logfile
+
 end
 
 def swf2lwf_optparse(args)

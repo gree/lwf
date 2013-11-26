@@ -78,3 +78,12 @@ tools/swf2lwf/lib/rkelly.rb tools/swf2lwf/lib/rkelly
 Pure ruby javascript parser and interpreter
 URL: https://github.com/tenderlove/rkelly
 License: MIT license
+
+-----
+Code in:
+tools/swf2lwf/gems/rb-img-0.0.6.gem
+
+Ruby 'Img' extension to save image data in png/jpg
+URL: https://github.com/gree/lwfs/tree/master/gems/rb-img
+License: zlib license
+
