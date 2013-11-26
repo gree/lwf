@@ -23,16 +23,21 @@ class WebkitCSSDomElementRenderer
     @appended = false
     @node.style.visibility = "hidden"
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
+    @matrixForDom = new Matrix(0, 0, 0, 0, 0, 0)
+    @matrixForRender = new Matrix(0, 0, 0, 0, 0, 0)
     @alpha = -1
     @zIndex = -1
-    @visible = true
+    @visible = false
 
   destructor: ->
     @factory.stage.parentNode.removeChild(@node) if @appended
     return
 
   destruct: ->
-    @context.factory.destructRenderer(@)
+    if @factory.resourceCache.constructor is WebkitCSSResourceCache
+      @factory.destructRenderer(@)
+    else
+      @destructor()
     return
 
   update:(m, c) ->
@@ -48,6 +53,11 @@ class WebkitCSSDomElementRenderer
       else
         @node.style.visibility = "visible"
 
+    matrixChanged = @matrix.setWithComparing(m)
+    return if !matrixChanged and @appended and
+      @alpha is c.multi.alpha and
+      @zIndex is renderingIndex + renderingCount
+
     unless @appended
       @appended = true
       @node.style.position = "absolute"
@@ -55,18 +65,25 @@ class WebkitCSSDomElementRenderer
       @node.style.display = "block"
       @factory.stage.parentNode.appendChild(@node)
 
-    matrixChanged = @matrix.setWithComparing(m)
-    return if !matrixChanged and
-      @alpha is c.multi.alpha and
-      @zIndex is renderingIndex
-
     @alpha = c.multi.alpha
-    @zIndex = renderingIndex
+    @zIndex = renderingIndex + renderingCount
 
     style = @node.style
     style.zIndex = @zIndex
     style.opacity = @alpha
-    m = @matrix
+    style.webkitTransform = "none"
+
+    rs = @factory.stage.getBoundingClientRect()
+    rn = @node.getBoundingClientRect()
+    dpr = if @factory.resourceCache.constructor is WebkitCSSResourceCache \
+      then 1 else window.devicePixelRatio
+    m = @matrixForDom
+    m.scaleX = 1 / dpr
+    m.scaleY = 1 / dpr
+    m.translateX = rs.left - rn.left
+    m.translateY = rs.top - rn.top
+
+    m = Utility.calcMatrix(@matrixForRender, @matrixForDom, @matrix)
     if @use3D
       style.webkitTransform = "matrix3d(" +
         "#{m.scaleX},#{m.skew1},0,0," +
