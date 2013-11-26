@@ -83,12 +83,12 @@ function main()
 		case "bitmap":
 			item.compressionType = "lossless";
 			var name = item.name;
-			if (name.match(/\.(jpg|jpeg|png)$/i) === null)
+			if (name.match(/\.(gif|jpg|jpeg|png)$/i) === null)
 				name += ".png";
-			name = name.replace(/(_rgb_[0-9a-f]{6}|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f]{8}|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f]{6}|_add_[0-9]+,[0-9]+,[0-9]+)\/([^\/]+)\.(jpg|jpeg|png)$/i, "$2$1.$3").replace(/\//g, "_");
+			name = name.replace(/(_rgb_[0-9a-f]{6}|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f]{8}|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f]{6}|_add_[0-9]+,[0-9]+,[0-9]+)\/([^\/]+)\.(gif|jpg|jpeg|png)$/i, "$2$1.$3").replace(/\//g, "_");
 			setLinkage(item, name);
 
-			m = name.match(/(_rgb_[0-9a-f]{6}|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f]{8}|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f]{6}|_add_[0-9]+,[0-9]+,[0-9]+)\.(jpg|jpeg|png)$/i);
+			m = name.match(/(_rgb_[0-9a-f]{6}|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f]{8}|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f]{6}|_add_[0-9]+,[0-9]+,[0-9]+)\.(gif|jpg|jpeg|png)$/i);
 			if (m === null)
 				item.exportToFile(bitmapDir + name);
 			break;

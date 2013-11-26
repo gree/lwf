@@ -7215,9 +7215,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.appended = false;
       this.node.style.visibility = "hidden";
       this.matrix = new Matrix(0, 0, 0, 0, 0, 0);
+      this.matrixForDom = new Matrix(0, 0, 0, 0, 0, 0);
+      this.matrixForRender = new Matrix(0, 0, 0, 0, 0, 0);
       this.alpha = -1;
       this.zIndex = -1;
-      this.visible = true;
+      this.visible = false;
     }
 
     WebkitCSSDomElementRenderer.prototype.destructor = function() {
@@ -7227,13 +7229,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSDomElementRenderer.prototype.destruct = function() {
-      this.context.factory.destructRenderer(this);
+      if (this.factory.resourceCache.constructor === WebkitCSSResourceCache) {
+        this.factory.destructRenderer(this);
+      } else {
+        this.destructor();
+      }
     };
 
     WebkitCSSDomElementRenderer.prototype.update = function(m, c) {};
 
     WebkitCSSDomElementRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var matrixChanged, style;
+      var dpr, matrixChanged, rn, rs, style;
       if (this.visible === visible) {
         if (visible === false) {
           return;
@@ -7247,6 +7253,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.node.style.visibility = "visible";
         }
       }
+      matrixChanged = this.matrix.setWithComparing(m);
+      if (!matrixChanged && this.appended && this.alpha === c.multi.alpha && this.zIndex === renderingIndex + renderingCount) {
+        return;
+      }
       if (!this.appended) {
         this.appended = true;
         this.node.style.position = "absolute";
@@ -7254,16 +7264,21 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.node.style.display = "block";
         this.factory.stage.parentNode.appendChild(this.node);
       }
-      matrixChanged = this.matrix.setWithComparing(m);
-      if (!matrixChanged && this.alpha === c.multi.alpha && this.zIndex === renderingIndex) {
-        return;
-      }
       this.alpha = c.multi.alpha;
-      this.zIndex = renderingIndex;
+      this.zIndex = renderingIndex + renderingCount;
       style = this.node.style;
       style.zIndex = this.zIndex;
       style.opacity = this.alpha;
-      m = this.matrix;
+      style.webkitTransform = "none";
+      rs = this.factory.stage.getBoundingClientRect();
+      rn = this.node.getBoundingClientRect();
+      dpr = this.factory.resourceCache.constructor === WebkitCSSResourceCache ? 1 : window.devicePixelRatio;
+      m = this.matrixForDom;
+      m.scaleX = 1 / dpr;
+      m.scaleY = 1 / dpr;
+      m.translateX = rs.left - rn.left;
+      m.translateY = rs.top - rn.top;
+      m = Utility.calcMatrix(this.matrixForRender, this.matrixForDom, this.matrix);
       if (this.use3D) {
         style.webkitTransform = "matrix3d(" + ("" + m.scaleX + "," + m.skew1 + ",0,0,") + ("" + m.skew0 + "," + m.scaleY + ",0,0,") + "0,0,1,0," + ("" + m.translateX + "," + m.translateY + ",0,1)");
       } else {
@@ -7406,7 +7421,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (!url.match(/^\//)) {
         url = prefix + url;
       }
-      url = url.replace(/(\.png|\.jpg)/i, suffix + "$1");
+      url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1");
       return url;
     };
 

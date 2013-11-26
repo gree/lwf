@@ -48,7 +48,7 @@ class WebkitCSSResourceCache
       newUrl = imageMap[url]
       url = newUrl if newUrl?
     url = prefix + url unless url.match(/^\//)
-    url = url.replace(/(\.png|\.jpg)/i, suffix + "$1")
+    url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1")
     return url
 
   checkTextures:(settings, data) ->
