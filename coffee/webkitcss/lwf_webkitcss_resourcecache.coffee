@@ -585,8 +585,9 @@ class WebkitCSSResourceCache
         break
       if empty
         try
-          head = document.getElementsByTagName('head')[0]
-          head.removeChild(script) for script in cache.scripts
+          if cache.scripts?
+            head = document.getElementsByTagName('head')[0]
+            head.removeChild(script) for script in cache.scripts
         catch e
           # ignore
         delete @cache[lwf.url]
