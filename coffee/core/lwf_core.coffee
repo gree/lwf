@@ -815,25 +815,25 @@ class LWF
       switch a
         when Animation.END
           return
-  
+
         when Animation.PLAY
           target.play()
-  
+
         when Animation.STOP
           target.stop()
-  
+
         when Animation.NEXTFRAME
           target.nextFrame()
-  
+
         when Animation.PREVFRAME
           target.prevFrame()
-  
+
         when Animation.GOTOFRAME
           target.gotoFrameInternal(animations[i++])
-  
+
         when Animation.GOTOLABEL
           target.gotoFrame(@searchFrame(target, animations[i++]))
-  
+
         when Animation.SETTARGET
           target = movie
 
@@ -854,10 +854,10 @@ class LWF
                   target =
                     target.searchMovieInstanceByInstanceId(instId, false)
                   target = movie unless target?
-  
+
         when Animation.EVENT
           eventId = animations[i++]
-          handlers = @eventHandlers[eventId]
+          handlers = @eventHandlers[eventId]?.slice(0)
           handler(movie, button) for handler in handlers if handlers?
 
         when Animation.CALL
