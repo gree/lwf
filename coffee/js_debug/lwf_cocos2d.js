@@ -6693,7 +6693,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.playAnimation = function(animationId, movie, button) {
-      var a, animations, count, eventId, func, handler, handlers, i, instId, j, stringId, target, _i, _j, _len, _ref1;
+      var a, animations, count, eventId, func, handler, handlers, i, instId, j, stringId, target, _i, _j, _len, _ref1, _ref2;
       i = 0;
       animations = this.data.animations[animationId];
       target = movie;
@@ -6747,7 +6747,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Animation.EVENT:
             eventId = animations[i++];
-            handlers = this.eventHandlers[eventId];
+            handlers = (_ref1 = this.eventHandlers[eventId]) != null ? _ref1.slice(0) : void 0;
             if (handlers != null) {
               for (_j = 0, _len = handlers.length; _j < _len; _j++) {
                 handler = handlers[_j];
@@ -6757,7 +6757,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Animation.CALL:
             stringId = animations[i++];
-            func = (_ref1 = this.functions) != null ? _ref1[this.data.strings[stringId]] : void 0;
+            func = (_ref2 = this.functions) != null ? _ref2[this.data.strings[stringId]] : void 0;
             if (func != null) {
               func.call(movie);
             }
@@ -8076,11 +8076,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         if (empty) {
           try {
-            head = document.getElementsByTagName('head')[0];
-            _ref2 = cache.scripts;
-            for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-              script = _ref2[_i];
-              head.removeChild(script);
+            if (cache.scripts != null) {
+              head = document.getElementsByTagName('head')[0];
+              _ref2 = cache.scripts;
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                script = _ref2[_i];
+                head.removeChild(script);
+              }
             }
           } catch (_error) {
             e = _error;
