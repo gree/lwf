@@ -25,6 +25,38 @@ License: MIT license
 
 -----
 Code in:
+cplusplus/supports/boost
+
+portable C++ source libraries
+URL: http://www.boost.org/
+License: Boost Software License
+
+-----
+Code in:
+cplusplus/supports/luna-gen
+
+lua binding code generator written in lua script language (luna.h, luna.cpp)
+URL: https://code.google.com/p/luna-gen/
+License: MIT license
+
+-----
+Code in:
+cplusplus/supports/luna-gen-tools
+
+lua binding code generator written in lua script language (tools)
+URL: https://code.google.com/p/luna-gen/
+License: GPL license
+
+-----
+Code in:
+cplusplus/supports/lzma
+
+LZMA SDK
+URL: http://www.7-zip.org/sdk.html
+License: public domain
+
+-----
+Code in:
 tools/closure
 
 Closure Compiler

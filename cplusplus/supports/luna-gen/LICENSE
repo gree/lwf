@@ -1,0 +1,6 @@
+The MIT license
+
+https://code.google.com/p/luna-gen/
+
+License
+The code generator luna-gen.lua is under GPL-license, but its input/output files and the dependencies luna.h, luna.cpp, mylib.lua are NOT. (The dependencies are distributed under MIT license when it is not bundled with QPerformanceTimer.h). So you can use luna-gen freely for all purposes including developing commercial apps without having to publish your source codes. In other words, when developing commercial apps, just remove QPerformanceTimer.h which is unused by default.
