@@ -104,7 +104,7 @@ extern class Movie
 
 	public function removeMovieClip():Void;
 
-	public function requestCalculateBounds():Void;
+	public function requestCalculateBounds(?callback:Void->Void):Void;
 
 	public function rotate(degree:Float):Void;
 

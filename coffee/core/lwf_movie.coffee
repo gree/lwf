@@ -49,6 +49,8 @@ class Movie extends IObject
     @movieExecCount = -1
     @postExecCount = -1
     @eventHandlers = {}
+    @requestedCalculateBounds = false
+    @calculateBoundsCallback = null
 
     @property = new Property(lwf)
 
@@ -705,8 +707,6 @@ class Movie extends IObject
       matrixChanged = @matrix.setWithComparing(m)
       colorTransformChanged = @colorTransform.setWithComparing(c)
 
-    @handler.call("update", @) unless @handler.empty
-
     if @property.hasMatrix
       matrixChanged = true
       m = Utility.calcMatrix(@matrix0, @matrix, @property.matrix)
@@ -770,6 +770,11 @@ class Movie extends IObject
         "yMin":@yMin
         "yMax":@yMax
       @requestedCalculateBounds = false
+      if @calculateBoundsCallback?
+        @calculateBoundsCallback.call(@)
+        @calculateBoundsCallback = null
+
+    @handler.call("update", @) unless @handler.empty
 
     return
 
@@ -1204,8 +1209,10 @@ class Movie extends IObject
     @property.setAlpha(v)
     return
 
-  requestCalculateBounds: ->
+  requestCalculateBounds:(callback = null) ->
     @requestedCalculateBounds = true
+    @calculateBoundsCallback = callback
+    @bounds = undefined
     return
 
   getBounds: ->

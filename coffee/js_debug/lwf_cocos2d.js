@@ -3557,6 +3557,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.movieExecCount = -1;
       this.postExecCount = -1;
       this.eventHandlers = {};
+      this.requestedCalculateBounds = false;
+      this.calculateBoundsCallback = null;
       this.property = new Property(lwf);
       this.matrix0 = new Matrix;
       this.matrix1 = new Matrix;
@@ -4442,9 +4444,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         matrixChanged = this.matrix.setWithComparing(m);
         colorTransformChanged = this.colorTransform.setWithComparing(c);
       }
-      if (!this.handler.empty) {
-        this.handler.call("update", this);
-      }
       if (this.property.hasMatrix) {
         matrixChanged = true;
         m = Utility.calcMatrix(this.matrix0, this.matrix, this.property.matrix);
@@ -4530,6 +4529,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           "yMax": this.yMax
         };
         this.requestedCalculateBounds = false;
+        if (this.calculateBoundsCallback != null) {
+          this.calculateBoundsCallback.call(this);
+          this.calculateBoundsCallback = null;
+        }
+      }
+      if (!this.handler.empty) {
+        this.handler.call("update", this);
       }
     };
 
@@ -5219,8 +5225,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.property.setAlpha(v);
     };
 
-    Movie.prototype.requestCalculateBounds = function() {
+    Movie.prototype.requestCalculateBounds = function(callback) {
+      if (callback == null) {
+        callback = null;
+      }
       this.requestedCalculateBounds = true;
+      this.calculateBoundsCallback = callback;
+      this.bounds = void 0;
     };
 
     Movie.prototype.getBounds = function() {
@@ -6517,6 +6528,153 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.addButtonEventHandler(instanceName, handlers);
     };
 
+    LWF.prototype.setMovieLoadCommand = function(instanceName, handler) {
+      var handlers, m;
+      m = this.searchMovieInstance(instanceName);
+      if (m != null) {
+        handler.call(m);
+      } else {
+        handlers = {};
+        handlers["load"] = function() {
+          this.lwf.removeMovieEventHandler(instanceName, handlers);
+          return handler.call(this);
+        };
+        this.addMovieEventHandler(instanceName, handlers);
+      }
+    };
+
+    LWF.prototype.setMoviePostLoadCommand = function(instanceName, handler) {
+      var handlers, m;
+      m = this.searchMovieInstance(instanceName);
+      if (m != null) {
+        handler.call(m);
+      } else {
+        handlers = {};
+        handlers["postLoad"] = function() {
+          this.lwf.removeMovieEventHandler(instanceName, handlers);
+          return handler.call(this);
+        };
+        this.addMovieEventHandler(instanceName, handlers);
+      }
+    };
+
+    LWF.prototype.playMovie = function(instanceName) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.play();
+      });
+    };
+
+    LWF.prototype.stopMovie = function(instanceName) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.stop();
+      });
+    };
+
+    LWF.prototype.nextFrameMovie = function(instanceName) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.nextFrame();
+      });
+    };
+
+    LWF.prototype.prevFrameMovie = function(instanceName) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.prevFrame();
+      });
+    };
+
+    LWF.prototype.setVisibleMovie = function(instanceName, visible) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.setVisible(visible);
+      });
+    };
+
+    LWF.prototype.gotoAndStopMovie = function(instanceName, label) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.gotoAndStop(label);
+      });
+    };
+
+    LWF.prototype.gotoAndStopMovie = function(instanceName, frameNo) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.gotoAndStop(frameNo);
+      });
+    };
+
+    LWF.prototype.gotoAndPlayMovie = function(instanceName, label) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.gotoAndPlay(label);
+      });
+    };
+
+    LWF.prototype.gotoAndPlayMovie = function(instanceName, frameNo) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.gotoAndPlay(frameNo);
+      });
+    };
+
+    LWF.prototype.moveMovie = function(instanceName, x, y) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.move(x, y);
+      });
+    };
+
+    LWF.prototype.moveToMovie = function(instanceName, x, y) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.moveTo(x, y);
+      });
+    };
+
+    LWF.prototype.rotateMovie = function(instanceName, degree) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.rotate(degree);
+      });
+    };
+
+    LWF.prototype.rotateToMovie = function(instanceName, degree) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.rotateTo(degree);
+      });
+    };
+
+    LWF.prototype.scaleMovie = function(instanceName, x, y) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.scale(x, y);
+      });
+    };
+
+    LWF.prototype.scaleToMovie = function(instanceName, x, y) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.scaleTo(x, y);
+      });
+    };
+
+    LWF.prototype.setMatrixMovie = function(instanceName, matrix, sx, sy, r) {
+      if (sx == null) {
+        sx = 1;
+      }
+      if (sy == null) {
+        sy = 1;
+      }
+      if (r == null) {
+        r = 0;
+      }
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.setMatrix(matrix, sx, sy, r);
+      });
+    };
+
+    LWF.prototype.setAlphaMovie = function(instanceName, alpha) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.setAlpha(alpha);
+      });
+    };
+
+    LWF.prototype.setColorTransformMovie = function(instanceName, colorTransform) {
+      this.setMovieLoadCommand(instanceName, function() {
+        return this.setColorTransform(colorTransform);
+      });
+    };
+
     LWF.prototype.execMovieCommand = function() {
       var available, deletes, k, movie, name, v, _i, _j, _len, _len1, _ref1;
       deletes = [];
@@ -6970,6 +7128,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["getStringId"] = LWF.prototype.getStringId;
 
+  LWF.prototype["gotoAndPlayMovie"] = LWF.prototype.gotoAndPlayMovie;
+
+  LWF.prototype["gotoAndPlayMovie"] = LWF.prototype.gotoAndPlayMovie;
+
+  LWF.prototype["gotoAndStopMovie"] = LWF.prototype.gotoAndStopMovie;
+
+  LWF.prototype["gotoAndStopMovie"] = LWF.prototype.gotoAndStopMovie;
+
   LWF.prototype["init"] = LWF.prototype.init;
 
   LWF.prototype["inputKeyPress"] = LWF.prototype.inputKeyPress;
@@ -6981,6 +7147,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["inputRelease"] = LWF.prototype.inputRelease;
 
   LWF.prototype["inspect"] = LWF.prototype.inspect;
+
+  LWF.prototype["moveMovie"] = LWF.prototype.moveMovie;
+
+  LWF.prototype["moveToMovie"] = LWF.prototype.moveToMovie;
+
+  LWF.prototype["nextFrameMovie"] = LWF.prototype.nextFrameMovie;
+
+  LWF.prototype["playMovie"] = LWF.prototype.playMovie;
+
+  LWF.prototype["prevFrameMovie"] = LWF.prototype.prevFrameMovie;
 
   LWF.prototype["removeAllowButton"] = LWF.prototype.removeAllowButton;
 
@@ -7000,9 +7176,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["render"] = LWF.prototype.render;
 
+  LWF.prototype["rotateMovie"] = LWF.prototype.rotateMovie;
+
+  LWF.prototype["rotateToMovie"] = LWF.prototype.rotateToMovie;
+
   LWF.prototype["scaleForHeight"] = LWF.prototype.scaleForHeight;
 
   LWF.prototype["scaleForWidth"] = LWF.prototype.scaleForWidth;
+
+  LWF.prototype["scaleMovie"] = LWF.prototype.scaleMovie;
+
+  LWF.prototype["scaleToMovie"] = LWF.prototype.scaleToMovie;
 
   LWF.prototype["searchAttachedLWF"] = LWF.prototype.searchAttachedLWF;
 
@@ -7014,9 +7198,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["searchProgramObjectId"] = LWF.prototype.searchProgramObjectId;
 
+  LWF.prototype["setAlphaMovie"] = LWF.prototype.setAlphaMovie;
+
   LWF.prototype["setButtonEventHandler"] = LWF.prototype.setButtonEventHandler;
 
   LWF.prototype["setButtonEventListener"] = LWF.prototype.setButtonEventHandler;
+
+  LWF.prototype["setColorTransformMovie"] = LWF.prototype.setColorTransformMovie;
 
   LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler;
 
@@ -7030,11 +7218,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip;
 
+  LWF.prototype["setMatrixMovie"] = LWF.prototype.setMatrixMovie;
+
   LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand;
 
   LWF.prototype["setMovieEventHandler"] = LWF.prototype.setMovieEventHandler;
 
   LWF.prototype["setMovieEventListener"] = LWF.prototype.setMovieEventHandler;
+
+  LWF.prototype["setMovieLoadCommand"] = LWF.prototype.setMovieLoadCommand;
+
+  LWF.prototype["setMoviePostLoadCommand"] = LWF.prototype.setMoviePostLoadCommand;
 
   LWF.prototype["setPreferredFrameRate"] = LWF.prototype.setPreferredFrameRate;
 
@@ -7043,6 +7237,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["setRendererFactory"] = LWF.prototype.setRendererFactory;
 
   LWF.prototype["setTextScale"] = LWF.prototype.setTextScale;
+
+  LWF.prototype["setVisibleMovie"] = LWF.prototype.setVisibleMovie;
+
+  LWF.prototype["stopMovie"] = LWF.prototype.stopMovie;
 
   Loader["load"] = Loader.load;
 

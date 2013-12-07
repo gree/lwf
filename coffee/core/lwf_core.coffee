@@ -677,6 +677,102 @@ class LWF
     @addButtonEventHandler(instanceName, handlers)
     return
 
+  setMovieLoadCommand:(instanceName, handler) ->
+    m = @searchMovieInstance(instanceName)
+    if m?
+      handler.call(m)
+    else
+      handlers = {}
+      handlers["load"] = ->
+        @lwf.removeMovieEventHandler(instanceName, handlers)
+        handler.call(@)
+      @addMovieEventHandler(instanceName, handlers)
+    return
+
+  setMoviePostLoadCommand:(instanceName, handler) ->
+    m = @searchMovieInstance(instanceName)
+    if m?
+      handler.call(m)
+    else
+      handlers = {}
+      handlers["postLoad"] = ->
+        @lwf.removeMovieEventHandler(instanceName, handlers)
+        handler.call(@)
+      @addMovieEventHandler(instanceName, handlers)
+    return
+
+  playMovie:(instanceName) ->
+    @setMovieLoadCommand(instanceName, -> @play())
+    return
+
+  stopMovie:(instanceName) ->
+    @setMovieLoadCommand(instanceName, -> @stop())
+    return
+
+  nextFrameMovie:(instanceName) ->
+    @setMovieLoadCommand(instanceName, -> @nextFrame())
+    return
+
+  prevFrameMovie:(instanceName) ->
+    @setMovieLoadCommand(instanceName, -> @prevFrame())
+    return
+
+  setVisibleMovie:(instanceName, visible) ->
+    @setMovieLoadCommand(instanceName, -> @setVisible(visible))
+    return
+
+  gotoAndStopMovie:(instanceName, label) ->
+    @setMovieLoadCommand(instanceName, -> @gotoAndStop(label))
+    return
+
+  gotoAndStopMovie:(instanceName, frameNo) ->
+    @setMovieLoadCommand(instanceName, -> @gotoAndStop(frameNo))
+    return
+
+  gotoAndPlayMovie:(instanceName, label) ->
+    @setMovieLoadCommand(instanceName, -> @gotoAndPlay(label))
+    return
+
+  gotoAndPlayMovie:(instanceName, frameNo) ->
+    @setMovieLoadCommand(instanceName, -> @gotoAndPlay(frameNo))
+    return
+
+  moveMovie:(instanceName, x, y) ->
+    @setMovieLoadCommand(instanceName, -> @move(x, y))
+    return
+
+  moveToMovie:(instanceName, x, y) ->
+    @setMovieLoadCommand(instanceName, -> @moveTo(x, y))
+    return
+
+  rotateMovie:(instanceName, degree) ->
+    @setMovieLoadCommand(instanceName, -> @rotate(degree))
+    return
+
+  rotateToMovie:(instanceName, degree) ->
+    @setMovieLoadCommand(instanceName, -> @rotateTo(degree))
+    return
+
+  scaleMovie:(instanceName, x, y) ->
+    @setMovieLoadCommand(instanceName, -> @scale(x, y))
+    return
+
+  scaleToMovie:(instanceName, x, y) ->
+    @setMovieLoadCommand(instanceName, -> @scaleTo(x, y))
+    return
+
+  setMatrixMovie:(instanceName, matrix, sx = 1, sy = 1, r = 0) ->
+    @setMovieLoadCommand(instanceName, -> @setMatrix(matrix, sx, sy, r))
+    return
+
+  setAlphaMovie:(instanceName, alpha) ->
+    @setMovieLoadCommand(instanceName, -> @setAlpha(alpha))
+    return
+
+  setColorTransformMovie:(instanceName, colorTransform) ->
+    @setMovieLoadCommand(instanceName, -> @setColorTransform(colorTransform))
+    return
+
   execMovieCommand: ->
     deletes = []
     for k, v of @movieCommands

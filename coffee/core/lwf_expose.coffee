@@ -60,12 +60,21 @@ LWF.prototype["forceExecWithoutProgress"] =
   LWF.prototype.forceExecWithoutProgress
 LWF.prototype["getStageSize"] = LWF.prototype.getStageSize
 LWF.prototype["getStringId"] = LWF.prototype.getStringId
+LWF.prototype["gotoAndPlayMovie"] = LWF.prototype.gotoAndPlayMovie
+LWF.prototype["gotoAndPlayMovie"] = LWF.prototype.gotoAndPlayMovie
+LWF.prototype["gotoAndStopMovie"] = LWF.prototype.gotoAndStopMovie
+LWF.prototype["gotoAndStopMovie"] = LWF.prototype.gotoAndStopMovie
 LWF.prototype["init"] = LWF.prototype.init
 LWF.prototype["inputKeyPress"] = LWF.prototype.inputKeyPress
 LWF.prototype["inputPoint"] = LWF.prototype.inputPoint
 LWF.prototype["inputPress"] = LWF.prototype.inputPress
 LWF.prototype["inputRelease"] = LWF.prototype.inputRelease
 LWF.prototype["inspect"] = LWF.prototype.inspect
+LWF.prototype["moveMovie"] = LWF.prototype.moveMovie
+LWF.prototype["moveToMovie"] = LWF.prototype.moveToMovie
+LWF.prototype["nextFrameMovie"] = LWF.prototype.nextFrameMovie
+LWF.prototype["playMovie"] = LWF.prototype.playMovie
+LWF.prototype["prevFrameMovie"] = LWF.prototype.prevFrameMovie
 LWF.prototype["removeAllowButton"] = LWF.prototype.removeAllowButton
 LWF.prototype["removeButtonEventHandler"] =
   LWF.prototype.removeButtonEventHandler
@@ -78,29 +87,40 @@ LWF.prototype["removeMovieEventHandler"] = LWF.prototype.removeMovieEventHandler
 LWF.prototype["removeMovieEventListener"] =
   LWF.prototype.removeMovieEventHandler
 LWF.prototype["render"] = LWF.prototype.render
+LWF.prototype["rotateMovie"] = LWF.prototype.rotateMovie
+LWF.prototype["rotateToMovie"] = LWF.prototype.rotateToMovie
 LWF.prototype["scaleForHeight"] = LWF.prototype.scaleForHeight
 LWF.prototype["scaleForWidth"] = LWF.prototype.scaleForWidth
+LWF.prototype["scaleMovie"] = LWF.prototype.scaleMovie
+LWF.prototype["scaleToMovie"] = LWF.prototype.scaleToMovie
 LWF.prototype["searchAttachedLWF"] = LWF.prototype.searchAttachedLWF
 LWF.prototype["searchAttachedMovie"] = LWF.prototype.searchAttachedMovie
 LWF.prototype["searchEventId"] = LWF.prototype.searchEventId
 LWF.prototype["searchFrame"] = LWF.prototype.searchFrame
 LWF.prototype["searchProgramObjectId"] = LWF.prototype.searchProgramObjectId
+LWF.prototype["setAlphaMovie"] = LWF.prototype.setAlphaMovie
 LWF.prototype["setButtonEventHandler"] = LWF.prototype.setButtonEventHandler
 LWF.prototype["setButtonEventListener"] = LWF.prototype.setButtonEventHandler
+LWF.prototype["setColorTransformMovie"] = LWF.prototype.setColorTransformMovie
 LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler
 LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler
 LWF.prototype["setFastForward"] = LWF.prototype.setFastForward
 LWF.prototype["setFastForwardTimeout"] = LWF.prototype.setFastForwardTimeout
 LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
 LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip
+LWF.prototype["setMatrixMovie"] = LWF.prototype.setMatrixMovie
 LWF.prototype["setMovieCommand"] = LWF.prototype.setMovieCommand
 LWF.prototype["setMovieEventHandler"] = LWF.prototype.setMovieEventHandler
 LWF.prototype["setMovieEventListener"] = LWF.prototype.setMovieEventHandler
+LWF.prototype["setMovieLoadCommand"] = LWF.prototype.setMovieLoadCommand
+LWF.prototype["setMoviePostLoadCommand"] = LWF.prototype.setMoviePostLoadCommand
 LWF.prototype["setPreferredFrameRate"] = LWF.prototype.setPreferredFrameRate
 LWF.prototype["setProgramObjectConstructor"] =
   LWF.prototype.setProgramObjectConstructor
 LWF.prototype["setRendererFactory"] = LWF.prototype.setRendererFactory
 LWF.prototype["setTextScale"] = LWF.prototype.setTextScale
+LWF.prototype["setVisibleMovie"] = LWF.prototype.setVisibleMovie
+LWF.prototype["stopMovie"] = LWF.prototype.stopMovie
 
 Loader["load"] = Loader.load
 
