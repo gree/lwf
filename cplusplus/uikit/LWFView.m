@@ -82,6 +82,16 @@
 	}
 }
 
+- (NSArray *)lwfList
+{
+	return self.displayList;
+}
+
+- (LWFObject *)lastLWFObject
+{
+	return [self.displayList lastObject];
+}
+
 - (void)update:(CADisplayLink *)sender
 {
 	CFTimeInterval tick = sender.duration * sender.frameInterval;

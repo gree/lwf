@@ -28,8 +28,10 @@
 @property (nonatomic, strong) NSString *fit;
 @property (nonatomic, assign) NSInteger frameInterval;
 @property (nonatomic, assign) BOOL useBackgroundColor;
+@property (nonatomic, readonly) NSArray *lwfList;
 
 - (void)invalidate;
 - (void)addLWFObject:(LWFObject *)lwfObject;
+- (LWFObject *)lastLWFObject;
 
 @end
