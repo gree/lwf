@@ -109,6 +109,11 @@ using namespace LWF;
 	return lwf->height;
 }
 
+- (void)lwfInit
+{
+	lwf->Init();
+}
+
 - (void)fitForHeight:(CGSize)size
 {
 	lwf->FitForHeight(size.width, size.height);

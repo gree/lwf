@@ -36,6 +36,7 @@ typedef void (^EventHandler)();
 
 + (id)lwfWithFile:(NSString *)path view:(LWFView *)view;
 - (id)initWithFile:(NSString *)path view:(LWFView *)view;
+- (void)lwfInit;
 
 - (void)fitForHeight:(CGSize)size;
 - (void)fitForWidth:(CGSize)size;

@@ -30,42 +30,42 @@
 
 - (void)awakeFromNib
 {
-	[self start];
+	self.displayList = [NSMutableArray array];
+	if (self.path) {
+		LWFObject *lwfObject = [LWFObject lwfWithFile:self.path view:self];
+		[self addLWFObject:lwfObject];
+	}
 }
 
 - (id)initWithFrame:(CGRect)frame
 {
 	self = [super initWithFrame:frame];
-	[self start];
+	self.displayList = [NSMutableArray array];
 	return self;
 }
 
-- (void)start
+- (void)didMoveToWindow
 {
-	if (!self.displayLink) {
-		self.displayList = [NSMutableArray array];
-
-		self.displayLink = [CADisplayLink
-			displayLinkWithTarget:self selector:@selector(update:)];
-		[self.displayLink setFrameInterval:(
-			self.frameInterval <= 0 ? 1 : self.frameInterval)];
-		[self.displayLink addToRunLoop:[NSRunLoop currentRunLoop]
-			forMode:NSRunLoopCommonModes];
-
-		if (self.path) {
-			LWFObject *lwfObject = [LWFObject lwfWithFile:self.path view:self];
-			[self addLWFObject:lwfObject];
+	if (self.window) {
+		if (!self.displayLink && self.displayList) {
+			self.displayLink = [CADisplayLink
+				displayLinkWithTarget:self selector:@selector(update:)];
+			[self.displayLink setFrameInterval:(
+				self.frameInterval <= 0 ? 1 : self.frameInterval)];
+			[self.displayLink addToRunLoop:[NSRunLoop currentRunLoop]
+				forMode:NSRunLoopCommonModes];
 		}
+	} else {
+		[self.displayLink invalidate];
+		self.displayLink = nil;
 	}
 }
 
 - (void)invalidate
 {
-	if (self.displayLink) {
-		[self.displayLink invalidate];
-		self.displayLink = nil;
-		self.displayList = nil;
-	}
+	[self.displayLink invalidate];
+	self.displayLink = nil;
+	self.displayList = nil;
 }
 
 - (void)addLWFObject:(LWFObject *)lwfObject
@@ -90,6 +90,15 @@
 - (LWFObject *)lastLWFObject
 {
 	return [self.displayList lastObject];
+}
+
+- (void)lwfInit
+{
+	if (self.displayList) {
+		for (LWFObject *lwfObject in self.displayList) {
+			[lwfObject lwfInit];
+		}
+	}
 }
 
 - (void)update:(CADisplayLink *)sender

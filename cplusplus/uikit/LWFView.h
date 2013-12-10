@@ -31,6 +31,7 @@
 @property (nonatomic, readonly) NSArray *lwfList;
 
 - (void)invalidate;
+- (void)lwfInit;
 - (void)addLWFObject:(LWFObject *)lwfObject;
 - (LWFObject *)lastLWFObject;
 
