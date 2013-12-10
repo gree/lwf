@@ -49,7 +49,6 @@ protected:
 	LWFRendererFactory *m_factory;
 	UIImageView *m_view;
 	CALayer *m_layer;
-	bool m_tintColorable;
 
 public:
 	LWFBitmapRenderer(LWFRendererFactory *factory, LWF *l, Bitmap *bitmap);

@@ -29,6 +29,10 @@ typedef void (^EventHandler)();
 @property (readonly) void *lwf;
 @property (readonly) NSString *name;
 @property (readonly) unsigned int backgroundColor;
+@property (nonatomic, assign) BOOL interactive;
+@property (nonatomic, assign) NSInteger frameRate;
+@property (readonly) float width;
+@property (readonly) float height;
 
 + (id)lwfWithFile:(NSString *)path view:(LWFView *)view;
 - (id)initWithFile:(NSString *)path view:(LWFView *)view;
@@ -43,6 +47,10 @@ typedef void (^EventHandler)();
 - (void)removeEventHandler:(NSString *)eventName handlerId:(int)handlerId;
 - (void)clearEventHandler:(NSString *)eventName;
 - (void)clearAllEventHandlers;
+
+- (BOOL)inputPoint:(CGPoint)point;
+- (void)inputPress;
+- (void)inputRelease;
 
 - (void)play:(NSString *)target;
 - (void)stop:(NSString *)target;

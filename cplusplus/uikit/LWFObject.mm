@@ -79,6 +79,36 @@ using namespace LWF;
 	return lwf->data->header.backgroundColor;
 }
 
+- (BOOL)interactive
+{
+	return lwf->interactive;
+}
+
+- (void)setInteractive:(BOOL)i
+{
+	lwf->interactive = i;
+}
+
+- (NSInteger)frameRate
+{
+	return lwf->frameRate;
+}
+
+- (void)setFrameRate:(NSInteger)f
+{
+	lwf->SetFrameRate(f);
+}
+
+- (float)width
+{
+	return lwf->width;
+}
+
+- (float)height
+{
+	return lwf->height;
+}
+
 - (void)fitForHeight:(CGSize)size
 {
 	lwf->FitForHeight(size.width, size.height);
@@ -119,6 +149,22 @@ using namespace LWF;
 - (void)clearAllEventHandlers
 {
 	lwf->ClearAllEventHandlers();
+}
+
+- (BOOL)inputPoint:(CGPoint)point
+{
+	Button *button = lwf->InputPoint(point.x, point.y);
+	return button ? YES : NO;
+}
+
+- (void)inputPress
+{
+	lwf->InputPress();
+}
+
+- (void)inputRelease
+{
+	lwf->InputRelease();
 }
 
 - (void)play:(NSString *)target

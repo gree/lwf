@@ -101,4 +101,38 @@
 		[lwfObject draw];
 }
 
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self];
+	for (LWFObject *lwfObject in self.displayList) {
+		if (lwfObject.interactive) {
+			[lwfObject inputPoint:point];
+			[lwfObject inputPress];
+		}
+	}
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self];
+	for (LWFObject *lwfObject in self.displayList) {
+		if (lwfObject.interactive)
+			[lwfObject inputPoint:point];
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	UITouch *touch = [touches anyObject];
+	CGPoint point = [touch locationInView:self];
+	for (LWFObject *lwfObject in self.displayList) {
+		if (lwfObject.interactive) {
+			[lwfObject inputPoint:point];
+			[lwfObject inputRelease];
+		}
+	}
+}
+
 @end

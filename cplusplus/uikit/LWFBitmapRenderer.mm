@@ -133,8 +133,6 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	}
 	m_layer.position = CGPointMake(0, 0);
 	m_layer.anchorPoint = CGPointMake(0, 0);
-
-	m_tintColorable = [m_view respondsToSelector:@selector(setTintColor:)];
 }
 
 LWFBitmapRenderer::LWFBitmapRenderer(
@@ -171,18 +169,7 @@ void LWFBitmapRenderer::Render(
 		return;
 
 	m_view.hidden = NO;
-
-	if (m_tintColorable) {
-		float red = colorTransform->multi.red;
-		float green = colorTransform->multi.green;
-		float blue = colorTransform->multi.blue;
-		float alpha = colorTransform->multi.alpha;
-		red *= alpha;
-		green *= alpha;
-		blue *= alpha;
-		m_view.tintColor =
-			[UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-	}
+	m_view.alpha = colorTransform->multi.alpha;
 
 	const Matrix *&m = matrix;
 	CATransform3D t;

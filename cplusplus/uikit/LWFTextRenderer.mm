@@ -82,8 +82,6 @@ LWFTextRenderer::LWFTextRenderer(
 	}
 
 	[factory->GetView() addSubview:m_label];
-
-	m_tintColorable = [m_label respondsToSelector:@selector(setTintColor:)];
 }
 
 void LWFTextRenderer::Destruct()
@@ -105,15 +103,7 @@ void LWFTextRenderer::Render(
 		return;
 
 	m_label.hidden = NO;
-
-	if (m_tintColorable) {
-		float red = colorTransform->multi.red;
-		float green = colorTransform->multi.green;
-		float blue = colorTransform->multi.blue;
-		float alpha = colorTransform->multi.alpha;
-		m_label.tintColor =
-			[UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-	}
+	m_label.alpha = colorTransform->multi.alpha;
 
 	const Matrix *&m = matrix;
 	CATransform3D t;

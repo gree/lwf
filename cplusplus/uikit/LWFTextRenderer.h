@@ -30,7 +30,6 @@ class LWFTextRenderer : public TextRenderer
 protected:
 	LWFRendererFactory *m_factory;
 	UILabel *m_label;
-	bool m_tintColorable;
 
 public:
 	LWFTextRenderer(LWFRendererFactory *factory, LWF *l, Text *text);
