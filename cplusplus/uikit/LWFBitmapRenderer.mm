@@ -121,13 +121,14 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	float x = m_context->GetX();
 	float y = m_context->GetY();
 	if (x != 0 || y != 0) {
-		UIView *view = [[UIView alloc] init];
-		[view addSubview:m_view];
+		m_wrapper = [[UIView alloc] init];
+		[m_wrapper addSubview:m_view];
 		m_view.frame = CGRectMake(
 			x, y, m_view.frame.size.width, m_view.frame.size.height);
-		[factory->GetView() addSubview:view];
-		m_layer = view.layer;
+		[factory->GetView() addSubview:m_wrapper];
+		m_layer = m_wrapper.layer;
 	} else {
+		m_wrapper = nil;
 		m_layer = m_view.layer;
 		[factory->GetView() addSubview:m_view];
 	}
@@ -154,6 +155,8 @@ void LWFBitmapRenderer::Destruct()
 {
 	[m_view removeFromSuperview];
 	m_view = nil;
+	[m_wrapper removeFromSuperview];
+	m_wrapper = nil;
 }
 
 void LWFBitmapRenderer::Update(
@@ -165,8 +168,10 @@ void LWFBitmapRenderer::Render(
 	const Matrix *matrix, const ColorTransform *colorTransform,
 	int renderingIndex, int renderingCount, bool visible)
 {
-	if (!m_context || !visible || colorTransform->multi.alpha == 0)
+	if (!m_context || !visible || colorTransform->multi.alpha == 0) {
+		m_view.hidden = YES;
 		return;
+	}
 
 	m_view.hidden = NO;
 	m_view.alpha = colorTransform->multi.alpha;

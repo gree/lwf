@@ -48,6 +48,7 @@ protected:
 	LWFBitmapRendererContext *m_context;
 	LWFRendererFactory *m_factory;
 	UIImageView *m_view;
+	UIView *m_wrapper;
 	CALayer *m_layer;
 
 public:

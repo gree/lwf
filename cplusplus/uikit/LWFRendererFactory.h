@@ -30,7 +30,7 @@ class LWFBitmapRendererContext;
 class LWFRendererFactory : public IRendererFactory
 {
 protected:
-	LWFView *m_view;
+	__weak LWFView *m_view;
 
 public:
 	LWFRendererFactory(LWFView *view) : m_view(view) {}

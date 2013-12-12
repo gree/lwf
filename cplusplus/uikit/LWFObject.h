@@ -71,18 +71,20 @@ typedef void (^EventHandler)();
 
 /**
  Creates and returns a `LWFObject` object with specified the LWF data.
+ You can call this method from any thread.
 
- @param path The specified path of the LWF data in the main bundle,
- like "sample.lwf".
+ @param path The specified path of the LWF data. If the path is relative,
+ like "sample.lwf", this method loads it from the main bundle.
  @param view The specified `LWFView` object.
  */
 + (id)lwfWithFile:(NSString *)path view:(LWFView *)view;
 
 /**
  Creates and returns a `LWFObject` object with specified the LWF data.
+ You can call this method from any thread.
 
- @param path The specified path of the LWF data in the main bundle,
- like "sample.lwf".
+ @param path The specified path of the LWF data. If the path is relative,
+ like "sample.lwf", this method loads it from the main bundle.
  @param view The specified `LWFView` object.
  */
 - (id)initWithFile:(NSString *)path view:(LWFView *)view;
@@ -211,8 +213,8 @@ typedef void (^EventHandler)();
 - (void)setVisible:(NSString *)target visible:(BOOL)visible;
 
 /**
- Moves the frame in the animation of the target movie clip as Adobe Flash
- ActionScript. It also calls `stop` method.
+ Moves the playhead to the specified frame in the animation of the target movie
+ clip as Adobe Flash ActionScript. It also calls `stop` method.
 
  @param target The instance name of the target movie, like "playerMovie" or
  "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
@@ -221,18 +223,18 @@ typedef void (^EventHandler)();
 - (void)gotoAndStop:(NSString *)target frame:(int)frame;
 
 /**
- Moves the frame in the animation of the target movie clip as Adobe Flash
- ActionScript. It also calls `stop` method.
+ Moves the playhead to the specified frame in the animation of the target movie
+ clip as Adobe Flash ActionScript. It also calls `stop` method.
 
  @param target The instance name of the target movie, like "playerMovie" or
  "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
- @param frame The frame number, 1-origin.
+ @param label The label name of the frame.
  */
 - (void)gotoAndStop:(NSString *)target label:(NSString *)label;
 
 /**
- Moves the frame in the animation of the target movie clip as Adobe Flash
- ActionScript. It also calls `play` method.
+ Moves the playhead to the specified frame in the animation of the target movie
+ clip as Adobe Flash ActionScript. It also calls `play` method.
 
  @param target The instance name of the target movie, like "playerMovie" or
  "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
@@ -241,12 +243,12 @@ typedef void (^EventHandler)();
 - (void)gotoAndPlay:(NSString *)target frame:(int)frame;
 
 /**
- Moves the frame in the animation of the target movie clip as Adobe Flash
- ActionScript. It also calls `play` method.
+ Moves the playhead to the specified frame in the animation of the target movie
+ clip as Adobe Flash ActionScript. It also calls `play` method.
 
  @param target The instance name of the target movie, like "playerMovie" or
  "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
- @param frame The frame number, 1-origin.
+ @param label The label name of the frame.
  */
 - (void)gotoAndPlay:(NSString *)target label:(NSString *)label;
 
@@ -336,10 +338,20 @@ typedef void (^EventHandler)();
  "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
  @param attachName A unique instance name for the movie clip being attached to
  the movie clip.
-
- @return `YES` is the new movie was successfully attached, otherwise `NO`.
  */
-- (BOOL)attachMovie:(NSString *)linkageName
+- (void)attachMovie:(NSString *)linkageName
+	target:(NSString *)target attachName:(NSString *)attachName;
+
+/**
+ Attaches a `LWFObject` object into a movie clip as Adobe Flash ActionScript.
+
+ @param lwfObject A `LWFObject` object.
+ @param target The instance name of the target movie, like "playerMovie" or
+ "_root.stageMovie.playerMovie" as Adobe Flash ActionScript.
+ @param attachName A unique instance name for the movie clip being attached to
+ the movie clip.
+ */
+- (void)attachLWF:(LWFObject *)lwfObject
 	target:(NSString *)target attachName:(NSString *)attachName;
 
 @end

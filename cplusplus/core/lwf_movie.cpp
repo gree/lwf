@@ -688,9 +688,14 @@ void Movie::Destroy()
 	if (!m_attachedLWFs.empty()) {
 		AttachedLWFs::iterator
 			it(m_attachedLWFs.begin()), itend(m_attachedLWFs.end());
-		for (; it != itend; ++it)
-			if (it->second->child->detachHandler)
-				it->second->child->detachHandler(it->second->child.get());
+		for (; it != itend; ++it) {
+			if (it->second->child->detachHandler) {
+				if (it->second->child->detachHandler(it->second->child.get()))
+					it->second->child.get()->Destroy();
+			} else {
+				it->second->child.get()->Destroy();
+			}
+		}
 		m_attachedLWFs.clear();
 		m_attachedLWFList.clear();
 		m_detachedLWFs.clear();

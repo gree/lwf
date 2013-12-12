@@ -99,8 +99,10 @@ void LWFTextRenderer::Render(
 	const Matrix *matrix, const ColorTransform *colorTransform,
 	int renderingIndex, int renderingCount, bool visible)
 {
-	if (!visible || colorTransform->multi.alpha == 0)
+	if (!visible || colorTransform->multi.alpha == 0) {
+		m_label.hidden = YES;
 		return;
+	}
 
 	m_label.hidden = NO;
 	m_label.alpha = colorTransform->multi.alpha;

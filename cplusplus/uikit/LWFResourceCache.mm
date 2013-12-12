@@ -28,6 +28,19 @@ using namespace std;
 
 namespace LWF {
 
+class Autolock
+{
+private:
+	dispatch_semaphore_t m_semaphore;
+public:
+	Autolock(dispatch_semaphore_t s) : m_semaphore(s) {
+		dispatch_semaphore_wait(m_semaphore, DISPATCH_TIME_FOREVER);
+	}
+	~Autolock() {
+		dispatch_semaphore_signal(m_semaphore);
+	}
+};
+
 LWFResourceCache *LWFResourceCache::m_instance;
 
 LWFResourceCache *LWFResourceCache::shared()
@@ -41,38 +54,48 @@ LWFResourceCache *LWFResourceCache::shared()
 	return m_instance;
 }
 
-
 LWFResourceCache::LWFResourceCache()
 {
+	m_semaphore = dispatch_semaphore_create(1);
 }
 
 LWFResourceCache::~LWFResourceCache()
 {
+#if !OS_OBJECT_USE_OBJC
+	dispatch_release(m_semaphore);
+#endif
 }
 
 shared_ptr<Data> LWFResourceCache::loadLWFData(const string &pathstr)
 {
-	DataCache::iterator it = m_dataCache.find(pathstr);
-	if (it != m_dataCache.end()) {
-		++it->second.refCount;
-		return it->second.data;
+	{
+		Autolock lock(m_semaphore);
+		DataCache::iterator it = m_dataCache.find(pathstr);
+		if (it != m_dataCache.end()) {
+			++it->second.refCount;
+			return it->second.data;
+		}
 	}
 
-	NSString *path = [NSString stringWithUTF8String:pathstr.c_str()];
-	NSString *file = [path stringByDeletingPathExtension];
-	NSString *ext = [path pathExtension];
-	NSString *bundlePath =
-		[[NSBundle mainBundle] pathForResource:file ofType:ext];
-	NSData *bundleData = [NSData dataWithContentsOfFile:bundlePath];
-	if (!bundleData)
+	NSString *dataPath;
+	if (pathstr[0] == '/') {
+		dataPath = [NSString stringWithUTF8String:pathstr.c_str()];
+	} else {
+		NSString *path = [NSString stringWithUTF8String:pathstr.c_str()];
+		NSString *file = [path stringByDeletingPathExtension];
+		NSString *ext = [path pathExtension];
+		dataPath = [[NSBundle mainBundle] pathForResource:file ofType:ext];
+	}
+	NSData *nsdata = [NSData dataWithContentsOfFile:dataPath];
+	if (!nsdata)
 		return shared_ptr<Data>();
 
 	shared_ptr<Data> data =
-		make_shared<Data>([bundleData bytes], [bundleData length]);
+		make_shared<Data>([nsdata bytes], [nsdata length]);
 	if (!data->Check())
 		return shared_ptr<Data>();
 
-	string fullPath = [bundlePath UTF8String];
+	string fullPath = [dataPath UTF8String];
 	vector<shared_ptr<LWFBitmapRendererContext> > bitmapContexts;
 	bitmapContexts.resize(data->bitmaps.size());
 	for (size_t i = 0; i < data->bitmaps.size(); ++i) {
@@ -103,14 +126,19 @@ shared_ptr<Data> LWFResourceCache::loadLWFData(const string &pathstr)
 			make_shared<LWFBitmapRendererContext>(data.get(), bx, fullPath);
 	}
 
-	m_dataCache[pathstr] = DataContext(data, bitmapContexts, bitmapExContexts);
-	m_dataCacheMap[data.get()] = m_dataCache.find(pathstr);
+	{
+		Autolock lock(m_semaphore);
+		m_dataCache[pathstr] =
+			DataContext(data, bitmapContexts, bitmapExContexts);
+		m_dataCacheMap[data.get()] = m_dataCache.find(pathstr);
+	}
 
 	return data;
 }
 
 void LWFResourceCache::unloadLWFData(const shared_ptr<Data> &data)
 {
+	Autolock lock(m_semaphore);
 	DataCacheMap::iterator it = m_dataCacheMap.find(data.get());
 	if (it == m_dataCacheMap.end())
 		return;
@@ -124,6 +152,7 @@ void LWFResourceCache::unloadLWFData(const shared_ptr<Data> &data)
 const LWFResourceCache::DataContext *LWFResourceCache::getDataContext(
 	const shared_ptr<Data> &data) const
 {
+	Autolock lock(m_semaphore);
 	DataCacheMap::const_iterator it = m_dataCacheMap.find(data.get());
 	if (it == m_dataCacheMap.end())
 		return 0;
@@ -148,6 +177,7 @@ UIImage *LWFResourceCache::loadTexture(
 
 void LWFResourceCache::unloadAll()
 {
+	Autolock lock(m_semaphore);
 	m_dataCache.clear();
 	m_dataCacheMap.clear();
 }

@@ -96,7 +96,7 @@ using namespace LWF;
 
 - (void)setFrameRate:(NSInteger)f
 {
-	lwf->SetFrameRate(f);
+	lwf->SetFrameRate((int)f);
 }
 
 - (float)width
@@ -259,19 +259,25 @@ using namespace LWF;
 	lwf->SetColorTransformMovie([target UTF8String], &c);
 }
 
-- (BOOL)attachMovie:(NSString *)linkageName
+- (void)attachMovie:(NSString *)linkageName
 	target:(NSString *)target attachName:(NSString *)attachName
 {
-	Movie *movie = lwf->SearchMovieInstance([target UTF8String]);
-	if (!movie)
-		return NO;
-
-	Movie *attachedMovie =
+	lwf->SetMovieLoadCommand([target UTF8String], ^(::LWF::Movie *movie){
 		movie->AttachMovie([linkageName UTF8String], [attachName UTF8String]);
-	if (!attachedMovie)
-		return NO;
+	});
+}
 
-	return YES;
+- (void)attachLWF:(LWFObject *)lwfObject
+	target:(NSString *)target attachName:(NSString *)attachName
+{
+	__block LWFObject *lwfObject_ = lwfObject;
+	lwf->SetMovieLoadCommand([target UTF8String], ^(::LWF::Movie *movie){
+		movie->AttachLWF(lwfObject_->lwf, [attachName UTF8String],
+				^bool(::LWF::LWF *l) {
+			lwfObject_ = nil;
+			return false;
+		});
+	});
 }
 
 - (void *)lwf

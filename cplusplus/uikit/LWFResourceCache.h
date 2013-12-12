@@ -18,6 +18,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#import <dispatch/dispatch.h>
 #import "lwf_type.h"
 
 namespace LWF {
@@ -48,6 +49,7 @@ private:
 	static LWFResourceCache *m_instance;
 
 private:
+	dispatch_semaphore_t m_semaphore;
 	DataCache m_dataCache;
 	DataCacheMap m_dataCacheMap;
 
