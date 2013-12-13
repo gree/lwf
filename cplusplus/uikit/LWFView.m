@@ -79,6 +79,7 @@
 		float alpha = 1.0f;
 		self.backgroundColor =
 			[UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+		self.opaque = YES;
 	}
 }
 

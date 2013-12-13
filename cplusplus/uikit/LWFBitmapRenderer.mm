@@ -117,6 +117,8 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 
 	m_view = [[UIImageView alloc] initWithImage:m_context->GetImage()];
 	m_view.hidden = YES;
+	m_view.backgroundColor = nil;
+	m_view.opaque = NO;
 
 	float x = m_context->GetX();
 	float y = m_context->GetY();

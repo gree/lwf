@@ -48,6 +48,8 @@ LWFTextRenderer::LWFTextRenderer(
 	m_label = [[UILabel alloc]
 		initWithFrame:CGRectMake(0, 0, t.width, t.height)];
 	m_label.hidden = YES;
+	m_label.backgroundColor = nil;
+	m_label.opaque = NO;
 	m_label.font = font;
 	m_label.text =
 		[NSString stringWithUTF8String:l->data->strings[t.stringId].c_str()];
