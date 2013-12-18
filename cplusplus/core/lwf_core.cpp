@@ -148,6 +148,32 @@ int LWF::RenderObject(int count)
 	return renderingIndex;
 }
 
+void LWF::BeginBlendMode(int blendMode)
+{
+	m_blendModes.push_back(blendMode);
+	rendererFactory->SetBlendMode(blendMode);
+}
+
+void LWF::EndBlendMode()
+{
+	m_blendModes.pop_back();
+	rendererFactory->SetBlendMode(m_blendModes.empty() ?
+		Format::BLEND_MODE_NORMAL : m_blendModes.back());
+}
+
+void LWF::BeginMaskMode(int maskMode)
+{
+	m_maskModes.push_back(maskMode);
+	rendererFactory->SetMaskMode(maskMode);
+}
+
+void LWF::EndMaskMode()
+{
+	m_maskModes.pop_back();
+	rendererFactory->SetMaskMode(m_maskModes.empty() ?
+		Format::BLEND_MODE_NORMAL : m_maskModes.back());
+}
+
 void LWF::SetAttachVisible(bool visible)
 {
 	attachVisible = visible;

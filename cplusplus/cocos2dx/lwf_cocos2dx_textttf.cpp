@@ -19,6 +19,7 @@
  */
 
 #include "cocos2d.h"
+#include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_textttf.h"
 #include "lwf_core.h"
@@ -147,6 +148,7 @@ LWFTextTTFRenderer::LWFTextTTFRenderer(
 	if (!m_label)
 		return;
 
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_label);
 }
 
@@ -184,6 +186,11 @@ void LWFTextTTFRenderer::Render(
 
 	m_label->setZOrder(renderingIndex);
 	m_label->setMatrixAndColorTransform(matrix, colorTransform);
+
+	cocos2d::BlendFunc blendFunc = m_label->getBlendFunc();
+	blendFunc.dst = (GLenum)(m_factory->GetBlendMode() ==
+		Format::BLEND_MODE_ADD ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+	m_label->setBlendFunc(blendFunc);
 }
 
 void LWFTextTTFRenderer::SetText(string text)

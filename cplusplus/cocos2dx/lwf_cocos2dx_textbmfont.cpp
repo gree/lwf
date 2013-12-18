@@ -19,6 +19,7 @@
  */
 
 #include "cocos2d.h"
+#include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_cocos2dx_textbmfont.h"
@@ -179,6 +180,7 @@ LWFTextBMFontRenderer::LWFTextBMFontRenderer(
 	if (!m_label)
 		return;
 
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_label);
 }
 
@@ -216,6 +218,11 @@ void LWFTextBMFontRenderer::Render(
 
 	m_label->setZOrder(renderingIndex);
 	m_label->setMatrixAndColorTransform(matrix, colorTransform);
+
+	cocos2d::BlendFunc blendFunc = m_label->getBlendFunc();
+	blendFunc.dst = (GLenum)(m_factory->GetBlendMode() ==
+		Format::BLEND_MODE_ADD ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+	m_label->setBlendFunc(blendFunc);
 }
 
 void LWFTextBMFontRenderer::SetText(string text)

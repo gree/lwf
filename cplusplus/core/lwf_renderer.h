@@ -73,6 +73,8 @@ public:
 	virtual void BeginRender(LWF *lwf) = 0;
 	virtual void EndRender(LWF *lwf) = 0;
 	virtual void Destruct() = 0;
+	virtual void SetBlendMode(int blendMode) = 0;
+	virtual void SetMaskMode(int maskMode) = 0;
 
 	virtual void FitForHeight(LWF *lwf, float w, float h) = 0;
 	virtual void FitForWidth(LWF *lwf, float w, float h) = 0;
@@ -95,6 +97,8 @@ public:
 	void BeginRender(LWF *lwf) {}
 	void EndRender(LWF *lwf) {}
 	void Destruct() {}
+	void SetBlendMode(int blendMode) {}
+	void SetMaskMode(int maskMode) {}
 
 	void FitForHeight(LWF *lwf, float w, float h) {}
 	void FitForWidth(LWF *lwf, float w, float h) {}

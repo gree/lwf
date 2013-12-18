@@ -52,6 +52,8 @@ public interface IRendererFactory
 	void BeginRender(LWF lwf);
 	void EndRender(LWF lwf);
 	void Destruct();
+	void SetBlendMode(int blendMode);
+	void SetMaskMode(int maskMode);
 }
 
 public class NullRendererFactory : IRendererFactory
@@ -68,6 +70,8 @@ public class NullRendererFactory : IRendererFactory
 	public void BeginRender(LWF lwf) {}
 	public void EndRender(LWF lwf) {}
 	public void Destruct() {}
+	public void SetBlendMode(int blendMode) {}
+	public void SetMaskMode(int maskMode) {}
 }
 
 }	// namespace LWF

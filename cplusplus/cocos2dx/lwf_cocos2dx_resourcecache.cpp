@@ -30,6 +30,7 @@ using LWFData = ::LWF::Data;
 
 NS_CC_BEGIN
 
+
 LWFResourceCache *LWFResourceCache::m_instance;
 
 LWFResourceCache *LWFResourceCache::sharedLWFResourceCache()
@@ -79,6 +80,7 @@ shared_ptr<LWFData> LWFResourceCache::loadLWFData(const string &path)
 	m_dataCacheMap[data.get()] = m_dataCache.find(path);
 	return data;
 }
+
 
 void LWFResourceCache::unloadLWFDataInternal(const shared_ptr<LWFData> &data)
 {
@@ -140,6 +142,7 @@ void LWFResourceCache::unloadParticle(Dictionary *dict)
 		m_particleCacheMap.erase(it);
 	}
 }
+
 
 void LWFResourceCache::unloadAll()
 {

@@ -217,11 +217,16 @@ class LWFLoader
       @readInt32())
 
   loadPlace: ->
+    v0 = @readInt32()
+    v1 = @readInt32()
+    v2 = @readInt32()
+    v3 = @readInt32()
     return new Format.Place(
-      @readInt32(),
-      @readInt32(),
-      @readInt32(),
-      @readInt32())
+      v0 & 0xffffff,
+      v1,
+      v2,
+      v3,
+      v0 >> 24)
 
   loadControlMoveM: ->
     return new Format.ControlMoveM(

@@ -35,6 +35,8 @@ using DenyButtonList = Dictionary<int, bool>;
 using ExecHandler = Action<LWF>;
 using ExecHandlerList = List<Action<LWF>>;
 using TextDictionary = Dictionary<string, TextDictionaryItem>;
+using BlendModes = List<int>;
+using MaskModes = List<int>;
 
 public class TextDictionaryItem
 {
@@ -78,6 +80,8 @@ public partial class LWF
 	private DenyButtonList m_denyButtonList;
 	private ExecHandlerList m_execHandlers;
 	private TextDictionary m_textDictionary;
+	private BlendModes m_blendModes;
+	private MaskModes m_maskModes;
 	private int m_frameRate;
 	private int m_execLimit;
 	private int m_renderingIndex;
@@ -170,7 +174,11 @@ public partial class LWF
 	}
 	public bool intercepted {get {return interactive && m_intercepted;}}
 
+#if LWF_USE_LUA
+	public LWF(Data lwfData, IRendererFactory r, object l = null)
+#else
 	public LWF(Data lwfData, IRendererFactory r)
+#endif
 	{
 		m_data = lwfData;
 
@@ -188,6 +196,11 @@ public partial class LWF
 		m_pressing = false;
 		m_instanceId = ++m_instanceOffset;
 		m_alive = true;
+#if LWF_USE_LUA
+		m_luaState = l;
+		m_instanceIdString = instanceId.ToString();
+		InitLua();
+#endif
 
 		if (!interactive && m_data.frames.Length == 1)
 			DisableExec();
@@ -204,6 +217,8 @@ public partial class LWF
 		m_matrixIdentity = new Matrix();
 		m_colorTransform = new ColorTransform();
 		m_colorTransformIdentity = new ColorTransform();
+		m_blendModes = new BlendModes();
+		m_maskModes = new MaskModes();
 
 		Init();
 
@@ -269,6 +284,34 @@ public partial class LWF
 		m_renderingIndex += count;
 		m_renderingIndexOffsetted += count;
 		return m_renderingIndex;
+	}
+
+	public void BeginBlendMode(int blendMode)
+	{
+		m_blendModes.Add(blendMode);
+		m_rendererFactory.SetBlendMode(blendMode);
+	}
+
+	public void EndBlendMode()
+	{
+		m_blendModes.RemoveAt(m_blendModes.Count - 1);
+		m_rendererFactory.SetBlendMode(m_blendModes.Count > 0 ?
+			m_blendModes[m_blendModes.Count - 1] :
+			(int)Format.Constant.BLEND_MODE_NORMAL);
+	}
+
+	public void BeginMaskMode(int maskMode)
+	{
+		m_maskModes.Add(maskMode);
+		m_rendererFactory.SetMaskMode(maskMode);
+	}
+
+	public void EndMaskMode()
+	{
+		m_maskModes.RemoveAt(m_maskModes.Count - 1);
+		m_rendererFactory.SetMaskMode(m_maskModes.Count > 0 ?
+			m_maskModes[m_maskModes.Count - 1] :
+			(int)Format.Constant.BLEND_MODE_NORMAL);
 	}
 
 	public void SetAttachVisible(bool visible)
@@ -485,6 +528,9 @@ public partial class LWF
 	public void Destroy()
 	{
 		m_rootMovie.Destroy();
+#if LWF_USE_LUA
+		DestroyLua();
+#endif
 		m_alive = false;
 	}
 

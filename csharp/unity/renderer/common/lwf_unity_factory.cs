@@ -74,6 +74,14 @@ public partial class Factory : IRendererFactory
 	{
 	}
 
+	public virtual void SetBlendMode(int blendMode)
+	{
+	}
+
+	public virtual void SetMaskMode(int maskMode)
+	{
+	}
+
 	public virtual Renderer ConstructBitmap(LWF lwf,
 		int objectId, Bitmap bitmap)
 	{

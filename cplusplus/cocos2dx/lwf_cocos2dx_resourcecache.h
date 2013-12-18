@@ -24,6 +24,7 @@
 #include "CCPlatformMacros.h"
 #include "lwf_type.h"
 
+
 namespace LWF {
 class Data;
 }

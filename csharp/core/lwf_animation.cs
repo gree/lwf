@@ -118,13 +118,25 @@ public partial class LWF
 			case Animation.EVENT:
 				{
 					int eventId = animations[i++];
+#if LWF_USE_LUA
+					CallEventFunctionLua(eventId, movie, button);
+#endif
 					if (m_eventHandlers[eventId] != null)
 						m_eventHandlers[eventId].ForEach(h => h(movie, button));
 				}
 				break;
 
 			case Animation.CALL:
+#if LWF_USE_LUA
+				{
+					int stringId = animations[i++];
+					if (stringId < 0 || stringId >= data.strings.Length)
+						break;
+					CallFunctionLua(data.strings[stringId], target);
+				}
+#else
 				i++;
+#endif
 				break;
 			}
 		}

@@ -48,6 +48,8 @@ public:
 	void BeginRender(LWF *lwf) {}
 	void EndRender(LWF *lwf) {}
 	void Destruct() {}
+	void SetBlendMode(int blendMode) {}
+	void SetMaskMode(int maskMode) {}
 
 	void FitForHeight(LWF *lwf, float w, float h);
 	void FitForWidth(LWF *lwf, float w, float h);

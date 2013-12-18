@@ -153,6 +153,9 @@ public class LWFObject : MonoBehaviour
 		LWFDataLoader lwfDataLoader = null,
 		TextureLoader textureLoader = null,
 		TextureUnloader textureUnloader = null
+#if LWF_USE_LUA
+		, object luaState = null
+#endif
 		)
 	{
 		lwfName = path;
@@ -188,7 +191,11 @@ public class LWFObject : MonoBehaviour
 				texturePrefix, fontPrefix, textureLoader, textureUnloader);
 		}
 
+#if LWF_USE_LUA
+		lwf = new LWF.LWF(data, factory, luaState);
+#else
 		lwf = new LWF.LWF(data, factory);
+#endif
 
 		OnLoad();
 

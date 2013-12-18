@@ -33,6 +33,8 @@ class LWFRendererFactory : public IRendererFactory
 {
 protected:
 	cocos2d::LWFNode *m_node;
+	int m_blendMode;
+	int m_maskMode;
 
 public:
 	LWFRendererFactory(cocos2d::LWFNode *node)
@@ -53,6 +55,10 @@ public:
 	void BeginRender(LWF *lwf);
 	void EndRender(LWF *lwf);
 	void Destruct();
+	void SetBlendMode(int blendMode) {m_blendMode = blendMode;}
+	void SetMaskMode(int maskMode) {m_maskMode = maskMode;}
+	int GetBlendMode() {return m_blendMode;}
+	int GetMaskMode() {return m_maskMode;}
 
 	void FitForHeight(LWF *lwf, float w, float h);
 	void FitForWidth(LWF *lwf, float w, float h);

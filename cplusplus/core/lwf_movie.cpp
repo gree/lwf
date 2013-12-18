@@ -54,6 +54,7 @@ Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 		name = n;
 
 	depth = 0;
+	blendMode = Format::BLEND_MODE_NORMAL;
 	visible = true;
 	playing = true;
 	active = true;
@@ -133,7 +134,7 @@ Point Movie::LocalToGlobal(const Point &point) const
 }
 
 void Movie::ExecObject(int dlDepth, int objId,
-	int matrixId, int colorTransformId, int instId)
+	int matrixId, int colorTransformId, int instId, int dlBlendMode)
 {
 	// Ignore error
 	if (objId == -1)
@@ -166,6 +167,7 @@ void Movie::ExecObject(int dlDepth, int objId,
 		case OType::MOVIE:
 			obj = make_shared<Movie>(lwf, this,
 				dataObjectId, instId, matrixId, colorTransformId);
+			((Movie *)obj.get())->blendMode = dlBlendMode;
 			break;
 
 		case OType::BITMAP:
@@ -308,7 +310,7 @@ void Movie::PostExec(bool progressing)
 					{
 						const Format::Place &p = d->places[control.controlId];
 						ExecObject(p.depth, p.objectId,
-							p.matrixId, 0, p.instanceId);
+							p.matrixId, 0, p.instanceId, p.blendMode);
 					}
 					break;
 
@@ -318,7 +320,7 @@ void Movie::PostExec(bool progressing)
 							d->controlMoveMs[control.controlId];
 						const Format::Place &p = d->places[ctrl.placeId];
 						ExecObject(p.depth, p.objectId,
-							ctrl.matrixId, 0, p.instanceId);
+							ctrl.matrixId, 0, p.instanceId, p.blendMode);
 					}
 					break;
 
@@ -328,7 +330,7 @@ void Movie::PostExec(bool progressing)
 							d->controlMoveCs[control.controlId];
 						const Format::Place &p = d->places[ctrl.placeId];
 						ExecObject(p.depth, p.objectId, p.matrixId,
-							ctrl.colorTransformId, p.instanceId);
+							ctrl.colorTransformId, p.instanceId, p.blendMode);
 					}
 					break;
 
@@ -338,7 +340,7 @@ void Movie::PostExec(bool progressing)
 							d->controlMoveMCs[control.controlId];
 						const Format::Place &p = d->places[ctrl.placeId];
 						ExecObject(p.depth, p.objectId, ctrl.matrixId,
-							ctrl.colorTransformId, p.instanceId);
+							ctrl.colorTransformId, p.instanceId, p.blendMode);
 					}
 					break;
 
@@ -588,6 +590,23 @@ void Movie::Render(bool v, int rOffset)
 	if (!visible || !active)
 		v = false;
 
+	bool useBlendMode = false;
+	bool useMaskMode = false;
+	if (blendMode != Format::BLEND_MODE_NORMAL) {
+		switch (blendMode) {
+		case Format::BLEND_MODE_ADD:
+			lwf->BeginBlendMode(blendMode);
+			useBlendMode = true;
+			break;
+		case Format::BLEND_MODE_ERASE:
+		case Format::BLEND_MODE_LAYER:
+		case Format::BLEND_MODE_MASK:
+			lwf->BeginMaskMode(blendMode);
+			useMaskMode = true;
+			break;
+		}
+	}
+
 	if (v && !m_handler.Empty())
 		m_handler.Call(METype::RENDER, this);
 
@@ -624,6 +643,11 @@ void Movie::Render(bool v, int rOffset)
 			}
 		}
 	}
+
+	if (useBlendMode)
+		lwf->EndBlendMode();
+	if (useMaskMode)
+		lwf->EndMaskMode();
 }
 
 void Movie::Inspect(

@@ -56,7 +56,7 @@ function main()
 		doc.asVersion = 3;
 	} else {
 		// Flash CS6
-		doc.setPlayerVersion(7);
+		doc.setPlayerVersion(8);
 		doc.asVersion = 1;
 	}
 

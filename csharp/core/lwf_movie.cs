@@ -23,6 +23,7 @@ using System.Collections.Generic;
 
 namespace LWF {
 
+using Constant = Format.Constant;
 using Type = Format.Object.Type;
 using EventHandler = Action;
 using EventHandlerList = List<Action>;
@@ -68,6 +69,7 @@ public partial class Movie : IObject
 	private int m_lastControlAnimationOffset;
 	private int m_movieExecCount;
 	private int m_postExecCount;
+	private int m_blendMode;
 	private bool m_active;
 	private bool m_visible;
 	private bool m_playing;
@@ -79,6 +81,9 @@ public partial class Movie : IObject
 	private bool m_skipped;
 	private bool m_attachMovieExeced;
 	private bool m_attachMoviePostExeced;
+#if LWF_USE_LUA
+	private bool m_isRoot;
+#endif
 	private Matrix m_matrix0;
 	private Matrix m_matrix1;
 	private ColorTransform m_colorTransform0;
@@ -119,6 +124,7 @@ public partial class Movie : IObject
 		m_attachMoviePostExeced = false;
 		m_movieExecCount = -1;
 		m_postExecCount = -1;
+		m_blendMode = (int)Constant.BLEND_MODE_NORMAL;
 
 		m_property = new Property(lwf);
 
@@ -129,6 +135,20 @@ public partial class Movie : IObject
 
 		m_displayList = new Object[m_data.depths];
 
+#if LWF_USE_LUA
+		m_isRoot = objId == lwf.data.header.rootMovieId;
+		if (m_isRoot) {
+			lwf.GetFunctionsLua(objId, out m_rootLoadFunc, out m_rootPostLoadFunc,
+				out m_rootUnloadFunc, out m_rootEnterFrameFunc, true);
+		}
+		lwf.GetFunctionsLua(objId,
+			out m_loadFunc, out m_postLoadFunc, out m_unloadFunc, out m_enterFrameFunc, false);
+
+		if (m_isRoot && !String.IsNullOrEmpty(m_rootLoadFunc))
+			lwf.CallFunctionLua(m_rootLoadFunc, this);
+		if (m_loadFunc != String.Empty)
+			lwf.CallFunctionLua(m_loadFunc, this);
+#endif
 		PlayAnimation(ClipEvent.LOAD);
 
 		m_eventHandlers = new EventHandlerDictionary();
@@ -149,6 +169,10 @@ public partial class Movie : IObject
 	public int depth {
 		get {return m_depth;}
 		set {m_depth = value;}
+	}
+	public int blendMode {
+		get {return m_blendMode;}
+		set {m_blendMode = value;}
 	}
 	public int currentFrame {get {return m_currentFrameInternal + 1;}}
 	public int totalFrames {get {return m_totalFrames;}}
@@ -195,7 +219,7 @@ public partial class Movie : IObject
 	}
 
 	private void ExecObject(int dlDepth, int objId,
-		int matrixId, int colorTransformId, int instId)
+		int matrixId, int colorTransformId, int instId, int dlBlendMode)
 	{
 		// Ignore error
 		if (objId == -1)
@@ -228,6 +252,7 @@ public partial class Movie : IObject
 			case Type.MOVIE:
 				obj = new Movie(m_lwf, this,
 					dataObjectId, instId, matrixId, colorTransformId);
+				((Movie)obj).blendMode = dlBlendMode;
 				break;
 
 			case Type.BITMAP:
@@ -367,7 +392,7 @@ public partial class Movie : IObject
 							Format.Place p =
 								data.places[control.controlId];
 							ExecObject(p.depth, p.objectId,
-								p.matrixId, 0, p.instanceId);
+								p.matrixId, 0, p.instanceId, p.blendMode);
 						}
 						break;
 
@@ -377,7 +402,7 @@ public partial class Movie : IObject
 								data.controlMoveMs[control.controlId];
 							Format.Place p = data.places[ctrl.placeId];
 							ExecObject(p.depth, p.objectId,
-								ctrl.matrixId, 0, p.instanceId);
+								ctrl.matrixId, 0, p.instanceId, p.blendMode);
 						}
 						break;
 
@@ -387,7 +412,8 @@ public partial class Movie : IObject
 								data.controlMoveCs[control.controlId];
 							Format.Place p = data.places[ctrl.placeId];
 							ExecObject(p.depth, p.objectId, p.matrixId,
-								ctrl.colorTransformId, p.instanceId);
+								ctrl.colorTransformId, p.instanceId,
+								p.blendMode);
 						}
 						break;
 
@@ -397,7 +423,8 @@ public partial class Movie : IObject
 								data.controlMoveMCs[control.controlId];
 							Format.Place p = data.places[ctrl.placeId];
 							ExecObject(p.depth, p.objectId, ctrl.matrixId,
-								ctrl.colorTransformId, p.instanceId);
+								ctrl.colorTransformId, p.instanceId,
+								p.blendMode);
 						}
 						break;
 
@@ -463,6 +490,12 @@ public partial class Movie : IObject
 
 			if (!m_postLoaded) {
 				m_postLoaded = true;
+#if LWF_USE_LUA
+			if (m_isRoot && !String.IsNullOrEmpty(m_rootPostLoadFunc))
+				lwf.CallFunctionLua(m_rootPostLoadFunc, this);
+			if (m_postLoadFunc != String.Empty)
+				lwf.CallFunctionLua(m_postLoadFunc, this);
+#endif
 				if (!m_handler.Empty())
 					m_handler.Call(EventType.POSTLOAD, this);
 			}
@@ -486,6 +519,12 @@ public partial class Movie : IObject
 				m_jumped = false;
 		}
 
+#if LWF_USE_LUA
+		if (m_isRoot && !String.IsNullOrEmpty(m_rootEnterFrameFunc))
+			lwf.CallFunctionLua(m_rootEnterFrameFunc, this);
+		if (m_enterFrameFunc != String.Empty)
+			lwf.CallFunctionLua(m_enterFrameFunc, this);
+#endif
 		PlayAnimation(ClipEvent.ENTERFRAME);
 		if (!m_handler.Empty())
 			m_handler.Call(EventType.ENTERFRAME, this);
@@ -618,6 +657,23 @@ public partial class Movie : IObject
 		if (!m_visible || !m_active)
 			v = false;
 
+		bool useBlendMode = false;
+		bool useMaskMode = false;
+		if (m_blendMode != (int)Constant.BLEND_MODE_NORMAL) {
+			switch (m_blendMode) {
+			case (int)Constant.BLEND_MODE_ADD:
+				m_lwf.BeginBlendMode(m_blendMode);
+				useBlendMode = true;
+				break;
+			case (int)Constant.BLEND_MODE_ERASE:
+			case (int)Constant.BLEND_MODE_LAYER:
+			case (int)Constant.BLEND_MODE_MASK:
+				m_lwf.BeginMaskMode(m_blendMode);
+				useMaskMode = true;
+				break;
+			}
+		}
+
 		if (v && !m_handler.Empty())
 			m_handler.Call(EventType.RENDER, this);
 
@@ -650,6 +706,11 @@ public partial class Movie : IObject
 				}
 			}
 		}
+
+		if (useBlendMode)
+			m_lwf.EndBlendMode();
+		if (useMaskMode)
+			m_lwf.EndMaskMode();
 	}
 
 #if UNITY_EDITOR
@@ -741,11 +802,20 @@ public partial class Movie : IObject
 			m_attachedLWFList = null;
 		}
 
+#if LWF_USE_LUA
+		if (m_isRoot && !String.IsNullOrEmpty(m_rootUnloadFunc))
+			lwf.CallFunctionLua(m_rootUnloadFunc, this);
+		if (m_unloadFunc != String.Empty)
+			lwf.CallFunctionLua(m_unloadFunc, this);
+#endif
 		PlayAnimation(ClipEvent.UNLOAD);
 
 		if (!m_handler.Empty())
 			m_handler.Call(EventType.UNLOAD, this);
 
+#if LWF_USE_LUA
+		lwf.DestroyMovieLua(this);
+#endif
 		m_displayList = null;
 		m_property = null;
 

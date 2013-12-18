@@ -52,6 +52,11 @@ public class Text : Object
 			if (text.stringId != -1)
 				textRenderer.SetText(t);
 		} else {
+#if LWF_USE_LUA
+			string lt = lwf.GetTextLua(parent, name);
+			if (!System.String.IsNullOrEmpty(lt))
+				t = lt;
+#endif
 			lwf.SetTextRenderer(p.GetFullName(), name, t, textRenderer);
 		}
 

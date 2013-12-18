@@ -466,7 +466,7 @@ class Movie extends IObject
         @detachedLWFs[lwfContainer.child.attachName] = true
     return
 
-  execObject:(depth, objId, matrixId, colorTransformId, instId) ->
+  execObject:(depth, objId, matrixId, colorTransformId, instId, blendMode) ->
     return if objId is -1
 
     data = @lwf.data
@@ -490,6 +490,15 @@ class Movie extends IObject
         when Type.MOVIE
           obj = new Movie(@lwf,
             @, dataObjectId, instId, matrixId, colorTransformId)
+          switch blendMode
+            when Format.Constant.BLEND_MODE_ADD
+              obj.blendMode = "add"
+            when Format.Constant.BLEND_MODE_ERASE
+              obj.blendMode = "erase"
+            when Format.Constant.BLEND_MODE_LAYER
+              obj.blendMode = "layer"
+            when Format.Constant.BLEND_MODE_MASK
+              obj.blendMode = "mask"
         when Type.BITMAP
           obj = new Bitmap(@lwf, @, dataObjectId)
         when Type.BITMAPEX
@@ -591,24 +600,26 @@ class Movie extends IObject
           switch control.controlType
             when ControlType.MOVE
               p = data.places[control.controlId]
-              @execObject(p.depth, p.objectId, p.matrixId, 0, p.instanceId)
+              @execObject(p.depth, p.objectId, p.matrixId, 0,
+                p.instanceId, p.blendMode)
   
             when ControlType.MOVEM
               ctrl = data.controlMoveMs[control.controlId]
               p = data.places[ctrl.placeId]
-              @execObject(p.depth, p.objectId, ctrl.matrixId, 0, p.instanceId)
+              @execObject(p.depth, p.objectId, ctrl.matrixId,
+                0, p.instanceId, p.blendMode)
   
             when ControlType.MOVEC
               ctrl = data.controlMoveCs[control.controlId]
               p = data.places[ctrl.placeId]
               @execObject(p.depth, p.objectId, p.matrixId,
-                ctrl.colorTransformId, p.instanceId)
+                ctrl.colorTransformId, p.instanceId, p.blendMode)
   
             when ControlType.MOVEMC
               ctrl = data.controlMoveMCs[control.controlId]
               p = data.places[ctrl.placeId]
               @execObject(p.depth, p.objectId,
-                ctrl.matrixId, ctrl.colorTransformId, p.instanceId)
+                ctrl.matrixId, ctrl.colorTransformId, p.instanceId, p.blendMode)
   
             when ControlType.ANIMATION
               controlAnimationOffset = i if controlAnimationOffset is -1

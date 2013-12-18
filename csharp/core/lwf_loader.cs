@@ -340,6 +340,8 @@ public partial class Place
 		objectId = br.ReadInt32();
 		instanceId = br.ReadInt32();
 		matrixId = br.ReadInt32();
+		blendMode = depth >> 24;
+		depth &= 0xffffff;
 	}
 }
 

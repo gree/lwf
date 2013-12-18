@@ -30,10 +30,12 @@ NS_CC_END
 namespace LWF {
 
 class LWFBitmap;
+class LWFRendererFactory;
 
 class LWFBitmapRenderer : public Renderer
 {
 protected:
+	LWFRendererFactory *m_factory;
 	LWFBitmap *m_sprite;
 
 public:

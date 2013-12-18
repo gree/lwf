@@ -36,13 +36,14 @@ using namespace LWF;
 LWFNode *LWFNode::create(const char *pszFileName, void *l)
 {
 	LWFNode *node = new LWFNode();
-	if (node && node->initWithFile(pszFileName, l)) {
+	if (node && node->initWithLWFFile(pszFileName, l)) {
 		node->autorelease();
 		return node;
 	}
 	CC_SAFE_DELETE(node);
 	return NULL;
 }
+
 
 void LWFNode::dump()
 {
@@ -66,7 +67,7 @@ LWFNode::~LWFNode()
 	}
 }
 
-bool LWFNode::initWithFile(const string &path, void *l)
+bool LWFNode::initWithLWFFile(const string &path, void *l)
 {
 	shared_ptr<LWFData> data =
 		LWFResourceCache::sharedLWFResourceCache()->loadLWFData(path);

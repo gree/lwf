@@ -97,13 +97,22 @@ class Data
         @useTextureAtlas = false
 
   check: ->
+    v0 = @header.formatVersion0
+    v1 = @header.formatVersion1
+    v2 = @header.formatVersion2
+
     if @header? and
         @header.id0 is 'L' and
         @header.id1 is 'W' and
         @header.id2 is 'F' and
-        @header.formatVersion0 is Format.Constant.FORMAT_VERSION_0 and
-        @header.formatVersion1 is Format.Constant.FORMAT_VERSION_1 and
-        @header.formatVersion2 is Format.Constant.FORMAT_VERSION_2
+        ((
+          v0 is Format.Constant.FORMAT_VERSION_0 and
+          v1 is Format.Constant.FORMAT_VERSION_1 and
+          v2 is Format.Constant.FORMAT_VERSION_2) or
+        (
+          v0 is Format.Constant.FORMAT_VERSION_COMPAT_0 and
+          v1 is Format.Constant.FORMAT_VERSION_COMPAT_1 and
+          v2 is Format.Constant.FORMAT_VERSION_COMPAT_2))
       return true
     else
       return false

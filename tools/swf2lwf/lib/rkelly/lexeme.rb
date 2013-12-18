@@ -9,8 +9,8 @@ module RKelly
       @block      = block
     end
 
-    def match(string)
-      match = pattern.match(string)
+    def match(scanner)
+      match = scanner.check(pattern)
       return Token.new(name, match.to_s, &@block) if match
       match
     end

@@ -52,6 +52,7 @@ typedef function<void (LWF *)> ExecHandler;
 typedef vector<pair<int, ExecHandler> > ExecHandlerList;
 typedef map<string, pair<string, TextRenderer *> > TextDictionary;
 typedef map<int, bool> EventFunctions;
+typedef vector<int> RenderingModes;
 
 class LWF
 {
@@ -130,6 +131,8 @@ private:
 	DenyButtonList m_denyButtonList;
 	ExecHandlerList m_execHandlers;
 	TextDictionary m_textDictionary;
+	RenderingModes m_blendModes;
+	RenderingModes m_maskModes;
 	float m_progress;
 	float m_roundOffTick;
 	bool m_executedForExecDisabled;
@@ -155,6 +158,11 @@ public:
 	void RenderOffset();
 	void ClearRenderOffset();
 	int RenderObject(int count = 1);
+
+	void BeginBlendMode(int blendMode);
+	void EndBlendMode();
+	void BeginMaskMode(int maskMode);
+	void EndMaskMode();
 
 	void SetAttachVisible(bool visible);
 	void ClearFocus(Button *button);

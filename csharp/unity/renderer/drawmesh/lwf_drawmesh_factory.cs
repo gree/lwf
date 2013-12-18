@@ -55,6 +55,14 @@ public partial class Factory : UnityRenderer.Factory
 	{
 		return new UnityRenderer.UnityTextRenderer(lwf, objectId);
 	}
+
+	public override void SetBlendMode(int blendMode)
+	{
+	}
+
+	public override void SetMaskMode(int maskMode)
+	{
+	}
 }
 
 }	// namespace DrawMeshRenderer

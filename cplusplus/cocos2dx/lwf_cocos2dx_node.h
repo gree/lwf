@@ -50,7 +50,7 @@ public:
 	LWFNode();
 	virtual ~LWFNode();
 
-	virtual bool initWithFile(const std::string &filename, void *l = 0);
+    bool initWithLWFFile(const std::string &filename, void *l = 0);
 
 	virtual LWF::shared_ptr<LWF::LWF> attachLWF(
 		const char *pszFilename, const char *pszTarget,

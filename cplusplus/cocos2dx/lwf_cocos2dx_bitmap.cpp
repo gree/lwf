@@ -21,8 +21,9 @@
 #include "cocos2d.h"
 #include "lwf_bitmap.h"
 #include "lwf_bitmapex.h"
-#include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_bitmap.h"
+#include "lwf_cocos2dx_factory.h"
+#include "lwf_cocos2dx_node.h"
 #include "lwf_core.h"
 #include "lwf_data.h"
 
@@ -208,6 +209,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 		return;
 
 	l->data->resourceCache[filename] = true;
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_sprite);
 }
 
@@ -228,6 +230,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	if (!m_sprite)
 		return;
 
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_sprite);
 }
 
@@ -261,6 +264,11 @@ void LWFBitmapRenderer::Render(
 
 	m_sprite->setZOrder(renderingIndex);
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
+
+	cocos2d::BlendFunc blendFunc = m_sprite->getBlendFunc();
+	blendFunc.dst = (GLenum)(m_factory->GetBlendMode() ==
+		Format::BLEND_MODE_ADD ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+	m_sprite->setBlendFunc(blendFunc);
 }
 
 }   // namespace LWF

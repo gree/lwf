@@ -33,9 +33,13 @@ enum Constant
 {
 	HEADER_SIZE = 324,
 
-	FORMAT_VERSION_0 = 0x12,
-	FORMAT_VERSION_1 = 0x10,
-	FORMAT_VERSION_2 = 0x10,
+	FORMAT_VERSION_0 = 0x13,
+	FORMAT_VERSION_1 = 0x12,
+	FORMAT_VERSION_2 = 0x11,
+
+	FORMAT_VERSION_COMPAT_0 = 0x12,
+	FORMAT_VERSION_COMPAT_1 = 0x10,
+	FORMAT_VERSION_COMPAT_2 = 0x10,
 
 	FORMAT_TYPE = 0,
 
@@ -49,6 +53,12 @@ enum Constant
 
 	TEXTUREFORMAT_NORMAL = 0,
 	TEXTUREFORMAT_PREMULTIPLIEDALPHA = 1,
+
+	BLEND_MODE_NORMAL = 0,
+	BLEND_MODE_ADD = 1,
+	BLEND_MODE_LAYER = 2,
+	BLEND_MODE_ERASE = 3,
+	BLEND_MODE_MASK = 4,
 };
 
 struct StringBase
@@ -342,12 +352,21 @@ struct String
 	int stringLength;
 };
 
+struct PlaceCompat
+{
+	int depth;
+	int objectId;
+	int instanceId;
+	int matrixId;
+};
+
 struct Place
 {
 	int depth;
 	int objectId;
 	int instanceId;
 	int matrixId;
+	int blendMode;
 };
 
 struct ControlMoveM

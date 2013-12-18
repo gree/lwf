@@ -78,14 +78,24 @@ public partial class Data
 
 	public bool Check()
 	{
+		byte v0 = header.formatVersion0;
+		byte v1 = header.formatVersion1;
+		byte v2 = header.formatVersion2;
+
 		if (header != null &&
 				header.id0 == 'L' &&
 				header.id1 == 'W' &&
 				header.id2 == 'F' &&
 				header.id3 == (byte)Constant.FORMAT_TYPE &&
-				header.formatVersion0 == (byte)Constant.FORMAT_VERSION_0 &&
-				header.formatVersion1 == (byte)Constant.FORMAT_VERSION_1 &&
-				header.formatVersion2 == (byte)Constant.FORMAT_VERSION_2) {
+				((
+					v0 == (byte)Constant.FORMAT_VERSION_0 &&
+					v1 == (byte)Constant.FORMAT_VERSION_1 &&
+					v2 == (byte)Constant.FORMAT_VERSION_2
+				) || (
+					v0 == (byte)Constant.FORMAT_VERSION_COMPAT_0 &&
+					v1 == (byte)Constant.FORMAT_VERSION_COMPAT_1 &&
+					v2 == (byte)Constant.FORMAT_VERSION_COMPAT_2
+				))) {
 			return true;
 		}
 		return false;

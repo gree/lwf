@@ -30,11 +30,13 @@ NS_CC_END
 
 namespace LWF {
 
+class LWFRendererFactory;
 class LWFTextBMFont;
 
 class LWFTextBMFontRenderer : public TextRenderer
 {
 protected:
+	LWFRendererFactory *m_factory;
 	LWFTextBMFont *m_label;
 
 public:

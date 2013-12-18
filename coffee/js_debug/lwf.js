@@ -498,11 +498,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.HEADER_SIZE = 324;
 
-      Constant.FORMAT_VERSION_0 = 0x12;
+      Constant.FORMAT_VERSION_0 = 0x13;
 
-      Constant.FORMAT_VERSION_1 = 0x10;
+      Constant.FORMAT_VERSION_1 = 0x12;
 
-      Constant.FORMAT_VERSION_2 = 0x10;
+      Constant.FORMAT_VERSION_2 = 0x11;
+
+      Constant.FORMAT_VERSION_COMPAT_0 = 0x12;
+
+      Constant.FORMAT_VERSION_COMPAT_1 = 0x10;
+
+      Constant.FORMAT_VERSION_COMPAT_2 = 0x10;
 
       Constant.FORMAT_TYPE = 0;
 
@@ -521,6 +527,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       Constant.TEXTUREFORMAT_NORMAL = 0;
 
       Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA = 1;
+
+      Constant.BLEND_MODE_NORMAL = 0;
+
+      Constant.BLEND_MODE_ADD = 1;
+
+      Constant.BLEND_MODE_LAYER = 2;
+
+      Constant.BLEND_MODE_ERASE = 3;
+
+      Constant.BLEND_MODE_MASK = 4;
 
       return Constant;
 
@@ -917,11 +933,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     })();
 
     Format.Place = (function() {
-      function Place(depth, objectId, instanceId, matrixId) {
+      function Place(depth, objectId, instanceId, matrixId, blendMode) {
         this.depth = depth;
         this.objectId = objectId;
         this.instanceId = instanceId;
         this.matrixId = matrixId;
+        this.blendMode = blendMode;
       }
 
       return Place;
@@ -1316,7 +1333,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     Data.prototype.check = function() {
-      if ((this.header != null) && this.header.id0 === 'L' && this.header.id1 === 'W' && this.header.id2 === 'F' && this.header.formatVersion0 === Format.Constant.FORMAT_VERSION_0 && this.header.formatVersion1 === Format.Constant.FORMAT_VERSION_1 && this.header.formatVersion2 === Format.Constant.FORMAT_VERSION_2) {
+      var v0, v1, v2;
+      v0 = this.header.formatVersion0;
+      v1 = this.header.formatVersion1;
+      v2 = this.header.formatVersion2;
+      if ((this.header != null) && this.header.id0 === 'L' && this.header.id1 === 'W' && this.header.id2 === 'F' && ((v0 === Format.Constant.FORMAT_VERSION_0 && v1 === Format.Constant.FORMAT_VERSION_1 && v2 === Format.Constant.FORMAT_VERSION_2) || (v0 === Format.Constant.FORMAT_VERSION_COMPAT_0 && v1 === Format.Constant.FORMAT_VERSION_COMPAT_1 && v2 === Format.Constant.FORMAT_VERSION_COMPAT_2))) {
         return true;
       } else {
         return false;
@@ -1488,7 +1509,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWFLoader.prototype.loadPlace = function() {
-      return new Format.Place(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
+      var v0, v1, v2, v3;
+      v0 = this.readInt32();
+      v1 = this.readInt32();
+      v2 = this.readInt32();
+      v3 = this.readInt32();
+      return new Format.Place(v0 & 0xffffff, v1, v2, v3, v0 >> 24);
     };
 
     LWFLoader.prototype.loadControlMoveM = function() {
@@ -4145,7 +4171,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    Movie.prototype.execObject = function(depth, objId, matrixId, colorTransformId, instId) {
+    Movie.prototype.execObject = function(depth, objId, matrixId, colorTransformId, instId, blendMode) {
       var data, dataObject, dataObjectId, obj;
       if (objId === -1) {
         return;
@@ -4168,6 +4194,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Type.MOVIE:
             obj = new Movie(this.lwf, this, dataObjectId, instId, matrixId, colorTransformId);
+            switch (blendMode) {
+              case Format.Constant.BLEND_MODE_ADD:
+                obj.blendMode = "add";
+                break;
+              case Format.Constant.BLEND_MODE_ERASE:
+                obj.blendMode = "erase";
+                break;
+              case Format.Constant.BLEND_MODE_LAYER:
+                obj.blendMode = "layer";
+                break;
+              case Format.Constant.BLEND_MODE_MASK:
+                obj.blendMode = "mask";
+            }
             break;
           case Type.BITMAP:
             obj = new Bitmap(this.lwf, this, dataObjectId);
@@ -4289,22 +4328,22 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             switch (control.controlType) {
               case ControlType.MOVE:
                 p = data.places[control.controlId];
-                this.execObject(p.depth, p.objectId, p.matrixId, 0, p.instanceId);
+                this.execObject(p.depth, p.objectId, p.matrixId, 0, p.instanceId, p.blendMode);
                 break;
               case ControlType.MOVEM:
                 ctrl = data.controlMoveMs[control.controlId];
                 p = data.places[ctrl.placeId];
-                this.execObject(p.depth, p.objectId, ctrl.matrixId, 0, p.instanceId);
+                this.execObject(p.depth, p.objectId, ctrl.matrixId, 0, p.instanceId, p.blendMode);
                 break;
               case ControlType.MOVEC:
                 ctrl = data.controlMoveCs[control.controlId];
                 p = data.places[ctrl.placeId];
-                this.execObject(p.depth, p.objectId, p.matrixId, ctrl.colorTransformId, p.instanceId);
+                this.execObject(p.depth, p.objectId, p.matrixId, ctrl.colorTransformId, p.instanceId, p.blendMode);
                 break;
               case ControlType.MOVEMC:
                 ctrl = data.controlMoveMCs[control.controlId];
                 p = data.places[ctrl.placeId];
-                this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId);
+                this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId, p.blendMode);
                 break;
               case ControlType.ANIMATION:
                 if (controlAnimationOffset === -1) {

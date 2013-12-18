@@ -42,15 +42,8 @@ ACTIONCOMPILER_VERSION = "1.0.0"
 begin
   require 'actioncompiler'
 rescue LoadError
-  RUBY_VERSION =~ /^(\d+\.\d+)\./
-  version = $1
-  platform = RUBY_PLATFORM
-  platform = $1 if platform =~ /(.*darwin).*/
-  platformdir = libdir + '/' + version + '/' + platform + '/'
-  begin
-    require platformdir + 'actioncompiler'
-  rescue LoadError
-  end
+  puts "ERROR: Cannot load 'actioncompiler' extension. Please 'gem install gems/actioncompiler*.gem'."
+  exit
 end
 begin
   require 'rubygems'
@@ -61,13 +54,23 @@ end
 begin
   require 'rb-img'
 rescue LoadError
+  puts "ERROR: Cannot load 'rb-img' extension. Please 'gem install gems/rb-img*.gem'."
+  exit
 end
 
 LWF_HEADER_SIZE = 324
 
-LWF_FORMAT_VERSION_0 = 0x12
-LWF_FORMAT_VERSION_1 = 0x10
-LWF_FORMAT_VERSION_2 = 0x10
+LWF_FORMAT_VERSION_0 = 0x13
+LWF_FORMAT_VERSION_1 = 0x12
+LWF_FORMAT_VERSION_2 = 0x11
+LWF_FORMAT_VERSION = (LWF_FORMAT_VERSION_0 << 16) +
+  (LWF_FORMAT_VERSION_1 << 8) + LWF_FORMAT_VERSION_2
+
+LWF_FORMAT_VERSION_COMPAT_0 = 0x12
+LWF_FORMAT_VERSION_COMPAT_1 = 0x10
+LWF_FORMAT_VERSION_COMPAT_2 = 0x10
+LWF_FORMAT_VERSION_COMPAT = (LWF_FORMAT_VERSION_COMPAT_0 << 16) +
+  (LWF_FORMAT_VERSION_COMPAT_1 << 8) + LWF_FORMAT_VERSION_COMPAT_2
 
 MATRIX_FLAG = (1 << 31)
 COLORTRANSFORM_FLAG = (1 << 31)
@@ -87,6 +90,30 @@ ROLLOUT        = (1 << 1)
 PRESS          = (1 << 2)
 RELEASE        = (1 << 3)
 KEYPRESS       = (1 << 7)
+
+BLEND_NORMAL = 0
+BLEND_ADD = 1
+BLEND_LAYER = 2
+BLEND_ERASE = 3
+BLEND_MASK = 4
+
+BLEND_MODE = {
+   0 => {:type => "normal",     :supported => true, :value => BLEND_NORMAL},
+   1 => {:type => "normal",     :supported => true, :value => BLEND_NORMAL},
+   2 => {:type => "layer",      :supported => true, :value => BLEND_LAYER},
+   3 => {:type => "multiply",   :supported => false},
+   4 => {:type => "screen",     :supported => false},
+   5 => {:type => "lighten",    :supported => false},
+   6 => {:type => "darken",     :supported => false},
+   7 => {:type => "difference", :supported => false},
+   8 => {:type => "add",        :supported => true, :value => BLEND_ADD},
+   9 => {:type => "subtract",   :supported => false},
+  10 => {:type => "invert",     :supported => false},
+  11 => {:type => "alpha",      :supported => true, :value => BLEND_MASK},
+  12 => {:type => "erase",      :supported => true, :value => BLEND_ERASE},
+  13 => {:type => "overlay",    :supported => false},
+  14 => {:type => "hardlight",  :supported => false},
+}
 
 class Colormap
   attr_accessor :r, :g, :b, :a
@@ -735,14 +762,18 @@ LWF_CONTROL_MOVEMC = 3
 LWF_CONTROL_ACTION = 4
 
 class LWFControlPLACE < LWFData
-  def initialize(depth, objectId, instanceId, matrixId)
+  def initialize(depth, objectId, instanceId, matrixId, blend_mode)
     @depth = depth
     @objectId = objectId
     @instanceId = instanceId
     @matrixId = matrixId
+    @blend_mode = blend_mode
+    if @depth < 0 or @depth > 0xffffff
+      error("place depth #{@depth} is out of range")
+    end
   end
   def to_bytes
-    to_u32(@depth) +
+    to_u32(@depth + (@blend_mode << 24)) +
     to_u32(@objectId) +
     to_u32(@instanceId) +
     to_u32(@matrixId)
@@ -1155,12 +1186,13 @@ class Graphic < SWFObject
 end
 
 class Place
-  attr_reader :depth, :object, :instance_name, :matrix
-  def set(depth, object, instance_name, matrix)
+  attr_reader :depth, :object, :instance_name, :matrix, :blend_mode
+  def set(depth, object, instance_name, matrix, blend_mode)
     @depth = depth
     @object = object
     @instance_name = instance_name
     @matrix = matrix
+    @blend_mode = blend_mode
   end
 end
 
@@ -1421,6 +1453,7 @@ end
 
 def get_flags(n)
   flags = Array.new
+  init_bits
   d = get_bits(n)
   for i in 0...n
     flags.push((d & ((1 << (n - 1)) >> i)) != 0 ? true : false)
@@ -1430,7 +1463,6 @@ end
 
 def get_color_transform(with_alpha)
   color_transform = ColorTransform.new
-  init_bits
   has_add, has_multi = get_flags(2)
   bits = get_bits(4)
   if has_multi
@@ -1972,7 +2004,6 @@ end
 
 def parse_define_font2
   obj_id = get_word
-  init_bits
   has_layout, is_shiftjis, is_small_text, is_ansi,
     is_wide_offsets, is_wide_codes, is_italic, is_bold = get_flags(8)
   langcode = get_byte
@@ -2005,7 +2036,6 @@ def parse_define_edit_text
   obj_id = get_word
   stage = get_stage
 
-  init_bits
   has_text, is_word_wrap, is_multiline, is_password,
     is_readonly, has_color, has_max_length, has_font,
       reserved, use_auto_size, has_layout, is_no_select,
@@ -2167,7 +2197,6 @@ def parse_define_sprite
 end
 
 def parse_place_object2
-  init_bits
   if @tag_parser == :parse_place_object3
     has_actions, has_clipping_depth, has_name, has_morph_position,
       has_color_transform, has_matrix, has_obj_id, has_move, reserved,
@@ -2199,6 +2228,7 @@ def parse_place_object2
   end
   depth = get_word
   prev_control = @current_movie.display_list_prev[depth]
+  class_name = get_string if has_classname
   obj_id = get_word if has_obj_id
   matrix = nil
   if has_matrix
@@ -2222,9 +2252,9 @@ def parse_place_object2
   if has_filter_list
     n = get_byte
     n.times do
-      has_dropshadow, has_blur, has_glow, has_bevel, has_gradientglow,
-        has_convolution, has_colormatrix, has_gradientbevel = get_flags(8)
-      if has_dropshadow
+      filter_type = get_byte
+      case filter_type
+      when 0 # DropShadow
         get_rgba
         get_dword
         get_dword
@@ -2232,20 +2262,17 @@ def parse_place_object2
         get_dword
         get_word
         get_flags(8)
-      end
-      if has_blur
+      when 1 # Blur
         get_dword
         get_dword
         get_flags(8)
-      end
-      if has_glow
+      when 2 # Glow
         get_rgba
         get_dword
         get_dword
         get_word
         get_flags(8)
-      end
-      if has_bevel
+      when 3 # Bevel
         get_rgba
         get_rgba
         get_dword
@@ -2254,11 +2281,9 @@ def parse_place_object2
         get_dword
         get_word
         get_flags(8)
-      end
-      if has_gradientglow
+      when 4 # Gradient Glow
         n = get_byte
-      end
-      if has_convolution
+      when 5 # Convolution
         x = get_byte
         y = get_byte
         get_dword
@@ -2268,13 +2293,11 @@ def parse_place_object2
         end
         get_rgba
         get_flags(8)
-      end
-      if has_colormatrix
+      when 6 # Color Matrix
         20.times do
           get_dword
         end
-      end
-      if has_gradientbevel
+      when 7 # Gradient Bevel
         nc = get_byte
         nc.times do
           get_rgba
@@ -2304,7 +2327,27 @@ def parse_place_object2
       end
     end
   end
-  blend_mode = get_byte if has_blend_mode
+  if has_blend_mode
+    blend_mode = get_byte
+    blend_mode = 0 if blend_mode == 1
+    if blend_mode != 0
+      if @format_version == LWF_FORMAT_VERSION
+        if BLEND_MODE[blend_mode][:supported]
+          @blend_mode_used = true
+        else
+          warn "blend mode \"#{BLEND_MODE[blend_mode][:type]}\" " +
+            "is not supported"
+          blend_mode = 0
+        end
+      else
+        warn "blend mode is not normal with format:" +
+          "#{sprintf("0x%06x", @format_version)}"
+        blend_mode = 0
+      end
+    end
+  else
+    blend_mode = 0
+  end
   bitmap_cache = get_byte if has_cache_as_bitmap
   get_byte if has_visible
   get_rgba if has_visible
@@ -2368,8 +2411,10 @@ def parse_place_object2
       end
     end
     @objects[obj_id].reference
-    place.set(depth, @objects[obj_id], name, matrix)
-    info "  PLACE depth:#{depth} obj:#{obj_id} name:[#{name}]"
+    place.set(depth,
+      @objects[obj_id], name, matrix, BLEND_MODE[blend_mode][:value])
+    info "  PLACE depth:#{depth} obj:#{obj_id} name:[#{name}] " +
+      "blend_mode:#{BLEND_MODE[blend_mode][:type]}"
     control = ControlMOVE.new(place, matrix, color_transform)
     @instance_name_map[name] = true unless name.nil?
   else
@@ -2596,6 +2641,7 @@ def load_swf(filename)
   magic, @version, length = swf.unpack('a3cV')
   case @version
   when 7
+  when 8
   when 20
   else
     warn "SWF Format Version #{@version} is not supported"
@@ -3699,7 +3745,7 @@ def swf2lwf(*args)
 
             lwfPlace = LWFControlPLACE.new(place.depth - 1, lwfObjectId,
               @map_instanceName[place.instance_name],
-                add_matrix(place.matrix))
+                add_matrix(place.matrix), place.blend_mode)
 
             lwfPlaceId = @map_place[lwfPlace.to_a]
             if lwfPlaceId.nil?
@@ -3960,11 +4006,15 @@ def swf2lwf(*args)
   lwf_format_type = 0
 
   @header = to_u8('L'[0].ord) + to_u8('W'[0].ord) + to_u8('F'[0].ord) +
-    to_u8(lwf_format_type) +
-    to_u8(LWF_FORMAT_VERSION_0) +
-    to_u8(LWF_FORMAT_VERSION_1) +
-    to_u8(LWF_FORMAT_VERSION_2) +
-    to_u8(@option)
+    to_u8(lwf_format_type)
+  if @blend_mode_used
+    @header += to_u8(LWF_FORMAT_VERSION_0) +
+      to_u8(LWF_FORMAT_VERSION_1) + to_u8(LWF_FORMAT_VERSION_2)
+  else
+    @header += to_u8(LWF_FORMAT_VERSION_COMPAT_0) +
+      to_u8(LWF_FORMAT_VERSION_COMPAT_1) + to_u8(LWF_FORMAT_VERSION_COMPAT_2)
+  end
+  @header += to_u8(@option)
 
   [
     @stage.x_max - @stage.x_min,
@@ -4235,9 +4285,20 @@ def swf2lwf_optparse(args)
   end
 
   @font_table = Hash.new
+  @format_version = LWF_FORMAT_VERSION
+  @blend_mode_used = false
   begin
     config = YAML::load(File.read(conf_path))
     @font_table = config['font']
+    format_version = config['format']
+    case format_version
+    when nil, LWF_FORMAT_VERSION, sprintf("0x%06x", LWF_FORMAT_VERSION)
+      @format_version = LWF_FORMAT_VERSION
+    when LWF_FORMAT_VERSION_COMPAT, sprintf("0x%06x", LWF_FORMAT_VERSION_COMPAT)
+      @format_version = LWF_FORMAT_VERSION_COMPAT
+    else
+      error "invalid format \"#{format_version}\" in conf file #{conf_path}"
+    end
   rescue
     error "can't load conf file #{conf_path}" if use_conf
   end

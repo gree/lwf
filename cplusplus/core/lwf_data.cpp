@@ -190,10 +190,21 @@ void Data::Load(const void *bytes, size_t length)
 	if (header.id0 != 'L' ||
 			header.id1 != 'W' ||
 			header.id2 != 'F' ||
-			header.id3 != Format::FORMAT_TYPE ||
-			header.formatVersion0 != Format::FORMAT_VERSION_0 ||
-			header.formatVersion1 != Format::FORMAT_VERSION_1 ||
-			header.formatVersion2 != Format::FORMAT_VERSION_2)
+			header.id3 != Format::FORMAT_TYPE)
+		return;
+
+	int v0 = header.formatVersion0;
+	int v1 = header.formatVersion1;
+	int v2 = header.formatVersion2;
+	if (!((
+				v0 == Format::FORMAT_VERSION_0 &&
+				v1 == Format::FORMAT_VERSION_1 &&
+				v2 == Format::FORMAT_VERSION_2
+			) || (
+				v0 == Format::FORMAT_VERSION_COMPAT_0 &&
+				v1 == Format::FORMAT_VERSION_COMPAT_1 &&
+				v2 == Format::FORMAT_VERSION_COMPAT_2
+			)))
 		return;
 
 #if LWF_USE_LZMA
@@ -248,7 +259,8 @@ void Data::Load(const void *bytes, size_t length)
 	READ(labels, label, Format::Label);
 	READ(instanceNames, instanceName, Format::InstanceName);
 	READ(events, eventData, Format::Event);
-	READ(places, place, Format::Place);
+	vector<Format::PlaceCompat> placeCompats;
+	READ(placeCompats, place, Format::PlaceCompat);
 	READ(controlMoveMs, controlMoveM, Format::ControlMoveM);
 	READ(controlMoveCs, controlMoveC, Format::ControlMoveC);
 	READ(controlMoveMCs, controlMoveMC, Format::ControlMoveMC);
@@ -262,6 +274,19 @@ void Data::Load(const void *bytes, size_t length)
 	if (p != end) {
 		memset(&header, 0, sizeof(header));
 		return;
+	}
+
+	places.reserve(placeCompats.size());
+	vector<Format::PlaceCompat>::const_iterator
+		pit(placeCompats.begin()), pitend(placeCompats.end());
+	for (; pit != pitend; ++pit) {
+		Format::Place place;
+		place.depth = pit->depth & 0xffffff;
+		place.objectId = pit->objectId;
+		place.instanceId = pit->instanceId;
+		place.matrixId = pit->matrixId;
+		place.blendMode = pit->depth >> 24;
+		places.push_back(place);
 	}
 
 	strings.reserve(stringData.size());

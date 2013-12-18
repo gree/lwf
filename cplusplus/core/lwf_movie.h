@@ -49,6 +49,7 @@ public:
 	int totalFrames;
 	int currentFrame;
 	int depth;
+	int blendMode;
 	bool visible;
 	bool playing;
 	bool active;
@@ -213,8 +214,8 @@ public:
 	void DetachAllLWFs();
 
 private:
-	void ExecObject(int dlDepth,
-		int objId, int matrixId, int colorTransformId, int instId);
+	void ExecObject(int dlDepth, int objId,
+		int matrixId, int colorTransformId, int instId, int dlBlendMode);
 	void UpdateObject(Object *obj, const Matrix *m, const ColorTransform *c,
 		bool matrixChanged, bool colorTransformChanged);
 	void PlayAnimation(int clipEvent);
