@@ -130,6 +130,7 @@ public class BitmapRenderer : Renderer
 {
 	BitmapContext m_context;
 	MaterialPropertyBlock m_property;
+	Material m_additiveMaterial;
 	Matrix4x4 m_matrix;
 	Matrix4x4 m_renderMatrix;
 	UnityEngine.Color m_colorMult;
@@ -150,6 +151,15 @@ public class BitmapRenderer : Renderer
 #if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
 #endif
+	}
+
+	public override void Destruct()
+	{
+		if (m_additiveMaterial != null) {
+			Material.Destroy(m_additiveMaterial);
+			m_additiveMaterial = null;
+		}
+		base.Destruct();
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
@@ -188,8 +198,21 @@ public class BitmapRenderer : Renderer
 		m_property.AddColor("_AdditionalColor", m_colorAdd);
 #endif
 
-		Graphics.DrawMesh(m_context.mesh, m_renderMatrix, m_context.material,
-			factory.gameObject.layer, factory.camera, 0, m_property);
+		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
+			if (m_additiveMaterial == null) {
+				m_additiveMaterial = new Material(m_context.material);
+				m_additiveMaterial.shader =
+					ResourceCache.SharedInstance().GetShader(
+						m_context.material.shader.name + "Additive");
+			}
+			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
+				m_additiveMaterial, factory.gameObject.layer, factory.camera, 0,
+				m_property);
+		} else {
+			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
+				m_context.material, factory.gameObject.layer, factory.camera, 0,
+				m_property);
+		}
 	}
 
 #if UNITY_EDITOR

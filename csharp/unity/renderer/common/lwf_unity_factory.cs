@@ -35,6 +35,8 @@ public partial class Factory : IRendererFactory
 	public float zOffset;
 	public float zRate;
 	public int renderQueueOffset;
+	public int blendMode;
+	public int maskMode;
 	public TextureLoader textureLoader;
 	public TextureUnloader textureUnloader;
 	private Matrix4x4 matrix;
@@ -55,6 +57,8 @@ public partial class Factory : IRendererFactory
 		textureLoader = textureLdr;
 		textureUnloader = textureUnldr;
 		matrix = Matrix4x4.identity;
+		blendMode = (int)Format.Constant.BLEND_MODE_NORMAL;
+		maskMode = (int)Format.Constant.BLEND_MODE_NORMAL;
 	}
 
 	public virtual void Init(LWF lwf)
@@ -74,12 +78,14 @@ public partial class Factory : IRendererFactory
 	{
 	}
 
-	public virtual void SetBlendMode(int blendMode)
+	public virtual void SetBlendMode(int m)
 	{
+		blendMode = m;
 	}
 
-	public virtual void SetMaskMode(int maskMode)
+	public virtual void SetMaskMode(int m)
 	{
+		maskMode = m;
 	}
 
 	public virtual Renderer ConstructBitmap(LWF lwf,
