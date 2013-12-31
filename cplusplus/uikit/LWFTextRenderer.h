@@ -28,7 +28,6 @@ class LWFRendererFactory;
 class LWFTextRenderer : public TextRenderer
 {
 protected:
-	LWFRendererFactory *m_factory;
 	UILabel *m_label;
 
 public:

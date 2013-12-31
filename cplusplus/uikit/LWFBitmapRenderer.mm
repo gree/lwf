@@ -29,6 +29,42 @@
 
 using namespace std;
 
+@interface LWFBitmapView : UIView
+- (id)initWithContext:(LWF::LWFBitmapRendererContext *)context;
+@end
+
+@implementation LWFBitmapView
+- (id)initWithContext:(LWF::LWFBitmapRendererContext *)context
+{
+ 	self = [super init];
+	self.backgroundColor = nil;
+	self.hidden = YES;
+	self.opaque = NO;
+	self.layer.position = CGPointMake(0, 0);
+	self.layer.anchorPoint = CGPointMake(0, 0);
+
+	CALayer *layer = [CALayer layer];
+	layer.position = CGPointMake(0, 0);
+	layer.anchorPoint = CGPointMake(0, 0);
+	layer.frame = context->frame;
+	layer.contents = (id)context->uiImage.CGImage;
+	layer.contentsRect = context->uvwh;
+	CATransform3D t = CATransform3DIdentity;
+	CGFloat x = context->position.x;
+	CGFloat y = context->position.y;
+	if (context->rotated) {
+		t = CATransform3DTranslate(t, x, y + context->frame.size.width, 0);
+		t = CATransform3DRotate(t, -M_PI / 2.0f, 0, 0, 1);
+	} else {
+		t = CATransform3DTranslate(t, x, y, 0);
+	}
+	layer.transform = t;
+	[self.layer addSublayer:layer];
+
+	return self;
+}
+@end
+
 namespace LWF {
 
 LWFBitmapRendererContext::LWFBitmapRendererContext(const Data *data,
@@ -39,8 +75,8 @@ LWFBitmapRendererContext::LWFBitmapRendererContext(const Data *data,
 	const Format::Texture &t = data->textures[f.textureId];
 	string filename = t.GetFilename(data);
 
-	UIImage *image = LWFResourceCache::shared()->loadTexture(path, filename);
-	if (!image)
+	uiImage = LWFResourceCache::shared()->loadTexture(path, filename);
+	if (!uiImage)
 		return;
 
 	float x = (float)f.x;
@@ -49,61 +85,41 @@ LWFBitmapRendererContext::LWFBitmapRendererContext(const Data *data,
 	float v = (float)f.v;
 	float w = (float)f.w;
 	float h = (float)f.h;
-	
+
 	float bu = bx.u * w;
 	float bv = bx.v * h;
 	float bw = bx.w;
 	float bh = bx.h;
-	
+
 	x += bu;
 	y += bv;
 	u += bu;
 	v += bv;
 	w *= bw;
 	h *= bh;
-	
- 	float scale = image.size.width / t.width;
-	float tu;
-	float tv;
-	float tw;
-	float th;
-	UIImageOrientation orientation;
+
+ 	float scale = uiImage.size.width / t.width;
+	position = CGPointMake(x, y);
 	if (f.rotated == 0) {
-		tu = u * scale;
-		tv = v * scale;
-		tw = w * scale;
-		th = h * scale;
-		orientation = UIImageOrientationUp;
+		frame = CGRectMake(0, 0, w * scale, h * scale);
+		uvwh = CGRectMake(u / t.width, v / t.height, w / t.width, h / t.height);
+		rotated = false;
 	} else {
-		tu = u * scale;
-		tv = v * scale;
-		tw = h * scale;
-		th = w * scale;
-		orientation = UIImageOrientationLeft;
+		frame = CGRectMake(0, 0, h * scale, w * scale);
+		uvwh = CGRectMake(u / t.width, v / t.height, h / t.width, w / t.height);
+		rotated = true;
 	}
-
-	if (tu == 0 && tv == 0 && tw == image.size.width &&
-			th == image.size.height && f.rotated == 0) {
-		m_image = image;
-	} else {
-		CGImageRef fragment = CGImageCreateWithImageInRect(
-			[image CGImage], CGRectMake(tu, tv, tw, th));
-		m_image = [UIImage
-			imageWithCGImage:fragment scale:scale orientation:orientation];
-		CGImageRelease(fragment);
-	}
-
-	m_x = x;
-	m_y = y;
 }
 
 LWFBitmapRendererContext::~LWFBitmapRendererContext()
 {
+	if (uiImage)
+		LWFResourceCache::shared()->unloadTexture(uiImage);
 }
 
 LWFBitmapRenderer::LWFBitmapRenderer(
 		LWFRendererFactory *factory, LWF *l, Bitmap *bitmap)
-	: Renderer(l), m_factory(factory), m_context(0), m_view(nil)
+	: Renderer(l), m_view(nil)
 {
 	const LWFResourceCache::DataContext *dataContext =
 		LWFResourceCache::shared()->getDataContext(l->data);
@@ -113,34 +129,14 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			!dataContext->bitmapContexts[objId])
 		return;
 
-	m_context = dataContext->bitmapContexts[objId].get();
-
-	m_view = [[UIImageView alloc] initWithImage:m_context->GetImage()];
-	m_view.hidden = YES;
-	m_view.backgroundColor = nil;
-	m_view.opaque = NO;
-
-	float x = m_context->GetX();
-	float y = m_context->GetY();
-	if (x != 0 || y != 0) {
-		m_wrapper = [[UIView alloc] init];
-		[m_wrapper addSubview:m_view];
-		m_view.frame = CGRectMake(
-			x, y, m_view.frame.size.width, m_view.frame.size.height);
-		[factory->GetView() addSubview:m_wrapper];
-		m_layer = m_wrapper.layer;
-	} else {
-		m_wrapper = nil;
-		m_layer = m_view.layer;
-		[factory->GetView() addSubview:m_view];
-	}
-	m_layer.position = CGPointMake(0, 0);
-	m_layer.anchorPoint = CGPointMake(0, 0);
+	m_view = [[LWFBitmapView alloc]
+		initWithContext:dataContext->bitmapContexts[objId].get()];
+	[factory->GetView() addSubview:m_view];
 }
 
 LWFBitmapRenderer::LWFBitmapRenderer(
 		LWFRendererFactory *factory, LWF *l, BitmapEx *bitmapEx)
-	: Renderer(l), m_factory(factory), m_context(0), m_view(nil)
+	: Renderer(l), m_view(nil)
 {
 	const LWFResourceCache::DataContext *dataContext =
 		LWFResourceCache::shared()->getDataContext(l->data);
@@ -150,15 +146,15 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			!dataContext->bitmapExContexts[objId])
 		return;
 
-	m_context = dataContext->bitmapExContexts[objId].get();
+	m_view = [[LWFBitmapView alloc]
+		initWithContext:dataContext->bitmapExContexts[objId].get()];
+	[factory->GetView() addSubview:m_view];
 }
 
 void LWFBitmapRenderer::Destruct()
 {
 	[m_view removeFromSuperview];
 	m_view = nil;
-	[m_wrapper removeFromSuperview];
-	m_wrapper = nil;
 }
 
 void LWFBitmapRenderer::Update(
@@ -170,7 +166,10 @@ void LWFBitmapRenderer::Render(
 	const Matrix *matrix, const ColorTransform *colorTransform,
 	int renderingIndex, int renderingCount, bool visible)
 {
-	if (!m_context || !visible || colorTransform->multi.alpha == 0) {
+	if (!m_view)
+		return;
+
+	if (!visible || colorTransform->multi.alpha == 0) {
 		m_view.hidden = YES;
 		return;
 	}
@@ -200,7 +199,7 @@ void LWFBitmapRenderer::Render(
 	t.m43 = renderingIndex;
 	t.m44 = 1;
 
-	m_layer.transform = t;
+	m_view.layer.transform = t;
 }
 
 }   // namespace LWF

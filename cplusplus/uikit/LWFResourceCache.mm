@@ -170,9 +170,41 @@ UIImage *LWFResourceCache::loadTexture(
 	else
 		path = dataPath.substr(0, pos + 1) + texturePath;
 
+	{
+		Autolock lock(m_semaphore);
+		TextureCache::iterator it = m_textureCache.find(path);
+		if (it != m_textureCache.end()) {
+			++it->second.refCount;
+			return it->second.uiImage;
+		}
+	}
+
 	NSString *fullPath = [NSString stringWithUTF8String:path.c_str()];
 	UIImage *image = [UIImage imageWithContentsOfFile:fullPath];
+	if (!image)
+		return NULL;
+
+	{
+		Autolock lock(m_semaphore);
+		m_textureCache[path] = TextureContext(image);
+		TextureCache::iterator it = m_textureCache.find(path);
+		m_textureCacheMap[image] = it;
+	}
+
 	return image;
+}
+
+void LWFResourceCache::unloadTexture(UIImage *uiImage)
+{
+	Autolock lock(m_semaphore);
+	TextureCacheMap::iterator it = m_textureCacheMap.find(uiImage);
+	if (it == m_textureCacheMap.end())
+		return;
+
+	if (--it->second->second.refCount <= 0) {
+		m_textureCache.erase(it->second);
+		m_textureCacheMap.erase(it);
+	}
 }
 
 void LWFResourceCache::unloadAll()
@@ -180,6 +212,8 @@ void LWFResourceCache::unloadAll()
 	Autolock lock(m_semaphore);
 	m_dataCache.clear();
 	m_dataCacheMap.clear();
+	m_textureCache.clear();
+	m_textureCacheMap.clear();
 }
 
 }	// namespace LWF

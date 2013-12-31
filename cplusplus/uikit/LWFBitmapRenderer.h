@@ -21,35 +21,32 @@
 #import <UIKit/UIKit.h>
 #import "lwf_renderer.h"
 
+@class LWFBitmapView;
+
 namespace LWF {
 
 class LWFRendererFactory;
 
 class LWFBitmapRendererContext
 {
-protected:
-	UIImage *m_image;
-	float m_x;
-	float m_y;
+public:
+	UIImage *uiImage;
+	CGPoint position;
+	CGRect frame;
+	CGRect uvwh;
+	BOOL rotated;
 
 public:
-	LWFBitmapRendererContext() : m_image(0) {}
+	LWFBitmapRendererContext() : uiImage(0) {}
 	LWFBitmapRendererContext(const Data *data,
 		const Format::BitmapEx &bx, const std::string &path);
 	~LWFBitmapRendererContext();
-	UIImage *GetImage() {return m_image;}
-	float GetX() const {return m_x;}
-	float GetY() const {return m_y;}
 };
 
 class LWFBitmapRenderer : public Renderer
 {
 protected:
-	LWFBitmapRendererContext *m_context;
-	LWFRendererFactory *m_factory;
-	UIImageView *m_view;
-	UIView *m_wrapper;
-	CALayer *m_layer;
+	LWFBitmapView *m_view;
 
 public:
 	LWFBitmapRenderer(LWFRendererFactory *factory, LWF *l, Bitmap *bitmap);

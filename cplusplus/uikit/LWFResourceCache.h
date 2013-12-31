@@ -41,9 +41,21 @@ public:
 			: refCount(1), data(d), bitmapContexts(b), bitmapExContexts(bx) {}
 	};
 
+	struct TextureContext
+	{
+		int refCount;
+		UIImage *uiImage;
+	
+		TextureContext() {}
+		TextureContext(UIImage *u)
+			: refCount(1), uiImage(u) {}
+	};
+
 private:
 	typedef map<string, DataContext> DataCache;
 	typedef map<Data *, DataCache::iterator> DataCacheMap;
+	typedef map<string, TextureContext> TextureCache;
+	typedef map<UIImage *, TextureCache::iterator> TextureCacheMap;
 
 private:
 	static LWFResourceCache *m_instance;
@@ -52,6 +64,8 @@ private:
 	dispatch_semaphore_t m_semaphore;
 	DataCache m_dataCache;
 	DataCacheMap m_dataCacheMap;
+	TextureCache m_textureCache;
+	TextureCacheMap m_textureCacheMap;
 
 public:
 	static LWFResourceCache *shared();
@@ -65,6 +79,7 @@ public:
 	const DataContext *getDataContext(const shared_ptr<Data> &data) const;
 
 	UIImage *loadTexture(const string &dataPath, const string &texturePath);
+	void unloadTexture(UIImage *uiImage);
 
 	void unloadAll();
 };

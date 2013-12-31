@@ -32,7 +32,7 @@ namespace LWF {
 
 LWFTextRenderer::LWFTextRenderer(
 		LWFRendererFactory *factory, LWF *l, Text *text)
-	: TextRenderer(l), m_factory(factory)
+	: TextRenderer(l)
 {
 	const Format::Text &t = lwf->data->texts[text->objectId];
 	const Format::TextProperty &p = lwf->data->textProperties[t.textPropertyId];
