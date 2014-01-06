@@ -280,6 +280,17 @@ using namespace LWF;
 	});
 }
 
+- (void)setText:(NSString *)textName text:(NSString *)text
+{
+	lwf->SetText([textName UTF8String], [text UTF8String]);
+}
+
+- (NSString *)getText:(NSString *)textName
+{
+	std::string text = lwf->GetText([textName UTF8String]);
+	return [NSString stringWithUTF8String:text.c_str()];
+}
+
 - (void *)lwf
 {
 	return lwf.get();

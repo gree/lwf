@@ -354,4 +354,23 @@ typedef void (^EventHandler)();
 - (void)attachLWF:(LWFObject *)lwfObject
 	target:(NSString *)target attachName:(NSString *)attachName;
 
+/**
+ Set text string to the text in the LWF instance.
+
+ @param textName The name of the target text, like "textMessage" or
+ "_root.panel.textMessage" as Adobe Flash ActionScript.
+ @param text A text string.
+ */
+- (void)setText:(NSString *)textName text:(NSString *)text;
+
+/**
+ Get text string from the text in the LWF instance.
+
+ @param textName The name of the target text, like "textMessage" or
+ "_root.panel.textMessage" as Adobe Flash ActionScript.
+
+ @return A test string.
+ */
+- (NSString *)getText:(NSString *)textName;
+
 @end
