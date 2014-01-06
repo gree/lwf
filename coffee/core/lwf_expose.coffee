@@ -215,3 +215,5 @@ Color.prototype["set"] = Color.prototype.set
 
 ColorTransform.prototype["clear"] = ColorTransform.prototype.clear
 ColorTransform.prototype["set"] = ColorTransform.prototype.set
+
+BitmapClip.prototype["setMatrix"] = BitmapClip.prototype.setMatrix

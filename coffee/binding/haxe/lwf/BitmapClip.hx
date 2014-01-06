@@ -17,4 +17,6 @@ extern class BitmapClip
 	public var width(default,never):Int;
 	public var x:Float;
 	public var y:Float;
+
+	public function setMatrix(matrix:Matrix):Void;
 }

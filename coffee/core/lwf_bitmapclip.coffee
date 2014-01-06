@@ -166,6 +166,16 @@ class BitmapClip extends LObject
     @_rotation = v
     return
 
+  setMatrix:(m) ->
+    @mScaleX = m.scaleX
+    @mScaleY = m.scaleY
+    @mSkew0 = m.skew0
+    @mSkew1 = m.skew1
+    @x = m.translateX
+    @y = m.translateY
+    @dirty()
+    return
+
   getAlphaProperty: ->
     return @_alpha
 

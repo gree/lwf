@@ -3398,6 +3398,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this._rotation = v;
     };
 
+    BitmapClip.prototype.setMatrix = function(m) {
+      this.mScaleX = m.scaleX;
+      this.mScaleY = m.scaleY;
+      this.mSkew0 = m.skew0;
+      this.mSkew1 = m.skew1;
+      this.x = m.translateX;
+      this.y = m.translateY;
+      this.dirty();
+    };
+
     BitmapClip.prototype.getAlphaProperty = function() {
       return this._alpha;
     };
@@ -5149,7 +5159,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (rotation == null) {
         rotation = 0;
       }
-      this.property.setMatrix(m, scalex, scaleY, rotation);
+      this.property.setMatrix(m, scaleX, scaleY, rotation);
       return this;
     };
 
@@ -7441,6 +7451,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   ColorTransform.prototype["clear"] = ColorTransform.prototype.clear;
 
   ColorTransform.prototype["set"] = ColorTransform.prototype.set;
+
+  BitmapClip.prototype["setMatrix"] = BitmapClip.prototype.setMatrix;
 
   WebkitCSSRendererFactory = (function() {
     function WebkitCSSRendererFactory(data, resourceCache, cache, stage, textInSubpixel, use3D, recycleTextCanvas, quirkyClearRect) {

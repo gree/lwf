@@ -1138,7 +1138,7 @@ class Movie extends IObject
     return @
 
   setMatrix:(m, scaleX = 1, scaleY = 1, rotation = 0) ->
-    @property.setMatrix(m, scalex, scaleY, rotation)
+    @property.setMatrix(m, scaleX, scaleY, rotation)
     return @
 
   setAlpha:(alpha) ->
