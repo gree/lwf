@@ -133,13 +133,12 @@ public:
 	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
-			_transform = cocos2d::AffineTransformMake(
-				m->scaleX,
-				-m->skew1,
-				m->skew0,
-				-m->scaleY,
-				m->translateX,
-				-m->translateY);
+            kmScalar mat[] = {
+				m->scaleX, -m->skew1, 0, 0,
+				m->skew0, -m->scaleY, 0, 0,
+                0, 0, 1, 0,
+				m->translateX, -m->translateY, 0, 1};
+            kmMat4Fill(&_transform, mat);
 			setDirty(true);
 		}
 
@@ -153,7 +152,7 @@ public:
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
-	const cocos2d::AffineTransform &getNodeToParentTransform() const
+	const kmMat4 &getNodeToParentTransform() const
 	{
 		return _transform;
 	}

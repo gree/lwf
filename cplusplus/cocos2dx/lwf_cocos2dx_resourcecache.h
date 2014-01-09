@@ -22,6 +22,7 @@
 #define LWF_COCOS2DX_RESOURCECACHE_H
 
 #include "CCPlatformMacros.h"
+#include "CCValue.h"
 #include "lwf_type.h"
 
 
@@ -31,7 +32,6 @@ class Data;
 
 NS_CC_BEGIN
 
-class Dictionary;
 
 class LWFResourceCache
 {
@@ -41,9 +41,7 @@ private:
 	typedef LWF::map<LWF::Data *, DataCache::iterator> DataCacheMap;
 	typedef LWF::pair<int, LWF::vector<LWF::PreloadCallback> > DataCallbackList;
 	typedef LWF::map<LWF::string, DataCallbackList> DataCallbackMap;
-	typedef LWF::map<LWF::string,
-		LWF::pair<int, Dictionary *> > ParticleCache;
-	typedef LWF::map<Dictionary *, ParticleCache::iterator> ParticleCacheMap;
+	typedef LWF::map<LWF::string, LWF::pair<int, ValueMap> > ParticleCache;
 
 private:
 	static LWFResourceCache *m_instance;
@@ -53,7 +51,6 @@ private:
 	DataCacheMap m_dataCacheMap;
 	DataCallbackMap m_dataCallbackMap;
 	ParticleCache m_particleCache;
-	ParticleCacheMap m_particleCacheMap;
 	LWF::string m_fontPathPrefix;
 	LWF::string m_particlePathPrefix;
 
@@ -67,8 +64,8 @@ public:
 	LWF::shared_ptr<LWF::Data> loadLWFData(const LWF::string &path);
 	void unloadLWFData(const LWF::shared_ptr<LWF::Data> &data);
 
-	Dictionary *loadParticle(const LWF::string &path, bool retain = true);
-	void unloadParticle(Dictionary *particle);
+    ValueMap loadParticle(const LWF::string &path, bool retain = true);
+	void unloadParticle(const LWF::string &path);
 
 	void unloadAll();
 	void dump();

@@ -836,7 +836,7 @@ int LWF::AttachMovieLua(Movie *movie)
 	lua_State *l = (lua_State *)luaState;
 	int args = lua_gettop(l);
 	string linkageName;
-	string attachName;
+	string aName;
 	int attachDepth = -1;
 	bool reorder = false;
 	MovieEventHandlerDictionary handlers;
@@ -844,12 +844,12 @@ int LWF::AttachMovieLua(Movie *movie)
 
 	/* 1: LWF_Movie instance */
 	/* 2: linkageName:string */
-	/* 3: attachName:string */
+	/* 3: aName:string */
 	/* 4: table {key:string, handler:function} */
 	/* 5: attachDepth:number (option) */
 	/* 6: reorder:boolean (option) */
 	linkageName = lua_tostring(l, 2);
-	attachName = lua_tostring(l, 3);
+	aName = lua_tostring(l, 3);
 	if (args >= 4) {
 		lua_getglobal(l, "LWF");
 		/* -1: LWF */
@@ -923,7 +923,7 @@ int LWF::AttachMovieLua(Movie *movie)
 		reorder = lua_toboolean(l, 6);
 
 	child = movie->AttachMovie(
-		linkageName, attachName, handlers, attachDepth, reorder);
+		linkageName, aName, handlers, attachDepth, reorder);
 	Luna<Movie>::push(l, child, false);
 	/* -1: LWF_Movie child */
 	return 1;

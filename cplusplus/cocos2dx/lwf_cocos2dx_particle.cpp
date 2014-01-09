@@ -31,6 +31,8 @@ namespace LWF {
 
 class LWFParticle : public cocos2d::ParticleSystemQuad
 {
+public:
+    string path;
 protected:
 	Matrix m_matrix;
 
@@ -46,15 +48,16 @@ public:
 		return NULL;
 	}
 
-	bool initWithFile(const char *path)
+	bool initWithFile(const char *filePath)
 	{
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
-		cocos2d::Dictionary *dict = cache->loadParticle(path);
-		if (!dict)
+		cocos2d::ValueMap dict = cache->loadParticle(filePath);
+		if (dict.empty())
 			return false;
+		path = dict["path"].asString();
 		if (!initWithDictionary(dict)) {
-			cache->unloadParticle(dict);
+			cache->unloadParticle(path);
 			return false;
 		}
 
@@ -105,6 +108,7 @@ void LWFParticleRenderer::Destruct()
 		dynamic_cast<cocos2d::LWFNode *>(m_particle->getParent());
 	if (node)
 		node->remove(m_particle);
+	cocos2d::LWFResourceCache::sharedLWFResourceCache()->unloadParticle(m_particle->path);
 	m_particle = 0;
 }
 

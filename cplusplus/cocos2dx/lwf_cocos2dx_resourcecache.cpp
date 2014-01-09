@@ -21,7 +21,7 @@
 #include "CCDirector.h"
 #include "CCFileUtils.h"
 #include "CCTextureCache.h"
-#include "CCDictionary.h"
+#include "CCValue.h"
 #include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_data.h"
 
@@ -107,7 +107,7 @@ void LWFResourceCache::unloadLWFData(const shared_ptr<LWFData> &data)
 	}
 }
 
-Dictionary *LWFResourceCache::loadParticle(const string &path, bool retain)
+ValueMap LWFResourceCache::loadParticle(const string &path, bool retain)
 {
 	ParticleCache::iterator it = m_particleCache.find(path);
 	if (it != m_particleCache.end()) {
@@ -118,29 +118,25 @@ Dictionary *LWFResourceCache::loadParticle(const string &path, bool retain)
 
 	string fullPath =
 		FileUtils::getInstance()->fullPathForFilename(path.c_str());
-	Dictionary *dict =
-		Dictionary::createWithContentsOfFileThreadSafe(fullPath.c_str());
-	if (!dict)
-		return 0;
-	dict->retain();
+	ValueMap dict =
+		FileUtils::getInstance()->getValueMapFromFile(fullPath.c_str());
 
-	m_particleCache[path] = make_pair(retain ? 1 : 0, dict);
-	m_particleCacheMap[dict] = m_particleCache.find(path);
+	if (!dict.empty()) {
+		m_particleCache[path] = make_pair(retain ? 1 : 0, dict);
+		dict["path"] = Value(path);
+	}
 
 	return dict;
 }
 
-void LWFResourceCache::unloadParticle(Dictionary *dict)
+void LWFResourceCache::unloadParticle(const string &path)
 {
-	ParticleCacheMap::iterator it = m_particleCacheMap.find(dict);
-	if (it == m_particleCacheMap.end())
+	ParticleCache::iterator it = m_particleCache.find(path);
+	if (it == m_particleCache.end())
 		return;
 
-	if (--it->second->second.first <= 0) {
-		it->second->second.second->release();
-		m_particleCache.erase(it->second);
-		m_particleCacheMap.erase(it);
-	}
+	if (--it->second.first <= 0)
+		m_particleCache.erase(it);
 }
 
 
@@ -156,12 +152,7 @@ void LWFResourceCache::unloadAll()
 	m_dataCache.clear();
 	m_dataCacheMap.clear();
 
-	ParticleCache::iterator
-		pit(m_particleCache.begin()), pitend(m_particleCache.end());
-	for (; pit != pitend; ++pit)
-		pit->second.second->release();
 	m_particleCache.clear();
-	m_particleCacheMap.clear();
 }
 
 void LWFResourceCache::dump()

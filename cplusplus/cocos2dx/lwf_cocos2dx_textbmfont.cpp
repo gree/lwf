@@ -90,13 +90,13 @@ public:
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
 			float scale = m_scale / node->lwf->scaleByStage;
-			_transform = cocos2d::AffineTransformMake(
-				m->scaleX * scale,
-				m->skew1 * scale,
-				m->skew0 * scale,
-				m->scaleY * scale,
+            kmScalar mat[] = {
+				m->scaleX * scale, m->skew1 * scale, 0, 0,
+				m->skew0 * scale, m->scaleY * scale, 0, 0,
+                0, 0, 1, 0,
 				m->translateX + m->skew0 * m_offsetY,
-				-m->translateY - m->scaleY * m_offsetY);
+                    -m->translateY - m->scaleY * m_offsetY, 0, 1};
+            kmMat4Fill(&_transform, mat);
 		}
 
 		const Color &c = cx->multi;
@@ -108,7 +108,7 @@ public:
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
-	const cocos2d::AffineTransform &getNodeToParentTransform() const
+	const kmMat4 &getNodeToParentTransform() const
 	{
 		return _transform;
 	}
