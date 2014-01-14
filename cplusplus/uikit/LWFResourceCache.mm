@@ -56,20 +56,22 @@ LWFResourceCache *LWFResourceCache::shared()
 
 LWFResourceCache::LWFResourceCache()
 {
-	m_semaphore = dispatch_semaphore_create(1);
+	m_dataSemaphore = dispatch_semaphore_create(1);
+	m_textureSemaphore = dispatch_semaphore_create(1);
 }
 
 LWFResourceCache::~LWFResourceCache()
 {
 #if !OS_OBJECT_USE_OBJC
-	dispatch_release(m_semaphore);
+	dispatch_release(m_dataSemaphore);
+	dispatch_release(m_textureSemaphore);
 #endif
 }
 
 shared_ptr<Data> LWFResourceCache::loadLWFData(const string &pathstr)
 {
 	{
-		Autolock lock(m_semaphore);
+		Autolock lock(m_dataSemaphore);
 		DataCache::iterator it = m_dataCache.find(pathstr);
 		if (it != m_dataCache.end()) {
 			++it->second.refCount;
@@ -127,7 +129,7 @@ shared_ptr<Data> LWFResourceCache::loadLWFData(const string &pathstr)
 	}
 
 	{
-		Autolock lock(m_semaphore);
+		Autolock lock(m_dataSemaphore);
 		m_dataCache[pathstr] =
 			DataContext(data, bitmapContexts, bitmapExContexts);
 		m_dataCacheMap[data.get()] = m_dataCache.find(pathstr);
@@ -138,7 +140,7 @@ shared_ptr<Data> LWFResourceCache::loadLWFData(const string &pathstr)
 
 void LWFResourceCache::unloadLWFData(const shared_ptr<Data> &data)
 {
-	Autolock lock(m_semaphore);
+	Autolock lock(m_dataSemaphore);
 	DataCacheMap::iterator it = m_dataCacheMap.find(data.get());
 	if (it == m_dataCacheMap.end())
 		return;
@@ -152,7 +154,7 @@ void LWFResourceCache::unloadLWFData(const shared_ptr<Data> &data)
 const LWFResourceCache::DataContext *LWFResourceCache::getDataContext(
 	const shared_ptr<Data> &data) const
 {
-	Autolock lock(m_semaphore);
+	Autolock lock(m_dataSemaphore);
 	DataCacheMap::const_iterator it = m_dataCacheMap.find(data.get());
 	if (it == m_dataCacheMap.end())
 		return 0;
@@ -171,7 +173,7 @@ UIImage *LWFResourceCache::loadTexture(
 		path = dataPath.substr(0, pos + 1) + texturePath;
 
 	{
-		Autolock lock(m_semaphore);
+		Autolock lock(m_textureSemaphore);
 		TextureCache::iterator it = m_textureCache.find(path);
 		if (it != m_textureCache.end()) {
 			++it->second.refCount;
@@ -185,7 +187,7 @@ UIImage *LWFResourceCache::loadTexture(
 		return NULL;
 
 	{
-		Autolock lock(m_semaphore);
+		Autolock lock(m_textureSemaphore);
 		m_textureCache[path] = TextureContext(image);
 		TextureCache::iterator it = m_textureCache.find(path);
 		m_textureCacheMap[image] = it;
@@ -196,7 +198,7 @@ UIImage *LWFResourceCache::loadTexture(
 
 void LWFResourceCache::unloadTexture(UIImage *uiImage)
 {
-	Autolock lock(m_semaphore);
+	Autolock lock(m_textureSemaphore);
 	TextureCacheMap::iterator it = m_textureCacheMap.find(uiImage);
 	if (it == m_textureCacheMap.end())
 		return;
@@ -209,11 +211,16 @@ void LWFResourceCache::unloadTexture(UIImage *uiImage)
 
 void LWFResourceCache::unloadAll()
 {
-	Autolock lock(m_semaphore);
-	m_dataCache.clear();
-	m_dataCacheMap.clear();
-	m_textureCache.clear();
-	m_textureCacheMap.clear();
+	{
+		Autolock lock(m_dataSemaphore);
+		m_dataCache.clear();
+		m_dataCacheMap.clear();
+	}
+	{
+		Autolock lock(m_textureSemaphore);
+		m_textureCache.clear();
+		m_textureCacheMap.clear();
+	}
 }
 
 }	// namespace LWF

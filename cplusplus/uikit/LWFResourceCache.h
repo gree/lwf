@@ -61,7 +61,8 @@ private:
 	static LWFResourceCache *m_instance;
 
 private:
-	dispatch_semaphore_t m_semaphore;
+	dispatch_semaphore_t m_dataSemaphore;
+	dispatch_semaphore_t m_textureSemaphore;
 	DataCache m_dataCache;
 	DataCacheMap m_dataCacheMap;
 	TextureCache m_textureCache;
