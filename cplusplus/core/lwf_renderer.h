@@ -33,10 +33,10 @@ class Text;
 class Renderer
 {
 public:
-	LWF *lwf;
+	LWFCore *lwf;
 
 public:
-	Renderer(LWF *l) : lwf(l) {}
+	Renderer(LWFCore *l) : lwf(l) {}
 	virtual ~Renderer() {}
 
 	virtual void Destruct() = 0;
@@ -50,7 +50,7 @@ public:
 class TextRenderer : public Renderer
 {
 public:
-	TextRenderer(LWF *l) : Renderer(l) {}
+	TextRenderer(LWFCore *l) : Renderer(l) {}
 	virtual ~TextRenderer() {}
 
 	virtual void SetText(string text) = 0;
@@ -62,48 +62,48 @@ public:
 	IRendererFactory() {}
 	virtual ~IRendererFactory() {}
 	virtual shared_ptr<Renderer> ConstructBitmap(
-		LWF *lwf, int objId, Bitmap *bitmap) = 0;
+		LWFCore *lwf, int objId, Bitmap *bitmap) = 0;
 	virtual shared_ptr<Renderer> ConstructBitmapEx(
-		LWF *lwf, int objId, BitmapEx *bitmapEx) = 0;
+		LWFCore *lwf, int objId, BitmapEx *bitmapEx) = 0;
 	virtual shared_ptr<TextRenderer> ConstructText(
-		LWF *lwf, int objId, Text *text) = 0;
+		LWFCore *lwf, int objId, Text *text) = 0;
 	virtual shared_ptr<Renderer> ConstructParticle(
-		LWF *lwf, int objId, Particle *particle) = 0;
-	virtual void Init(LWF *lwf) = 0;
-	virtual void BeginRender(LWF *lwf) = 0;
-	virtual void EndRender(LWF *lwf) = 0;
+		LWFCore *lwf, int objId, Particle *particle) = 0;
+	virtual void Init(LWFCore *lwf) = 0;
+	virtual void BeginRender(LWFCore *lwf) = 0;
+	virtual void EndRender(LWFCore *lwf) = 0;
 	virtual void Destruct() = 0;
 	virtual void SetBlendMode(int blendMode) = 0;
 	virtual void SetMaskMode(int maskMode) = 0;
 
-	virtual void FitForHeight(LWF *lwf, float w, float h) = 0;
-	virtual void FitForWidth(LWF *lwf, float w, float h) = 0;
-	virtual void ScaleForHeight(LWF *lwf, float w, float h) = 0;
-	virtual void ScaleForWidth(LWF *lwf, float w, float h) = 0;
+	virtual void FitForHeight(LWFCore *lwf, float w, float h) = 0;
+	virtual void FitForWidth(LWFCore *lwf, float w, float h) = 0;
+	virtual void ScaleForHeight(LWFCore *lwf, float w, float h) = 0;
+	virtual void ScaleForWidth(LWFCore *lwf, float w, float h) = 0;
 };
 
 class NullRendererFactory : public IRendererFactory
 {
 public:
-	shared_ptr<Renderer> ConstructBitmap(LWF *lwf,
+	shared_ptr<Renderer> ConstructBitmap(LWFCore *lwf,
 		int objId, Bitmap *bitmap) {return 0;}
-	shared_ptr<Renderer> ConstructBitmapEx(LWF *lwf,
+	shared_ptr<Renderer> ConstructBitmapEx(LWFCore *lwf,
 		int objId, BitmapEx *bitmapEx) {return 0;}
-	shared_ptr<TextRenderer> ConstructText(LWF *lwf,
+	shared_ptr<TextRenderer> ConstructText(LWFCore *lwf,
 		int objId, Text *text) {return 0;}
-	shared_ptr<Renderer> ConstructParticle(LWF *lwf,
+	shared_ptr<Renderer> ConstructParticle(LWFCore *lwf,
 		int objId, Particle *particle) {return 0;}
-	void Init(LWF *lwf) {}
-	void BeginRender(LWF *lwf) {}
-	void EndRender(LWF *lwf) {}
+	void Init(LWFCore *lwf) {}
+	void BeginRender(LWFCore *lwf) {}
+	void EndRender(LWFCore *lwf) {}
 	void Destruct() {}
 	void SetBlendMode(int blendMode) {}
 	void SetMaskMode(int maskMode) {}
 
-	void FitForHeight(LWF *lwf, float w, float h) {}
-	void FitForWidth(LWF *lwf, float w, float h) {}
-	void ScaleForHeight(LWF *lwf, float w, float h) {}
-	void ScaleForWidth(LWF *lwf, float w, float h) {}
+	void FitForHeight(LWFCore *lwf, float w, float h) {}
+	void FitForWidth(LWFCore *lwf, float w, float h) {}
+	void ScaleForHeight(LWFCore *lwf, float w, float h) {}
+	void ScaleForWidth(LWFCore *lwf, float w, float h) {}
 };
 
 }	// namespace LWF

@@ -101,10 +101,10 @@ public:
 
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
-		setColor((cocos2d::Color3B){
+		setColor(cocos2d::Color3B(
 			(GLubyte)(c.red * m_red * dc.r),
 			(GLubyte)(c.green * m_green * dc.g),
-			(GLubyte)(c.blue * m_blue * dc.b)});
+			(GLubyte)(c.blue * m_blue * dc.b)));
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
@@ -133,7 +133,7 @@ public:
 };
 
 LWFTextBMFontRenderer::LWFTextBMFontRenderer(
-		LWF *l, Text *text, const char *fontName, cocos2d::LWFNode *node)
+		LWFCore *l, Text *text, const char *fontName, cocos2d::LWFNode *node)
 	: TextRenderer(l), m_label(0)
 {
 	const Format::Text &t = l->data->texts[text->objectId];

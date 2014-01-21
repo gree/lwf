@@ -23,7 +23,7 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Matrix;
 class Movie;
 class ColorTransform;
@@ -46,12 +46,12 @@ public:
 	static float GetGreen(const Movie *movie);
 	static float GetBlue(const Movie *movie);
 	static Matrix *CalcMatrix(
-		LWF *lwf, Matrix *dst, const Matrix *src0, int src1Id);
+		LWFCore *lwf, Matrix *dst, const Matrix *src0, int src1Id);
 	static Matrix *CalcMatrix(
 		Matrix *dst, const Matrix *src0, const Matrix *src1);
 	static Matrix *CopyMatrix(Matrix *dst, const Matrix *src);
 	static void InvertMatrix(Matrix *dst, const Matrix *src);
-	static ColorTransform *CalcColorTransform(LWF *lwf,
+	static ColorTransform *CalcColorTransform(LWFCore *lwf,
 		ColorTransform *dst, const ColorTransform *src0, int src1Id);
 	static ColorTransform *CalcColorTransform(ColorTransform *dst,
 		const ColorTransform *src0, const ColorTransform *src1);

@@ -32,12 +32,12 @@
 #include <utility>
 #include <vector>
 
-#if __cplusplus <= 199711L
-#include <boost/function.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#endif
+// #if __cplusplus <= 199711L
+// #include <boost/function.hpp>
+// #include <boost/make_shared.hpp>
+// #include <boost/scoped_ptr.hpp>
+// #include <boost/shared_ptr.hpp>
+// #endif
 
 namespace LWF {
 
@@ -50,25 +50,26 @@ using std::remove_if;
 using std::string;
 using std::vector;
 
-#if __cplusplus > 199711L
+//#if __cplusplus > 199711L
+/*#if __cplusplus == 201103L  */
 using std::function;
 using std::make_shared;
 using std::shared_ptr;
 using std::unique_ptr;
-#else
-using boost::function;
-using boost::make_shared;
-using boost::scoped_ptr;
-using boost::shared_ptr;
-#endif
+// #else
+// using boost::function;
+// using boost::make_shared;
+// using boost::scoped_ptr;
+// using boost::shared_ptr;
+// #endif
 
-class LWF;
+class LWFCore;
 class Object;
 class Movie;
 class Button;
 
 typedef function<void (Object *, int, int, int)> Inspector;
-typedef function<bool (LWF *)> DetachHandler;
+typedef function<bool (LWFCore *)> DetachHandler;
 typedef function<void (Movie *, Button *)> EventHandler;
 typedef vector<pair<int, EventHandler> > EventHandlerList;
 typedef function<void ()> PreloadCallback;

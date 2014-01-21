@@ -41,7 +41,7 @@ protected:
 
 public:
 	LWFTextTTFRenderer(
-		LWF *l, Text *text, const char *fontName, cocos2d::LWFNode *node);
+		LWFCore *l, Text *text, const char *fontName, cocos2d::LWFNode *node);
 	virtual ~LWFTextTTFRenderer();
 
 	void Destruct();

@@ -43,29 +43,29 @@ public:
 	}
 
 	shared_ptr<Renderer> ConstructBitmap(
-		LWF *lwf, int objId, Bitmap *bitmap);
+		LWFCore *lwf, int objId, Bitmap *bitmap);
 	shared_ptr<Renderer> ConstructBitmapEx(
-		LWF *lwf, int objId, BitmapEx *bitmapEx);
+		LWFCore *lwf, int objId, BitmapEx *bitmapEx);
 	shared_ptr<TextRenderer> ConstructText(
-		LWF *lwf, int objId, Text *text);
+		LWFCore *lwf, int objId, Text *text);
 	shared_ptr<Renderer> ConstructParticle(
-		LWF *lwf, int objId, Particle *particle);
+		LWFCore *lwf, int objId, Particle *particle);
 
-	void Init(LWF *lwf);
-	void BeginRender(LWF *lwf);
-	void EndRender(LWF *lwf);
+	void Init(LWFCore *lwf);
+	void BeginRender(LWFCore *lwf);
+	void EndRender(LWFCore *lwf);
 	void Destruct();
 	void SetBlendMode(int blendMode) {m_blendMode = blendMode;}
 	void SetMaskMode(int maskMode) {m_maskMode = maskMode;}
 	int GetBlendMode() {return m_blendMode;}
 	int GetMaskMode() {return m_maskMode;}
 
-	void FitForHeight(LWF *lwf, float w, float h);
-	void FitForWidth(LWF *lwf, float w, float h);
-	void ScaleForHeight(LWF *lwf, float w, float h);
-	void ScaleForWidth(LWF *lwf, float w, float h);
+	void FitForHeight(LWFCore *lwf, float w, float h);
+	void FitForWidth(LWFCore *lwf, float w, float h);
+	void ScaleForHeight(LWFCore *lwf, float w, float h);
+	void ScaleForWidth(LWFCore *lwf, float w, float h);
 };
 
-}	// namespace LWF
+}	// namespace LWFCore
 
 #endif

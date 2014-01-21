@@ -218,7 +218,7 @@ float Utility::GetBlue(const Movie *movie)
 }
 
 Matrix *Utility::CalcMatrix(
-	LWF *lwf, Matrix *dst, const Matrix *src0, int src1Id)
+	LWFCore *lwf, Matrix *dst, const Matrix *src0, int src1Id)
 {
 	if (src1Id == 0) {
 		dst->Set(src0);
@@ -296,7 +296,7 @@ void Utility::InvertMatrix(Matrix *dst, const Matrix *src)
 	}
 }
 
-ColorTransform *Utility::CalcColorTransform(LWF *lwf,
+ColorTransform *Utility::CalcColorTransform(LWFCore *lwf,
 	ColorTransform *dst, const ColorTransform *src0, int src1Id)
 {
 	if (src1Id == 0) {

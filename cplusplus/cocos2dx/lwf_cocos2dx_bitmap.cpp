@@ -145,10 +145,10 @@ public:
 		cocos2d::LWFNode *node = (cocos2d::LWFNode *)getParent();
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
-		setColor((cocos2d::Color3B){
+		setColor((cocos2d::Color3B(
 			(GLubyte)(c.red * dc.r),
 			(GLubyte)(c.green * dc.g),
-			(GLubyte)(c.blue * dc.b)});
+			(GLubyte)(c.blue * dc.b))));
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
@@ -183,7 +183,7 @@ public:
 };
 
 LWFBitmapRenderer::LWFBitmapRenderer(
-		LWF *l, Bitmap *bitmap, cocos2d::LWFNode *node)
+		LWFCore *l, Bitmap *bitmap, cocos2d::LWFNode *node)
 	: Renderer(l), m_sprite(0)
 {
 	const Format::Bitmap &b = l->data->bitmaps[bitmap->objectId];
@@ -213,7 +213,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 }
 
 LWFBitmapRenderer::LWFBitmapRenderer(
-		LWF *l, BitmapEx *bitmapEx, cocos2d::LWFNode *node)
+		LWFCore *l, BitmapEx *bitmapEx, cocos2d::LWFNode *node)
 	: Renderer(l), m_sprite(0)
 {
 	const Format::BitmapEx &bx = l->data->bitmapExs[bitmapEx->objectId];

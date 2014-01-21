@@ -127,7 +127,7 @@ bool ButtonEventHandlers::Add(
 		return false;
 	ButtonEventHandlerDictionary handlers;
 	handlers[type] = h;
-	Add(it->second, handlers, 0);
+	Add(it->second, handlers, nullptr);
 	return true;
 }
 
@@ -178,7 +178,7 @@ public:
 
 void ButtonEventHandlers::Call(Type type, Button *target)
 {
-	scoped_ptr<ButtonEventHandlerList>
+	unique_ptr<ButtonEventHandlerList>
 		p(new ButtonEventHandlerList(m_handlers[type]));
 	for_each(p->begin(), p->end(), Exec(target));
 }
@@ -198,7 +198,7 @@ public:
 
 void ButtonEventHandlers::CallKEYPRESS(Button *target, int code)
 {
-	scoped_ptr<ButtonKeyPressHandlerList>
+	unique_ptr<ButtonKeyPressHandlerList>
 		p(new ButtonKeyPressHandlerList(m_keyPressHandler));
 	for_each(p->begin(), p->end(), KExec(target, code));
 }

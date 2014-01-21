@@ -102,7 +102,7 @@ private:
 #endif
 
 public:
-	Movie(LWF *l, Movie *p, int objId, int instId, int mId = 0, int cId = 0,
+	Movie(LWFCore *l, Movie *p, int objId, int instId, int mId = 0, int cId = 0,
 		bool attached = false, const MovieEventHandlers *handler = 0,
 		string n = string());
 
@@ -203,14 +203,14 @@ public:
 	void DetachMovie(Movie *movie);
 	void DetachFromParent();
 
-	void AttachLWF(shared_ptr<LWF> attachLWF, string aName,
+	void AttachLWF(shared_ptr<LWFCore> attachLWF, string aName,
 		DetachHandler detachHandler, int aDepth = -1, bool reorder = false);
-	void AttachLWF(shared_ptr<LWF> attachLWF, string aName,
+	void AttachLWF(shared_ptr<LWFCore> attachLWF, string aName,
 		int aDepth = -1, bool reorder = false);
 	void SwapAttachedLWFDepth(int depth0, int depth1);
 	void DetachLWF(string aName);
 	void DetachLWF(int aDepth);
-	void DetachLWF(shared_ptr<LWF> detachLWF);
+	void DetachLWF(shared_ptr<LWFCore> detachLWF);
 	void DetachAllLWFs();
 
 private:

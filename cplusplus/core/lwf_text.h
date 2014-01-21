@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Movie;
 
 class Text : public Object
@@ -34,7 +34,7 @@ public:
 	string name;
 
 public:
-	Text(LWF *lwf, Movie *p, int objId, int instId = -1);
+	Text(LWFCore *lwf, Movie *p, int objId, int instId = -1);
 };
 
 }	// namespace LWF

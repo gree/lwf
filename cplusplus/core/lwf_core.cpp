@@ -24,14 +24,15 @@
 #include "lwf_property.h"
 #include "lwf_renderer.h"
 #include "lwf_utility.h"
+#include "CCStdC.h"
 
 namespace LWF {
 
-int LWF::m_instanceOffset = 0;
-int LWF::m_iObjectOffset = 0;
-float LWF::ROUND_OFF_TICK_RATE = 0.05f;
+int LWFCore::m_instanceOffset = 0;
+int LWFCore::m_iObjectOffset = 0;
+float LWFCore::ROUND_OFF_TICK_RATE = 0.05f;
 
-LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
+LWFCore::LWFCore(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	: data(d)
 {
 	property = make_shared<Property>(this);
@@ -90,13 +91,13 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	SetRendererFactory(r);
 }
 
-void LWF::SetRendererFactory(shared_ptr<IRendererFactory> r)
+void LWFCore::SetRendererFactory(shared_ptr<IRendererFactory> r)
 {
 	rendererFactory = r;
 	rendererFactory->Init(this);
 }
 
-void LWF::SetFrameRate(int f)
+void LWFCore::SetFrameRate(int f)
 {
 	if (f == 0)
 		return;
@@ -104,99 +105,99 @@ void LWF::SetFrameRate(int f)
 	tick = 1.0f / frameRate;
 }
 
-void LWF::SetPreferredFrameRate(int f, int eLimit)
+void LWFCore::SetPreferredFrameRate(int f, int eLimit)
 {
 	if (f == 0)
 		return;
 	execLimit = (int)ceilf(frameRate / (float)f) + eLimit;
 }
 
-void LWF::FitForHeight(float stageWidth, float stageHeight)
+void LWFCore::FitForHeight(float stageWidth, float stageHeight)
 {
 	rendererFactory->FitForHeight(this, stageWidth, stageHeight);
 }
 
-void LWF::FitForWidth(float stageWidth, float stageHeight)
+void LWFCore::FitForWidth(float stageWidth, float stageHeight)
 {
 	rendererFactory->FitForWidth(this, stageWidth, stageHeight);
 }
 
-void LWF::ScaleForHeight(float stageWidth, float stageHeight)
+void LWFCore::ScaleForHeight(float stageWidth, float stageHeight)
 {
 	rendererFactory->ScaleForHeight(this, stageWidth, stageHeight);
 }
 
-void LWF::ScaleForWidth(float stageWidth, float stageHeight)
+void LWFCore::ScaleForWidth(float stageWidth, float stageHeight)
 {
 	rendererFactory->ScaleForWidth(this, stageWidth, stageHeight);
 }
 
-void LWF::RenderOffset()
+void LWFCore::RenderOffset()
 {
 	renderingIndexOffsetted = 0;
 }
 
-void LWF::ClearRenderOffset()
+void LWFCore::ClearRenderOffset()
 {
 	renderingIndexOffsetted = renderingIndex;
 }
 
-int LWF::RenderObject(int count)
+int LWFCore::RenderObject(int count)
 {
 	renderingIndex += count;
 	renderingIndexOffsetted += count;
 	return renderingIndex;
 }
 
-void LWF::BeginBlendMode(int blendMode)
+void LWFCore::BeginBlendMode(int blendMode)
 {
 	m_blendModes.push_back(blendMode);
 	rendererFactory->SetBlendMode(blendMode);
 }
 
-void LWF::EndBlendMode()
+void LWFCore::EndBlendMode()
 {
 	m_blendModes.pop_back();
 	rendererFactory->SetBlendMode(m_blendModes.empty() ?
 		Format::BLEND_MODE_NORMAL : m_blendModes.back());
 }
 
-void LWF::BeginMaskMode(int maskMode)
+void LWFCore::BeginMaskMode(int maskMode)
 {
 	m_maskModes.push_back(maskMode);
 	rendererFactory->SetMaskMode(maskMode);
 }
 
-void LWF::EndMaskMode()
+void LWFCore::EndMaskMode()
 {
 	m_maskModes.pop_back();
 	rendererFactory->SetMaskMode(m_maskModes.empty() ?
 		Format::BLEND_MODE_NORMAL : m_maskModes.back());
 }
 
-void LWF::SetAttachVisible(bool visible)
+void LWFCore::SetAttachVisible(bool visible)
 {
 	attachVisible = visible;
 }
 
-void LWF::ClearFocus(Button *button)
+void LWFCore::ClearFocus(Button *button)
 {
 	if (focus == button)
 		focus = 0;
 }
 
-void LWF::ClearPressed(Button *button)
+void LWFCore::ClearPressed(Button *button)
 {
 	if (pressed == button)
 		pressed = 0;
 }
 
-void LWF::ClearIntercepted()
+void LWFCore::ClearIntercepted()
 {
 	intercepted = false;
 }
 
-void LWF::Init()
+void LWFCore::Init()
 {
 	time = 0;
 	m_progress = 0;
@@ -216,7 +217,7 @@ void LWF::Init()
 		data->header.rootMovieId, SearchInstanceId(m_rootMovieStringId));
 }
 
-const Matrix *LWF::CalcMatrix(const Matrix *matrix)
+const Matrix *LWFCore::CalcMatrix(const Matrix *matrix)
 {
 	const Matrix *m;
 	const shared_ptr<Property> &p = property;
@@ -232,7 +233,7 @@ const Matrix *LWF::CalcMatrix(const Matrix *matrix)
 	return m;
 }
 
-const ColorTransform *LWF::CalcColorTransform(
+const ColorTransform *LWFCore::CalcColorTransform(
 	const ColorTransform *colorTransform)
 {
 	const ColorTransform *c;
@@ -250,7 +251,7 @@ const ColorTransform *LWF::CalcColorTransform(
 	return c;
 }
 
-int LWF::Exec(
+int LWFCore::Exec(
 	float t, const Matrix *matrix, const ColorTransform *colorTransform)
 {
 	if (!playing)
@@ -322,18 +323,18 @@ int LWF::Exec(
 	return renderingCount;
 }
 
-int LWF::ForceExec(const Matrix *matrix, const ColorTransform *colorTransform)
+int LWFCore::ForceExec(const Matrix *matrix, const ColorTransform *colorTransform)
 {
 	return Exec(0, matrix, colorTransform);
 }
 
-int LWF::ForceExecWithoutProgress(
+int LWFCore::ForceExecWithoutProgress(
 	const Matrix *matrix, const ColorTransform *colorTransform)
 {
 	return Exec(-1, matrix, colorTransform);
 }
 
-void LWF::Update(const Matrix *matrix, const ColorTransform *colorTransform)
+void LWFCore::Update(const Matrix *matrix, const ColorTransform *colorTransform)
 {
 	++updateCount;
 	const Matrix *m = CalcMatrix(matrix);
@@ -345,7 +346,7 @@ void LWF::Update(const Matrix *matrix, const ColorTransform *colorTransform)
 	isPropertyDirty = false;
 }
 
-int LWF::Render(int rIndex, int rCount, int rOffset)
+int LWFCore::Render(int rIndex, int rCount, int rOffset)
 {
 	int renderingCountBackup = renderingCount;
 	if (rCount > 0)
@@ -363,7 +364,7 @@ int LWF::Render(int rIndex, int rCount, int rOffset)
 	return renderingCount;
 }
 
-int LWF::Inspect(Inspector inspector,
+int LWFCore::Inspect(Inspector inspector,
 	int hierarchy, int inspectDepth, int rIndex, int rCount, int rOffset)
 {
 	int renderingCountBackup = renderingCount;
@@ -381,7 +382,7 @@ int LWF::Inspect(Inspector inspector,
 	return renderingCount;
 }
 
-void LWF::Destroy()
+void LWFCore::Destroy()
 {
 	rootMovie->Destroy();
 #if defined(LWF_USE_LUA)
@@ -390,12 +391,12 @@ void LWF::Destroy()
 	alive = false;
 }
 
-Movie *LWF::SearchMovieInstance(int stringId) const
+Movie *LWFCore::SearchMovieInstance(int stringId) const
 {
 	return SearchMovieInstanceByInstanceId(SearchInstanceId(stringId));
 }
 
-Movie *LWF::SearchMovieInstance(string instanceName) const
+Movie *LWFCore::SearchMovieInstance(string instanceName) const
 {
 	size_t pos = instanceName.find(".");
 	if (pos != string::npos) {
@@ -420,12 +421,12 @@ Movie *LWF::SearchMovieInstance(string instanceName) const
 	return SearchMovieInstance(stringId);
 }
 
-Movie *LWF::operator[](string instanceName) const
+Movie *LWFCore::operator[](string instanceName) const
 {
 	return SearchMovieInstance(instanceName);
 }
 
-Movie *LWF::SearchMovieInstanceByInstanceId(int instId) const
+Movie *LWFCore::SearchMovieInstanceByInstanceId(int instId) const
 {
 	if (instId < 0 || instId >= (int)m_instances.size())
 		return 0;
@@ -438,12 +439,12 @@ Movie *LWF::SearchMovieInstanceByInstanceId(int instId) const
 	return 0;
 }
 
-Button *LWF::SearchButtonInstance(int stringId) const
+Button *LWFCore::SearchButtonInstance(int stringId) const
 {
 	return SearchButtonInstanceByInstanceId(SearchInstanceId(stringId));
 }
 
-Button *LWF::SearchButtonInstance(string instanceName) const
+Button *LWFCore::SearchButtonInstance(string instanceName) const
 {
 	size_t pos = instanceName.find(".");
 	if (pos != string::npos) {
@@ -472,7 +473,7 @@ Button *LWF::SearchButtonInstance(string instanceName) const
 	return SearchButtonInstance(stringId);
 }
 
-Button *LWF::SearchButtonInstanceByInstanceId(int instId) const
+Button *LWFCore::SearchButtonInstanceByInstanceId(int instId) const
 {
 	if (instId < 0 || instId >= (int)m_instances.size())
 		return 0;
@@ -485,40 +486,40 @@ Button *LWF::SearchButtonInstanceByInstanceId(int instId) const
 	return 0;
 }
 
-IObject *LWF::GetInstance(int instId) const
+IObject *LWFCore::GetInstance(int instId) const
 {
 	return m_instances[instId];
 }
 
-void LWF::SetInstance(int instId, IObject *instance)
+void LWFCore::SetInstance(int instId, IObject *instance)
 {
 	m_instances[instId] = instance;
 }
 
-ProgramObjectConstructor LWF::GetProgramObjectConstructor(
+ProgramObjectConstructor LWFCore::GetProgramObjectConstructor(
 	string programObjectName) const
 {
 	return GetProgramObjectConstructor(
 		SearchProgramObjectId(programObjectName));
 }
 
-ProgramObjectConstructor LWF::GetProgramObjectConstructor(
+ProgramObjectConstructor LWFCore::GetProgramObjectConstructor(
 	int programObjectId) const
 {
 	if (programObjectId < 0 ||
 			programObjectId >= (int)data->programObjects.size())
-		return 0;
+		return nullptr;
 	return m_programObjectConstructors[programObjectId];
 }
 
-void LWF::SetProgramObjectConstructor(string programObjectName,
+void LWFCore::SetProgramObjectConstructor(string programObjectName,
 	ProgramObjectConstructor programObjectConstructor)
 {
 	SetProgramObjectConstructor(
 		SearchProgramObjectId(programObjectName), programObjectConstructor);
 }
 
-void LWF::SetProgramObjectConstructor(int programObjectId,
+void LWFCore::SetProgramObjectConstructor(int programObjectId,
 	ProgramObjectConstructor programObjectConstructor)
 {
 	if (programObjectId < 0 ||
@@ -527,7 +528,7 @@ void LWF::SetProgramObjectConstructor(int programObjectId,
 	m_programObjectConstructors[programObjectId] = programObjectConstructor;
 }
 
-void LWF::ExecMovieCommand()
+void LWFCore::ExecMovieCommand()
 {
 	if (m_movieCommands.empty())
 		return;
@@ -564,13 +565,13 @@ void LWF::ExecMovieCommand()
 	}
 }
 
-void LWF::SetMovieCommand(vector<string> instanceNames, MovieCommand cmd)
+void LWFCore::SetMovieCommand(vector<string> instanceNames, MovieCommand cmd)
 {
 	m_movieCommands.push_back(make_pair(instanceNames, cmd));
 	ExecMovieCommand();
 }
 
-bool LWF::AddAllowButton(string buttonName)
+bool LWFCore::AddAllowButton(string buttonName)
 {
 	int instId = SearchInstanceId(GetStringId(buttonName));
 	if (instId < 0)
@@ -580,7 +581,7 @@ bool LWF::AddAllowButton(string buttonName)
 	return true;
 }
 
-bool LWF::RemoveAllowButton(string buttonName)
+bool LWFCore::RemoveAllowButton(string buttonName)
 {
 	int instId = SearchInstanceId(GetStringId(buttonName));
 	if (instId < 0)
@@ -589,12 +590,12 @@ bool LWF::RemoveAllowButton(string buttonName)
 	return m_allowButtonList.erase(instId) != 0;
 }
 
-void LWF::ClearAllowButton()
+void LWFCore::ClearAllowButton()
 {
 	m_allowButtonList.clear();
 }
 
-bool LWF::AddDenyButton(string buttonName)
+bool LWFCore::AddDenyButton(string buttonName)
 {
 	int instId = SearchInstanceId(GetStringId(buttonName));
 	if (instId < 0)
@@ -604,13 +605,13 @@ bool LWF::AddDenyButton(string buttonName)
 	return true;
 }
 
-void LWF::DenyAllButtons()
+void LWFCore::DenyAllButtons()
 {
 	for (size_t instId = 0; instId < m_instances.size(); ++instId)
 		m_denyButtonList[(int)instId] = true;
 }
 
-bool LWF::RemoveDenyButton(string buttonName)
+bool LWFCore::RemoveDenyButton(string buttonName)
 {
 	int instId = SearchInstanceId(GetStringId(buttonName));
 	if (instId < 0)
@@ -619,30 +620,30 @@ bool LWF::RemoveDenyButton(string buttonName)
 	return m_denyButtonList.erase(instId) != 0;
 }
 
-void LWF::ClearDenyButton()
+void LWFCore::ClearDenyButton()
 {
 	m_denyButtonList.clear();
 }
 
-void LWF::DisableExec()
+void LWFCore::DisableExec()
 {
 	isExecDisabled = true;
 	m_executedForExecDisabled = false;
 }
 
-void LWF::EnableExec()
+void LWFCore::EnableExec()
 {
 	isExecDisabled = false;
 }
 
-void LWF::SetPropertyDirty()
+void LWFCore::SetPropertyDirty()
 {
 	isPropertyDirty = true;
 	if (parent)
 		parent->lwf->SetPropertyDirty();
 }
 
-int LWF::AddExecHandler(ExecHandler execHandler)
+int LWFCore::AddExecHandler(ExecHandler execHandler)
 {
 	int id = GetEventOffset();
 	m_execHandlers.push_back(make_pair(id, execHandler));
@@ -661,25 +662,25 @@ public:
 	}
 };
 
-void LWF::RemoveExecHandler(int id)
+void LWFCore::RemoveExecHandler(int id)
 {
 	if (m_execHandlers.empty())
 		return;
 	remove_if(m_execHandlers.begin(), m_execHandlers.end(), Pred(id));
 }
 
-void LWF::ClearExecHandler()
+void LWFCore::ClearExecHandler()
 {
 	m_execHandlers.clear();
 }
 
-int LWF::SetExecHandler(ExecHandler execHandler)
+int LWFCore::SetExecHandler(ExecHandler execHandler)
 {
 	ClearExecHandler();
 	return AddExecHandler(execHandler);
 }
 
-void LWF::SetText(string textName, string text)
+void LWFCore::SetText(string textName, string text)
 {
 	TextDictionary::iterator it = m_textDictionary.find(textName);
 	if (it == m_textDictionary.end()) {
@@ -691,7 +692,7 @@ void LWF::SetText(string textName, string text)
 	}
 }
 
-string LWF::GetText(string textName)
+string LWFCore::GetText(string textName)
 {
 	TextDictionary::iterator it = m_textDictionary.find(textName);
 	if (it != m_textDictionary.end())
@@ -699,7 +700,7 @@ string LWF::GetText(string textName)
 	return string();
 }
 
-void LWF::SetTextRenderer(string fullPath,
+void LWFCore::SetTextRenderer(string fullPath,
 	string textName, string text, TextRenderer *textRenderer)
 {
 	bool setText = false;
@@ -730,7 +731,7 @@ void LWF::SetTextRenderer(string fullPath,
 		textRenderer->SetText(text);
 }
 
-void LWF::ClearTextRenderer(string textName)
+void LWFCore::ClearTextRenderer(string textName)
 {
 	TextDictionary::iterator it = m_textDictionary.find(textName);
 	if (it != m_textDictionary.end())

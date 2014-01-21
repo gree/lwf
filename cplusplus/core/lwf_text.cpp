@@ -26,7 +26,7 @@
 
 namespace LWF {
 
-Text::Text(LWF *lwf, Movie *p, int objId, int instId)
+Text::Text(LWFCore *lwf, Movie *p, int objId, int instId)
 	: Object(lwf, p, Format::Object::TEXT, objId)
 {
 	const Format::Text &text = lwf->data->texts[objId];

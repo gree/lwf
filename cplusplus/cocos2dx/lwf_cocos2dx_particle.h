@@ -37,7 +37,7 @@ protected:
 	LWFParticle *m_particle;
 
 public:
-	LWFParticleRenderer(LWF *l, Particle *particle, cocos2d::LWFNode *node);
+	LWFParticleRenderer(LWFCore *l, Particle *particle, cocos2d::LWFNode *node);
 	virtual ~LWFParticleRenderer();
 
 	void Destruct();

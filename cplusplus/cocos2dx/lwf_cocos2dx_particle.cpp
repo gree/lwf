@@ -73,7 +73,7 @@ public:
 };
 
 LWFParticleRenderer::LWFParticleRenderer(
-		LWF *l, Particle *particle, cocos2d::LWFNode *node)
+		LWFCore *l, Particle *particle, cocos2d::LWFNode *node)
 	: Renderer(l), m_particle(0)
 {
 	const Format::Particle &p = l->data->particles[particle->objectId];

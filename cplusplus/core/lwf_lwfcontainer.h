@@ -25,16 +25,16 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Movie;
 
 class LWFContainer : public Button
 {
 public:
-	shared_ptr<LWF> child;
+	shared_ptr<LWFCore> child;
 
 public:
-	LWFContainer(Movie *p, shared_ptr<LWF> c);
+	LWFContainer(Movie *p, shared_ptr<LWFCore> c);
 	bool CheckHit(float px, float py);
 	void RollOver();
 	void RollOut();

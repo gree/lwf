@@ -28,7 +28,7 @@ namespace LWF {
 typedef ButtonEventHandlers EventType;
 typedef Format::ButtonCondition Condition;
 
-Button::Button(LWF *l, Movie *p, int objId, int instId, int mId, int cId)
+Button::Button(LWFCore *l, Movie *p, int objId, int instId, int mId, int cId)
 	: IObject(l, p, Format::Object::BUTTON, objId, instId)
 {
 	matrixId = mId;

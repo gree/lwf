@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-IObject::IObject(LWF *lwf, Movie *p, int t, int objId, int instId)
+IObject::IObject(LWFCore *lwf, Movie *p, int t, int objId, int instId)
 	: Object(lwf, p, t, objId)
 {
 	alive = true;

@@ -24,14 +24,14 @@
 
 namespace LWF {
 
-int LWF::GetInstanceNameStringId(int instId) const
+int LWFCore::GetInstanceNameStringId(int instId) const
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return -1;
 	return data->instanceNames[instId].stringId;
 }
 
-int LWF::GetStringId(string str) const
+int LWFCore::GetStringId(string str) const
 {
 	map<string, int>::const_iterator it(data->stringMap.find(str));
 	if (it != data->stringMap.end())
@@ -40,7 +40,7 @@ int LWF::GetStringId(string str) const
 		return -1;
 }
 
-int LWF::SearchInstanceId(int stringId) const
+int LWFCore::SearchInstanceId(int stringId) const
 {
 	if (stringId < 0 || stringId >= (int)data->strings.size())
 		return -1;
@@ -52,12 +52,12 @@ int LWF::SearchInstanceId(int stringId) const
 		return -1;
 }
 
-int LWF::SearchFrame(const Movie *movie, string label) const
+int LWFCore::SearchFrame(const Movie *movie, string label) const
 {
 	return SearchFrame(movie, GetStringId(label));
 }
 
-int LWF::SearchFrame(const Movie *movie, int stringId) const
+int LWFCore::SearchFrame(const Movie *movie, int stringId) const
 {
 	if (stringId < 0 || stringId >= (int)data->strings.size())
 		return -1;
@@ -70,7 +70,7 @@ int LWF::SearchFrame(const Movie *movie, int stringId) const
 		return -1;
 }
 
-const map<int, int> *LWF::GetMovieLabels(string linkageName) const
+const map<int, int> *LWFCore::GetMovieLabels(string linkageName) const
 {
 	int objectId = SearchMovieLinkage(GetStringId(linkageName));
 	if (objectId < 0)
@@ -78,14 +78,14 @@ const map<int, int> *LWF::GetMovieLabels(string linkageName) const
 	return &data->labelMap[objectId];
 }
 
-const map<int, int> *LWF::GetMovieLabels(const Movie *movie) const
+const map<int, int> *LWFCore::GetMovieLabels(const Movie *movie) const
 {
 	if (!movie)
 		return 0;
 	return &data->labelMap[movie->objectId];
 }
 
-int LWF::SearchMovieLinkage(int stringId) const
+int LWFCore::SearchMovieLinkage(int stringId) const
 {
 	if (stringId < 0 || stringId >= (int)data->strings.size())
 		return -1;
@@ -97,7 +97,7 @@ int LWF::SearchMovieLinkage(int stringId) const
 		return -1;
 }
 
-string LWF::GetMovieLinkageName(int movieId) const
+string LWFCore::GetMovieLinkageName(int movieId) const
 {
 	map<int, int>::const_iterator it = data->movieLinkageNameMap.find(movieId);
 	if (it != data->movieLinkageNameMap.end())
@@ -106,12 +106,12 @@ string LWF::GetMovieLinkageName(int movieId) const
 		return string();
 }
 
-int LWF::SearchEventId(string eventName) const
+int LWFCore::SearchEventId(string eventName) const
 {
 	return SearchEventId(GetStringId(eventName));
 }
 
-int LWF::SearchEventId(int stringId) const
+int LWFCore::SearchEventId(int stringId) const
 {
 	if (stringId < 0 || stringId >= (int)data->strings.size())
 		return -1;
@@ -123,12 +123,12 @@ int LWF::SearchEventId(int stringId) const
 		return -1;
 }
 
-int LWF::SearchProgramObjectId(string programObjectName) const
+int LWFCore::SearchProgramObjectId(string programObjectName) const
 {
 	return SearchProgramObjectId(GetStringId(programObjectName));
 }
 
-int LWF::SearchProgramObjectId(int stringId) const
+int LWFCore::SearchProgramObjectId(int stringId) const
 {
 	if (stringId < 0 || stringId >= (int)data->strings.size())
 		return -1;

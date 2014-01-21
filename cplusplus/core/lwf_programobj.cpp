@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-ProgramObject::ProgramObject(LWF *l, Movie *p, int objId)
+ProgramObject::ProgramObject(LWFCore *l, Movie *p, int objId)
 	: Object(l, p, Format::Object::PROGRAMOBJECT, objId)
 {
 	const ProgramObjectConstructor ctor =

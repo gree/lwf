@@ -23,10 +23,13 @@
 
 #include "CCSprite.h"
 #include "lwf_type.h"
+#include "lwf_core.h"
 
 namespace LWF {
-class LWF;
+class LWFCore;
 }
+
+
 
 NS_CC_BEGIN
 
@@ -35,7 +38,7 @@ class EventListenerTouchOneByOne;
 class LWFNode : public Sprite
 {
 public:
-	LWF::shared_ptr<LWF::LWF> lwf;
+	LWF::shared_ptr<LWF::LWFCore> lwf;
 	LWF::string basePath;
 
 private:
@@ -52,7 +55,7 @@ public:
 
     bool initWithLWFFile(const std::string &filename, void *l = 0);
 
-	virtual LWF::shared_ptr<LWF::LWF> attachLWF(
+	LWF::shared_ptr<LWF::LWFCore> attachLWF(
 		const char *pszFilename, const char *pszTarget,
 		const char *pszAttachName);
 

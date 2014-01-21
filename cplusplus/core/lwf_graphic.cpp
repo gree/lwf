@@ -30,7 +30,7 @@ namespace LWF {
 
 typedef Format::GraphicObject GType;
 
-Graphic::Graphic(LWF *l, Movie *p, int objId)
+Graphic::Graphic(LWFCore *l, Movie *p, int objId)
 	: Object(l, p, Format::Object::GRAPHIC, objId)
 {
 	const Format::Graphic &data = lwf->data->graphics[objId];

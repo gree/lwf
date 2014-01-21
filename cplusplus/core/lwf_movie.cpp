@@ -39,7 +39,7 @@ namespace LWF {
 typedef ButtonEventHandlers BEType;
 typedef MovieEventHandlers METype;
 
-Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
+Movie::Movie(LWFCore *l, Movie *p, int objId, int instId, int mId, int cId,
 		bool attached, const MovieEventHandlers *handler, string n)
 	: IObject(l, p,
 		attached ? OType::ATTACHEDMOVIE : OType::MOVIE, objId, instId)
@@ -636,7 +636,7 @@ void Movie::Render(bool v, int rOffset)
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
 			if (it->second) {
-				LWF *child = it->second->child.get();
+				LWFCore *child = it->second->child.get();
 				child->SetAttachVisible(v);
 				lwf->RenderObject(child->Render(lwf->renderingIndex,
 					lwf->renderingCount, rOffset));
@@ -815,7 +815,7 @@ Movie *Movie::SearchMovieInstance(string instanceName, bool recursive) const
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
 			if (it->second) {
-				LWF *child = it->second->child.get();
+				LWFCore *child = it->second->child.get();
 				if (child->attachName == instanceName) {
 					return child->rootMovie.get();
 				} else if (recursive) {
@@ -896,7 +896,7 @@ Button *Movie::SearchButtonInstance(string instanceName, bool recursive) const
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
 			if (it->second) {
-				LWF *child = it->second->child.get();
+				LWFCore *child = it->second->child.get();
 				Button *button = child->rootMovie->SearchButtonInstance(
 					instanceName, recursive);
 				if (button)
@@ -1009,7 +1009,7 @@ void Movie::DispatchEvent(string eventName)
 	if (m_handler.Call(eventName, this))
 		return;
 
-	scoped_ptr<MovieEventHandlerList> list(
+	unique_ptr<MovieEventHandlerList> list(
 		new MovieEventHandlerList(m_eventHandlers[eventName]));
 	MovieEventHandlerList::iterator it(list->begin()), itend(list->end());
 	for (; it != itend; ++it)

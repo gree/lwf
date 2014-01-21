@@ -34,7 +34,7 @@ private:
 	DisplayList m_displayList;
 
 public:
-	Graphic(LWF *l, Movie *p, int objId);
+	Graphic(LWFCore *l, Movie *p, int objId);
 	void Update(const Matrix *m, const ColorTransform *c);
 	void Render(bool v, int rOffset);
 	void Destroy();
