@@ -27,11 +27,12 @@
 #include "lwf_data.h"
 #include "lwf_movie.h"
 
-using LWFData = ::LWF::Data;
+typedef LWF::Data LWFData;
+
 
 NS_CC_BEGIN;
 
-using namespace LWF;
+
 
 LWFNode *LWFNode::create(const char *pszFileName, void *l)
 {
@@ -96,27 +97,27 @@ bool LWFNode::initWithLWFFile(const string &path, void *l)
 
 	shared_ptr<LWFRendererFactory> factory =
 		make_shared<LWFRendererFactory>(this);
-	lwf = make_shared<class LWF>(data, factory, l);
+	lwf = make_shared<class LWFCore>(data, factory, l);
 
 	scheduleUpdate();
 
 	return true;
 }
 
-shared_ptr<class LWF> LWFNode::attachLWF(
+shared_ptr<class LWFCore> LWFNode::attachLWF(
 	const char *pszFilename, const char *pszTarget, const char *pszAttachName)
 {
 	if (!lwf)
-		return shared_ptr<class LWF>();
+		return shared_ptr<class LWFCore>();
 
 	shared_ptr<LWFData> data =
-		LWFResourceCache::sharedLWFResourceCache()->loadLWFData(pszFilename);
+		LWFResourceCache::sharedLWFResourceCache()->loadLWFData(std::string(pszFilename));
 	if (!data)
-		return shared_ptr<class LWF>();
+		return shared_ptr<class LWFCore>();
 
 	shared_ptr<LWFRendererFactory> factory =
 		make_shared<LWFRendererFactory>(this);
-	shared_ptr<class LWF> child = make_shared<class LWF>(data, factory);
+	shared_ptr<class LWFCore> child = make_shared<class LWFCore>(data, factory);
 	if (!child) {
 		LWFResourceCache::sharedLWFResourceCache()->unloadLWFData(data);
 		return child;
@@ -125,7 +126,7 @@ shared_ptr<class LWF> LWFNode::attachLWF(
 	Movie *movie = lwf->SearchMovieInstance(pszTarget);
 	if (!movie) {
 		LWFResourceCache::sharedLWFResourceCache()->unloadLWFData(data);
-		return shared_ptr<class LWF>();
+		return shared_ptr<class LWFCore>();
 	}
 
 	movie->AttachLWF(child, pszAttachName);

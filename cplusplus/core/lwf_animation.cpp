@@ -26,7 +26,7 @@
 
 namespace LWF {
 
-void LWF::PlayAnimation(int animationId, Movie *movie, Button *button)
+void LWFCore::PlayAnimation(int animationId, Movie *movie, Button *button)
 {
 	int i = 0;
 	const vector<int> &animations = data->animations[animationId];

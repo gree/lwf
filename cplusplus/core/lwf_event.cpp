@@ -26,14 +26,14 @@
 
 namespace LWF {
 
-void LWF::InitEvent()
+void LWFCore::InitEvent()
 {
 	m_eventHandlers.resize(data->events.size());
 	m_movieEventHandlers.resize(data->instanceNames.size());
 	m_buttonEventHandlers.resize(data->instanceNames.size());
 }
 
-int LWF::AddEventHandler(string eventName, EventHandler eventHandler)
+int LWFCore::AddEventHandler(string eventName, EventHandler eventHandler)
 {
 	int eventId = SearchEventId(eventName);
 	int id;
@@ -52,7 +52,7 @@ int LWF::AddEventHandler(string eventName, EventHandler eventHandler)
 	return id;
 }
 
-int LWF::AddEventHandler(int eventId, EventHandler eventHandler)
+int LWFCore::AddEventHandler(int eventId, EventHandler eventHandler)
 {
 	if (eventId < 0 || eventId >= (int)data->events.size())
 		return -1;
@@ -73,7 +73,7 @@ public:
 	}
 };
 
-void LWF::RemoveEventHandler(string eventName, int id)
+void LWFCore::RemoveEventHandler(string eventName, int id)
 {
 	if (id < 0)
 		return;
@@ -88,7 +88,7 @@ void LWF::RemoveEventHandler(string eventName, int id)
 	}
 }
 
-void LWF::RemoveEventHandler(int eventId, int id)
+void LWFCore::RemoveEventHandler(int eventId, int id)
 {
 	if (id < 0)
 		return;
@@ -98,7 +98,7 @@ void LWF::RemoveEventHandler(int eventId, int id)
 	remove_if(list.begin(), list.end(), Pred(id));
 }
 
-void LWF::ClearEventHandler(string eventName)
+void LWFCore::ClearEventHandler(string eventName)
 {
 	int eventId = SearchEventId(eventName);
 	if (eventId >= 0 && eventId < (int)data->events.size()) {
@@ -108,25 +108,25 @@ void LWF::ClearEventHandler(string eventName)
 	}
 }
 
-void LWF::ClearEventHandler(int eventId)
+void LWFCore::ClearEventHandler(int eventId)
 {
 	if (eventId < 0 || eventId >= (int)data->events.size())
 		return;
 	m_eventHandlers[eventId].clear();
 }
 
-int LWF::SetEventHandler(string eventName, EventHandler eventHandler)
+int LWFCore::SetEventHandler(string eventName, EventHandler eventHandler)
 {
 	return SetEventHandler(SearchEventId(eventName), eventHandler);
 }
 
-int LWF::SetEventHandler(int eventId, EventHandler eventHandler)
+int LWFCore::SetEventHandler(int eventId, EventHandler eventHandler)
 {
 	ClearEventHandler(eventId);
 	return AddEventHandler(eventId, eventHandler);
 }
 
-void LWF::DispatchEvent(string eventName, Movie *m, Button *b)
+void LWFCore::DispatchEvent(string eventName, Movie *m, Button *b)
 {
 	if (m == 0)
 		m = rootMovie.get();
@@ -142,14 +142,14 @@ void LWF::DispatchEvent(string eventName, Movie *m, Button *b)
 	}
 
 	if (list && !list->empty()) {
-		scoped_ptr<EventHandlerList> l(new EventHandlerList(*list));
+		unique_ptr<EventHandlerList> l(new EventHandlerList(*list));
 		EventHandlerList::iterator it(l->begin()), itend(l->end());
 		for (; it != itend; ++it)
 			it->second(m, b);
 	}
 }
 
-MovieEventHandlers *LWF::GetMovieEventHandlers(const Movie *m)
+MovieEventHandlers *LWFCore::GetMovieEventHandlers(const Movie *m)
 {
 	if (!m_movieEventHandlersByFullName.empty()) {
 		string fullName = m->GetFullName();
@@ -167,7 +167,7 @@ MovieEventHandlers *LWF::GetMovieEventHandlers(const Movie *m)
 	return &m_movieEventHandlers[instId];
 }
 
-int LWF::AddMovieEventHandler(
+int LWFCore::AddMovieEventHandler(
 	string instanceName, const MovieEventHandlerDictionary &h)
 {
 	if (h.empty())
@@ -196,7 +196,7 @@ int LWF::AddMovieEventHandler(
 	return id;
 }
 
-int LWF::AddMovieEventHandler(
+int LWFCore::AddMovieEventHandler(
 	int instId, const MovieEventHandlerDictionary &h)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
@@ -212,7 +212,7 @@ int LWF::AddMovieEventHandler(
 	return id;
 }
 
-void LWF::RemoveMovieEventHandler(string instanceName, int id)
+void LWFCore::RemoveMovieEventHandler(string instanceName, int id)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -231,7 +231,7 @@ void LWF::RemoveMovieEventHandler(string instanceName, int id)
 	it->second.Remove(id);
 }
 
-void LWF::RemoveMovieEventHandler(int instId, int id)
+void LWFCore::RemoveMovieEventHandler(int instId, int id)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -239,7 +239,7 @@ void LWF::RemoveMovieEventHandler(int instId, int id)
 	m_movieEventHandlers[instId].Remove(id);
 }
 
-void LWF::ClearMovieEventHandler(string instanceName)
+void LWFCore::ClearMovieEventHandler(string instanceName)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -258,7 +258,7 @@ void LWF::ClearMovieEventHandler(string instanceName)
 	it->second.Clear();
 }
 
-void LWF::ClearMovieEventHandler(int instId)
+void LWFCore::ClearMovieEventHandler(int instId)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -266,7 +266,7 @@ void LWF::ClearMovieEventHandler(int instId)
 	m_movieEventHandlers[instId].Clear();
 }
 
-void LWF::ClearMovieEventHandler(string instanceName, string type)
+void LWFCore::ClearMovieEventHandler(string instanceName, string type)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -285,7 +285,7 @@ void LWF::ClearMovieEventHandler(string instanceName, string type)
 	it->second.Clear(type);
 }
 
-void LWF::ClearMovieEventHandler(int instId, string type)
+void LWFCore::ClearMovieEventHandler(int instId, string type)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -293,20 +293,20 @@ void LWF::ClearMovieEventHandler(int instId, string type)
 	m_movieEventHandlers[instId].Clear(type);
 }
 
-void LWF::SetMovieEventHandler(
+void LWFCore::SetMovieEventHandler(
 	string instanceName, const MovieEventHandlerDictionary &h)
 {
 	ClearMovieEventHandler(instanceName);
 	AddMovieEventHandler(instanceName, h);
 }
 
-void LWF::SetMovieEventHandler(int instId, const MovieEventHandlerDictionary &h)
+void LWFCore::SetMovieEventHandler(int instId, const MovieEventHandlerDictionary &h)
 {
 	ClearMovieEventHandler(instId);
 	AddMovieEventHandler(instId, h);
 }
 
-ButtonEventHandlers *LWF::GetButtonEventHandlers(const Button *b)
+ButtonEventHandlers *LWFCore::GetButtonEventHandlers(const Button *b)
 {
 	if (!m_buttonEventHandlersByFullName.empty()) {
 		string fullName = b->GetFullName();
@@ -324,7 +324,7 @@ ButtonEventHandlers *LWF::GetButtonEventHandlers(const Button *b)
 	return &m_buttonEventHandlers[instId];
 }
 
-int LWF::AddButtonEventHandler(string instanceName,
+int LWFCore::AddButtonEventHandler(string instanceName,
 	const ButtonEventHandlerDictionary &h, ButtonKeyPressHandler kh)
 {
 	if (h.empty())
@@ -353,7 +353,7 @@ int LWF::AddButtonEventHandler(string instanceName,
 	return id;
 }
 
-int LWF::AddButtonEventHandler(
+int LWFCore::AddButtonEventHandler(
 	int instId, const ButtonEventHandlerDictionary &h, ButtonKeyPressHandler kh)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
@@ -369,7 +369,7 @@ int LWF::AddButtonEventHandler(
 	return id;
 }
 
-void LWF::RemoveButtonEventHandler(string instanceName, int id)
+void LWFCore::RemoveButtonEventHandler(string instanceName, int id)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -388,7 +388,7 @@ void LWF::RemoveButtonEventHandler(string instanceName, int id)
 	it->second.Remove(id);
 }
 
-void LWF::RemoveButtonEventHandler(int instId, int id)
+void LWFCore::RemoveButtonEventHandler(int instId, int id)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -396,7 +396,7 @@ void LWF::RemoveButtonEventHandler(int instId, int id)
 	m_buttonEventHandlers[instId].Remove(id);
 }
 
-void LWF::ClearButtonEventHandler(string instanceName)
+void LWFCore::ClearButtonEventHandler(string instanceName)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -415,7 +415,7 @@ void LWF::ClearButtonEventHandler(string instanceName)
 	it->second.Clear();
 }
 
-void LWF::ClearButtonEventHandler(int instId)
+void LWFCore::ClearButtonEventHandler(int instId)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -423,7 +423,7 @@ void LWF::ClearButtonEventHandler(int instId)
 	m_buttonEventHandlers[instId].Clear();
 }
 
-void LWF::ClearButtonEventHandler(string instanceName, string type)
+void LWFCore::ClearButtonEventHandler(string instanceName, string type)
 {
 	int instId = SearchInstanceId(GetStringId(instanceName));
 	if (instId >= 0) {
@@ -442,7 +442,7 @@ void LWF::ClearButtonEventHandler(string instanceName, string type)
 	it->second.Clear(type);
 }
 
-void LWF::ClearButtonEventHandler(int instId, string type)
+void LWFCore::ClearButtonEventHandler(int instId, string type)
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return;
@@ -450,21 +450,21 @@ void LWF::ClearButtonEventHandler(int instId, string type)
 	m_buttonEventHandlers[instId].Clear(type);
 }
 
-void LWF::SetButtonEventHandler(string instanceName,
+void LWFCore::SetButtonEventHandler(string instanceName,
 	const ButtonEventHandlerDictionary &h, ButtonKeyPressHandler kh)
 {
 	ClearButtonEventHandler(instanceName);
 	AddButtonEventHandler(instanceName, h, kh);
 }
 
-void LWF::SetButtonEventHandler(int instId,
+void LWFCore::SetButtonEventHandler(int instId,
 	const ButtonEventHandlerDictionary &h, ButtonKeyPressHandler kh)
 {
 	ClearButtonEventHandler(instId);
 	AddButtonEventHandler(instId, h, kh);
 }
 
-void LWF::ClearAllEventHandlers()
+void LWFCore::ClearAllEventHandlers()
 {
 	m_eventHandlers.clear();
 	m_movieEventHandlers.clear();

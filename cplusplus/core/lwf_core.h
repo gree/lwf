@@ -36,6 +36,8 @@ class ProgramObject;
 class Property;
 class Renderer;
 class TextRenderer;
+class LWFCore;
+
 
 typedef function<shared_ptr<Renderer> (ProgramObject *, int, int, int)>
 	ProgramObjectConstructor;
@@ -48,13 +50,13 @@ typedef function<void (Movie *)> MovieCommand;
 typedef vector<pair<vector<string>, MovieCommand> > MovieCommands;
 typedef map<int, bool> AllowButtonList;
 typedef map<int, bool> DenyButtonList;
-typedef function<void (LWF *)> ExecHandler;
+typedef function<void (LWFCore *)> ExecHandler;
 typedef vector<pair<int, ExecHandler> > ExecHandlerList;
 typedef map<string, pair<string, TextRenderer *> > TextDictionary;
 typedef map<int, bool> EventFunctions;
 typedef vector<int> RenderingModes;
 
-class LWF
+class LWFCore
 {
 public:
 	enum TweenMode {
@@ -144,7 +146,7 @@ private:
 	int m_eventOffset;
 
 public:
-	LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l = 0);
+	LWFCore(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l = 0);
 
 	void SetRendererFactory(shared_ptr<IRendererFactory> r);
 	void SetFrameRate(int f);

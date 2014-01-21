@@ -25,12 +25,12 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 
 class Property
 {
 public:
-	LWF *lwf;
+	LWFCore *lwf;
 	Matrix matrix;
 	ColorTransform colorTransform;
 	int renderingOffset;
@@ -42,7 +42,7 @@ public:
 	float rotation;
 
 public:
-	Property(LWF *l);
+	Property(LWFCore *l);
 	void Clear();
 	void Move(float x, float y);
 	void MoveTo(float x, float y);

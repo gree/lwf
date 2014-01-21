@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-Object::Object(LWF *l, Movie *p, int t, int objId)
+Object::Object(LWFCore *l, Movie *p, int t, int objId)
 {
 	lwf = l;
 	parent = p;

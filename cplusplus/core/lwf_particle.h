@@ -25,13 +25,13 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Movie;
 
 class Particle : public Object
 {
 public:
-	Particle(LWF *lwf, Movie *p, int objId);
+	Particle(LWFCore *lwf, Movie *p, int objId);
 };
 
 }	// namespace LWF

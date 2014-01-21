@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-Particle::Particle(LWF *lwf, Movie *p, int objId)
+Particle::Particle(LWFCore *lwf, Movie *p, int objId)
 	: Object(lwf, p, Format::Object::PARTICLE, objId)
 {
 	dataMatrixId = lwf->data->particles[objId].matrixId;

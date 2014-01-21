@@ -39,8 +39,8 @@ protected:
 	LWFBitmap *m_sprite;
 
 public:
-	LWFBitmapRenderer(LWF *l, Bitmap *bitmap, cocos2d::LWFNode *node);
-	LWFBitmapRenderer(LWF *l, BitmapEx *bitmapEx, cocos2d::LWFNode *node);
+	LWFBitmapRenderer(LWFCore *l, Bitmap *bitmap, cocos2d::LWFNode *node);
+	LWFBitmapRenderer(LWFCore *l, BitmapEx *bitmapEx, cocos2d::LWFNode *node);
 
 	void Destruct();
 	void Update(const Matrix *matrix, const ColorTransform *colorTransform);
@@ -48,6 +48,6 @@ public:
 		int renderingIndex, int renderingCount, bool visible);
 };
 
-}   // namespace LWF
+}   // namespace LWFCore
 
 #endif

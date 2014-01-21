@@ -63,7 +63,7 @@ Movie *Movie::AttachMovie(string linkageName, string aName,
 
 	MovieEventHandlers handlers;
 	handlers.Add(lwf->GetEventOffset(), h);
-	shared_ptr<Movie> movie = make_shared<Movie>(
+	shared_ptr<Movie> movie = std::make_shared<Movie>(
 		lwf, this, movieId, -1, 0, 0, true, &handlers, aName);
 	if (m_attachMovieExeced)
 		movie->Exec();
@@ -184,7 +184,7 @@ void Movie::DeleteAttachedLWF(Movie *p, shared_ptr<LWFContainer> lwfContainer,
 	if (deleteFromDetachedLWFs)
 		p->m_detachedLWFs.erase(aName);
 	if (destroy) {
-		LWF *l = lwfContainer->child.get();
+		LWFCore *l = lwfContainer->child.get();
 		if (l->detachHandler) {
 			if (l->detachHandler(l))
 				l->Destroy();
@@ -192,14 +192,14 @@ void Movie::DeleteAttachedLWF(Movie *p, shared_ptr<LWFContainer> lwfContainer,
 			l->Destroy();
 		}
 		l->parent = 0;
-		l->detachHandler = 0;
+		l->detachHandler = nullptr;
 		l->attachName.clear();
 		l->depth = -1;
 		lwfContainer->Destroy();
 	}
 }
 
-void Movie::AttachLWF(shared_ptr<LWF> attachLWF, string aName,
+void Movie::AttachLWF(shared_ptr<LWFCore> attachLWF, string aName,
 	DetachHandler detachHandler, int aDepth, bool reorder)
 {
 	AttachedLWFs::iterator it;
@@ -243,7 +243,7 @@ void Movie::AttachLWF(shared_ptr<LWF> attachLWF, string aName,
 	lwf->isLWFAttached = true;
 }
 
-void Movie::AttachLWF(shared_ptr<LWF> attachLWF,
+void Movie::AttachLWF(shared_ptr<LWFCore> attachLWF,
 	string aName, int aDepth, bool reorder)
 {
 	DetachHandler detachHandler;
@@ -289,7 +289,7 @@ void Movie::DetachLWF(int aDepth)
 		m_detachedLWFs[it->second->child->attachName] = true;
 }
 
-void Movie::DetachLWF(shared_ptr<LWF> detachLWF)
+void Movie::DetachLWF(shared_ptr<LWFCore> detachLWF)
 {
 	if (detachLWF.get() && !detachLWF->attachName.empty())
 		m_detachedLWFs[detachLWF->attachName] = true;

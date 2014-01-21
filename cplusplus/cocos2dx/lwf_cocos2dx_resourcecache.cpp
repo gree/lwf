@@ -26,7 +26,8 @@
 #include "lwf_data.h"
 
 using namespace LWF;
-using LWFData = ::LWF::Data;
+
+typedef LWF::Data LWFData ;
 
 NS_CC_BEGIN
 
@@ -53,7 +54,7 @@ LWFResourceCache::~LWFResourceCache()
 
 shared_ptr<LWFData> LWFResourceCache::loadLWFDataInternal(const string &path)
 {
-    long size;
+    ssize_t size;
 	unsigned char *buffer =
 		FileUtils::getInstance()->getFileData(path.c_str(), "r", &size);
 	if (!buffer)
@@ -82,7 +83,7 @@ shared_ptr<LWFData> LWFResourceCache::loadLWFData(const string &path)
 }
 
 
-void LWFResourceCache::unloadLWFDataInternal(const shared_ptr<LWFData> &data)
+void LWFResourceCache::unloadLWFDataInternal(shared_ptr<LWFData> data)
 {
 	map<string, bool>::iterator
 		it(data->resourceCache.begin()), itend(data->resourceCache.end());
@@ -94,7 +95,7 @@ void LWFResourceCache::unloadLWFDataInternal(const shared_ptr<LWFData> &data)
 	}
 }
 
-void LWFResourceCache::unloadLWFData(const shared_ptr<LWFData> &data)
+void LWFResourceCache::unloadLWFData(shared_ptr<LWFData> data)
 {
 	DataCacheMap::iterator it = m_dataCacheMap.find(data.get());
 	if (it == m_dataCacheMap.end())

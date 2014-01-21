@@ -25,11 +25,11 @@
 
 namespace LWF {
 
-Bitmap::Bitmap(LWF *lwf, Movie *p, int objId)
+Bitmap::Bitmap(LWFCore *lwf, Movie *p, int objId)
 	: Object(lwf, p, Format::Object::BITMAP, objId)
 {
 	dataMatrixId = lwf->data->bitmaps[objId].matrixId;
 	renderer = lwf->rendererFactory->ConstructBitmap(lwf, objId, this);
 }
 
-}	// namespace LWF
+}	// namespace LWFCore

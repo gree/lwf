@@ -27,21 +27,24 @@
 
 
 namespace LWF {
-class Data;
+struct Data;
 }
 
+using namespace LWF;
+
 NS_CC_BEGIN
+
 
 
 class LWFResourceCache
 {
 private:
-	typedef LWF::map<LWF::string,
+	typedef map<LWF::string,
 		LWF::pair<int, LWF::shared_ptr<LWF::Data> > > DataCache;
 	typedef LWF::map<LWF::Data *, DataCache::iterator> DataCacheMap;
-	typedef LWF::pair<int, LWF::vector<LWF::PreloadCallback> > DataCallbackList;
-	typedef LWF::map<LWF::string, DataCallbackList> DataCallbackMap;
-	typedef LWF::map<LWF::string, LWF::pair<int, ValueMap> > ParticleCache;
+	typedef LWF::pair<int, LWF::vector<PreloadCallback> > DataCallbackList;
+	typedef LWF::map<string, DataCallbackList> DataCallbackMap;
+	typedef LWF::map<string, pair<int, ValueMap> > ParticleCache;
 
 private:
 	static LWFResourceCache *m_instance;
@@ -62,7 +65,7 @@ public:
 	~LWFResourceCache();
 
 	LWF::shared_ptr<LWF::Data> loadLWFData(const LWF::string &path);
-	void unloadLWFData(const LWF::shared_ptr<LWF::Data> &data);
+	void unloadLWFData(LWF::shared_ptr<LWF::Data> data);
 
     ValueMap loadParticle(const LWF::string &path, bool retain = true);
 	void unloadParticle(const LWF::string &path);
@@ -78,7 +81,7 @@ public:
 		{m_particlePathPrefix = path;}
 
 private:
-	void unloadLWFDataInternal(const LWF::shared_ptr<LWF::Data> &data);
+	void unloadLWFDataInternal(LWF::shared_ptr<LWF::Data> data);
 	LWF::shared_ptr<LWF::Data> loadLWFDataInternal(const LWF::string &path);
 };
 

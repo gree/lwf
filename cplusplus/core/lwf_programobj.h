@@ -28,7 +28,7 @@ namespace LWF {
 class ProgramObject : public Object
 {
 public:
-	ProgramObject(LWF *lwf, Movie *p, int objId);
+	ProgramObject(LWFCore *lwf, Movie *p, int objId);
 	void Update(const Matrix *m, const ColorTransform *c);
 };
 

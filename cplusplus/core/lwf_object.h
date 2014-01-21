@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Movie;
 class Object;
 class Renderer;
@@ -35,7 +35,7 @@ typedef Format::Object OType;
 class Object
 {
 public:
-	LWF *lwf;
+	LWFCore *lwf;
 	Movie *parent;
 	int type;
 	int execCount;
@@ -52,7 +52,7 @@ public:
 
 public:
 	Object() {}
-	Object(LWF *l, Movie *p, int t, int objId);
+	Object(LWFCore *l, Movie *p, int t, int objId);
 	virtual ~Object() {}
 
 	virtual void Exec(int mId = 0, int cId = 0);

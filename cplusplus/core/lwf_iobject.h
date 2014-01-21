@@ -38,7 +38,7 @@ public:
 
 public:
 	IObject() {}
-	IObject(LWF *lwf, Movie *p, int t, int objId, int instId);
+	IObject(LWFCore *lwf, Movie *p, int t, int objId, int instId);
 
 	void Destroy();
 	virtual void LinkButton() {/* NOTHING TO DO */}

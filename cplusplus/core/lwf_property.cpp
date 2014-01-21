@@ -23,7 +23,7 @@
 
 namespace LWF {
 
-Property::Property(LWF *l)
+Property::Property(LWFCore *l)
 {
 	lwf = l;
 

@@ -23,7 +23,7 @@
 
 namespace LWF {
 
-Button *LWF::InputPoint(int px, int py)
+Button *LWFCore::InputPoint(int px, int py)
 {
 	intercepted = false;
 
@@ -79,7 +79,7 @@ Button *LWF::InputPoint(int px, int py)
 	return focus;
 }
 
-void LWF::InputPress()
+void LWFCore::InputPress()
 {
 	if (!interactive)
 		return;
@@ -92,7 +92,7 @@ void LWF::InputPress()
 	}
 }
 
-void LWF::InputRelease()
+void LWFCore::InputRelease()
 {
 	if (!interactive)
 		return;
@@ -105,7 +105,7 @@ void LWF::InputRelease()
 	}
 }
 
-void LWF::InputKeyPress(int code)
+void LWFCore::InputKeyPress(int code)
 {
 	if (!interactive)
 		return;

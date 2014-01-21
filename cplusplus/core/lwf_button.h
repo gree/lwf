@@ -23,6 +23,7 @@
 
 #include "lwf_eventbutton.h"
 #include "lwf_iobject.h"
+#include "lwf_core.h"
 
 namespace LWF {
 
@@ -42,7 +43,7 @@ private:
 
 public:
 	Button() {};
-	Button(LWF *l, Movie *p, int objId, int instId, int mId = -1, int cId = -1);
+	Button(LWFCore *l, Movie *p, int objId, int instId, int mId = -1, int cId = -1);
 	virtual ~Button() {};
 
 	void AddHandlers(const ButtonEventHandlers *h);

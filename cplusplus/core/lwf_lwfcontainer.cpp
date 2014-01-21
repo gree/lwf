@@ -24,7 +24,7 @@
 
 namespace LWF {
 
-LWFContainer::LWFContainer(Movie *p, shared_ptr<LWF> c)
+LWFContainer::LWFContainer(Movie *p, shared_ptr<LWFCore> c)
 {
 	lwf = p->lwf;
 	parent = p;

@@ -25,7 +25,7 @@
 
 namespace LWF {
 
-BitmapEx::BitmapEx(LWF *lwf, Movie *p, int objId)
+BitmapEx::BitmapEx(LWFCore *lwf, Movie *p, int objId)
 	: Object(lwf, p, Format::Object::BITMAPEX, objId)
 {
 	dataMatrixId = lwf->data->bitmapExs[objId].matrixId;

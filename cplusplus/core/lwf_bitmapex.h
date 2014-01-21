@@ -25,13 +25,13 @@
 
 namespace LWF {
 
-class LWF;
+class LWFCore;
 class Movie;
 
 class BitmapEx : public Object
 {
 public:
-	BitmapEx(LWF *lwf, Movie *p, int objId);
+	BitmapEx(LWFCore *lwf, Movie *p, int objId);
 };
 
 }	// namespace LWF

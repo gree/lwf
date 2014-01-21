@@ -155,7 +155,7 @@ public:
 
 void MovieEventHandlers::Call(Type type, Movie *target)
 {
-	scoped_ptr<MovieEventHandlerList>
+	unique_ptr<MovieEventHandlerList>
 		p(new MovieEventHandlerList(m_handlers[type]));
 	for_each(p->begin(), p->end(), Exec(target));
 }
@@ -196,7 +196,7 @@ public:
 	}
 };
 
-void LWF::SetMovieLoadCommand(string instanceName, MovieEventHandler handler)
+void LWFCore::SetMovieLoadCommand(string instanceName, MovieEventHandler handler)
 {
 	Movie *movie = SearchMovieInstance(instanceName);
 	if (movie) {
@@ -209,7 +209,7 @@ void LWF::SetMovieLoadCommand(string instanceName, MovieEventHandler handler)
 	}
 }
 
-void LWF::SetMoviePostLoadCommand(string instanceName, MovieEventHandler handler)
+void LWFCore::SetMoviePostLoadCommand(string instanceName, MovieEventHandler handler)
 {
 	Movie *movie = SearchMovieInstance(instanceName);
 	if (movie) {
@@ -231,7 +231,7 @@ public:
 	}
 };
 
-void LWF::PlayMovie(string instanceName)
+void LWFCore::PlayMovie(string instanceName)
 {
 	SetMovieLoadCommand(instanceName, PlayWrapper());
 }
@@ -245,7 +245,7 @@ public:
 	}
 };
 
-void LWF::StopMovie(string instanceName)
+void LWFCore::StopMovie(string instanceName)
 {
 	SetMovieLoadCommand(instanceName, StopWrapper());
 }
@@ -259,7 +259,7 @@ public:
 	}
 };
 
-void LWF::NextFrameMovie(string instanceName)
+void LWFCore::NextFrameMovie(string instanceName)
 {
 	SetMovieLoadCommand(instanceName, NextFrameWrapper());
 }
@@ -273,7 +273,7 @@ public:
 	}
 };
 
-void LWF::PrevFrameMovie(string instanceName)
+void LWFCore::PrevFrameMovie(string instanceName)
 {
 	SetMovieLoadCommand(instanceName, PrevFrameWrapper());
 }
@@ -289,7 +289,7 @@ public:
 	}
 };
 
-void LWF::SetVisibleMovie(string instanceName, bool visible)
+void LWFCore::SetVisibleMovie(string instanceName, bool visible)
 {
 	SetMovieLoadCommand(instanceName, SetVisibleWrapper(visible));
 }
@@ -305,12 +305,12 @@ public:
 	}
 };
 
-void LWF::GotoAndStopMovie(string instanceName, string label)
+void LWFCore::GotoAndStopMovie(string instanceName, string label)
 {
 	SetMovieLoadCommand(instanceName, GotoAndStopWrapper<string>(label));
 }
 
-void LWF::GotoAndStopMovie(string instanceName, int frameNo)
+void LWFCore::GotoAndStopMovie(string instanceName, int frameNo)
 {
 	SetMovieLoadCommand(instanceName, GotoAndStopWrapper<int>(frameNo));
 }
@@ -326,12 +326,12 @@ public:
 	}
 };
 
-void LWF::GotoAndPlayMovie(string instanceName, string label)
+void LWFCore::GotoAndPlayMovie(string instanceName, string label)
 {
 	SetMovieLoadCommand(instanceName, GotoAndPlayWrapper<string>(label));
 }
 
-void LWF::GotoAndPlayMovie(string instanceName, int frameNo)
+void LWFCore::GotoAndPlayMovie(string instanceName, int frameNo)
 {
 	SetMovieLoadCommand(instanceName, GotoAndPlayWrapper<int>(frameNo));
 }
@@ -348,7 +348,7 @@ public:
 	}
 };
 
-void LWF::MoveMovie(string instanceName, float vx, float vy)
+void LWFCore::MoveMovie(string instanceName, float vx, float vy)
 {
 	SetMovieLoadCommand(instanceName, MoveWrapper(vx, vy));
 }
@@ -365,7 +365,7 @@ public:
 	}
 };
 
-void LWF::MoveToMovie(string instanceName, float vx, float vy)
+void LWFCore::MoveToMovie(string instanceName, float vx, float vy)
 {
 	SetMovieLoadCommand(instanceName, MoveToWrapper(vx, vy));
 }
@@ -381,7 +381,7 @@ public:
 	}
 };
 
-void LWF::RotateMovie(string instanceName, float degree)
+void LWFCore::RotateMovie(string instanceName, float degree)
 {
 	SetMovieLoadCommand(instanceName, RotateWrapper(degree));
 }
@@ -397,7 +397,7 @@ public:
 	}
 };
 
-void LWF::RotateToMovie(string instanceName, float degree)
+void LWFCore::RotateToMovie(string instanceName, float degree)
 {
 	SetMovieLoadCommand(instanceName, RotateToWrapper(degree));
 }
@@ -414,7 +414,7 @@ public:
 	}
 };
 
-void LWF::ScaleMovie(string instanceName, float vx, float vy)
+void LWFCore::ScaleMovie(string instanceName, float vx, float vy)
 {
 	SetMovieLoadCommand(instanceName, ScaleWrapper(vx, vy));
 }
@@ -431,7 +431,7 @@ public:
 	}
 };
 
-void LWF::ScaleToMovie(string instanceName, float vx, float vy)
+void LWFCore::ScaleToMovie(string instanceName, float vx, float vy)
 {
 	SetMovieLoadCommand(instanceName, ScaleToWrapper(vx, vy));
 }
@@ -451,7 +451,7 @@ public:
 	}
 };
 
-void LWF::SetMatrixMovie(string instanceName, const Matrix *matrix,
+void LWFCore::SetMatrixMovie(string instanceName, const Matrix *matrix,
 	float sx, float sy, float r)
 {
 	SetMovieLoadCommand(instanceName, SetMatrixWrapper(matrix, sx, sy, r));
@@ -468,7 +468,7 @@ public:
 	}
 };
 
-void LWF::SetAlphaMovie(string instanceName, float v)
+void LWFCore::SetAlphaMovie(string instanceName, float v)
 {
 	SetMovieLoadCommand(instanceName, SetAlphaWrapper(v));
 }
@@ -484,13 +484,13 @@ public:
 	}
 };
 
-void LWF::SetColorTransformMovie(string instanceName, const ColorTransform *c)
+void LWFCore::SetColorTransformMovie(string instanceName, const ColorTransform *c)
 {
 	SetMovieLoadCommand(instanceName, SetColorTransformWrapper(c));
 }
 
 #if defined(LWF_USE_LUA)
-void LWF::SetColorTransformMovieLua(
+void LWFCore::SetColorTransformMovieLua(
 	string instanceName, float vr, float vg, float vb, float va)
 {
 	ColorTransform colorTransform(vr, vg, vb, va);

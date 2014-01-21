@@ -34,19 +34,19 @@ USING_NS_CC;
 namespace LWF {
 
 shared_ptr<Renderer> LWFRendererFactory::ConstructBitmap(
-	LWF *lwf, int objId, Bitmap *bitmap)
+	LWFCore *lwf, int objId, Bitmap *bitmap)
 {
 	return make_shared<LWFBitmapRenderer>(lwf, bitmap, m_node);
 }
 
 shared_ptr<Renderer> LWFRendererFactory::ConstructBitmapEx(
-	LWF *lwf, int objId, BitmapEx *bitmapEx)
+	LWFCore *lwf, int objId, BitmapEx *bitmapEx)
 {
 	return make_shared<LWFBitmapRenderer>(lwf, bitmapEx, m_node);
 }
 
 shared_ptr<TextRenderer> LWFRendererFactory::ConstructText(
-	LWF *lwf, int objId, Text *text)
+	LWFCore *lwf, int objId, Text *text)
 {
 	const Format::Text &t = lwf->data->texts[text->objectId];
 	const Format::TextProperty &p = lwf->data->textProperties[t.textPropertyId];
@@ -64,20 +64,20 @@ shared_ptr<TextRenderer> LWFRendererFactory::ConstructText(
 }
 
 shared_ptr<Renderer> LWFRendererFactory::ConstructParticle(
-	LWF *lwf, int objId, Particle *particle)
+	LWFCore *lwf, int objId, Particle *particle)
 {
 	return make_shared<LWFParticleRenderer>(lwf, particle, m_node);
 }
 
-void LWFRendererFactory::Init(LWF *lwf)
+void LWFRendererFactory::Init(LWFCore *lwf)
 {
 }
 
-void LWFRendererFactory::BeginRender(LWF *lwf)
+void LWFRendererFactory::BeginRender(LWFCore *lwf)
 {
 }
 
-void LWFRendererFactory::EndRender(LWF *lwf)
+void LWFRendererFactory::EndRender(LWFCore *lwf)
 {
 }
 
@@ -85,7 +85,7 @@ void LWFRendererFactory::Destruct()
 {
 }
 
-void LWFRendererFactory::FitForHeight(class LWF *lwf, float w, float h)
+void LWFRendererFactory::FitForHeight(class LWFCore *lwf, float w, float h)
 {
 	ScaleForHeight(lwf, w, h);
 	float offsetX = (w - lwf->width * lwf->scaleByStage) / 2.0f;
@@ -93,7 +93,7 @@ void LWFRendererFactory::FitForHeight(class LWF *lwf, float w, float h)
 	lwf->property->Move(offsetX, offsetY);
 }
 
-void LWFRendererFactory::FitForWidth(class LWF *lwf, float w, float h)
+void LWFRendererFactory::FitForWidth(class LWFCore *lwf, float w, float h)
 {
 	ScaleForWidth(lwf, w, h);
 	float offsetX = (w - lwf->width * lwf->scaleByStage) / 2.0f;
@@ -101,14 +101,14 @@ void LWFRendererFactory::FitForWidth(class LWF *lwf, float w, float h)
 	lwf->property->Move(offsetX, offsetY);
 }
 
-void LWFRendererFactory::ScaleForHeight(class LWF *lwf, float w, float h)
+void LWFRendererFactory::ScaleForHeight(class LWFCore *lwf, float w, float h)
 {
 	float scale = h / lwf->height;
 	lwf->scaleByStage = scale;
 	lwf->property->Scale(scale, scale);
 }
 
-void LWFRendererFactory::ScaleForWidth(class LWF *lwf, float w, float h)
+void LWFRendererFactory::ScaleForWidth(class LWFCore *lwf, float w, float h)
 {
 	float scale = w / lwf->width;
 	lwf->scaleByStage = scale;
