@@ -79,6 +79,15 @@ public class Graphic : Object
 			m_displayList[i].Render(v, rOffset);
 	}
 
+#if UNITY_EDITOR
+	public override void RenderNow()
+	{
+		int n = m_displayList.Length;
+		for (int i = 0; i < n; ++i)
+			m_displayList[i].RenderNow();
+	}
+#endif
+
 	public override void Destroy()
 	{
 		int n = m_displayList.Length;
