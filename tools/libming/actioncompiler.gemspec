@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'actioncompiler'
-  s.version     = '1.0.0'
-  s.date        = '2013-07-30'
+  s.version     = '1.0.2'
+  s.date        = '2014-01-28'
   s.summary     = "SWF Version 3 Action Compiler"
   s.description = s.summary
   s.authors     = ["libming Authors"]

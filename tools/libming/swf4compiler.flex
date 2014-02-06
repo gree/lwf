@@ -215,6 +215,7 @@ enddrag			{ count();	return ASMENDDRAG; }
 gettime			{ count();	return ASMGETTIME; }
 randomnumber		{ count();	return ASMRANDOMNUMBER; }
 asmtrace		{ count();	return ASMTRACE; }
+end				{ count();	return ASMEND; }
 }
 
 {ID}			{ count();	swf4lval.str = strdup(yytext);

@@ -19,7 +19,7 @@ f.write <<EOL
 
 LEX = flex
 YACC = bison -y
-CLEANFILES += lex.swf4.c swf4compiler.tab.c swf4compiler.tab.h Makefile
+CLEANFILES += lex.swf4.c swf4compiler.tab.c swf4compiler.tab.h
 
 lex.swf4.c: swf4compiler.flex swf4compiler.tab.h
 	$(LEX) -Pswf4 swf4compiler.flex
