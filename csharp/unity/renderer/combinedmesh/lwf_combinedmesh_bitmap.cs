@@ -150,9 +150,7 @@ public class BitmapRenderer : Renderer
 	BitmapContext m_context;
 	Matrix4x4 m_matrix;
 	UnityEngine.Color m_colorMult;
-#if LWF_USE_ADDITIONALCOLOR
 	UnityEngine.Color m_colorAdd;
-#endif
 	bool m_available;
 
 	static Color32 s_clearColor = new Color32(0, 0, 0, 0);
@@ -162,9 +160,7 @@ public class BitmapRenderer : Renderer
 		m_context = context;
 		m_matrix = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
-#if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
-#endif
 		m_available = false;
 
 		if (m_context != null)
@@ -195,12 +191,8 @@ public class BitmapRenderer : Renderer
 		if (!visible)
 			goto invisible;
 
-#if LWF_USE_ADDITIONALCOLOR
 		factory.ConvertColorTransform(
 			ref m_colorMult, ref m_colorAdd, colorTransform);
-#else
-		factory.ConvertColorTransform(ref m_colorMult, colorTransform);
-#endif
 		if (m_colorMult.a <= 0)
 			goto invisible;
 		if (factory.premultipliedAlpha) {
@@ -221,6 +213,17 @@ public class BitmapRenderer : Renderer
 				bc.a != color32.a) {
 			for (int i = 0; i < 4; ++i)
 				buffer.colors32[index + i] = color32;
+		}
+
+		if (factory.useAdditionalColor) {
+			Vector3 bac = buffer.additionalColors[index];
+			if (bac.x != m_colorAdd.r ||
+					bac.y != m_colorAdd.g ||
+					bac.z != m_colorAdd.b) {
+				for (int i = 0; i < 4; ++i)
+					buffer.additionalColors[index + i] =
+						new Vector3(m_colorAdd.r, m_colorAdd.g, m_colorAdd.b);
+			}
 		}
 
 		if (!buffer.clean && m_available &&

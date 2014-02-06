@@ -71,11 +71,7 @@ public partial class ColorTransform
 	public ColorTransform(BinaryReader br)
 	{
 		multi = new Color(br);
-#if LWF_USE_ADDITIONALCOLOR
 		add = new Color(br);
-#else
-		new Color(br);
-#endif
 	}
 }
 

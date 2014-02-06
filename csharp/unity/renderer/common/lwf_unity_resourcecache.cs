@@ -181,7 +181,8 @@ public class ResourceCache
 	}
 
 	public Material LoadTexture(string lwfName,
-		string filename, int format, TextureLoader textureLoader = null,
+		string filename, int format, bool combined, bool useAdditionalColor,
+		TextureLoader textureLoader = null,
 		TextureUnloader textureUnloader = null)
 	{
 		TextureItem item;
@@ -197,6 +198,8 @@ public class ResourceCache
 				shaderName = "LWF/PreMultipliedAlpha";
 				break;
 			}
+			if (useAdditionalColor)
+				shaderName += combined ? "Combined" : "Additional";
 			Shader shader = GetShader(shaderName);
 
 			if (textureLoader == null)

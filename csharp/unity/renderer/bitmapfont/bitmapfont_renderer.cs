@@ -479,7 +479,6 @@ public class Renderer
 			mMesh, matrix, mMaterial, layer, camera, 0, mProperty);
 	}
 
-#if LWF_USE_ADDITIONALCOLOR
 	public virtual void Render(Matrix4x4 matrix,
 		Color multColor, Color addColor, int layer = 0, Camera camera = null)
 	{
@@ -491,7 +490,6 @@ public class Renderer
 		Graphics.DrawMesh(
 			mMesh, matrix, mMaterial, layer, camera, 0, mProperty);
 	}
-#endif
 
 #if UNITY_EDITOR
 	public virtual void RenderNow(Matrix4x4 matrix, Color multColor)

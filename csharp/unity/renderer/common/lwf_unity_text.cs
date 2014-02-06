@@ -161,18 +161,11 @@ public class TextContext
 	}
 
 	public void Render(Matrix4x4 m, UnityEngine.Color colorMult,
-#if LWF_USE_ADDITIONALCOLOR
 		UnityEngine.Color colorAdd,
-#endif
 		int layer, Camera camera)
 	{
-#if LWF_USE_ADDITIONALCOLOR
 		if (bitmapFontRenderer != null)
 			bitmapFontRenderer.Render(m, colorMult, colorAdd, layer, camera);
-#else
-		if (bitmapFontRenderer != null)
-			bitmapFontRenderer.Render(m, colorMult, layer, camera);
-#endif
 		if (systemFontRenderer != null)
 			systemFontRenderer.Render(m, colorMult, layer, camera);
 	}
@@ -194,9 +187,7 @@ public class UnityTextRenderer : TextRenderer
 	private Matrix4x4 m_matrix;
 	private Matrix4x4 m_renderMatrix;
 	private UnityEngine.Color m_colorMult;
-#if LWF_USE_ADDITIONALCOLOR
 	private UnityEngine.Color m_colorAdd;
-#endif
 #if UNITY_EDITOR
 	private bool m_visible;
 #endif
@@ -211,9 +202,7 @@ public class UnityTextRenderer : TextRenderer
 		m_matrix = new Matrix4x4();
 		m_renderMatrix = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
-#if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
-#endif
 		if (m_context != null && m_context.systemFontRenderer != null) {
 			ISystemFontRenderer.Parameter p =
 				m_context.systemFontRendererParameter;
@@ -272,16 +261,10 @@ public class UnityTextRenderer : TextRenderer
 		Factory.MultiplyMatrix(ref m_renderMatrix,
 			m_context.parent.transform.localToWorldMatrix, m_matrix);
 
-#if LWF_USE_ADDITIONALCOLOR
 		factory.ConvertColorTransform(
 			ref m_colorMult, ref m_colorAdd, colorTransform);
 		m_context.Render(m_renderMatrix, m_colorMult, m_colorAdd,
 			m_context.parent.layer, factory.camera);
-#else
-		factory.ConvertColorTransform(ref m_colorMult, colorTransform);
-		m_context.Render(m_renderMatrix, m_colorMult,
-			m_context.parent.layer, factory.camera);
-#endif
 	}
 
 #if UNITY_EDITOR

@@ -84,6 +84,7 @@ public class LWFPlayer : MonoBehaviour
 		string texturePrefix = "", string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
 		int cachingFrames = 0, Camera camera = null, bool autoPlay = true,
+		bool useAdditionalColor = false,
 		LWFDataCallback lwfDataCallback = null,
 		LWFCallback lwfLoadCallback = null,
 		LWFCallback lwfDestroyCallback = null,
@@ -108,8 +109,8 @@ public class LWFPlayer : MonoBehaviour
 		if (lwfDataCallback != null && !lwfDataCallback(data))
 			return false;
 
-		factory = new LWF.CombinedMeshRenderer.Factory(
-			data, gameObject, zOffset, zRate, renderQueueOffset, camera,
+		factory = new LWF.CombinedMeshRenderer.Factory(data, gameObject,
+			zOffset, zRate, renderQueueOffset, useAdditionalColor, camera,
 			texturePrefix, fontPrefix, textureLoader, textureUnloader);
 
 		lwf = new LWF.LWF(data, factory);

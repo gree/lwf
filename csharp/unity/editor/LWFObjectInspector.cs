@@ -88,17 +88,11 @@ public class LWFObjectInspector : EditorWindow
 			container.renderingIndex, container.renderingCount));
 
 		LWF.ColorTransform c = obj.colorTransform;
-#if LWF_USE_ADDITIONALCOLOR
 		EditorGUILayout.LabelField("ColorTransform",
 			string.Format("multi:(r:{0},g:{1},b:{2},a:{3}) " +
 				"add:(r:{4},g:{5},b:{6},a:{7})",
 			c.multi.red, c.multi.green, c.multi.blue, c.multi.alpha,
 			c.add.red, c.add.green, c.add.blue, c.add.alpha));
-#else
-		EditorGUILayout.LabelField("ColorTransform",
-			string.Format("multi:(r:{0},g:{1},b:{2},a:{3})",
-			c.multi.red, c.multi.green, c.multi.blue, c.multi.alpha));
-#endif
 	}
 
 	void DrawInspector(ObjectContainer container)

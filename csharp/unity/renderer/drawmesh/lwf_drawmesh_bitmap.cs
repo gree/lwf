@@ -106,8 +106,9 @@ public class BitmapContext
 			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
 
 		m_material = ResourceCache.SharedInstance().LoadTexture(
-			data.name, m_textureName, texture.format,
-			factory.textureLoader, factory.textureUnloader);
+			data.name, m_textureName, texture.format, false,
+			factory.useAdditionalColor, factory.textureLoader,
+			factory.textureUnloader);
 		if (factory.renderQueueOffset != 0)
 			m_material.renderQueue += factory.renderQueueOffset;
 
@@ -134,9 +135,7 @@ public class BitmapRenderer : Renderer
 	Matrix4x4 m_matrix;
 	Matrix4x4 m_renderMatrix;
 	UnityEngine.Color m_colorMult;
-#if LWF_USE_ADDITIONALCOLOR
 	UnityEngine.Color m_colorAdd;
-#endif
 #if UNITY_EDITOR
 	bool m_visible;
 #endif
@@ -148,9 +147,7 @@ public class BitmapRenderer : Renderer
 		m_matrix = new Matrix4x4();
 		m_renderMatrix = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
-#if LWF_USE_ADDITIONALCOLOR
 		m_colorAdd = new UnityEngine.Color();
-#endif
 	}
 
 	public override void Destruct()
@@ -173,12 +170,8 @@ public class BitmapRenderer : Renderer
 			return;
 
 		Factory factory = m_context.factory;
-#if LWF_USE_ADDITIONALCOLOR
 		factory.ConvertColorTransform(
 			ref m_colorMult, ref m_colorAdd, colorTransform);
-#else
-		factory.ConvertColorTransform(ref m_colorMult, colorTransform);
-#endif
 		if (m_colorMult.a <= 0)
 			return;
 		if (m_context.premultipliedAlpha) {
@@ -194,16 +187,18 @@ public class BitmapRenderer : Renderer
 
 		m_property.Clear();
 		m_property.AddColor("_Color", m_colorMult);
-#if LWF_USE_ADDITIONALCOLOR
-		m_property.AddColor("_AdditionalColor", m_colorAdd);
-#endif
+		if (factory.useAdditionalColor)
+			m_property.AddColor("_AdditionalColor", m_colorAdd);
 
 		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
 			if (m_additiveMaterial == null) {
 				m_additiveMaterial = new Material(m_context.material);
+				string shaderName = m_context.material.shader.name;
+				shaderName += "Additive";
+				if (factory.useAdditionalColor) 
+					shaderName += "Additional";
 				m_additiveMaterial.shader =
-					ResourceCache.SharedInstance().GetShader(
-						m_context.material.shader.name + "Additive");
+					ResourceCache.SharedInstance().GetShader(shaderName);
 			}
 			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
 				m_additiveMaterial, factory.gameObject.layer, factory.camera, 0,
@@ -223,6 +218,8 @@ public class BitmapRenderer : Renderer
 
 		Material material = new Material(m_context.material);
 		material.color = m_colorMult;
+		if (m_context.factory.useAdditionalColor)
+			material.SetColor("_AdditionalColor", m_colorAdd);
 		material.SetPass(0);
 		Graphics.DrawMeshNow(m_context.mesh, m_renderMatrix);
 		Material.Destroy(material);

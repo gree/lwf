@@ -36,6 +36,7 @@ public class CombinedMeshBuffer
 	public Vector2[] uv;
 	public int[] triangles;
 	public Color32[] colors32;
+	public Vector3[] additionalColors;
 	public int index;
 	public bool clean;
 	public bool changed;
@@ -47,6 +48,7 @@ public class CombinedMeshBuffer
 		uv = new Vector2[n * 4];
 		triangles = new int[n * 6];
 		colors32 = new Color32[n * 4];
+		additionalColors = new Vector3[n * 4];
 		index = 0;
 		clean = true;
 		changed = true;
@@ -67,11 +69,11 @@ public partial class Factory : UnityRenderer.Factory
 	private int bitmapCount;
 
 	public Factory(Data d, GameObject gObj,
-			float zOff = 0, float zR = 1, int rQOff = 0, Camera cam = null,
-			string texturePrfx = "", string fontPrfx = "",
+			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
+			Camera cam = null, string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null)
-		: base(gObj, zOff, zR, rQOff,
+		: base(gObj, zOff, zR, rQOff, uAC,
 			cam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
 	{
 		data = d;
@@ -91,8 +93,8 @@ public partial class Factory : UnityRenderer.Factory
 		textureName = texturePrefix + data.textures[0].filename;
 		meshRenderer.sharedMaterial =
 			ResourceCache.SharedInstance().LoadTexture(
-				data.name, textureName, data.textures[0].format,
-					textureLoader, textureUnloader);
+				data.name, textureName, data.textures[0].format, true,
+					useAdditionalColor, textureLoader, textureUnloader);
 		if (renderQueueOffset != 0)
 			meshRenderer.sharedMaterial.renderQueue += renderQueueOffset;
 
@@ -169,6 +171,7 @@ public partial class Factory : UnityRenderer.Factory
 			mesh.vertices = buffer.vertices;
 		}
 		mesh.colors32 = buffer.colors32;
+		mesh.normals = buffer.additionalColors;
 		mesh.RecalculateBounds();
 		//mesh.Optimize();
 	}

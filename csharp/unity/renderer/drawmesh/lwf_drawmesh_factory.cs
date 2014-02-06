@@ -29,11 +29,11 @@ namespace DrawMeshRenderer {
 public partial class Factory : UnityRenderer.Factory
 {
 	public Factory(Data data, GameObject gObj,
-			float zOff = 0, float zR = 1, int rQOff = 0, Camera cam = null,
-			string texturePrfx = "", string fontPrfx = "",
+			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
+			Camera cam = null, string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null)
-		: base(gObj, zOff, zR, rQOff,
+		: base(gObj, zOff, zR, rQOff, uAC,
 			cam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
 	{
 		CreateBitmapContexts(data);

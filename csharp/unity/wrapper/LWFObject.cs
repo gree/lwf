@@ -55,6 +55,7 @@ public class RendererFactoryArguments
 	public float zOffset;
 	public float zRate;
 	public int renderQueueOffset;
+	public bool useAdditionalColor;
 	public Camera camera;
 	public string texturePrefix;
 	public string fontPrefix;
@@ -62,14 +63,15 @@ public class RendererFactoryArguments
 	public TextureUnloader textureUnloader;
 
 	public RendererFactoryArguments(LWF.Data d, GameObject gObj, float zOff,
-		float zR, int rQOff, Camera cam, string texturePrfx, string fontPrfx,
-		TextureLoader textureLdr, TextureUnloader textureUnldr)
+		float zR, int rQOff, bool uAC, Camera cam, string texturePrfx,
+		string fontPrfx, TextureLoader textureLdr, TextureUnloader textureUnldr)
 	{
 		data = d;
 		gameObject = gObj;
 		zOffset = zOff;
 		zRate = zR;
 		renderQueueOffset = rQOff;
+		useAdditionalColor = uAC;
 		camera = cam;
 		texturePrefix = texturePrfx;
 		fontPrefix = fontPrfx;
@@ -147,6 +149,7 @@ public class LWFObject : MonoBehaviour
 		string texturePrefix = "", string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
 		Camera camera = null, bool autoUpdate = true,
+		bool useAdditionalColor = false,
 		LWFDataCallback lwfDataCallback = null,
 		LWFCallback lwfLoadCallback = null,
 		LWFCallback lwfDestroyCallback = null,
@@ -178,17 +181,20 @@ public class LWFObject : MonoBehaviour
 
 		if (rendererFactoryConstructor != null) {
 			RendererFactoryArguments arg = new RendererFactoryArguments(
-				data, gameObject, zOffset, zRate, renderQueueOffset, camera,
-				texturePrefix, fontPrefix, textureLoader, textureUnloader);
+				data, gameObject, zOffset, zRate, renderQueueOffset,
+				useAdditionalColor, camera, texturePrefix, fontPrefix,
+				textureLoader, textureUnloader);
 			factory = rendererFactoryConstructor(arg);
 		} else if (useCombinedMeshRenderer && data.textures.Length == 1) {
 			factory = new LWF.CombinedMeshRenderer.Factory(
-				data, gameObject, zOffset, zRate, renderQueueOffset, camera,
-				texturePrefix, fontPrefix, textureLoader, textureUnloader);
+				data, gameObject, zOffset, zRate, renderQueueOffset,
+				useAdditionalColor, camera, texturePrefix, fontPrefix,
+				textureLoader, textureUnloader);
 		} else {
 			factory = new LWF.DrawMeshRenderer.Factory(
-				data, gameObject, zOffset, zRate, renderQueueOffset, camera,
-				texturePrefix, fontPrefix, textureLoader, textureUnloader);
+				data, gameObject, zOffset, zRate, renderQueueOffset,
+				useAdditionalColor, camera, texturePrefix, fontPrefix,
+				textureLoader, textureUnloader);
 		}
 
 #if LWF_USE_LUA

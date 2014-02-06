@@ -37,12 +37,13 @@ public partial class Factory : IRendererFactory
 	public int renderQueueOffset;
 	public int blendMode;
 	public int maskMode;
+	public bool useAdditionalColor;
 	public TextureLoader textureLoader;
 	public TextureUnloader textureUnloader;
 	private Matrix4x4 matrix;
 
 	protected Factory(GameObject gObj,
-		float zOff, float zR, int rQOff, Camera cam,
+		float zOff, float zR, int rQOff, bool uAC, Camera cam,
 		string texturePrfx = "", string fontPrfx = "",
 		TextureLoader textureLdr = null,
 		TextureUnloader textureUnldr = null)
@@ -51,6 +52,7 @@ public partial class Factory : IRendererFactory
 		zOffset = zOff;
 		zRate = zR;
 		renderQueueOffset = rQOff;
+		useAdditionalColor = uAC;
 		camera = cam;
 		texturePrefix = texturePrfx;
 		fontPrefix = fontPrfx;
@@ -165,7 +167,6 @@ public partial class Factory : IRendererFactory
 		m.m33 = l.m30 * r.m03 + l.m31 * r.m13 + l.m32 * r.m23 + l.m33;
 	}
 
-#if LWF_USE_ADDITIONALCOLOR
 	public void ConvertColorTransform(
 		ref UnityEngine.Color mc, ref UnityEngine.Color ac, ColorTransform c)
 	{
@@ -179,16 +180,6 @@ public partial class Factory : IRendererFactory
 		ac.b = c.add.blue;
 		ac.a = 0;
 	}
-#else
-	public void ConvertColorTransform(
-		ref UnityEngine.Color mc, ColorTransform c)
-	{
-		mc.r = c.multi.red;
-		mc.g = c.multi.green;
-		mc.b = c.multi.blue;
-		mc.a = c.multi.alpha;
-	}
-#endif
 
 	public UnityEngine.Color ConvertColor(Color c)
 	{

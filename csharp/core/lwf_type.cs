@@ -182,53 +182,40 @@ public partial class AlphaTransform
 public partial class ColorTransform
 {
 	public Color multi;
-#if LWF_USE_ADDITIONALCOLOR
 	public Color add;
-#endif
 
 	public ColorTransform(
 		float multiRed = 1,
 		float multiGreen = 1,
 		float multiBlue = 1,
-		float multiAlpha = 1
-#if LWF_USE_ADDITIONALCOLOR
-		,
+		float multiAlpha = 1,
 		float addRed = 0,
 		float addGreen = 0,
 		float addBlue = 0,
 		float addAlpha = 0
-#endif
 		)
 	{
 		multi = new Color(multiRed, multiGreen, multiBlue, multiAlpha);
-#if LWF_USE_ADDITIONALCOLOR
 		add = new Color(addRed, addGreen, addBlue, addAlpha);
-#endif
 	}
 
 	public ColorTransform(ColorTransform c)
 	{
 		multi = new Color();
-#if LWF_USE_ADDITIONALCOLOR
 		add = new Color();
-#endif
 		Set(c);
 	}
 
 	public void Clear()
 	{
 		multi.Set(1, 1, 1, 1);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(0, 0, 0, 0);
-#endif
 	}
 
 	public ColorTransform Set(ColorTransform c)
 	{
 		multi.Set(c.multi);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(c.add);
-#endif
 		return this;
 	}
 
@@ -260,7 +247,7 @@ public partial class ColorTransform
 			m.alpha = alpha;
 			changed = true;
 		}
-#if LWF_USE_ADDITIONALCOLOR
+
 		Color ca = c.add;
 		red = ca.red;
 		green = ca.green;
@@ -283,7 +270,6 @@ public partial class ColorTransform
 			a.alpha = alpha;
 			changed = true;
 		}
-#endif
 		return changed;
 	}
 }
