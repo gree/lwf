@@ -23,6 +23,8 @@ var lib;
 var flaDir;
 var flaName;
 var message;
+var buttonColors = {};
+var buttonColor = 0;
 
 function error(msg)
 {
@@ -101,6 +103,7 @@ function main()
 					name = "movie" + movies++;
 				} else {
 					name = "button" + buttons++;
+					correctButtonShapeColor(item);
 				}
 				warn("Corrected LinkageName: " + item.itemType + ": \"" +
 					item.name + "\" -> \"" + name + "\"");
@@ -141,6 +144,40 @@ function setLinkage(item, name)
 	catch (e)
 	{
 		error(item.name + ": " + e.toString().replace(/^Error: /, ""));
+	}
+}
+
+function correctButtonShapeColor(item)
+{
+	if (item.timeline.frameCount == 4 && item.timeline.layerCount == 1) {
+		var frame = item.timeline.layers[0].frames[3];
+		if (frame.elements.length == 1 && frame.elements[0].elementType === "shape") {
+			var shape = frame.elements[0];
+			if (shape.vertices.length == 4 && shape.contours.length == 2) {
+				var color = shape.contours[1].fill.color;
+warn(color);
+				if (color !== undefined) {
+					var n = parseInt(color.substring(1), 16);
+					if (buttonColors[n] === undefined) {
+						buttonColors[n] = true;
+					} else {
+						while (buttonColors[buttonColor] !== undefined) {
+							buttonColor++;
+						}
+						var n = buttonColor++;
+						lib.selectItem(item.name);
+						item.timeline.setSelectedLayers(0);
+						item.timeline.setSelectedFrames(3, 3);
+						var fill = doc.getCustomFill();
+						fill.color = n;
+						doc.setCustomFill(fill);
+						doc.selectNone();
+						buttonColors[n] = true;
+						warn("Corrected Button Shape Color: " + color + " -> " + shape.contours[1].fill.color);
+					}
+				}
+			}
+		}
 	}
 }
 
