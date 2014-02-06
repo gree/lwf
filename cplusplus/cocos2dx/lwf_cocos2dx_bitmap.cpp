@@ -201,7 +201,12 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	const Format::TextureFragment &f =
 		l->data->textureFragments[b.textureFragmentId];
 	const Format::Texture &t = l->data->textures[f.textureId];
-	string filename = node->basePath + t.GetFilename(l->data.get());
+	string texturePath = t.GetFilename(l->data.get());
+	string filename = node->basePath + texturePath;
+
+	if (LWF::GetTextureLoadHandler())
+		filename = LWF::GetTextureLoadHandler()(
+			filename, node->basePath, texturePath);
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)
@@ -223,7 +228,12 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	const Format::TextureFragment &f =
 		l->data->textureFragments[bx.textureFragmentId];
 	const Format::Texture &t = l->data->textures[f.textureId];
-	string filename = node->basePath + t.GetFilename(l->data.get());
+	string texturePath = t.GetFilename(l->data.get());
+	string filename = node->basePath + texturePath;
+
+	if (LWF::GetTextureLoadHandler())
+		filename = LWF::GetTextureLoadHandler()(
+			filename, node->basePath, texturePath);
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)

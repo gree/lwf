@@ -53,6 +53,7 @@ typedef vector<pair<int, ExecHandler> > ExecHandlerList;
 typedef map<string, pair<string, TextRenderer *> > TextDictionary;
 typedef map<int, bool> EventFunctions;
 typedef vector<int> RenderingModes;
+typedef function<string (string, string, string)> TextureLoadHandler;
 
 class LWF
 {
@@ -67,6 +68,7 @@ public:
 private:
 	static int m_instanceOffset;
 	static int m_iObjectOffset;
+	static TextureLoadHandler m_textureLoadHandler;
 
 public:
 	shared_ptr<Data> data;
@@ -318,6 +320,9 @@ public:
 		float sx = 1, float sy = 1, float r = 0);
 	void SetAlphaMovie(string instanceName, float v);
 	void SetColorTransformMovie(string instanceName, const ColorTransform *c);
+
+	static void SetTextureLoadHandler(TextureLoadHandler h);
+	static TextureLoadHandler GetTextureLoadHandler();
 
 #if defined(LWF_USE_LUA)
 	void InitLua();

@@ -166,11 +166,15 @@ UIImage *LWFResourceCache::loadTexture(
 	const string &dataPath, const string &texturePath)
 {
 	size_t pos = dataPath.find_last_of('/');
-	string path;
+	string basePath;
 	if (pos == string::npos)
-		path = texturePath;
+		basePath = "";
 	else
-		path = dataPath.substr(0, pos + 1) + texturePath;
+		basePath = dataPath.substr(0, pos + 1);
+	string path = basePath + texturePath;
+
+	if (LWF::GetTextureLoadHandler())
+		path = LWF::GetTextureLoadHandler()(path, basePath, texturePath);
 
 	{
 		Autolock lock(m_textureSemaphore);

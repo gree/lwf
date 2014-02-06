@@ -29,6 +29,7 @@ namespace LWF {
 
 int LWF::m_instanceOffset = 0;
 int LWF::m_iObjectOffset = 0;
+TextureLoadHandler LWF::m_textureLoadHandler = 0;
 float LWF::ROUND_OFF_TICK_RATE = 0.05f;
 
 LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
@@ -735,6 +736,16 @@ void LWF::ClearTextRenderer(string textName)
 	TextDictionary::iterator it = m_textDictionary.find(textName);
 	if (it != m_textDictionary.end())
 		it->second.second = 0;
+}
+
+void LWF::SetTextureLoadHandler(TextureLoadHandler h)
+{
+	m_textureLoadHandler = h;
+}
+
+TextureLoadHandler LWF::GetTextureLoadHandler()
+{
+	return m_textureLoadHandler;
 }
 
 }	// namespace LWF
