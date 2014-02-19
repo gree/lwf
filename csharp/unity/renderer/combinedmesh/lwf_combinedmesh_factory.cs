@@ -67,6 +67,7 @@ public partial class Factory : UnityRenderer.Factory
 	private string textureName;
 	private int updateCount;
 	private int bitmapCount;
+	private bool usingAdditiveShader;
 
 	public Factory(Data d, GameObject gObj,
 			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
@@ -115,6 +116,18 @@ public partial class Factory : UnityRenderer.Factory
 		MeshFilter.Destroy(meshFilter);
 		Mesh.Destroy(mesh);
 		base.Destruct();
+	}
+
+	public override void SetBlendMode(int m)
+	{
+		base.SetBlendMode(m);
+
+		if (m == (int)Format.Constant.BLEND_MODE_ADD && !usingAdditiveShader) {
+			usingAdditiveShader = true;
+			meshRenderer.sharedMaterial.shader =
+				ResourceCache.SharedInstance().GetAdditiveShader(
+					meshRenderer.sharedMaterial.shader);
+		}
 	}
 
 	public void AddBitmap()

@@ -19,6 +19,7 @@
  */
 
 using UnityEngine;
+
 using ResourceCache = LWF.UnityRenderer.ResourceCache;
 using MeshContext = LWF.UnityRenderer.MeshContext;
 
@@ -193,12 +194,9 @@ public class BitmapRenderer : Renderer
 		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
 			if (m_additiveMaterial == null) {
 				m_additiveMaterial = new Material(m_context.material);
-				string shaderName = m_context.material.shader.name;
-				shaderName += "Additive";
-				if (factory.useAdditionalColor) 
-					shaderName += "Additional";
 				m_additiveMaterial.shader =
-					ResourceCache.SharedInstance().GetShader(shaderName);
+					ResourceCache.SharedInstance().GetAdditiveShader(
+						m_context.material.shader);
 			}
 			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
 				m_additiveMaterial, factory.gameObject.layer, factory.camera, 0,

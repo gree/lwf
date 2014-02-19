@@ -21,6 +21,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using LWFDataLoader = System.Func<string, byte[]>;
 using TextureLoader = System.Func<string, UnityEngine.Texture2D>;
@@ -129,14 +130,22 @@ public class ResourceCache
 
 		if (m_lwfDataLoader == null) {
 			m_lwfDataLoader = (filename) => {
-				TextAsset asset = (TextAsset)Resources.Load(filename, typeof(TextAsset));
+				TextAsset asset =
+					(TextAsset)Resources.Load(filename, typeof(TextAsset));
+				if (asset == null)
+					Debug.LogError(string.Format(
+						"Resources.Load can't load [{0}]", filename));
 				return asset.bytes;
 			};
 		}
 
 		if (m_textureLoader == null) {
 			m_textureLoader = (filename) => {
-				return (Texture2D)Resources.Load(filename);
+				Texture2D texture = (Texture2D)Resources.Load(filename);
+				if (texture == null)
+					Debug.LogError(string.Format(
+						"Resources.Load can't load [{0}]", filename));
+				return texture;
 			};
 		}
 
@@ -236,6 +245,21 @@ public class ResourceCache
 				m_textureCache.Remove(cacheName);
 			}
 		}
+	}
+
+	public Shader GetAdditiveShader(Shader shader)
+	{
+		string shaderName = shader.name;
+		Regex r = new Regex("Additive");
+		if (r.IsMatch(shaderName))
+			return shader;
+
+		r = new Regex("(Normal|PreMultipliedAlpha)");
+		shaderName = r.Replace(shaderName, (match) => {
+			string s = match.ToString();
+			return s + "Additive";
+		});
+		return GetShader(shaderName);
 	}
 
 	public MeshContext LoadMesh(string lwfName,
@@ -343,6 +367,9 @@ public class ResourceCache
 		Shader shader;
 		if (!m_shaderCache.TryGetValue(filename, out shader)) {
 			shader = Shader.Find(filename);
+			if (shader == null)
+				Debug.LogError(
+					string.Format("Shader.Find can't find [{0}]", filename));
 			m_shaderCache[filename] = shader;
 		}
 		return shader;
