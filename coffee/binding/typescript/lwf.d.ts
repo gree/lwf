@@ -113,6 +113,7 @@ declare module LWF {
 		y:number;
 
 		addTween():Tween;
+		detachFromParent():void;
 		setMatrix(matrix:Matrix):void;
 		stopTween():void;
 	}
@@ -158,6 +159,7 @@ declare module LWF {
 		attachLWF(pLwf:LWF, attachName:string, option?:Object):void;
 		attachMovie(linkage:LWF, attachName:string, option?:Object):Movie;
 		attachMovie(linkageName:string, attachName:string, option?:Object):Movie;
+		attachMovie(movie:Movie, attachName:string, option?:Object):Movie;
 		clearEventListener(type?:string):void;
 		detachBitmap(pDepth:number):void;
 		detachFromParent():void;
@@ -260,11 +262,13 @@ declare module LWF {
 		addButtonEventListener(instanceName:string, listeners:Object):void;
 		addDenyButton(buttonName:string):boolean;
 		addEventListener(event:string, listener:Function):void;
+		addExecListener(listener:Function):void;
 		addMovieEventListener(instanceName:string, listeners:Object):void;
 		clearAllowButton():void;
 		clearButtonEventListener(instanceName:string, type?:string):void;
 		clearDenyButton():void;
 		clearEventListener(event:string):void;
+		clearExecListener():void;
 		clearMovieEventListener(instanceName:string, type?:string):void;
 		denyAllButtons():void;
 		destroy():void;
@@ -286,6 +290,7 @@ declare module LWF {
 		removeButtonEventListener(instanceName:string, listeners:Object):void;
 		removeDenyButton(buttonName:string):boolean;
 		removeEventListener(event:string, listener:Function):void;
+		removeExecListener(listener:Function):void;
 		removeMovieEventListener(instanceName:string, listeners:Object):void;
 		render():void;
 		scaleForHeight(stageWidth:number, stageHeight:number):void;
@@ -297,6 +302,7 @@ declare module LWF {
 		searchProgramObjectId(name:string):number;
 		setButtonEventListener(instanceName:string, listeners:Object):void;
 		setEventListener(event:string, listener:Function):void;
+		setExecListener(listener:Function):void;
 		setFastForward(pFastForward:boolean):void;
 		setFastForwardTimeout(pFastForwardTimeout:number):void;
 		setFrameRate(pFrameRate:number):void;
@@ -415,6 +421,4 @@ declare module LWF {
 		Factorial:Function;
 		CatmullRom:Function;
 	}
-
-	export var _root:Movie;
 }
