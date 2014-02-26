@@ -319,6 +319,7 @@ declare module LWF {
 		static Interpolation:TweenInterpolation;
 
 		chain():Tween;
+		chain(tween:Tween):Tween;
 		delay(frame:number):Tween;
 		easing(easeFunc:Function):Tween;
 		interpolation(func:Function):Tween;
