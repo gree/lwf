@@ -43,8 +43,25 @@ function main()
 	fl.showIdleMessage(false);
 
 	doc = fl.getDocumentDOM();
+	if (doc.getPlayerVersion().match(/^FlashLite/)) {
+		if (! confirm("WARNING: the current player version is "
+					  + doc.getPlayerVersion()
+					  + ". Can we continue to publish?")) {
+			return;
+		}
+	}
+
 	lib = doc.library;
 	var uri = doc.pathURI;
+	if (! uri) {
+		if (fl.saveDocumentAs(doc)) {
+			uri = doc.pathURI;
+		} else {
+			return;
+		}
+	}
+	FLfile.remove(uri + '~');
+	FLfile.copy(uri, uri + '~');
 	flaDir = uri.substr(0, uri.lastIndexOf("/") + 1);
 	flaName = uri.substr(flaDir.length);
 	flaName = flaName.substr(0, flaName.lastIndexOf("."));
