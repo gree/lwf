@@ -19,4 +19,5 @@ extern class BitmapClip
 	public var y:Float;
 
 	public function setMatrix(matrix:Matrix):Void;
+	public function detachFromParent():Void;
 }

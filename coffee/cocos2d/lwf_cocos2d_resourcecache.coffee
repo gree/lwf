@@ -83,7 +83,6 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
     return
 
   loadImages:(settings, data) ->
-    lwfUrl = settings["lwf"]
     prefix = settings["imagePrefix"] ? settings["prefix"] ? ""
     suffix = settings["imageSuffix"] ? ""
     imageCache = {}
@@ -102,7 +101,7 @@ class Cocos2dResourceCache extends WebkitCSSResourceCache
     return
 
   unloadLWF:(lwf) ->
-    super
+    super(lwf)
     unless @cache[lwf.url]?
       for name, url of lwf.renderFactory.cache
         if url.match(/\.(png|jpg)$/i)

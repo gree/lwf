@@ -18,18 +18,184 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-class WebGLRendererFactory extends WebkitCSSRendererFactory
-  @shaderProgram = null
+class WebGLRenderCommand
+  constructor:(context, texture, matrix) ->
+    @renderCount = 0
+    @renderingIndex = 0
+    @context = context
+    @texture = texture
+    @matrix = matrix
+    @colorTransform = null
+    @blendMode = 0
+    @maskMode = 0
 
-  setupGL: ->
-    gl = @stageContext
+class WebGLRendererContext
+  constructor: ->
+    @refCount = 1
+    @glContext = null
+    @textures = {}
+    @vertexBuffer = null
+    @indexBuffer = null
+    @aVertexPosition = null
+    @aTextureCoord = null
+    @uPMatrix = null
+    @uMatrix = null
+    @uTexture = null
+
+class WebGLRendererFactory extends WebkitCSSRendererFactory
+  @rendererContexts = {}
+
+  initGL: ->
+    rendererContext = WebGLRendererFactory.rendererContexts[@stage.id]
+    if rendererContext?
+      ++rendererContext.refCount
+      @glContext = rendererContext.glContext
+      @textures = rendererContext.textures
+      @vertexBuffer = rendererContext.vertexBuffer
+      @indexBuffer = rendererContext.indexBuffer
+      @aVertexPosition = rendererContext.aVertexPosition
+      @aTextureCoord = rendererContext.aTextureCoord
+      @aColor = rendererContext.aColor
+      @uPMatrix = rendererContext.uPMatrix
+      @uMatrix = rendererContext.uMatrix
+      @uTexture = rendererContext.uTexture
+      return
+
+    rendererContext = new WebGLRendererContext()
+    @textures = rendererContext.textures
+    WebGLRendererFactory.rendererContexts[@stage.id] = rendererContext
+
+    @stage.style.webkitUserSelect = "none"
+    if @stage.width is 0 and @stage.height is 0
+      @stage.width = @data.header.width
+      @stage.height = @data.header.height
+
+    params =
+      alpha:true
+      antialias:false
+      depth:false
+      premultipliedAlpha:true
+      preserveDrawingBuffer:false
+    @glContext = @stage.getContext("webgl", params) ?
+      @stage.getContext("experimental-webgl", params)
+    rendererContext.glContext = @glContext
+
+    gl = @glContext
+    @vertexBuffer = gl.createBuffer()
+    @indexBuffer = gl.createBuffer()
+    rendererContext.vertexBuffer = @vertexBuffer
+    rendererContext.indexBuffer = @indexBuffer
+    @bindVertexBuffer(gl, @vertexBuffer)
+    @bindIndexBuffer(gl, @indexBuffer)
+
+    if @useVertexColor
+      vertexShader = @loadShader(gl, gl.VERTEX_SHADER, """
+        attribute vec2 aVertexPosition;
+        attribute vec2 aTextureCoord;
+        attribute vec4 aColor;
+        uniform mat4 uPMatrix;
+        uniform mat4 uMatrix;
+        varying vec2 vTextureCoord;
+        varying vec4 vColor;
+        void main() {
+          gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);
+          vTextureCoord = aTextureCoord;
+          vColor = aColor;
+        }
+        """)
+
+      fragmentShader = @loadShader(gl, gl.FRAGMENT_SHADER, """
+        precision mediump float;
+        varying vec2 vTextureCoord;
+        varying vec4 vColor;
+        uniform sampler2D uTexture;
+        void main() {
+          gl_FragColor = vColor * texture2D(uTexture, vTextureCoord);
+        }
+        """)
+    else
+      vertexShader = @loadShader(gl, gl.VERTEX_SHADER, """
+        attribute vec2 aVertexPosition;
+        attribute vec3 aTextureCoord;
+        uniform mat4 uPMatrix;
+        uniform mat4 uMatrix;
+        varying vec3 vTextureCoord;
+        void main() {
+          gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);
+          vTextureCoord = aTextureCoord;
+        }
+        """)
+
+      fragmentShader = @loadShader(gl, gl.FRAGMENT_SHADER, """
+        precision mediump float;
+        varying vec3 vTextureCoord;
+        uniform sampler2D uTexture;
+        void main() {
+          gl_FragColor = vec4(1, 1, 1, vTextureCoord.z) * texture2D(uTexture, vTextureCoord.xy);
+        }
+        """)
+
+    shaderProgram = gl.createProgram()
+    gl.attachShader(shaderProgram, vertexShader)
+    gl.attachShader(shaderProgram, fragmentShader)
+    gl.linkProgram(shaderProgram)
+    unless gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)
+      alert("Unable to initialize the shader program.")
+    gl.useProgram(shaderProgram)
+
+    @aVertexPosition = gl.getAttribLocation(shaderProgram, "aVertexPosition")
+    @aTextureCoord = gl.getAttribLocation(shaderProgram, "aTextureCoord")
+    @uPMatrix = gl.getUniformLocation(shaderProgram, "uPMatrix")
+    @uMatrix = gl.getUniformLocation(shaderProgram, "uMatrix")
+    @uTexture = gl.getUniformLocation(shaderProgram, "uTexture")
+    rendererContext.aVertexPosition = @aVertexPosition
+    rendererContext.aTextureCoord = @aTextureCoord
+    rendererContext.uPMatrix = @uPMatrix
+    rendererContext.uMatrix = @uMatrix
+    rendererContext.uTexture = @uTexture
+
+    vertexBufferSize = 4 * @attributes
+    gl.vertexAttribPointer(
+      @aVertexPosition, 2, gl.FLOAT, false, vertexBufferSize, 0)
+    gl.vertexAttribPointer(@aTextureCoord, (if @useVertexColor then 2 else 3),
+      gl.FLOAT, false, vertexBufferSize, 8)
+
+    gl.enableVertexAttribArray(@aVertexPosition)
+    gl.enableVertexAttribArray(@aTextureCoord)
+
+    if @useVertexColor
+      @aColor = gl.getAttribLocation(shaderProgram, "aColor")
+      rendererContext.aColor = @aColor
+      gl.vertexAttribPointer(@aColor, 4, gl.FLOAT, false, vertexBufferSize, 16)
+      gl.enableVertexAttribArray(@aColor)
+
     gl.enable(gl.BLEND)
     gl.disable(gl.DEPTH_TEST)
     gl.disable(gl.DITHER)
     gl.disable(gl.SCISSOR_TEST)
     gl.activeTexture(gl.TEXTURE0)
-    gl.useProgram(@shaderProgram)
+    gl.clearColor(0.0, 0.0, 0.0, 1.0)
     return
+
+  destructGL: ->
+    rendererContext = WebGLRendererFactory.rendererContexts[@stage.id]
+    return if --rendererContext.refCount > 0
+
+    gl = @glContext
+    gl.deleteBuffer(@indexBuffer)
+    gl.deleteBuffer(@vertexBuffer)
+    gl.deleteTexture(d[0]) for k, d in @textures
+    delete WebGLRendererFactory.rendererContexts[@stage.id]
+    return
+
+  loadShader:(gl, type, program) ->
+    shader = gl.createShader(type)
+    gl.shaderSource(shader, program)
+    gl.compileShader(shader)
+    unless gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+      alert("An error occurred compiling the shaders: " +
+        gl.getShaderInfoLog(shader))
+    return shader
 
   setTexParameter:(gl, repeatS = false, repeatT = false) ->
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -41,14 +207,10 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     return
 
   setViewport:(gl, lwf) ->
-    r = @stage.getBoundingClientRect()
-    changed = @clientRect isnt r
-    changed |= @propertyMatrix.setWithComparing(lwf.property.matrix)
-    if changed
-      @clientRect = r
-      dpr = devicePixelRatio
-      @w = Math.round(r.width * dpr)
-      @h = Math.round(r.height * dpr)
+    changed = @propertyMatrix.setWithComparing(lwf.property.matrix)
+    if changed or @w isnt @stage.width or @h isnt @stage.height
+      @w = @stage.width
+      @h = @stage.height
       gl.viewport(0, 0, @w, @h)
       #gl.scissor(@propertyMatrix.translateX, @propertyMatrix.translateY,
       #  @data.header.width * @propertyMatrix.scaleX,
@@ -60,84 +222,30 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       bottom = @h
       far = 1
       near = -1
-      pmatrix = [
+      pmatrix = new Float32Array([
         2 / (right - left), 0, 0, 0,
         0, 2 / (top - bottom), 0, 0,
         0, 0, -2 / (far - near), 0,
         -(right + left) / (right - left), -(top + bottom) / (top - bottom),
           -(far + near) / (far - near), 1
-      ]
-      gl.uniformMatrix4fv(@uPMatrix, false, new Float32Array(pmatrix))
+      ])
+      gl.uniformMatrix4fv(@uPMatrix, false, pmatrix)
+    return
 
   constructor:(@data, @resourceCache,
       @cache, @stage, @textInSubpixel, @needsClear, @useVertexColor) ->
-    params = {premultipliedAlpha:true, alpha:false}
+    @attributes = if @useVertexColor then 8 else 5
+    @initGL()
     @drawCalls = 0
-    @stage.style.webkitUserSelect = "none"
-    @stageContext = @stage.getContext("webgl", params) ?
-      @stage.getContext("experimental-webgl", params)
-    if @stage.width is 0 and @stage.height is 0
-      @stage.width = @data.header.width
-      @stage.height = @data.header.height
     @blendMode = "normal"
     @maskMode = "normal"
-    @clientRect = null
+    @matrix = new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])
     @propertyMatrix = new Matrix
     @vertexData = new Float32Array(1)
     @indexData = new Uint16Array(1)
+    @color = new Float32Array(4)
+    @backGroundColor = [0, 0, 0, 1]
 
-    gl = @stageContext
-    @vertexBufferSize = 3 * 4 + 2 * 4 + 4 * 4
-    @vertexBuffer = gl.createBuffer()
-    @indexBuffer = gl.createBuffer()
-    @matrix = new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])
-
-    if WebGLRendererFactory.shaderProgram?
-      @shaderProgram = WebGLRendererFactory.shaderProgram
-    else
-      vertexShader = @loadShader(gl, gl.VERTEX_SHADER, """
-        attribute vec4 aVertexPosition;
-        attribute vec2 aTextureCoord;
-        attribute vec4 aColor;
-        uniform mat4 uPMatrix;
-        uniform mat4 uMatrix;
-        varying lowp vec2 vTextureCoord;
-        varying lowp vec4 vColor;
-        void main() {
-          gl_Position = uPMatrix * uMatrix * aVertexPosition;
-          vTextureCoord = aTextureCoord;
-          vColor = aColor;
-        }
-        """)
-
-      fragmentShader = @loadShader(gl, gl.FRAGMENT_SHADER, """
-        varying lowp vec2 vTextureCoord;
-        varying lowp vec4 vColor;
-        uniform sampler2D uTexture;
-        void main() {
-          gl_FragColor = vColor * texture2D(uTexture, vTextureCoord);
-        }
-        """)
-
-      @shaderProgram = gl.createProgram()
-      gl.attachShader(@shaderProgram, vertexShader)
-      gl.attachShader(@shaderProgram, fragmentShader)
-      gl.linkProgram(@shaderProgram)
-      unless gl.getProgramParameter(@shaderProgram, gl.LINK_STATUS)
-        alert("Unable to initialize the shader program.")
-      WebGLRendererFactory.shaderProgram = @shaderProgram
-
-    @aVertexPosition = gl.getAttribLocation(@shaderProgram, "aVertexPosition")
-    @aTextureCoord = gl.getAttribLocation(@shaderProgram, "aTextureCoord")
-    @aColor = gl.getAttribLocation(@shaderProgram, "aColor")
-    @uPMatrix = gl.getUniformLocation(@shaderProgram, "uPMatrix")
-    @uMatrix = gl.getUniformLocation(@shaderProgram, "uMatrix")
-    @uTexture = gl.getUniformLocation(@shaderProgram, "uTexture")
-
-    @setupGL()
-    gl.clearColor(0.0, 0.0, 0.0, 1.0)
-
-    @textures = {}
     @bitmapContexts = []
     for bitmap in data.bitmaps
       continue if bitmap.textureFragmentId is -1
@@ -162,43 +270,57 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
     @initCommands()
 
-  loadShader:(gl, type, program) ->
-    shader = gl.createShader(type)
-    gl.shaderSource(shader, program)
-    gl.compileShader(shader)
-    unless gl.getShaderParameter(shader, gl.COMPILE_STATUS)
-      alert("An error occurred compiling the shaders: " +
-        gl.getShaderInfoLog(shader))
-    return shader
-
   destruct: ->
-    gl = @stageContext
-    @deleteMask(gl)
-    gl.deleteBuffer(@indexBuffer)
-    gl.deleteBuffer(@vertexBuffer)
-    gl.deleteTexture(d[0]) for k, d in @textures
+    @bindedTexture = null
+    @currentTexture = null
+    @deleteMask(@glContext)
+    @destructGL()
     context.destruct() for context in @bitmapContexts
     context.destruct() for context in @bitmapExContexts
     context.destruct() for context in @textContexts
     return
 
   beginRender:(lwf) ->
-    super
+    super(lwf)
     @lwf = lwf
-    @drawCalls = 0
     return if lwf.parent?
-    @currentTexture = null
-    @currentBlendMode = "normal"
     @faces = 0
-    gl = @stageContext
-    @setViewport(gl, lwf)
-    gl.clear(gl.COLOR_BUFFER_BIT) if @needsClear
+    return
+
+  bindTexture:(gl, texture) ->
+    if @bindedTexture isnt texture
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      @bindedTexture = texture
+    return
+
+  blendFunc:(gl, blendSrcFactor, blendDstFactor) ->
+    if @setSrcFactor isnt blendSrcFactor or @setDstFactor isnt blendDstFactor
+      @setSrcFactor = blendSrcFactor
+      @setDstFactor = blendDstFactor
+      gl.blendFunc(blendSrcFactor, blendDstFactor)
+    return
+
+  bindVertexBuffer:(gl, buffer) ->
+    if @bindedVertexBuffer isnt buffer
+      @bindedVertexBuffer = buffer
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    return
+
+  bindIndexBuffer:(gl, buffer) ->
+    if @bindedIndexBuffer isnt buffer
+      @bindedIndexBuffer = buffer
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer)
+    return
+
+  setClearColor:(gl) ->
+    [r, g, b, a] = @backGroundColor
+    gl.clearColor(r / 255, g / 255, b / 255, a / 255)
     return
 
   addCommand:(rIndex, cmd) ->
-    super
+    super(rIndex, cmd)
     return if @lwf.parent?
-    ++@faces if cmd.renderer is null
+    ++@faces
     return
 
   endRender:(lwf) ->
@@ -206,16 +328,27 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @addCommandToParent(lwf)
       return
 
-    gl = @stageContext
+    @currentTexture = null
+    @bindedTexture = null
+    @setSrcFactor = null
+    @setDstFactor = null
+    @bindedVertexBuffer = null
+    @bindedIndexBuffer = null
+    @currentBlendMode = "normal"
+    gl = @glContext
+    @setViewport(gl, lwf)
+    gl.clear(gl.COLOR_BUFFER_BIT) if @needsClear
 
-    vertices = @faces * 4 * 9
+    vertices = @faces * 4 * @attributes
     @faces = 0
+    @drawCalls = 0
     if vertices > @vertexData.length #or vertices < @vertexData.length / 6
-      vertices *= 2
-      vertices = 65532 * 9 if vertices > 65532 * 9
-      indices = vertices / (4 * 9) * 6
+      vertices *= 3
+      vertices = 65536 * @attributes if vertices > 65536 * @attributes
+      indices = vertices / (4 * @attributes) * 6
       if vertices isnt @vertexData.length
         @vertexData = new Float32Array(vertices)
+
         @indexData = new Uint16Array(indices)
         offset = 0
         indexOffset = 0
@@ -228,18 +361,24 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
           @indexData[offset + 5] = indexOffset + 3
           offset += 6
           indexOffset += 4
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @indexBuffer)
+        @bindIndexBuffer(gl, @indexBuffer)
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @indexData, gl.STATIC_DRAW)
 
     @renderMaskMode = "normal"
     @renderMasked = false
-    for rIndex in @commandsKeys
+
+    renderCount = lwf.renderCount
+    for rIndex in [0...@commands.length]
       cmd = @commands[rIndex]
-      if cmd.subCommandsKeys?
-        for srIndex in cmd.subCommandsKeys
+      continue if !cmd? or cmd.renderingIndex isnt rIndex or
+        cmd.renderCount isnt renderCount
+      if cmd.subCommands?
+        for srIndex in [0...cmd.subCommands.length]
           scmd = cmd.subCommands[srIndex]
-          @render(gl, scmd, srIndex)
-      @render(gl, cmd, rIndex)
+          continue if !scmd? or scmd.renderingIndex isnt srIndex or
+            scmd.renderCount isnt renderCount
+          @render(gl, scmd)
+      @render(gl, cmd)
     @renderMesh(gl)
 
     if @renderMaskMode isnt "normal"
@@ -251,7 +390,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     @initCommands()
     return
 
-  render:(gl, cmd, rIndex) ->
+  render:(gl, cmd) ->
     if @renderMaskMode isnt cmd.maskMode
       @renderMesh(gl)
       @generateMask(gl)
@@ -264,11 +403,13 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
           gl.bindFramebuffer(gl.FRAMEBUFFER, @maskFrameBuffer)
           gl.clearColor(0, 0, 0, 0)
           gl.clear(gl.COLOR_BUFFER_BIT)
+          @setClearColor(gl)
         when "layer"
           if @renderMasked
             gl.bindFramebuffer(gl.FRAMEBUFFER, @layerFrameBuffer)
             gl.clearColor(0, 0, 0, 0)
             gl.clear(gl.COLOR_BUFFER_BIT)
+            @setClearColor(gl)
           else
             gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         else
@@ -278,18 +419,14 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
             gl.bindFramebuffer(gl.FRAMEBUFFER, null)
       @renderMaskMode = cmd.maskMode
 
-    if cmd.renderer is null
-      @updateMesh(gl, cmd.context, cmd.texture, cmd.matrix, cmd.colorTransform,
-        rIndex, cmd.blendMode, cmd.meshCache, cmd.useMeshCache)
-    else
-      cmd.renderer.renderCommand(
-        cmd.matrix, cmd.colorTransform, rIndex, cmd.blendMode)
-    return
+    context = cmd.context
+    texture = cmd.texture
+    m = cmd.matrix
+    c = cmd.colorTransform
+    blendMode = cmd.blendMode
 
-  updateMesh:(gl, context,
-      texture, m, c, renderingIndex, blendMode, meshCache, useMeshCache) ->
     if texture isnt @currentTexture or blendMode isnt @currentBlendMode or
-        @faces * 4 * 9 >= @vertexData.length
+        @faces * 4 * @attributes >= @vertexData.length
       @renderMesh(gl)
       @currentTexture = texture
       @currentBlendMode = blendMode
@@ -298,6 +435,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @blendDstFactor =
         if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA
 
+    ###
     alpha = c.multi.alpha
     if @useVertexColor
       red = c.multi.red
@@ -311,72 +449,89 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       red = 1
       green = 1
       blue = 1
+    ###
+    cc = @color
+    cc[3] = c.multi._[3]
+    if @useVertexColor
+      cc[0] = c.multi._[0]
+      cc[1] = c.multi._[1]
+      cc[2] = c.multi._[2]
+      if context.preMultipliedAlpha
+        cc[0] *= cc[3]
+        cc[1] *= cc[3]
+        cc[2] *= cc[3]
 
-    if useMeshCache
-      for i in [0...4]
-        offset = i * 9
-        meshCache[offset + 5] = red
-        meshCache[offset + 6] = green
-        meshCache[offset + 7] = blue
-        meshCache[offset + 8] = alpha
-    else
-      scaleX = m.scaleX
-      skew0 = m.skew0
-      translateX = m.translateX
+    ###
+    scaleX = m.scaleX
+    skew0 = m.skew0
+    translateX = m.translateX
 
-      skew1 = m.skew1
-      scaleY = m.scaleY
-      translateY = m.translateY
+    skew1 = m.skew1
+    scaleY = m.scaleY
+    translateY = m.translateY
 
-      translateZ = 0
+    translateZ = 0
+    ###
 
-      vertexData = context.vertexData
-      uv = context.uv
-      for i in [0...4]
-        x = vertexData[i].x
-        y = vertexData[i].y
+    v = context.vertexData
+    uv = context.uv
+    mm0 = m._[0]
+    mm1 = m._[1]
+    mm2 = m._[2]
+    mm3 = m._[3]
+    mm4 = m._[4]
+    mm5 = m._[5]
+    alpha = cc[3]
+    voffset = @faces++ * 4 * @attributes
+    vertexData = @vertexData
+    for i in [0...4]
+      ###
+      x = vertexData[i].x
+      y = vertexData[i].y
+      px = x * scaleX + y * skew0 + translateX
+      py = x * skew1 + y * scaleY + translateY
+      pz = translateZ
+      ###
+      x = i * 2 + 0
+      y = i * 2 + 1
+      vx = v[x]
+      vy = v[y]
+      uvx = uv[x]
+      uvy = uv[y]
 
-        px = x * scaleX + y * skew0 + translateX
-        py = x * skew1 + y * scaleY + translateY
-        pz = translateZ
-
-        offset = i * 9
-        meshCache[offset + 0] = px
-        meshCache[offset + 1] = py
-        meshCache[offset + 2] = pz
-        meshCache[offset + 3] = uv[i].u
-        meshCache[offset + 4] = uv[i].v
-        meshCache[offset + 5] = red
-        meshCache[offset + 6] = green
-        meshCache[offset + 7] = blue
-        meshCache[offset + 8] = alpha
-
-    offset = @faces++ * 4 * 9
-    for i in [0...4 * 9]
-      @vertexData[offset + i] = meshCache[i]
+      offset = voffset + i * @attributes
+      if @useVertexColor
+        vertexData[offset + 0] = vx * mm0 + vy * mm2 + mm4 # px
+        vertexData[offset + 1] = vx * mm1 + vy * mm3 + mm5 # py
+        vertexData[offset + 2] = uvx # uv[i].u
+        vertexData[offset + 3] = uvy # uv[i].v
+        vertexData[offset + 4] = cc[0] # red
+        vertexData[offset + 5] = cc[1] # green
+        vertexData[offset + 6] = cc[2] # blue
+        vertexData[offset + 7] = alpha
+      else
+        vertexData[offset + 0] = vx * mm0 + vy * mm2 + mm4 # px
+        vertexData[offset + 1] = vx * mm1 + vy * mm3 + mm5 # py
+        vertexData[offset + 2] = uvx # uv[i].u
+        vertexData[offset + 3] = uvy # uv[i].v
+        vertexData[offset + 4] = alpha
     return
 
   renderMesh:(gl) ->
     return if @currentTexture is null or @faces is 0
 
-    gl.bindTexture(gl.TEXTURE_2D, @currentTexture)
-    gl.blendFunc(@blendSrcFactor, @blendDstFactor)
+    @bindTexture(gl, @currentTexture)
+    @blendFunc(gl, @blendSrcFactor, @blendDstFactor)
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, @vertexBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, @vertexData, gl.DYNAMIC_DRAW)
+    if @bindedVertexBuffer is @vertexBuffer
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, @vertexData)
+    else
+      @bindVertexBuffer(gl, @vertexBuffer)
+      gl.bufferData(gl.ARRAY_BUFFER, @vertexData, gl.DYNAMIC_DRAW)
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @indexBuffer)
-
-    gl.vertexAttribPointer(
-      @aVertexPosition, 3, gl.FLOAT, false, @vertexBufferSize, 0)
-    gl.vertexAttribPointer(
-      @aTextureCoord, 2, gl.FLOAT, false, @vertexBufferSize, 12)
-    gl.vertexAttribPointer(
-      @aColor, 4, gl.FLOAT, false, @vertexBufferSize, 20)
-
-    gl.enableVertexAttribArray(@aVertexPosition)
-    gl.enableVertexAttribArray(@aTextureCoord)
-    gl.enableVertexAttribArray(@aColor)
+    if @bindedIndexBuffer isnt @indexBuffer
+      @bindIndexBuffer(gl, @indexBuffer)
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @indexData, gl.STATIC_DRAW)
 
     gl.uniformMatrix4fv(@uMatrix, false, @matrix)
 
@@ -406,7 +561,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
     for i in [0...2]
       texture = textures[i]
-      gl.bindTexture(gl.TEXTURE_2D, texture)
+      @bindTexture(gl, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0,
         gl.RGBA, @w, @h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
       @setTexParameter(gl)
@@ -417,31 +572,26 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
       gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    buffer = new Float32Array([
-      #x,  y, z, u, v, r, g, b, a
-      @w, @h, 0, 1, 1, 1, 1, 1, 1,
-      @w,  0, 0, 1, 0, 1, 1, 1, 1,
-       0, @h, 0, 0, 1, 1, 1, 1, 1,
-       0,  0, 0, 0, 0, 1, 1, 1, 1,
-    ])
-    @maskVertexBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, @maskVertexBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW)
-
-    indexData = new Uint8Array([
-      0, 1, 2,
-      2, 1, 3,
-    ])
-    @maskIndexBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskIndexBuffer)
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW)
+    if @useVertexColor
+      @maskVertexData = new Float32Array([
+        #x,  y, u, v, r, g, b, a
+        @w, @h, 1, 1, 1, 1, 1, 1,
+        @w,  0, 1, 0, 1, 1, 1, 1,
+         0, @h, 0, 1, 1, 1, 1, 1,
+         0,  0, 0, 0, 1, 1, 1, 1,
+      ])
+    else
+      @maskVertexData = new Float32Array([
+        #x,  y, u, v, a
+        @w, @h, 1, 1, 1,
+        @w,  0, 1, 0, 1,
+         0, @h, 0, 1, 1,
+         0,  0, 0, 0, 1,
+      ])
     return
 
   deleteMask:(gl) ->
     return unless @maskTexture?
-
-    gl.deleteBuffer(@maskVertexBuffer)
-    gl.deleteBuffer(@maskIndexBuffer)
 
     gl.deleteFramebuffer(@maskFrameBuffer)
     gl.deleteFramebuffer(@layerFrameBuffer)
@@ -455,32 +605,33 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     return
 
   renderMask:(gl) ->
-    gl.bindBuffer(gl.ARRAY_BUFFER, @maskVertexBuffer)
-    gl.vertexAttribPointer(
-      @aVertexPosition, 3, gl.FLOAT, false, @vertexBufferSize, 0)
-    gl.vertexAttribPointer(
-      @aTextureCoord, 2, gl.FLOAT, false, @vertexBufferSize, 12)
-    gl.vertexAttribPointer(
-      @aColor, 4, gl.FLOAT, false, @vertexBufferSize, 20)
+    @bindVertexBuffer(gl, @vertexBuffer)
+    @maskVertexData[@attributes * 0 + 0] = @w
+    @maskVertexData[@attributes * 0 + 1] = @h
+    @maskVertexData[@attributes * 1 + 0] = @w
+    @maskVertexData[@attributes * 2 + 1] = @h
+    if @bindedVertexBuffer is @vertexBuffer
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, @maskVertexData)
+    else
+      @bindVertexBuffer(gl, @vertexBuffer)
+      gl.bufferData(gl.ARRAY_BUFFER, @maskVertexData, gl.DYNAMIC_DRAW)
 
-    gl.enableVertexAttribArray(@aVertexPosition)
-    gl.enableVertexAttribArray(@aTextureCoord)
-    gl.enableVertexAttribArray(@aColor)
-
+    @maskMatrix[13] = @h
     gl.uniformMatrix4fv(@uMatrix, false, @maskMatrix)
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, @maskIndexBuffer)
+    @bindIndexBuffer(gl, @indexBuffer)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @indexData, gl.STATIC_DRAW)
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, @maskFrameBuffer)
-    gl.blendFunc(@maskSrcFactor, gl.ZERO)
-    gl.bindTexture(gl.TEXTURE_2D, @layerTexture)
-    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
+    @bindTexture(gl, @layerTexture)
+    @blendFunc(gl, @maskSrcFactor, gl.ZERO)
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.bindTexture(gl.TEXTURE_2D, @maskTexture)
-    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0)
+    @bindTexture(gl, @maskTexture)
+    @blendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
     return
 
@@ -502,13 +653,11 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     ctor(lwf, lwf.data.strings[particleData.stringId]) if ctor?
 
   getStageSize: ->
-    r = @stage.getBoundingClientRect()
-    dpr = devicePixelRatio
-    return [r.width * dpr, r.height * dpr]
+    return [@stage.width, @stage.height]
 
   setBackgroundColor:(v) ->
     [r, g, b, a] = @parseBackgroundColor(v)
-    gl = @stageContext
-    gl.clearColor(r / 255, g / 255, b / 255, a / 255)
+    @backGroundColor = [r, g, b, a]
+    @setClearColor(@glContext)
     return
 

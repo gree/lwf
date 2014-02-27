@@ -168,11 +168,11 @@ class Format
 
   class @InstanceName extends @StringBase
     constructor:(stringId) ->
-      super
+      super(stringId)
 
   class @Event extends @StringBase
     constructor:(stringId) ->
-      super
+      super(stringId)
 
   class @String
     constructor:(@stringOffset, @stringLength) ->

@@ -22,11 +22,13 @@ class WebkitCSSTextContext extends HTML5TextContext
 
 class WebkitCSSTextRenderer extends HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
-    super
+    super(@lwf, @context, @textObject)
 
     @alpha = -1
     @zIndex = -1
     @visible = false
+    @node = null
+    @currentCanvas = null
     @cmd = {}
 
   destructor: ->
@@ -48,21 +50,24 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
       else
         @node.style.visibility = "visible" if @node?
 
-    super
+    super(m, c, renderingIndex, renderingCount, visible)
 
     nodeChanged = false
-    if @node? and @node isnt @canvas
-      @node.parentNode.removeChild(@node)
-      @node = null
     unless @node?
-      nodeChanged = true
-      @node = @canvas
+      @node = document.createElement("div")
+      @node.style.width = "#{@canvas.width}px"
+      @node.style.height = "#{@canvas.height}px"
       @node.style.display = "block"
       @node.style.pointerEvents = "none"
       @node.style.position = "absolute"
       @node.style.webkitTransformOrigin = "0px 0px"
       @node.style.visibility = "visible"
       @context.factory.stage.appendChild(@node)
+      nodeChanged = true
+
+    if @currentCanvas isnt @canvas
+      @node.style.background = "-webkit-canvas(#{@canvas.name}) transparent"
+      @currentCanvas = @canvas
 
     maskMode = @context.factory.maskMode
 

@@ -20,15 +20,17 @@
 
 class Utility
   @calcMatrixToPoint:(sx, sy, m) ->
+    mm = m._
     #dx = m.scaleX * sx + m.skew0  * sy + m.translateX
-    dx = m._[0] * sx + m._[2] * sy + m._[4]
+    dx = mm[0] * sx + mm[2] * sy + mm[4]
     #dy = m.skew1  * sx + m.scaleY * sy + m.translateY
-    dy = m._[1] * sx + m._[3] * sy + m._[5]
+    dy = mm[1] * sx + mm[3] * sy + mm[5]
     return [dx, dy]
 
   @getMatrixDeterminant:(matrix) ->
+    mm = matrix._
     #return matrix.scaleX * matrix.scaleY - matrix.skew0 * matrix.skew1 < 0
-    return matrix._[0] * matrix._[3] - matrix._[2] * matrix._[1] < 0
+    return mm[0] * mm[3] - mm[2] * mm[1] < 0
 
   @syncMatrix:(movie) ->
     matrixId = movie.matrixId ? 0
@@ -37,26 +39,28 @@ class Utility
       scaleX = 1
       scaleY = 1
       rotation = 0
+      t = translate._
       matrix = new Matrix(
         #scaleX, scaleY, 0, 0, translate.translateX, translate.translateY)
-        scaleX, scaleY, 0, 0, translate._[0], translate._[1])
+        scaleX, scaleY, 0, 0, t[0], t[1])
     else
       matrixId &= ~Constant.MATRIX_FLAG
       matrix = movie.lwf.data.matrices[matrixId]
       md = @getMatrixDeterminant(matrix)
+      mm = matrix._
       scaleX = Math.sqrt(
         #matrix.scaleX * matrix.scaleX + matrix.skew1 * matrix.skew1)
-        matrix._[0] * matrix._[0] + matrix._[1] * matrix._[1])
+        mm[0] * mm[0] + mm[1] * mm[1])
       scaleX = -scaleX if md
       scaleY = Math.sqrt(
         #matrix.scaleY * matrix.scaleY + matrix.skew0 * matrix.skew0)
-        matrix._[3] * matrix._[3] + matrix._[2] * matrix._[2])
+        mm[3] * mm[3] + mm[2] * mm[2])
       if md
         #rotation = Math.atan2(matrix.skew1, -matrix.scaleX)
-        rotation = Math.atan2(matrix._[1], -matrix._[0])
+        rotation = Math.atan2(mm[1], -mm[0])
       else
         #rotation = Math.atan2(matrix.skew1, matrix.scaleX)
-        rotation = Math.atan2(matrix._[1], matrix._[0])
+        rotation = Math.atan2(mm[1], mm[0])
       rotation = rotation / Math.PI * 180
 
     movie.property.setMatrix(matrix, scaleX, scaleY, rotation)
@@ -94,9 +98,10 @@ class Utility
       matrixId &= ~Constant.MATRIX_FLAG
       matrix = movie.lwf.data.matrices[matrixId]
       md = @getMatrixDeterminant(matrix)
+      mm = matrix._
       scaleX = Math.sqrt(
         #matrix.scaleX * matrix.scaleX + matrix.skew1 * matrix.skew1)
-        matrix._[0] * matrix._[0] + matrix._[1] * matrix._[1])
+        mm[0] * mm[0] + mm[1] * mm[1])
       scaleX = -scaleX if md
       return scaleX
 
@@ -107,9 +112,10 @@ class Utility
     else
       matrixId &= ~Constant.MATRIX_FLAG
       matrix = movie.lwf.data.matrices[matrixId]
+      mm = matrix._
       scaleY = Math.sqrt(
         #matrix.scaleY * matrix.scaleY + matrix.skew0 * matrix.skew0)
-        matrix._[3] * matrix._[3] + matrix._[2] * matrix._[2])
+        mm[3] * mm[3] + mm[2] * mm[2])
       return scaleY
 
   @getRotation:(movie) ->
@@ -120,12 +126,13 @@ class Utility
       matrixId &= ~Constant.MATRIX_FLAG
       matrix = movie.lwf.data.matrices[matrixId]
       md = @getMatrixDeterminant(matrix)
+      mm = matrix._
       if md
         #rotation = Math.atan2(matrix.skew1, -matrix.scaleX)
-        rotation = Math.atan2(matrix._[1], -matrix._[0])
+        rotation = Math.atan2(mm[1], -mm[0])
       else
         #rotation = Math.atan2(matrix.skew1, matrix.scaleX)
-        rotation = Math.atan2(matrix._[1], matrix._[0])
+        rotation = Math.atan2(mm[1], mm[0])
       rotation = rotation / Math.PI * 180
       return rotation
 
@@ -159,30 +166,33 @@ class Utility
       dst.set(src0)
     else if (src1Id & Constant.MATRIX_FLAG) is 0
       translate = lwf.data.translates[src1Id]
+      d = dst._
+      s0 = src0._
+      t = translate._
       #dst.scaleX = src0.scaleX
-      dst._[0] = src0._[0]
+      d[0] = s0[0]
       #dst.skew0  = src0.skew0
-      dst._[2] = src0._[2]
+      d[2] = s0[2]
       #dst.translateX =
-      dst._[4] =
+      d[4] =
         #src0.scaleX * translate.translateX +
-        src0._[0] * translate._[0] +
+        s0[0] * t[0] +
         #src0.skew0  * translate.translateY +
-        src0._[2] * translate._[1] +
+        s0[2] * t[1] +
         #src0.translateX
-        src0._[4]
+        s0[4]
       #dst.skew1  = src0.skew1
-      dst._[1] = src0._[1]
+      d[1] = s0[1]
       #dst.scaleY = src0.scaleY
-      dst._[3] = src0._[3]
+      d[3] = s0[3]
       #dst.translateY =
-      dst._[5] =
+      d[5] =
         #src0.skew1  * translate.translateX +
-        src0._[1] * translate._[0] +
+        s0[1] * t[0] +
         #src0.scaleY * translate.translateY +
-        src0._[3] * translate._[1] +
+        s0[3] * t[1] +
         #src0.translateY
-        src0._[5]
+        s0[5]
     else
       matrixId = src1Id & ~Constant.MATRIX_FLAG
       src1 = lwf.data.matrices[matrixId]
@@ -190,80 +200,87 @@ class Utility
     return dst
 
   @calcMatrix:(dst, src0, src1) ->
+    d = dst._
+    s0 = src0._
+    s1 = src1._
     #dst.scaleX =
-    dst._[0] =
+    d[0] =
       #src0.scaleX * src1.scaleX +
-      src0._[0] * src1._[0] +
+      s0[0] * s1[0] +
       #src0.skew0  * src1.skew1
-      src0._[2] * src1._[1]
+      s0[2] * s1[1]
     #dst.skew0 =
-    dst._[2] =
+    d[2] =
       #src0.scaleX * src1.skew0 +
-      src0._[0] * src1._[2] +
+      s0[0] * s1[2] +
       #src0.skew0  * src1.scaleY
-      src0._[2] * src1._[3]
+      s0[2] * s1[3]
     #dst.translateX =
-    dst._[4] =
+    d[4] =
       #src0.scaleX * src1.translateX +
-      src0._[0] * src1._[4] +
+      s0[0] * s1[4] +
       #src0.skew0  * src1.translateY +
-      src0._[2] * src1._[5] +
+      s0[2] * s1[5] +
       #src0.translateX
-      src0._[4]
+      s0[4]
     #dst.skew1 =
-    dst._[1] =
+    d[1] =
       #src0.skew1  * src1.scaleX +
-      src0._[1] * src1._[0] +
+      s0[1] * s1[0] +
       #src0.scaleY * src1.skew1
-      src0._[3] * src1._[1]
+      s0[3] * s1[1]
     #dst.scaleY =
-    dst._[3] =
+    d[3] =
       #src0.skew1  * src1.skew0 +
-      src0._[1] * src1._[2] +
+      s0[1] * s1[2] +
       #src0.scaleY * src1.scaleY
-      src0._[3] * src1._[3]
+      s0[3] * s1[3]
     #dst.translateY =
-    dst._[5] =
+    d[5] =
       #src0.skew1  * src1.translateX +
-      src0._[1] * src1._[4] +
+      s0[1] * s1[4] +
       #src0.scaleY * src1.translateY +
-      src0._[3] * src1._[5] +
+      s0[3] * s1[5] +
       #src0.translateY
-      src0._[5]
+      s0[5]
     return dst
 
   @rotateMatrix:(dst, src, scale, offsetX, offsetY) ->
     offsetX *= scale
     offsetY *= scale
+    d = dst._
+    s = src._
     #dst.scaleX = -src.skew0 * scale
-    dst._[0] = -src._[2] * scale
+    d[0] = -s[2] * scale
     #dst.skew0 = src.scaleX * scale
-    dst._[2] = src._[0] * scale
+    d[2] = s[0] * scale
     #dst.translateX= src.scaleX * offsetX + src.skew0 * offsetY + src.translateX
-    dst._[4] = src._[0] * offsetX + src._[2] * offsetY + src._[4]
+    d[4] = s[0] * offsetX + s[2] * offsetY + s[4]
     #dst.skew1 = -src.scaleY * scale
-    dst._[1] = -src._[3] * scale
+    d[1] = -s[3] * scale
     #dst.scaleY = src.skew1 * scale
-    dst._[3] = src._[1] * scale
+    d[3] = s[1] * scale
     #dst.translateY= src.skew1 * offsetX + src.scaleY * offsetY + src.translateY
-    dst._[5] = src._[1] * offsetX + src._[3] * offsetY + src._[5]
+    d[5] = s[1] * offsetX + s[3] * offsetY + s[5]
     return dst
 
   @scaleMatrix:(dst, src, scale, offsetX, offsetY) ->
     offsetX *= scale
     offsetY *= scale
+    d = dst._
+    s = src._
     #dst.scaleX = src.scaleX * scale
-    dst._[0] = src._[0] * scale
+    d[0] = s[0] * scale
     #dst.skew0 = src.skew0 * scale
-    dst._[2] = src._[2] * scale
+    d[2] = s[2] * scale
     #dst.translateX= src.scaleX * offsetX + src.skew0 * offsetY + src.translateX
-    dst._[4] = src._[0] * offsetX + src._[2] * offsetY + src._[4]
+    d[4] = s[0] * offsetX + s[2] * offsetY + s[4]
     #dst.skew1 = src.skew1 * scale
-    dst._[1] = src._[1] * scale
+    d[1] = s[1] * scale
     #dst.scaleY = src.scaleY * scale
-    dst._[3] = src._[3] * scale
+    d[3] = s[3] * scale
     #dst.translateY= src.skew1 * offsetX + src.scaleY * offsetY + src.translateY
-    dst._[5] = src._[1] * offsetX + src._[3] * offsetY + src._[5]
+    d[5] = s[1] * offsetX + s[3] * offsetY + s[5]
     return dst
 
   @fitForHeight:(lwf, stageWidth, stageHeight) ->
@@ -297,25 +314,27 @@ class Utility
     return dst
 
   @invertMatrix:(dst, src) ->
+    d = dst._
+    s = src._
     #dt = src.scaleX * src.scaleY - src.skew0 * src.skew1
-    dt = src._[0] * src._[3] - src._[2] * src._[1]
+    dt = s[0] * s[3] - s[2] * s[1]
     if dt isnt 0
       #dst.scaleX = src.scaleY / dt
-      dst._[0] = src._[3] / dt
+      d[0] = s[3] / dt
       #dst.skew0 = -src.skew0 / dt
-      dst._[2] = -src._[2] / dt
+      d[2] = -s[2] / dt
       #dst.translateX = (src.skew0 * src.translateY -
-      dst._[4] = (src._[2] * src._[5] -
+      d[4] = (s[2] * s[5] -
         #src.translateX * src.scaleY) / dt
-        src._[4] * src._[3]) / dt
+        s[4] * s[3]) / dt
       #dst.skew1 = -src.skew1 / dt
-      dst._[1] = -src._[1] / dt
+      d[1] = -s[1] / dt
       #dst.scaleY = src.scaleX / dt
-      dst._[3] = src._[0] / dt
+      d[3] = s[0] / dt
       #dst.translateY = (src.translateX * src.skew1 -
-      dst._[5] = (src._[4] * src._[1] -
+      d[5] = (s[4] * s[1] -
         #src.scaleX * src.translateY) / dt
-        src._[0] * src._[5]) / dt
+        s[0] * s[5]) / dt
     else
       dst.clear()
     return
@@ -344,8 +363,11 @@ class Utility
     #dst.multi.green = src0.multi.green * src1.multi.green
     #dst.multi.blue  = src0.multi.blue  * src1.multi.blue
     #dst.multi.alpha = src0.multi.alpha * src1.multi.alpha
+    d = dst.multi._
+    s0 = src0.multi._
+    s1 = src1.multi._
     for i in [0...4]
-      dst.multi._[i] = src0.multi._[i] * src1.multi._[i]
+      d[i] = s0[i] * s1[i]
     #dst.add.red   = src0.add.red   * src1.multi.red   + src1.add.red
     #dst.add.green = src0.add.green * src1.multi.green + src1.add.green
     #dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue
@@ -361,8 +383,11 @@ class Utility
     #dst.green = c.green * t.multi.green
     #dst.blue  = c.blue  * t.multi.blue
     #dst.alpha = c.alpha * t.multi.alpha
+    d = dst._
+    cc = c._
+    tc = t.multi._
     for i in [0...4]
-      dst._[i] = c._[i] * t.multi._[i]
+      d[i] = cc[i] * tc[i]
     #dst.red   = c.red   * t.multi.red   + t.add.red
     #dst.green = c.green * t.multi.green + t.add.green
     #dst.blue  = c.blue  * t.multi.blue  + t.add.blue
@@ -371,6 +396,10 @@ class Utility
 
   @newIntArray:() ->
     return []
+
+  @clearIntArray:(array) ->
+    array.length = 0
+    return
 
   @insertIntArray:(array, v) ->
     if array.length is 0 or v > array[array.length - 1]

@@ -18,6 +18,21 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
+class CanvasRenderCommand
+  constructor: ->
+    @renderCount = 0
+    @renderingIndex = 0
+    @alpha = 0
+    @blendMode = 0
+    @maskMode = 0
+    @matrix = null
+    @image = null
+    @pattern = null
+    @u = 0
+    @v = 0
+    @w = 0
+    @h = 0
+
 class CanvasRendererFactory extends WebkitCSSRendererFactory
   constructor:(data, @resourceCache, \
       @cache, @stage, @textInSubpixel, @needsClear, @quirkyClearRect) ->
@@ -172,11 +187,16 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     @renderBlendMode = "normal"
     @renderMaskMode = "normal"
     @renderMasked = false
-    for rIndex in @commandsKeys
+    renderCount = lwf.renderCount
+    for rIndex in [0...@commands.length]
       cmd = @commands[rIndex]
-      if cmd.subCommandsKeys?
-        for srIndex in cmd.subCommandsKeys
+      continue if !cmd? or cmd.renderingIndex isnt rIndex or
+        cmd.renderCount isnt renderCount
+      if cmd.subCommands?
+        for srIndex in [0...cmd.subCommands.length]
           scmd = cmd.subCommands[srIndex]
+          continue if !scmd? or scmd.renderingIndex isnt srIndex or
+            scmd.renderCount isnt renderCount
           ctx = @render(ctx, scmd)
       ctx = @render(ctx, cmd)
 

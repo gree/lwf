@@ -171,8 +171,7 @@ class WebkitCSSResourceCache
     needsToLoadScript =
       data.useScript and !global["LWF"]?["Script"]?[data.name()]?
 
-    lwfUrl = settings["lwf"]
-    @cache[lwfUrl].data = data
+    @cache[settings["lwfUrl"]].data = data
     settings.total = settings._textures.length + 1
     settings.total++ if needsToLoadScript
     settings.loadedCount = 1
@@ -187,8 +186,8 @@ class WebkitCSSResourceCache
 
   loadLWF:(settings) ->
     lwfUrl = settings["lwf"]
-    url = lwfUrl
-    url = (settings["prefix"] ? "") + url unless url.match(/^\//)
+    lwfUrl = (settings["prefix"] ? "") + lwfUrl unless lwfUrl.match(/^\//)
+    settings["lwfUrl"] = lwfUrl
     settings.error = []
 
     if @cache[lwfUrl]?
@@ -198,13 +197,13 @@ class WebkitCSSResourceCache
         @checkTextures(settings, data)
         settings.total = settings._textures.length + 1
         settings.loadedCount = 1
-        onprogress.call(settings,
-          settings.loadedCount, settings.total) if onprogress?
+        settings["onprogress"].call(settings,
+          settings.loadedCount, settings.total) if settings["onprogress"]?
         @loadImages(settings, data)
         return
 
     @cache[lwfUrl] = {}
-    @loadLWFData(settings, url)
+    @loadLWFData(settings, lwfUrl)
     return
 
   dispatchOnloaddata:(settings, \
@@ -299,7 +298,7 @@ class WebkitCSSResourceCache
 
       script.src = url
       head.appendChild(script)
-      lwfUrl = settings["lwf"]
+      lwfUrl = settings["lwfUrl"]
       @cache[lwfUrl].scripts ?= []
       @cache[lwfUrl].scripts.push(script)
       return
@@ -354,8 +353,8 @@ class WebkitCSSResourceCache
     return
 
   loadJS:(settings, data) ->
-    lwfUrl = settings["lwf"]
-    url = settings["js"] ? lwfUrl.replace(/\.lwf(\.js)?/i, ".js")
+    lwfUrl = settings["lwfUrl"]
+    url = settings["js"] ? settings["lwf"].replace(/\.lwf(\.js)?/i, ".js")
     url = (settings["prefix"] ? "") + url unless url.match(/^\//)
     onload = settings["onload"]
     onprogress = settings["onprogress"]
@@ -417,17 +416,20 @@ class WebkitCSSResourceCache
     ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih)
     return
 
-  createCanvas:(filename, w, h) ->
+  getCanvasName: ->
+    return "__canvas__" + ++@canvasIndex
+
+  createCanvas:(w, h) ->
+    name = @getCanvasName()
     if @.constructor is WebkitCSSResourceCache
-      name = "canvas_" + ++@canvasIndex
       ctx = document.getCSSCanvasContext("2d", name, w, h)
       canvas = ctx.canvas
-      canvas.name = name
     else
       canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
       ctx = canvas.getContext('2d')
+    canvas.name = name
     return [canvas, ctx]
 
   generateImages:(settings, imageCache, texture, image) ->
@@ -448,7 +450,7 @@ class WebkitCSSResourceCache
           iw = w
           ih = h
 
-        [canvas, ctx] = @createCanvas(o.filename, w, h)
+        [canvas, ctx] = @createCanvas(w, h)
 
         switch o.colorOp
           when "rgb"
@@ -512,8 +514,7 @@ class WebkitCSSResourceCache
             jpgImg = imageCache[jpg.filename]
             alphaImg = imageCache[alpha.filename]
             if jpgImg? and alphaImg?
-              [canvas, ctx] =
-                @createCanvas(jpg.filename, jpgImg.width, jpgImg.height)
+              [canvas, ctx] = @createCanvas(jpgImg.width, jpgImg.height)
               ctx.drawImage(jpgImg,
                 0, 0, jpgImg.width, jpgImg.height,
                 0, 0, jpgImg.width, jpgImg.height)
@@ -554,13 +555,13 @@ class WebkitCSSResourceCache
     return
 
   newLWF:(settings, imageCache, data) ->
-    lwfUrl = settings["lwf"]
+    lwfUrl = settings["lwfUrl"]
     cache = @cache[lwfUrl]
     factory = @newFactory(settings, imageCache, data)
     embeddedScript = global["LWF"]?["Script"]?[data.name()] if data.useScript
     lwf = new LWF(data, factory, embeddedScript, settings["privateData"])
     lwf.active = settings["active"] if settings["active"]?
-    lwf.url = settings["lwf"]
+    lwf.url = settings["lwfUrl"]
     lwf.lwfInstanceId = ++@lwfInstanceIndex
     cache.instances ?= {}
     cache.instances[lwf.lwfInstanceId] = lwf

@@ -29,203 +29,138 @@ class BitmapClip extends LObject
     @dataMatrixId = data.matrixId
     @renderer = lwf.rendererFactory.constructBitmap(lwf, objId, @)
 
-    @_regX = 0
-    @_regY = 0
-    @_x = 0
-    @_y = 0
-    @_scaleX = 1
-    @_scaleY = 1
-    @_rotation = 0
-    @_alpha = 1
     @depth = -1
     @visible = true
 
-    @dirtyMatrix = true
-    @dirtyMatrixSR = false
-    @dirtyColorTransform = true
-    @mScaleX = 1
-    @mScaleY = 1
-    @mSkew0 = 0
-    @mSkew1 = 0
+    @regX = 0
+    @regY = 0
+    @x = 0
+    @y = 0
+    @scaleX = 1
+    @scaleY = 1
+    @rotation = 0
+    @alpha = 1
 
-  updateMatrix:(m) ->
-    if @dirtyMatrixSR
+    @_scaleX = @scaleX
+    @_scaleY = @scaleY
+    @_rotation = @rotation
+    @_cos = 1
+    @_sin = 0
+
+    @_ = if TypedArray.available then new Float32Array(8) else []
+    @_[0] = 1 # mScaleX
+    @_[1] = 0 # mSkew1
+    @_[2] = 0 # mSkew0
+    @_[3] = 1 # mScaleY
+    @_[4] = 0 # x
+    @_[5] = 0 # y
+    @_[6] = 0 # regX
+    @_[7] = 0 # regY
+
+  update:(m, c) ->
+    dst = @matrix._
+    mm = m._
+    my = @_
+
+    if @rotation isnt @_rotation
+      @_rotation = @rotation
       radian = @_rotation * Math.PI / 180
       if radian is 0
-        c = 1
-        s = 0
+        @_cos = 1
+        @_sin = 0
       else
-        c = Math.cos(radian)
-        s = Math.sin(radian)
-      @mScaleX = @_scaleX * c
-      @mSkew0 = @_scaleY * -s
-      @mSkew1 = @_scaleX * s
-      @mScaleY = @_scaleY * c
-      @dirtyMatrixSR = false
+        @_cos = Math.cos(radian)
+        @_sin = Math.sin(radian)
+      dirty = true
+    else
+      dirty = false
+    if dirty or @_scaleX isnt @scaleX or @_scaleY isnt @scaleY
+      @_scaleX = @scaleX
+      @_scaleY = @scaleY
+      #@mScaleX = @_scaleX * c
+      my[0] = @_scaleX * @_cos
+      #@mSkew1 = @_scaleX * s
+      my[1] = @_scaleX * @_sin
+      #@mSkew0 = @_scaleY * -s
+      my[2] = @_scaleY * -@_sin
+      #@mScaleY = @_scaleY * c
+      my[3] = @_scaleY * @_cos
 
-    x = @_x - @_regX
-    y = @_y - @_regY
+    #x = @_x - @_regX
+    my[4] = @x
+    my[6] = @regX
+    my[4] -= my[6]
+    #y = @_y - @_regY
+    my[5] = @y
+    my[7] = @regY
+    my[5] -= my[7]
 
-    dst = @matrix
-    dst.scaleX =
-      m.scaleX * @mScaleX +
-      m.skew0  * @mSkew1
-    dst.skew0 =
-      m.scaleX * @mSkew0 +
-      m.skew0  * @mScaleY
-    dst.translateX =
-      m.scaleX * x +
-      m.skew0  * y +
-      m.translateX +
-        m.scaleX * @_regX + m.skew0 * @_regY +
-        dst.scaleX * -@_regX + dst.skew0 * -@_regY
-    dst.skew1 =
-      m.skew1  * @mScaleX +
-      m.scaleY * @mSkew1
-    dst.scaleY =
-      m.skew1  * @mSkew0 +
-      m.scaleY * @mScaleY
-    dst.translateY =
-      m.skew1  * x +
-      m.scaleY * y +
-      m.translateY +
-        m.skew1 * @_regX + m.scaleY * @_regY +
-        dst.skew1 * -@_regX + dst.scaleY * -@_regY
-    @dirtyMatrix = false
-    return
+    #dst = @matrix
+    #dst.scaleX =
+    #  m.scaleX * @mScaleX +
+    #  m.skew0  * @mSkew1
+    dst[0] = mm[0] * my[0] + mm[2] * my[1]
+    #dst.skew0 =
+    #  m.scaleX * @mSkew0 +
+    #  m.skew0  * @mScaleY
+    dst[2] = mm[0] * my[2] + mm[2] * my[3]
+    #dst.translateX =
+    #  m.scaleX * x +
+    #  m.skew0  * y +
+    #  m.translateX +
+    #    m.scaleX * @_regX + m.skew0 * @_regY +
+    #    dst.scaleX * -@_regX + dst.skew0 * -@_regY
+    dst[4] = mm[0] * my[4] + mm[2] * my[5] +
+      mm[4] + mm[0] * my[6] + mm[2] * my[7] +
+      dst[0] * -my[6] + dst[2] * -my[7]
+    #dst.skew1 =
+    #  m.skew1  * @mScaleX +
+    #  m.scaleY * @mSkew1
+    dst[1] = mm[1] * my[0] + mm[3] * my[1]
+    #dst.scaleY =
+    #  m.skew1  * @mSkew0 +
+    #  m.scaleY * @mScaleY
+    dst[3] = mm[1] * my[2] + mm[3] * my[3]
+    #dst.translateY =
+    #  m.skew1  * x +
+    #  m.scaleY * y +
+    #  m.translateY +
+    #    m.skew1 * @_regX + m.scaleY * @_regY +
+    #    dst.skew1 * -@_regX + dst.scaleY * -@_regY
+    dst[5] = mm[1] * my[4] + mm[3] * my[5] +
+      mm[5] + mm[1] * my[6] + mm[3] * my[7] +
+      dst[1] * -my[6] + dst[3] * -my[7]
 
-  updateColorTransform:(c) ->
-    m = @colorTransform.multi
-    cm = c.multi
-    m.red = cm.red
-    m.green = cm.green
-    m.blue = cm.blue
-    m.alpha = @_alpha * cm.alpha
-    @dirtyColorTransform = false
-    return
-
-  dirty:(dirtyMatrixSR = false) ->
-    @lwf.setPropertyDirty()
-    @dirtyMatrix = true
-    @dirtyMatrixSR = true if dirtyMatrixSR
-    return
-
-  getRegX: ->
-    return @_regX
-
-  setRegX:(v) ->
-    @dirty() if @_regX isnt v
-    @_regX = v
-    return
-
-  getRegY: ->
-    return @_regY
-
-  setRegY:(v) ->
-    @dirty() if @_regY isnt v
-    @_regY = v
-    return
-
-  getX: ->
-    return @_x
-
-  setX:(v) ->
-    @dirty() if @_x isnt v
-    @_x = v
-    return
-
-  getY: ->
-    return @_y
-
-  setY:(v) ->
-    @dirty() if @_y isnt v
-    @_y = v
-    return
-
-  getScaleX: ->
-    return @_scaleX
-
-  setScaleX:(v) ->
-    @dirty(true) if @_scaleX isnt v
-    @_scaleX = v
-    return
-
-  getScaleY: ->
-    return @_scaleY
-
-  setScaleY:(v) ->
-    @dirty(true) if @_scaleY isnt v
-    @_scaleY = v
-    return
-
-  getRotation: ->
-    return @_rotation
-
-  setRotation:(v) ->
-    @dirty(true) if @_rotation isnt v
-    @_rotation = v
+    dst = @colorTransform.multi._
+    cm = c.multi._
+    #m.red = cm.red
+    #m.green = cm.green
+    #m.blue = cm.blue
+    #m.alpha = @_alpha * cm.alpha
+    if @alpha is 1
+      for i in [0...4]
+        dst[i] = cm[i]
+    else
+      for i in [0...3]
+        dst[i] = cm[i]
+      dst[3] = @alpha * cm[3]
+    @lwf.renderObject()
     return
 
   setMatrix:(m) ->
-    @mScaleX = m.scaleX
-    @mScaleY = m.scaleY
-    @mSkew0 = m.skew0
-    @mSkew1 = m.skew1
-    @x = m.translateX
-    @y = m.translateY
-    @dirty()
+    #@mScaleX = m.scaleX
+    #@mScaleY = m.scaleY
+    #@mSkew0 = m.skew0
+    #@mSkew1 = m.skew1
+    #@x = m.translateX
+    #@y = m.translateY
+    for i in [0...6]
+      @_[i] = m._[i]
     return
 
-  getAlphaProperty: ->
-    return @_alpha
-
-  setAlphaProperty:(v) ->
-    if @_alpha isnt v
-      @lwf.setPropertyDirty()
-      @dirtyColorTransform = true
-    @_alpha = v
+  detachFromParent: ->
+    if @parent?
+      @parent.detachBitmap(@depth)
+      @parent = null
     return
-
-if typeof(BitmapClip.prototype.__defineGetter__) isnt "undefined"
-  BitmapClip.prototype.__defineGetter__("regX", -> @getRegX())
-  BitmapClip.prototype.__defineSetter__("regX", (v) -> @setRegX(v))
-  BitmapClip.prototype.__defineGetter__("regY", -> @getRegY())
-  BitmapClip.prototype.__defineSetter__("regY", (v) -> @setRegY(v))
-  BitmapClip.prototype.__defineGetter__("x", -> @getX())
-  BitmapClip.prototype.__defineSetter__("x", (v) -> @setX(v))
-  BitmapClip.prototype.__defineGetter__("y", -> @getY())
-  BitmapClip.prototype.__defineSetter__("y", (v) -> @setY(v))
-  BitmapClip.prototype.__defineGetter__("scaleX", -> @getScaleX())
-  BitmapClip.prototype.__defineSetter__("scaleX", (v) -> @setScaleX(v))
-  BitmapClip.prototype.__defineGetter__("scaleY", -> @getScaleY())
-  BitmapClip.prototype.__defineSetter__("scaleY", (v) -> @setScaleY(v))
-  BitmapClip.prototype.__defineGetter__("rotation", -> @getRotation())
-  BitmapClip.prototype.__defineSetter__("rotation", (v) -> @setRotation(v))
-  BitmapClip.prototype.__defineGetter__("alpha", -> @getAlphaProperty())
-  BitmapClip.prototype.__defineSetter__("alpha", (v) -> @setAlphaProperty(v))
-else if typeof(Object.defineProperty) isnt "undefined"
-  Object.defineProperty(BitmapClip.prototype, "regX",
-    get: -> @getRegX()
-    set: (v) -> @setRegX(v))
-  Object.defineProperty(BitmapClip.prototype, "regY",
-    get: -> @getRegY()
-    set: (v) -> @setRegY(v))
-  Object.defineProperty(BitmapClip.prototype, "x",
-    get: -> @getX()
-    set: (v) -> @setX(v))
-  Object.defineProperty(BitmapClip.prototype, "y",
-    get: -> @getY()
-    set: (v) -> @setY(v))
-  Object.defineProperty(BitmapClip.prototype, "scaleX",
-    get: -> @getScaleX()
-    set: (v) -> @setScaleX(v))
-  Object.defineProperty(BitmapClip.prototype, "scaleY",
-    get: -> @getScaleY()
-    set: (v) -> @setScaleY(v))
-  Object.defineProperty(BitmapClip.prototype, "rotation",
-    get: -> @getRotation()
-    set: (v) -> @setRotation(v))
-  Object.defineProperty(BitmapClip.prototype, "alpha",
-    get: -> @getAlphaProperty()
-    set: (v) -> @setAlphaProperty(v))
 

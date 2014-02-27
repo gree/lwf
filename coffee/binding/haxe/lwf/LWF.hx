@@ -7,6 +7,8 @@ typedef StageSize = {
 
 typedef EventListener = Movie->Button->Void;
 
+typedef ExecListener = LWF->Void;
+
 @:native("LWF.LWF")
 extern class LWF
 {
@@ -46,6 +48,8 @@ extern class LWF
 
 	public function addEventListener(event:String, listener:EventListener):Void;
 
+	public function addExecListener(listener:ExecListener):Void;
+
 	public function addMovieEventListener(instanceName:String, listeners:{}):Void;
 
 	public function clearAllowButton():Void;
@@ -55,6 +59,8 @@ extern class LWF
 	public function clearDenyButton():Void;
 
 	public function clearEventListener(event:String):Void;
+
+	public function clearExecListener():Void;
 
 	public function clearMovieEventListener(instanceName:String, ?type:String):Void;
 
@@ -98,6 +104,8 @@ extern class LWF
 
 	public function removeEventListener(event:String, listener:EventListener):Void;
 
+	public function removeExecListener(listener:ExecListener):Void;
+
 	public function removeMovieEventListener(instanceName:String, listeners:{}):Void;
 
 	public function render():Void;
@@ -119,6 +127,8 @@ extern class LWF
 	public function setButtonEventListener(instanceName:String, listeners:{}):Void;
 
 	public function setEventListener(event:String, listener:EventListener):Void;
+
+	public function setExecListener(listener:ExecListener):Void;
 
 	public function setFastForward(fastForward:Bool):Void;
 

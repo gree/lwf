@@ -84,7 +84,7 @@ class CanvasBitmapRenderer
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
     @matrixForAtlas = new Matrix() if fragment.rotated or
       @context.x isnt 0 or @context.y isnt 0 or @context.scale isnt 1
-    @cmd = {}
+    @cmd = new CanvasRenderCommand()
 
   destruct: ->
 

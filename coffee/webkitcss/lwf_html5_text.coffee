@@ -258,11 +258,9 @@ class HTML5TextRenderer
         @align = "left"
         @offsetX = leftMargin
 
-    canvas = document.createElement("canvas")
-    canvas.width = @context.text.width * scale
-    canvas.height = @context.text.height * scale
+    [canvas, ctx] = @context.factory.resourceCache.createCanvas(
+      @context.text.width * scale, @context.text.height * scale)
     @maxWidth = canvas.width - (leftMargin + rightMargin)
-    ctx = canvas.getContext("2d")
     @initCanvasContext(ctx)
     @canvas = canvas
     @canvasContext = ctx

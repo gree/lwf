@@ -52,7 +52,8 @@ class IObject extends LObject
     @nextInstance = null
     @linkInstance = null
 
-    super
+    super()
+    return
 
   linkButton: ->
  
@@ -66,3 +67,4 @@ class IObject extends LObject
       splitter = "."
       o = o.parent
     return fullPath
+

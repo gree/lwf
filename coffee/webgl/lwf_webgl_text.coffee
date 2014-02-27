@@ -20,7 +20,7 @@
 
 class WebGLTextContext extends HTML5TextContext
   constructor:(@factory, @data, @text) ->
-    super
+    super(@factory, @data, @text)
 
     @preMultipliedAlpha = false
 
@@ -32,12 +32,19 @@ class WebGLTextContext extends HTML5TextContext
     x1 = tw
     y1 = th
 
+    ###
     @vertexData = [
       {x:x1, y:y1},
       {x:x1, y:y0},
       {x:x0, y:y1},
       {x:x0, y:y0}
     ]
+    ###
+    @vertexData = new Float32Array(2 * 4)
+    @vertexData[0] = x1; @vertexData[1] = y1
+    @vertexData[2] = x1; @vertexData[3] = y0
+    @vertexData[4] = x0; @vertexData[5] = y1
+    @vertexData[6] = x0; @vertexData[7] = y0
 
     dw = 2.0 * tw
     dh = 2.0 * th
@@ -46,50 +53,51 @@ class WebGLTextContext extends HTML5TextContext
     u1 = u0 + (tw * 2 - 2) / dw
     v1 = v0 + (th * 2 - 1) / dh
 
+    ###
     @uv = [
       {u:u1, v:v1},
       {u:u1, v:v0},
       {u:u0, v:v1},
       {u:u0, v:v0}
     ]
+    ###
+    @uv = new Float32Array(2 * 4)
+    @uv[0] = u1; @uv[1] = v1
+    @uv[2] = u1; @uv[3] = v0
+    @uv[4] = u0; @uv[5] = v1
+    @uv[6] = u0; @uv[7] = v0
 
 class WebGLTextRenderer extends HTML5TextRenderer
   constructor:(@lwf, @context, @textObject) ->
-    super
-    @meshCache = new Float32Array(4 * 9)
-    @cmd = {}
+    super(@lwf, @context, @textObject)
+    @cmd = new WebGLRenderCommand(@context, null, @matrix)
 
   destruct: ->
-    gl = @context.factory.stageContext
+    gl = @context.factory.glContext
     gl.deleteTexture(@texture) if @texture
     return
 
   needsScale: ->
     return false
 
-  render:(m, c, renderingIndex, @renderingCount, visible) ->
+  render:(m, c, renderingIndex, renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
 
-    super
+    super(m, c, renderingIndex, renderingCount, visible)
 
     factory = @context.factory
     cmd = @cmd
-    cmd.renderer = null
-    cmd.context = @context
     cmd.texture = @texture
-    cmd.matrix = @matrix
     cmd.colorTransform = c
     cmd.blendMode = factory.blendMode
     cmd.maskMode = factory.maskMode
-    cmd.meshCache = @meshCache
-    cmd.useMeshCache = !@matrixChanged
     factory.addCommand(renderingIndex, cmd)
     return
 
   renderText:(textColor) ->
-    super
+    super(textColor)
 
-    gl = @context.factory.stageContext
+    gl = @context.factory.glContext
     @texture = gl.createTexture() unless @texture?
     gl.bindTexture(gl.TEXTURE_2D, @texture)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, @canvas)

@@ -737,11 +737,7 @@ class Movie extends IObject
 
     if @bitmapClips?
       for bitmapClip in @bitmapClips
-        if bitmapClip?
-          if matrixChanged or bitmapClip.dirtyMatrix
-            bitmapClip.updateMatrix(m)
-          if colorTransformChanged or bitmapClip.dirtyColorTransform
-            bitmapClip.updateColorTransform(c)
+        bitmapClip.update(m, c) if bitmapClip?
 
     if @attachedMovies? or @attachedLWFs?
       if @attachedMovies?
@@ -848,6 +844,7 @@ class Movie extends IObject
     return
 
   render:(v, rOffset) ->
+    return if !@active and !@lwf.rendererFactory.needsRenderForInactive?
     v = false if !@visible or !@active
 
     useBlendMode = false
@@ -958,7 +955,7 @@ class Movie extends IObject
     @displayList = null
     @property = null
 
-    super
+    super()
     return
 
   playAnimation:(clipEvent) ->

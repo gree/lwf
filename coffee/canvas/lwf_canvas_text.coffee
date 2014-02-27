@@ -24,12 +24,12 @@ class CanvasTextRenderer extends HTML5TextRenderer
   constructor: ->
     super
 
-    @cmd = {}
+    @cmd = new CanvasRenderCommand()
 
   render:(m, c, renderingIndex, renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
 
-    super
+    super(m, c, renderingIndex, renderingCount, visible)
 
     cmd = @cmd
     cmd.alpha = c.multi.alpha

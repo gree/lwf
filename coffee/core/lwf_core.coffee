@@ -44,6 +44,7 @@ class LWF
     @thisTick = 0
     @attachVisible = true
     @execCount = 0
+    @renderCount = 0
     @isExecDisabled = false
     @isPropertyDirty = false
     @isLWFAttached = false
@@ -321,6 +322,7 @@ class LWF
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
     return if !@rootMovie? or !@active or @fastForwardCurrent
+    ++@renderCount
     renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex

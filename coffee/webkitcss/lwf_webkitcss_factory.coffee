@@ -18,9 +18,19 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
+class WebKitCSSRenderCommand
+  constructor: ->
+    @renderCount = 0
+    @renderingIndex = 0
+    @isBitmap = false
+    @renderer = null
+    @matrix = null
+    @maskMode = 0
+
 class WebkitCSSRendererFactory
   constructor:(data, @resourceCache, @cache, \
       @stage, @textInSubpixel, @use3D, @recycleTextCanvas, @quirkyClearRect) ->
+    @needsRenderForInactive = true
     @maskMode = "normal"
     @bitmapContexts = []
     for bitmap in data.bitmaps
@@ -61,10 +71,10 @@ class WebkitCSSRendererFactory
     @destructedRenderers = []
 
   initCommands: ->
-    @commands = {}
-    @commandsKeys = Utility.newIntArray()
+    if !@commands? or @commandsCount < @commands.length * 0.75
+      @commands = []
+    @commandsCount = 0
     @subCommands = null
-    @subCommandsKeys = null
     return
 
   isMask:(cmd) ->
@@ -77,18 +87,17 @@ class WebkitCSSRendererFactory
     cmd.maskMode is "layer"
 
   addCommand:(rIndex, cmd) ->
+    cmd.renderCount = @lwf.renderCount
+    cmd.renderingIndex = rIndex
     if @isMask(cmd)
       if @subCommands?
         @subCommands[rIndex] = cmd
-        Utility.insertIntArray(@subCommandsKeys, rIndex)
     else
       if @isLayer(cmd) and @commandMaskMode isnt cmd.maskMode
-        cmd.subCommands = {}
-        cmd.subCommandsKeys = Utility.newIntArray()
+        cmd.subCommands = []
         @subCommands = cmd.subCommands
-        @subCommandsKeys = cmd.subCommandsKeys
       @commands[rIndex] = cmd
-      Utility.insertIntArray(@commandsKeys, rIndex)
+      @commandsCount++
     @commandMaskMode = cmd.maskMode
     return
 
@@ -96,16 +105,20 @@ class WebkitCSSRendererFactory
     parent = lwf.parent
     parent = parent.parent while parent.parent?
     f = parent.lwf.rendererFactory
-    for rIndex, cmd of @commands
+    renderCount = lwf.renderCount
+    for rIndex in [0...@commands.length]
+      cmd = @commands[rIndex]
+      continue if !cmd? or cmd.renderingIndex isnt rIndex or
+        cmd.renderCount isnt renderCount
       subCommands = cmd.subCommands
-      subCommandsKeys = cmd.subCommandsKeys
-      cmd.subCommands = undefined
-      cmd.subCommandsKeys = undefined
-      f.addCommand(parseInt(rIndex, 10), cmd)
-      if subCommandsKeys?
-        for srIndex in subCommandsKeys
+      cmd.subCommands = null
+      f.addCommand(rIndex, cmd)
+      if subCommands?
+        for srIndex in [0...subCommands.length]
           scmd = subCommands[srIndex]
-          f.addCommand(parseInt(srIndex, 10), scmd)
+          continue if !scmd? or scmd.renderingIndex isnt srIndex or
+            scmd.renderCount isnt renderCount
+          f.addCommand(srIndex, scmd)
     @initCommands()
     return
 
@@ -117,6 +130,7 @@ class WebkitCSSRendererFactory
     return
 
   init:(lwf) ->
+    @lwf = lwf
     lwf.stage = @stage
     lwf.resourceCache = @resourceCache
     return if @setupedDomElementConstructor
@@ -232,11 +246,16 @@ class WebkitCSSRendererFactory
 
     @renderMaskMode = "normal"
     @renderMasked = false
-    for rIndex in @commandsKeys
+    renderCount = lwf.renderCount
+    for rIndex in [0...@commands.length]
       cmd = @commands[rIndex]
-      if cmd.subCommandsKeys?
-        for srIndex in cmd.subCommandsKeys
+      continue if !cmd? or cmd.renderingIndex isnt rIndex or
+        cmd.renderCount isnt renderCount
+      if cmd.subCommands?
+        for srIndex in [0...cmd.subCommands.length]
           scmd = cmd.subCommands[srIndex]
+          continue if !scmd? or scmd.renderingIndex isnt srIndex or
+            scmd.renderCount isnt renderCount
           @render(scmd)
       @render(cmd)
 

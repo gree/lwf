@@ -92,6 +92,9 @@ LObject.prototype.isBitmapClip;
 LObject.prototype.isButton;
 LObject.prototype.isMovie;
 
+function IObject() {}
+IObject.prototype.name;
+
 function Movie() {}
 Movie.prototype.active;
 Movie.prototype.alpha;
@@ -115,6 +118,8 @@ Movie.prototype.y;
 function Button() {}
 Button.prototype.hitX;
 Button.prototype.hitY;
+Button.prototype.width;
+Button.prototype.height;
 
 function BitmapClip() {}
 BitmapClip.prototype.alpha;

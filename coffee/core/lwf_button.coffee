@@ -64,7 +64,7 @@ class Button extends IObject
     @lwf.clearFocus(@)
     @lwf.clearPressed(@)
     @handler.call("unload", @) if @handler?
-    super
+    super()
     return
 
   linkButton: ->

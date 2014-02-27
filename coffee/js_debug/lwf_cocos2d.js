@@ -907,7 +907,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       __extends(InstanceName, _super);
 
       function InstanceName(stringId) {
-        InstanceName.__super__.constructor.apply(this, arguments);
+        InstanceName.__super__.constructor.call(this, stringId);
       }
 
       return InstanceName;
@@ -918,7 +918,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       __extends(Event, _super);
 
       function Event(stringId) {
-        Event.__super__.constructor.apply(this, arguments);
+        Event.__super__.constructor.call(this, stringId);
       }
 
       return Event;
@@ -2147,38 +2147,43 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     function Utility() {}
 
     Utility.calcMatrixToPoint = function(sx, sy, m) {
-      var dx, dy;
-      dx = m._[0] * sx + m._[2] * sy + m._[4];
-      dy = m._[1] * sx + m._[3] * sy + m._[5];
+      var dx, dy, mm;
+      mm = m._;
+      dx = mm[0] * sx + mm[2] * sy + mm[4];
+      dy = mm[1] * sx + mm[3] * sy + mm[5];
       return [dx, dy];
     };
 
     Utility.getMatrixDeterminant = function(matrix) {
-      return matrix._[0] * matrix._[3] - matrix._[2] * matrix._[1] < 0;
+      var mm;
+      mm = matrix._;
+      return mm[0] * mm[3] - mm[2] * mm[1] < 0;
     };
 
     Utility.syncMatrix = function(movie) {
-      var matrix, matrixId, md, rotation, scaleX, scaleY, translate, _ref1;
+      var matrix, matrixId, md, mm, rotation, scaleX, scaleY, t, translate, _ref1;
       matrixId = (_ref1 = movie.matrixId) != null ? _ref1 : 0;
       if ((matrixId & Constant.MATRIX_FLAG) === 0) {
         translate = movie.lwf.data.translates[matrixId];
         scaleX = 1;
         scaleY = 1;
         rotation = 0;
-        matrix = new Matrix(scaleX, scaleY, 0, 0, translate._[0], translate._[1]);
+        t = translate._;
+        matrix = new Matrix(scaleX, scaleY, 0, 0, t[0], t[1]);
       } else {
         matrixId &= ~Constant.MATRIX_FLAG;
         matrix = movie.lwf.data.matrices[matrixId];
         md = this.getMatrixDeterminant(matrix);
-        scaleX = Math.sqrt(matrix._[0] * matrix._[0] + matrix._[1] * matrix._[1]);
+        mm = matrix._;
+        scaleX = Math.sqrt(mm[0] * mm[0] + mm[1] * mm[1]);
         if (md) {
           scaleX = -scaleX;
         }
-        scaleY = Math.sqrt(matrix._[3] * matrix._[3] + matrix._[2] * matrix._[2]);
+        scaleY = Math.sqrt(mm[3] * mm[3] + mm[2] * mm[2]);
         if (md) {
-          rotation = Math.atan2(matrix._[1], -matrix._[0]);
+          rotation = Math.atan2(mm[1], -mm[0]);
         } else {
-          rotation = Math.atan2(matrix._[1], matrix._[0]);
+          rotation = Math.atan2(mm[1], mm[0]);
         }
         rotation = rotation / Math.PI * 180;
       }
@@ -2212,7 +2217,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.getScaleX = function(movie) {
-      var matrix, matrixId, md, scaleX, _ref1;
+      var matrix, matrixId, md, mm, scaleX, _ref1;
       matrixId = (_ref1 = movie.matrixId) != null ? _ref1 : 0;
       if ((matrixId & Constant.MATRIX_FLAG) === 0) {
         return 1;
@@ -2220,7 +2225,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         matrixId &= ~Constant.MATRIX_FLAG;
         matrix = movie.lwf.data.matrices[matrixId];
         md = this.getMatrixDeterminant(matrix);
-        scaleX = Math.sqrt(matrix._[0] * matrix._[0] + matrix._[1] * matrix._[1]);
+        mm = matrix._;
+        scaleX = Math.sqrt(mm[0] * mm[0] + mm[1] * mm[1]);
         if (md) {
           scaleX = -scaleX;
         }
@@ -2229,20 +2235,21 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.getScaleY = function(movie) {
-      var matrix, matrixId, scaleY, _ref1;
+      var matrix, matrixId, mm, scaleY, _ref1;
       matrixId = (_ref1 = movie.matrixId) != null ? _ref1 : 0;
       if ((matrixId & Constant.MATRIX_FLAG) === 0) {
         return 1;
       } else {
         matrixId &= ~Constant.MATRIX_FLAG;
         matrix = movie.lwf.data.matrices[matrixId];
-        scaleY = Math.sqrt(matrix._[3] * matrix._[3] + matrix._[2] * matrix._[2]);
+        mm = matrix._;
+        scaleY = Math.sqrt(mm[3] * mm[3] + mm[2] * mm[2]);
         return scaleY;
       }
     };
 
     Utility.getRotation = function(movie) {
-      var matrix, matrixId, md, rotation, _ref1;
+      var matrix, matrixId, md, mm, rotation, _ref1;
       matrixId = (_ref1 = movie.matrixId) != null ? _ref1 : 0;
       if ((matrixId & Constant.MATRIX_FLAG) === 0) {
         return 0;
@@ -2250,10 +2257,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         matrixId &= ~Constant.MATRIX_FLAG;
         matrix = movie.lwf.data.matrices[matrixId];
         md = this.getMatrixDeterminant(matrix);
+        mm = matrix._;
         if (md) {
-          rotation = Math.atan2(matrix._[1], -matrix._[0]);
+          rotation = Math.atan2(mm[1], -mm[0]);
         } else {
-          rotation = Math.atan2(matrix._[1], matrix._[0]);
+          rotation = Math.atan2(mm[1], mm[0]);
         }
         rotation = rotation / Math.PI * 180;
         return rotation;
@@ -2287,17 +2295,20 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcMatrixId = function(lwf, dst, src0, src1Id) {
-      var matrixId, src1, translate;
+      var d, matrixId, s0, src1, t, translate;
       if (src1Id === 0) {
         dst.set(src0);
       } else if ((src1Id & Constant.MATRIX_FLAG) === 0) {
         translate = lwf.data.translates[src1Id];
-        dst._[0] = src0._[0];
-        dst._[2] = src0._[2];
-        dst._[4] = src0._[0] * translate._[0] + src0._[2] * translate._[1] + src0._[4];
-        dst._[1] = src0._[1];
-        dst._[3] = src0._[3];
-        dst._[5] = src0._[1] * translate._[0] + src0._[3] * translate._[1] + src0._[5];
+        d = dst._;
+        s0 = src0._;
+        t = translate._;
+        d[0] = s0[0];
+        d[2] = s0[2];
+        d[4] = s0[0] * t[0] + s0[2] * t[1] + s0[4];
+        d[1] = s0[1];
+        d[3] = s0[3];
+        d[5] = s0[1] * t[0] + s0[3] * t[1] + s0[5];
       } else {
         matrixId = src1Id & ~Constant.MATRIX_FLAG;
         src1 = lwf.data.matrices[matrixId];
@@ -2307,36 +2318,46 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcMatrix = function(dst, src0, src1) {
-      dst._[0] = src0._[0] * src1._[0] + src0._[2] * src1._[1];
-      dst._[2] = src0._[0] * src1._[2] + src0._[2] * src1._[3];
-      dst._[4] = src0._[0] * src1._[4] + src0._[2] * src1._[5] + src0._[4];
-      dst._[1] = src0._[1] * src1._[0] + src0._[3] * src1._[1];
-      dst._[3] = src0._[1] * src1._[2] + src0._[3] * src1._[3];
-      dst._[5] = src0._[1] * src1._[4] + src0._[3] * src1._[5] + src0._[5];
+      var d, s0, s1;
+      d = dst._;
+      s0 = src0._;
+      s1 = src1._;
+      d[0] = s0[0] * s1[0] + s0[2] * s1[1];
+      d[2] = s0[0] * s1[2] + s0[2] * s1[3];
+      d[4] = s0[0] * s1[4] + s0[2] * s1[5] + s0[4];
+      d[1] = s0[1] * s1[0] + s0[3] * s1[1];
+      d[3] = s0[1] * s1[2] + s0[3] * s1[3];
+      d[5] = s0[1] * s1[4] + s0[3] * s1[5] + s0[5];
       return dst;
     };
 
     Utility.rotateMatrix = function(dst, src, scale, offsetX, offsetY) {
+      var d, s;
       offsetX *= scale;
       offsetY *= scale;
-      dst._[0] = -src._[2] * scale;
-      dst._[2] = src._[0] * scale;
-      dst._[4] = src._[0] * offsetX + src._[2] * offsetY + src._[4];
-      dst._[1] = -src._[3] * scale;
-      dst._[3] = src._[1] * scale;
-      dst._[5] = src._[1] * offsetX + src._[3] * offsetY + src._[5];
+      d = dst._;
+      s = src._;
+      d[0] = -s[2] * scale;
+      d[2] = s[0] * scale;
+      d[4] = s[0] * offsetX + s[2] * offsetY + s[4];
+      d[1] = -s[3] * scale;
+      d[3] = s[1] * scale;
+      d[5] = s[1] * offsetX + s[3] * offsetY + s[5];
       return dst;
     };
 
     Utility.scaleMatrix = function(dst, src, scale, offsetX, offsetY) {
+      var d, s;
       offsetX *= scale;
       offsetY *= scale;
-      dst._[0] = src._[0] * scale;
-      dst._[2] = src._[2] * scale;
-      dst._[4] = src._[0] * offsetX + src._[2] * offsetY + src._[4];
-      dst._[1] = src._[1] * scale;
-      dst._[3] = src._[3] * scale;
-      dst._[5] = src._[1] * offsetX + src._[3] * offsetY + src._[5];
+      d = dst._;
+      s = src._;
+      d[0] = s[0] * scale;
+      d[2] = s[2] * scale;
+      d[4] = s[0] * offsetX + s[2] * offsetY + s[4];
+      d[1] = s[1] * scale;
+      d[3] = s[3] * scale;
+      d[5] = s[1] * offsetX + s[3] * offsetY + s[5];
       return dst;
     };
 
@@ -2380,15 +2401,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.invertMatrix = function(dst, src) {
-      var dt;
-      dt = src._[0] * src._[3] - src._[2] * src._[1];
+      var d, dt, s;
+      d = dst._;
+      s = src._;
+      dt = s[0] * s[3] - s[2] * s[1];
       if (dt !== 0) {
-        dst._[0] = src._[3] / dt;
-        dst._[2] = -src._[2] / dt;
-        dst._[4] = (src._[2] * src._[5] - src._[4] * src._[3]) / dt;
-        dst._[1] = -src._[1] / dt;
-        dst._[3] = src._[0] / dt;
-        dst._[5] = (src._[4] * src._[1] - src._[0] * src._[5]) / dt;
+        d[0] = s[3] / dt;
+        d[2] = -s[2] / dt;
+        d[4] = (s[2] * s[5] - s[4] * s[3]) / dt;
+        d[1] = -s[1] / dt;
+        d[3] = s[0] / dt;
+        d[5] = (s[4] * s[1] - s[0] * s[5]) / dt;
       } else {
         dst.clear();
       }
@@ -2413,9 +2436,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColorTransform = function(dst, src0, src1) {
-      var i, _i;
+      var d, i, s0, s1, _i;
+      d = dst.multi._;
+      s0 = src0.multi._;
+      s1 = src1.multi._;
       for (i = _i = 0; _i < 4; i = ++_i) {
-        dst.multi._[i] = src0.multi._[i] * src1.multi._[i];
+        d[i] = s0[i] * s1[i];
       }
       return dst;
     };
@@ -2430,14 +2456,21 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColor = function(dst, c, t) {
-      var i, _i;
+      var cc, d, i, tc, _i;
+      d = dst._;
+      cc = c._;
+      tc = t.multi._;
       for (i = _i = 0; _i < 4; i = ++_i) {
-        dst._[i] = c._[i] * t.multi._[i];
+        d[i] = cc[i] * tc[i];
       }
     };
 
     Utility.newIntArray = function() {
       return [];
+    };
+
+    Utility.clearIntArray = function(array) {
+      array.length = 0;
     };
 
     Utility.insertIntArray = function(array, v) {
@@ -2833,7 +2866,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.prevInstance = null;
       this.nextInstance = null;
       this.linkInstance = null;
-      return IObject.__super__.destroy.apply(this, arguments);
+      IObject.__super__.destroy.call(this);
     };
 
     IObject.prototype.linkButton = function() {};
@@ -2927,7 +2960,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.handler != null) {
         this.handler.call("unload", this);
       }
-      Button.__super__.destroy.apply(this, arguments);
+      Button.__super__.destroy.call(this);
     };
 
     Button.prototype.linkButton = function() {
@@ -3254,294 +3287,103 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.height = fragment.h;
       this.dataMatrixId = data.matrixId;
       this.renderer = lwf.rendererFactory.constructBitmap(lwf, objId, this);
-      this._regX = 0;
-      this._regY = 0;
-      this._x = 0;
-      this._y = 0;
-      this._scaleX = 1;
-      this._scaleY = 1;
-      this._rotation = 0;
-      this._alpha = 1;
       this.depth = -1;
       this.visible = true;
-      this.dirtyMatrix = true;
-      this.dirtyMatrixSR = false;
-      this.dirtyColorTransform = true;
-      this.mScaleX = 1;
-      this.mScaleY = 1;
-      this.mSkew0 = 0;
-      this.mSkew1 = 0;
+      this.regX = 0;
+      this.regY = 0;
+      this.x = 0;
+      this.y = 0;
+      this.scaleX = 1;
+      this.scaleY = 1;
+      this.rotation = 0;
+      this.alpha = 1;
+      this._scaleX = this.scaleX;
+      this._scaleY = this.scaleY;
+      this._rotation = this.rotation;
+      this._cos = 1;
+      this._sin = 0;
+      this._ = TypedArray.available ? new Float32Array(8) : [];
+      this._[0] = 1;
+      this._[1] = 0;
+      this._[2] = 0;
+      this._[3] = 1;
+      this._[4] = 0;
+      this._[5] = 0;
+      this._[6] = 0;
+      this._[7] = 0;
     }
 
-    BitmapClip.prototype.updateMatrix = function(m) {
-      var c, dst, radian, s, x, y;
-      if (this.dirtyMatrixSR) {
+    BitmapClip.prototype.update = function(m, c) {
+      var cm, dirty, dst, i, mm, my, radian, _i, _j;
+      dst = this.matrix._;
+      mm = m._;
+      my = this._;
+      if (this.rotation !== this._rotation) {
+        this._rotation = this.rotation;
         radian = this._rotation * Math.PI / 180;
         if (radian === 0) {
-          c = 1;
-          s = 0;
+          this._cos = 1;
+          this._sin = 0;
         } else {
-          c = Math.cos(radian);
-          s = Math.sin(radian);
+          this._cos = Math.cos(radian);
+          this._sin = Math.sin(radian);
         }
-        this.mScaleX = this._scaleX * c;
-        this.mSkew0 = this._scaleY * -s;
-        this.mSkew1 = this._scaleX * s;
-        this.mScaleY = this._scaleY * c;
-        this.dirtyMatrixSR = false;
+        dirty = true;
+      } else {
+        dirty = false;
       }
-      x = this._x - this._regX;
-      y = this._y - this._regY;
-      dst = this.matrix;
-      dst.scaleX = m.scaleX * this.mScaleX + m.skew0 * this.mSkew1;
-      dst.skew0 = m.scaleX * this.mSkew0 + m.skew0 * this.mScaleY;
-      dst.translateX = m.scaleX * x + m.skew0 * y + m.translateX + m.scaleX * this._regX + m.skew0 * this._regY + dst.scaleX * -this._regX + dst.skew0 * -this._regY;
-      dst.skew1 = m.skew1 * this.mScaleX + m.scaleY * this.mSkew1;
-      dst.scaleY = m.skew1 * this.mSkew0 + m.scaleY * this.mScaleY;
-      dst.translateY = m.skew1 * x + m.scaleY * y + m.translateY + m.skew1 * this._regX + m.scaleY * this._regY + dst.skew1 * -this._regX + dst.scaleY * -this._regY;
-      this.dirtyMatrix = false;
-    };
-
-    BitmapClip.prototype.updateColorTransform = function(c) {
-      var cm, m;
-      m = this.colorTransform.multi;
-      cm = c.multi;
-      m.red = cm.red;
-      m.green = cm.green;
-      m.blue = cm.blue;
-      m.alpha = this._alpha * cm.alpha;
-      this.dirtyColorTransform = false;
-    };
-
-    BitmapClip.prototype.dirty = function(dirtyMatrixSR) {
-      if (dirtyMatrixSR == null) {
-        dirtyMatrixSR = false;
+      if (dirty || this._scaleX !== this.scaleX || this._scaleY !== this.scaleY) {
+        this._scaleX = this.scaleX;
+        this._scaleY = this.scaleY;
+        my[0] = this._scaleX * this._cos;
+        my[1] = this._scaleX * this._sin;
+        my[2] = this._scaleY * -this._sin;
+        my[3] = this._scaleY * this._cos;
       }
-      this.lwf.setPropertyDirty();
-      this.dirtyMatrix = true;
-      if (dirtyMatrixSR) {
-        this.dirtyMatrixSR = true;
+      my[4] = this.x;
+      my[6] = this.regX;
+      my[4] -= my[6];
+      my[5] = this.y;
+      my[7] = this.regY;
+      my[5] -= my[7];
+      dst[0] = mm[0] * my[0] + mm[2] * my[1];
+      dst[2] = mm[0] * my[2] + mm[2] * my[3];
+      dst[4] = mm[0] * my[4] + mm[2] * my[5] + mm[4] + mm[0] * my[6] + mm[2] * my[7] + dst[0] * -my[6] + dst[2] * -my[7];
+      dst[1] = mm[1] * my[0] + mm[3] * my[1];
+      dst[3] = mm[1] * my[2] + mm[3] * my[3];
+      dst[5] = mm[1] * my[4] + mm[3] * my[5] + mm[5] + mm[1] * my[6] + mm[3] * my[7] + dst[1] * -my[6] + dst[3] * -my[7];
+      dst = this.colorTransform.multi._;
+      cm = c.multi._;
+      if (this.alpha === 1) {
+        for (i = _i = 0; _i < 4; i = ++_i) {
+          dst[i] = cm[i];
+        }
+      } else {
+        for (i = _j = 0; _j < 3; i = ++_j) {
+          dst[i] = cm[i];
+        }
+        dst[3] = this.alpha * cm[3];
       }
-    };
-
-    BitmapClip.prototype.getRegX = function() {
-      return this._regX;
-    };
-
-    BitmapClip.prototype.setRegX = function(v) {
-      if (this._regX !== v) {
-        this.dirty();
-      }
-      this._regX = v;
-    };
-
-    BitmapClip.prototype.getRegY = function() {
-      return this._regY;
-    };
-
-    BitmapClip.prototype.setRegY = function(v) {
-      if (this._regY !== v) {
-        this.dirty();
-      }
-      this._regY = v;
-    };
-
-    BitmapClip.prototype.getX = function() {
-      return this._x;
-    };
-
-    BitmapClip.prototype.setX = function(v) {
-      if (this._x !== v) {
-        this.dirty();
-      }
-      this._x = v;
-    };
-
-    BitmapClip.prototype.getY = function() {
-      return this._y;
-    };
-
-    BitmapClip.prototype.setY = function(v) {
-      if (this._y !== v) {
-        this.dirty();
-      }
-      this._y = v;
-    };
-
-    BitmapClip.prototype.getScaleX = function() {
-      return this._scaleX;
-    };
-
-    BitmapClip.prototype.setScaleX = function(v) {
-      if (this._scaleX !== v) {
-        this.dirty(true);
-      }
-      this._scaleX = v;
-    };
-
-    BitmapClip.prototype.getScaleY = function() {
-      return this._scaleY;
-    };
-
-    BitmapClip.prototype.setScaleY = function(v) {
-      if (this._scaleY !== v) {
-        this.dirty(true);
-      }
-      this._scaleY = v;
-    };
-
-    BitmapClip.prototype.getRotation = function() {
-      return this._rotation;
-    };
-
-    BitmapClip.prototype.setRotation = function(v) {
-      if (this._rotation !== v) {
-        this.dirty(true);
-      }
-      this._rotation = v;
+      this.lwf.renderObject();
     };
 
     BitmapClip.prototype.setMatrix = function(m) {
-      this.mScaleX = m.scaleX;
-      this.mScaleY = m.scaleY;
-      this.mSkew0 = m.skew0;
-      this.mSkew1 = m.skew1;
-      this.x = m.translateX;
-      this.y = m.translateY;
-      this.dirty();
-    };
-
-    BitmapClip.prototype.getAlphaProperty = function() {
-      return this._alpha;
-    };
-
-    BitmapClip.prototype.setAlphaProperty = function(v) {
-      if (this._alpha !== v) {
-        this.lwf.setPropertyDirty();
-        this.dirtyColorTransform = true;
+      var i, _i;
+      for (i = _i = 0; _i < 6; i = ++_i) {
+        this._[i] = m._[i];
       }
-      this._alpha = v;
+    };
+
+    BitmapClip.prototype.detachFromParent = function() {
+      if (this.parent != null) {
+        this.parent.detachBitmap(this.depth);
+        this.parent = null;
+      }
     };
 
     return BitmapClip;
 
   })(LObject);
-
-  if (typeof BitmapClip.prototype.__defineGetter__ !== "undefined") {
-    BitmapClip.prototype.__defineGetter__("regX", function() {
-      return this.getRegX();
-    });
-    BitmapClip.prototype.__defineSetter__("regX", function(v) {
-      return this.setRegX(v);
-    });
-    BitmapClip.prototype.__defineGetter__("regY", function() {
-      return this.getRegY();
-    });
-    BitmapClip.prototype.__defineSetter__("regY", function(v) {
-      return this.setRegY(v);
-    });
-    BitmapClip.prototype.__defineGetter__("x", function() {
-      return this.getX();
-    });
-    BitmapClip.prototype.__defineSetter__("x", function(v) {
-      return this.setX(v);
-    });
-    BitmapClip.prototype.__defineGetter__("y", function() {
-      return this.getY();
-    });
-    BitmapClip.prototype.__defineSetter__("y", function(v) {
-      return this.setY(v);
-    });
-    BitmapClip.prototype.__defineGetter__("scaleX", function() {
-      return this.getScaleX();
-    });
-    BitmapClip.prototype.__defineSetter__("scaleX", function(v) {
-      return this.setScaleX(v);
-    });
-    BitmapClip.prototype.__defineGetter__("scaleY", function() {
-      return this.getScaleY();
-    });
-    BitmapClip.prototype.__defineSetter__("scaleY", function(v) {
-      return this.setScaleY(v);
-    });
-    BitmapClip.prototype.__defineGetter__("rotation", function() {
-      return this.getRotation();
-    });
-    BitmapClip.prototype.__defineSetter__("rotation", function(v) {
-      return this.setRotation(v);
-    });
-    BitmapClip.prototype.__defineGetter__("alpha", function() {
-      return this.getAlphaProperty();
-    });
-    BitmapClip.prototype.__defineSetter__("alpha", function(v) {
-      return this.setAlphaProperty(v);
-    });
-  } else if (typeof Object.defineProperty !== "undefined") {
-    Object.defineProperty(BitmapClip.prototype, "regX", {
-      get: function() {
-        return this.getRegX();
-      },
-      set: function(v) {
-        return this.setRegX(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "regY", {
-      get: function() {
-        return this.getRegY();
-      },
-      set: function(v) {
-        return this.setRegY(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "x", {
-      get: function() {
-        return this.getX();
-      },
-      set: function(v) {
-        return this.setX(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "y", {
-      get: function() {
-        return this.getY();
-      },
-      set: function(v) {
-        return this.setY(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "scaleX", {
-      get: function() {
-        return this.getScaleX();
-      },
-      set: function(v) {
-        return this.setScaleX(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "scaleY", {
-      get: function() {
-        return this.getScaleY();
-      },
-      set: function(v) {
-        return this.setScaleY(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "rotation", {
-      get: function() {
-        return this.getRotation();
-      },
-      set: function(v) {
-        return this.setRotation(v);
-      }
-    });
-    Object.defineProperty(BitmapClip.prototype, "alpha", {
-      get: function() {
-        return this.getAlphaProperty();
-      },
-      set: function(v) {
-        return this.setAlphaProperty(v);
-      }
-    });
-  }
 
   Movie = (function(_super) {
     __extends(Movie, _super);
@@ -4516,12 +4358,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         for (_j = 0, _len = _ref2.length; _j < _len; _j++) {
           bitmapClip = _ref2[_j];
           if (bitmapClip != null) {
-            if (matrixChanged || bitmapClip.dirtyMatrix) {
-              bitmapClip.updateMatrix(m);
-            }
-            if (colorTransformChanged || bitmapClip.dirtyColorTransform) {
-              bitmapClip.updateColorTransform(c);
-            }
+            bitmapClip.update(m, c);
           }
         }
       }
@@ -4682,6 +4519,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     Movie.prototype.render = function(v, rOffset) {
       var attachedMovie, bitmapClip, child, depth, k, lwfContainer, obj, useBlendMode, useMaskMode, _i, _j, _k, _l, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4;
+      if (!this.active && (this.lwf.rendererFactory.needsRenderForInactive == null)) {
+        return;
+      }
       if (!this.visible || !this.active) {
         v = false;
       }
@@ -4848,7 +4688,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.instanceTail = null;
       this.displayList = null;
       this.property = null;
-      Movie.__super__.destroy.apply(this, arguments);
+      Movie.__super__.destroy.call(this);
     };
 
     Movie.prototype.playAnimation = function(clipEvent) {
@@ -5618,6 +5458,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.thisTick = 0;
       this.attachVisible = true;
       this.execCount = 0;
+      this.renderCount = 0;
       this.isExecDisabled = false;
       this.isPropertyDirty = false;
       this.isLWFAttached = false;
@@ -5985,6 +5826,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if ((this.rootMovie == null) || !this.active || this.fastForwardCurrent) {
         return;
       }
+      ++this.renderCount;
       renderingCountBackup = this.renderingCount;
       if (rCount > 0) {
         this.renderingCount = rCount;
@@ -7137,6 +6979,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["addEventListener"] = LWF.prototype.addEventHandler;
 
+  LWF.prototype["addExecHandler"] = LWF.prototype.addExecHandler;
+
+  LWF.prototype["addExecListener"] = LWF.prototype.addExecHandler;
+
   LWF.prototype["addMovieEventHandler"] = LWF.prototype.addMovieEventHandler;
 
   LWF.prototype["addMovieEventListener"] = LWF.prototype.addMovieEventHandler;
@@ -7152,6 +6998,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["clearEventHandler"] = LWF.prototype.clearEventHandler;
 
   LWF.prototype["clearEventListener"] = LWF.prototype.clearEventHandler;
+
+  LWF.prototype["clearExecHandler"] = LWF.prototype.clearExecHandler;
+
+  LWF.prototype["clearExecListener"] = LWF.prototype.clearExecHandler;
 
   LWF.prototype["clearMovieEventHandler"] = LWF.prototype.clearMovieEventHandler;
 
@@ -7219,6 +7069,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
   LWF.prototype["removeEventListener"] = LWF.prototype.removeEventHandler;
 
+  LWF.prototype["removeExecHandler"] = LWF.prototype.removeExecHandler;
+
+  LWF.prototype["removeExecListener"] = LWF.prototype.removeExecHandler;
+
   LWF.prototype["removeMovieEventHandler"] = LWF.prototype.removeMovieEventHandler;
 
   LWF.prototype["removeMovieEventListener"] = LWF.prototype.removeMovieEventHandler;
@@ -7258,6 +7112,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF.prototype["setEventHandler"] = LWF.prototype.setEventHandler;
 
   LWF.prototype["setEventListener"] = LWF.prototype.setEventHandler;
+
+  LWF.prototype["setExecHandler"] = LWF.prototype.setExecHandler;
+
+  LWF.prototype["setExecListener"] = LWF.prototype.setExecHandler;
 
   LWF.prototype["setFastForward"] = LWF.prototype.setFastForward;
 
@@ -7454,6 +7312,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   ColorTransform.prototype["clear"] = ColorTransform.prototype.clear;
 
   ColorTransform.prototype["set"] = ColorTransform.prototype.set;
+
+  BitmapClip.prototype["detachFromParent"] = BitmapClip.prototype.detachFromParent;
 
   BitmapClip.prototype["setMatrix"] = BitmapClip.prototype.setMatrix;
 
@@ -7775,7 +7635,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.onloaddata = function(settings, data, url) {
-      var lwfUrl, needsToLoadScript, _ref1, _ref2;
+      var needsToLoadScript, _ref1, _ref2;
       if (!((data != null) && data.check())) {
         settings.error.push({
           url: url,
@@ -7787,8 +7647,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       settings["name"] = data.name();
       this.checkTextures(settings, data);
       needsToLoadScript = data.useScript && (((_ref1 = global["LWF"]) != null ? (_ref2 = _ref1["Script"]) != null ? _ref2[data.name()] : void 0 : void 0) == null);
-      lwfUrl = settings["lwf"];
-      this.cache[lwfUrl].data = data;
+      this.cache[settings["lwfUrl"]].data = data;
       settings.total = settings._textures.length + 1;
       if (needsToLoadScript) {
         settings.total++;
@@ -7805,12 +7664,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.loadLWF = function(settings) {
-      var data, lwfUrl, url, _ref1;
+      var data, lwfUrl, _ref1;
       lwfUrl = settings["lwf"];
-      url = lwfUrl;
-      if (!url.match(/^\//)) {
-        url = ((_ref1 = settings["prefix"]) != null ? _ref1 : "") + url;
+      if (!lwfUrl.match(/^\//)) {
+        lwfUrl = ((_ref1 = settings["prefix"]) != null ? _ref1 : "") + lwfUrl;
       }
+      settings["lwfUrl"] = lwfUrl;
       settings.error = [];
       if (this.cache[lwfUrl] != null) {
         data = this.cache[lwfUrl].data;
@@ -7819,15 +7678,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.checkTextures(settings, data);
           settings.total = settings._textures.length + 1;
           settings.loadedCount = 1;
-          if (typeof onprogress !== "undefined" && onprogress !== null) {
-            onprogress.call(settings, settings.loadedCount, settings.total);
+          if (settings["onprogress"] != null) {
+            settings["onprogress"].call(settings, settings.loadedCount, settings.total);
           }
           this.loadImages(settings, data);
           return;
         }
       }
       this.cache[lwfUrl] = {};
-      this.loadLWFData(settings, url);
+      this.loadLWFData(settings, lwfUrl);
     };
 
     WebkitCSSResourceCache.prototype.dispatchOnloaddata = function(settings, url, useWorker, useArrayBuffer, useWorkerWithArrayBuffer, data) {
@@ -7959,7 +7818,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         };
         script.src = url;
         head.appendChild(script);
-        lwfUrl = settings["lwf"];
+        lwfUrl = settings["lwfUrl"];
         if ((_base = this.cache[lwfUrl]).scripts == null) {
           _base.scripts = [];
         }
@@ -8039,8 +7898,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebkitCSSResourceCache.prototype.loadJS = function(settings, data) {
       var head, lwfUrl, onload, onprogress, script, url, _base, _ref1, _ref2,
         _this = this;
-      lwfUrl = settings["lwf"];
-      url = (_ref1 = settings["js"]) != null ? _ref1 : lwfUrl.replace(/\.lwf(\.js)?/i, ".js");
+      lwfUrl = settings["lwfUrl"];
+      url = (_ref1 = settings["js"]) != null ? _ref1 : settings["lwf"].replace(/\.lwf(\.js)?/i, ".js");
       if (!url.match(/^\//)) {
         url = ((_ref2 = settings["prefix"]) != null ? _ref2 : "") + url;
       }
@@ -8118,19 +7977,23 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih);
     };
 
-    WebkitCSSResourceCache.prototype.createCanvas = function(filename, w, h) {
+    WebkitCSSResourceCache.prototype.getCanvasName = function() {
+      return "__canvas__" + ++this.canvasIndex;
+    };
+
+    WebkitCSSResourceCache.prototype.createCanvas = function(w, h) {
       var canvas, ctx, name;
+      name = this.getCanvasName();
       if (this.constructor === WebkitCSSResourceCache) {
-        name = "canvas_" + ++this.canvasIndex;
         ctx = document.getCSSCanvasContext("2d", name, w, h);
         canvas = ctx.canvas;
-        canvas.name = name;
       } else {
         canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         ctx = canvas.getContext('2d');
       }
+      canvas.name = name;
       return [canvas, ctx];
     };
 
@@ -8154,7 +8017,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             iw = w;
             ih = h;
           }
-          _ref3 = this.createCanvas(o.filename, w, h), canvas = _ref3[0], ctx = _ref3[1];
+          _ref3 = this.createCanvas(w, h), canvas = _ref3[0], ctx = _ref3[1];
           switch (o.colorOp) {
             case "rgb":
               ctx.fillStyle = "#" + o.colorValue;
@@ -8231,7 +8094,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             jpgImg = imageCache[jpg.filename];
             alphaImg = imageCache[alpha.filename];
             if ((jpgImg != null) && (alphaImg != null)) {
-              _ref2 = _this.createCanvas(jpg.filename, jpgImg.width, jpgImg.height), canvas = _ref2[0], ctx = _ref2[1];
+              _ref2 = _this.createCanvas(jpgImg.width, jpgImg.height), canvas = _ref2[0], ctx = _ref2[1];
               ctx.drawImage(jpgImg, 0, 0, jpgImg.width, jpgImg.height, 0, 0, jpgImg.width, jpgImg.height);
               ctx.globalCompositeOperation = 'destination-in';
               ctx.drawImage(alphaImg, 0, 0, alphaImg.width, alphaImg.height, 0, 0, jpgImg.width, jpgImg.height);
@@ -8279,7 +8142,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     WebkitCSSResourceCache.prototype.newLWF = function(settings, imageCache, data) {
       var cache, embeddedScript, factory, lwf, lwfUrl, parentLWF, _ref1, _ref2;
-      lwfUrl = settings["lwf"];
+      lwfUrl = settings["lwfUrl"];
       cache = this.cache[lwfUrl];
       factory = this.newFactory(settings, imageCache, data);
       if (data.useScript) {
@@ -8289,7 +8152,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (settings["active"] != null) {
         lwf.active = settings["active"];
       }
-      lwf.url = settings["lwf"];
+      lwf.url = settings["lwfUrl"];
       lwf.lwfInstanceId = ++this.lwfInstanceIndex;
       if (cache.instances == null) {
         cache.instances = {};
@@ -8982,8 +8845,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Cocos2dResourceCache.prototype.loadImages = function(settings, data) {
-      var imageCache, lwfUrl, name, prefix, suffix, tc, texture, url, _i, _len, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
-      lwfUrl = settings["lwf"];
+      var imageCache, name, prefix, suffix, tc, texture, url, _i, _len, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
       prefix = (_ref1 = (_ref2 = settings["imagePrefix"]) != null ? _ref2 : settings["prefix"]) != null ? _ref1 : "";
       suffix = (_ref3 = settings["imageSuffix"]) != null ? _ref3 : "";
       imageCache = {};
@@ -9007,7 +8869,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     Cocos2dResourceCache.prototype.unloadLWF = function(lwf) {
       var name, url, _ref1;
-      Cocos2dResourceCache.__super__.unloadLWF.apply(this, arguments);
+      Cocos2dResourceCache.__super__.unloadLWF.call(this, lwf);
       if (this.cache[lwf.url] == null) {
         _ref1 = lwf.renderFactory.cache;
         for (name in _ref1) {

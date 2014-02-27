@@ -35,6 +35,7 @@ class CanvasResourceCache extends WebkitCSSResourceCache
       canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
+      canvas.name = @getCanvasName()
       ctx = canvas.getContext('2d')
       canvas.withPadding = true
       ctx.drawImage(image,
@@ -42,5 +43,5 @@ class CanvasResourceCache extends WebkitCSSResourceCache
         1, 1, image.width, image.height)
       imageCache[texture.filename] = canvas
 
-    super
+    super(settings, imageCache, texture, image)
     return
