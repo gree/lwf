@@ -39,6 +39,8 @@ class WebkitCSSResourceCache
   getTextureURL:(settings, data, texture) ->
     prefix = settings["imagePrefix"] ? settings["prefix"] ? ""
     suffix = settings["imageSuffix"] ? ""
+    queryString = settings["imageQueryString"] ? ""
+    queryString = "?#{queryString}" if queryString.length > 0
     imageMap = settings["imageMap"]
     url = texture.filename
     if typeof imageMap is 'function'
@@ -48,7 +50,7 @@ class WebkitCSSResourceCache
       newUrl = imageMap[url]
       url = newUrl if newUrl?
     url = prefix + url unless url.match(/^\//)
-    url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1")
+    url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1" + queryString)
     return url
 
   checkTextures:(settings, data) ->
