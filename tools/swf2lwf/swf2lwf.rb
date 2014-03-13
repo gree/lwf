@@ -2973,6 +2973,19 @@ def parse_xflxml(xml, isRootMovie = false)
                     escape(instance_linkage_name).gsub(/(\/|%2F)/, '_')
                   instance_name = eee.attributes["name"]
                   instance_name = escape(instance_name)
+                  if instance_name.nil? or instance_name.empty?
+                    symbol_instance = eee
+                    em = symbol_instance.send(elementsMsg).find(){
+                      |elm| elm.name == "matrix"}
+                    if em.nil?
+                      instance_name = create_instance_name(0, 0)
+                    else
+                      m = em.send(elementsMsg).find(){
+                        |elm| elm.name == "Matrix"}
+                      instance_name = create_instance_name(
+                        m.attributes["tx"] || 0, m.attributes["ty"] || 0)
+                    end
+                  end
                 end
               rescue NoMethodError
               end
