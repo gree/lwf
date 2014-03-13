@@ -349,3 +349,12 @@ class WebkitCSSRendererFactory
     canvas.width = canvas.width if @quirkyClearRect
     return
 
+  setFont:(oldFontName, newFontName) ->
+    oldFontName += ",sans-serif"
+    newFontName += ",sans-serif"
+    for context in @textContexts
+      if context.fontName is oldFontName
+        context.fontName = newFontName
+        context.fontChanged = true
+    return
+

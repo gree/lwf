@@ -31,6 +31,7 @@ class HTML5TextContext
       @shadowColor = @data.colors[@textProperty.shadowColorId]
 
     @fontName = "#{@data.strings[font.stringId]},sans-serif"
+    @fontChanged = true
     @letterSpacing = font.letterSpacing + @textProperty.letterSpacing
 
   destruct: ->
@@ -45,6 +46,7 @@ class HTML5TextRenderer
     @color = new Color
     @textRendered = false
     @textScale = @lwf.textScale
+    @currentShadowMarginY = 0
     @initCanvas()
 
   destruct: ->
@@ -113,6 +115,38 @@ class HTML5TextRenderer
       newlines.push(line)
     return newlines
 
+  renderLines:(ctx, lines, useStroke, shadowColor, offsetY) ->
+    for i in [0...lines.length]
+      line = lines[i]
+      x = @offsetX * @lwf.textScale
+      if @letterSpacing isnt 0
+        switch (@context.textProperty.align & Align.ALIGN_MASK)
+          when Align.RIGHT
+            x -= @measureText(line)
+          when Align.CENTER
+            x -= @measureText(line) / 2
+      y = offsetY + (@fontHeight + @leading) * i * 96 / 72
+      if useStroke
+        ctx.shadowColor = "rgba(0, 0, 0, 0)" if @context.shadowColor?
+        if @letterSpacing is 0
+          ctx.strokeText(line, x, y)
+        else
+          offset = 0
+          for j in [0...line.length]
+            c = line[j]
+            ctx.strokeText(c, x + offset, y)
+            offset += @canvasContext.measureText(c).width + @letterSpacing
+      ctx.shadowColor = shadowColor if @context.shadowColor?
+      if @letterSpacing is 0
+        ctx.fillText(line, x, y)
+      else
+        offset = 0
+        for j in [0...line.length]
+          c = line[j]
+          ctx.fillText(c, x + offset, y)
+          offset += @canvasContext.measureText(c).width + @letterSpacing
+    return
+
   renderText:(textColor) ->
     @textRendered = true
 
@@ -123,19 +157,6 @@ class HTML5TextRenderer
     lines = @adjustText(@str.split("\n"))
 
     property = context.textProperty
-
-    switch (property.align & Align.VERTICAL_MASK)
-      when Align.VERTICAL_BOTTOM
-        len = lines.length
-        h = (@fontHeight * len + @leading * (len - 1)) * 96 / 72
-        offsetY = canvas.height - h
-      when Align.VERTICAL_MIDDLE
-        len = lines.length
-        h = (@fontHeight * len + @leading * (len - 1)) * 96 / 72
-        offsetY = (canvas.height - h) / 2
-      else
-        offsetY = 0
-    offsetY += @fontHeight * 1.2
 
     context.factory.clearCanvasRect(canvas, ctx)
     @initCanvasContext(ctx)
@@ -155,35 +176,39 @@ class HTML5TextRenderer
       ctx.shadowOffsetY = property.shadowOffsetY * scale
       ctx.shadowBlur = property.shadowBlur * scale
 
-    for i in [0...lines.length]
-      line = lines[i]
-      x = @offsetX * scale
-      if @letterSpacing isnt 0
-        switch (@context.textProperty.align & Align.ALIGN_MASK)
-          when Align.RIGHT
-            x -= @measureText(line)
-          when Align.CENTER
-            x -= @measureText(line) / 2
-      y = offsetY + (@fontHeight + @leading) * i * 96 / 72
-      if useStroke
-        ctx.shadowColor = "rgba(0, 0, 0, 0)" if context.shadowColor?
-        if @letterSpacing is 0
-          ctx.strokeText(line, x, y)
-        else
-          offset = 0
-          for j in [0...line.length]
-            c = line[j]
-            ctx.strokeText(c, x + offset, y)
-            offset += @canvasContext.measureText(c).width + @letterSpacing
-      ctx.shadowColor = shadowColor if context.shadowColor?
-      if @letterSpacing is 0
-        ctx.fillText(line, x, y)
-      else
-        offset = 0
-        for j in [0...line.length]
-          c = line[j]
-          ctx.fillText(c, x + offset, y)
-          offset += @canvasContext.measureText(c).width + @letterSpacing
+    offsetY = @fontHeight * 1.2
+    switch (property.align & Align.VERTICAL_MASK)
+      when Align.VERTICAL_BOTTOM, Align.VERTICAL_MIDDLE
+        @renderLines(ctx, lines, useStroke, "rgba(0, 0, 0, 0)", offsetY)
+        img = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        width = canvas.width
+        height = canvas.height
+        first = null
+        last = null
+        r = 0
+        while !first? && r < height
+          for c in [0...width]
+            if img.data[r * width * 4 + c * 4 + 3] isnt 0
+              first = r
+              break
+          r++
+        r = height
+        while !last? && r > 0
+          r--
+          for c in [0...width]
+            if img.data[r * width * 4 + c * 4 + 3] isnt 0
+              last = r
+              break
+        if first? and last?
+          h = last - first + 1
+          switch (property.align & Align.VERTICAL_MASK)
+            when Align.VERTICAL_BOTTOM
+              offsetY += height - h - first - @currentShadowMarginY
+            when Align.VERTICAL_MIDDLE
+              offsetY += (height - h) / 2 - first - @currentShadowMarginY
+        context.factory.clearCanvasRect(canvas, ctx)
+
+    @renderLines(ctx, lines, useStroke, shadowColor, offsetY)
     return
 
   needsScale: ->
@@ -196,6 +221,21 @@ class HTML5TextRenderer
         m = Utility.scaleMatrix(@matrix, m, 1 / @lwf.textScale, 0, 0)
       else
         m = Utility.copyMatrix(@matrix, m)
+      if @context.shadowColor?
+        property = @context.textProperty
+        scale = @lwf.textScale
+        @currentShadowMarginY = 0
+        switch (property.align & Align.VERTICAL_MASK)
+          when Align.VERTICAL_BOTTOM
+            if property.shadowOffsetY > 0
+              @currentShadowMarginY = property.shadowOffsetY * scale
+            @currentShadowMarginY += property.shadowBlur * scale
+          when Align.VERTICAL_MIDDLE
+          else
+            if property.shadowOffsetY < 0
+              @currentShadowMarginY = property.shadowOffsetY * scale
+            @currentShadowMarginY -= property.shadowBlur * scale
+        m.translateY += m.scaleY * @currentShadowMarginY
       unless @context.factory.textInSubpixel
         m.translateX = Math.round(m.translateX)
         m.translateY = Math.round(m.translateY)
@@ -208,6 +248,11 @@ class HTML5TextRenderer
     colorChanged = false
     if red isnt c.red or green isnt c.green or blue isnt c.blue
       colorChanged = true
+
+    fontChanged = false
+    if @context.fontChanged
+      fontChanged = true
+      @context.fontChanged = false
 
     strChanged = false
     str = @textObject.parent[@textObject.name]
@@ -224,7 +269,7 @@ class HTML5TextRenderer
       @textScale = @lwf.textScale
 
     @renderText(c) if !@textRendered or
-      colorChanged or strChanged or scaleChanged
+      colorChanged or fontChanged or strChanged or scaleChanged
     return
 
   initCanvas: ->

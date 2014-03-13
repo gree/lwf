@@ -305,6 +305,7 @@ declare module LWF {
 		setExecListener(listener:Function):void;
 		setFastForward(pFastForward:boolean):void;
 		setFastForwardTimeout(pFastForwardTimeout:number):void;
+		setFont(oldFontName:string, newFontName:string):void;
 		setFrameRate(pFrameRate:number):void;
 		setFrameSkip(frameSkip:boolean):void;
 		setMovieCommand(instanceNames:string[], cmd:Function):void;

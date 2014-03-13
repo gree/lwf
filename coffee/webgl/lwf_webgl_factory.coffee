@@ -71,7 +71,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @stage.height = @data.header.height
 
     params =
-      alpha:true
+      alpha:false
       antialias:false
       depth:false
       premultipliedAlpha:true

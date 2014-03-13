@@ -130,6 +130,10 @@ class LWF
     @textScale = textScale
     return
 
+  setFont:(oldFontName, newFontName) ->
+    @rendererFactory.setFont(oldFontName, newFontName)
+    return
+
   getStageSize: ->
     [w, h] = @rendererFactory.getStageSize()
     return {width:w, height:h}
@@ -1051,3 +1055,4 @@ class LWF
       button.keyPress(code)
       button = button.buttonLink
     return
+

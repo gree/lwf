@@ -134,6 +134,8 @@ extern class LWF
 
 	public function setFastForwardTimeout(fastForwardTimeout:Int):Void;
 
+	public function setFont(oldFontName:String, newFontName:String):Void;
+
 	public function setFrameRate(frameRate:Int):Void;
 
 	public function setFrameSkip(frameSkip:Bool):Void;

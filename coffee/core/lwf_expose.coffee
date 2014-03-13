@@ -114,6 +114,7 @@ LWF.prototype["setExecHandler"] = LWF.prototype.setExecHandler
 LWF.prototype["setExecListener"] = LWF.prototype.setExecHandler
 LWF.prototype["setFastForward"] = LWF.prototype.setFastForward
 LWF.prototype["setFastForwardTimeout"] = LWF.prototype.setFastForwardTimeout
+LWF.prototype["setFont"] = LWF.prototype.setFont
 LWF.prototype["setFrameRate"] = LWF.prototype.setFrameRate
 LWF.prototype["setFrameSkip"] = LWF.prototype.setFrameSkip
 LWF.prototype["setMatrixMovie"] = LWF.prototype.setMatrixMovie
