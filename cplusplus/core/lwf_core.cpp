@@ -112,6 +112,13 @@ void LWF::SetPreferredFrameRate(int f, int eLimit)
 	execLimit = (int)ceilf(frameRate / (float)f) + eLimit;
 }
 
+void LWF::SetInteractive()
+{
+	interactive = true;
+	if (parent)
+		parent->lwf->SetInteractive();
+}
+
 void LWF::FitForHeight(float stageWidth, float stageHeight)
 {
 	rendererFactory->FitForHeight(this, stageWidth, stageHeight);

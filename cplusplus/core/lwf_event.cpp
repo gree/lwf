@@ -337,6 +337,8 @@ int LWF::AddButtonEventHandler(string instanceName,
 	if (instanceName.find('.') == string::npos)
 		return -1;
 
+	SetInteractive();
+
 	ButtonEventHandlersDictionary::iterator it =
 		m_buttonEventHandlersByFullName.find(instanceName);
 	if (it == m_buttonEventHandlersByFullName.end()) {
@@ -358,6 +360,8 @@ int LWF::AddButtonEventHandler(
 {
 	if (instId < 0 || instId >= (int)data->instanceNames.size())
 		return -1;
+
+	SetInteractive();
 
 	int id = GetEventOffset();
 	m_buttonEventHandlers[instId].Add(id, h, kh);

@@ -151,6 +151,7 @@ public:
 	void SetRendererFactory(shared_ptr<IRendererFactory> r);
 	void SetFrameRate(int f);
 	void SetPreferredFrameRate(int f, int eLimit = 2);
+	void SetInteractive();
 
 	void FitForHeight(float stageWidth, float stageHeight);
 	void FitForWidth(float stageWidth, float stageHeight);
