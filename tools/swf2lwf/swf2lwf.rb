@@ -3271,7 +3271,7 @@ def parse_xflxml(xml, isRootMovie = false)
         end
       end
       if @version == 8
-        re = /^[\s\001]*on[\s\001]*\([\s\001]*(?<c>press|release|rollOver|rollOut)[\s\001]*\)[\s\001]*(?<p>\{(?:[^{}]|\g<p>)*\})/
+        re = /[\A\s\001]*on[\s\001]*\([\s\001]*(?<c>press|release|rollOver|rollOut)[\s\001]*\)[\s\001]*(?<p>\{(?:[^{}]|\g<p>)*\})/
         text.gsub(re) do |m|
           event = $~[:c]
           btnscript = $~[:p]
