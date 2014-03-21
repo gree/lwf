@@ -6786,7 +6786,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                     break;
                   case Animation.INSTANCE_TARGET_PARENT:
                     target = target.parent;
-                    if (this.target == null) {
+                    if (target == null) {
                       target = this.rootMovie;
                     }
                     break;

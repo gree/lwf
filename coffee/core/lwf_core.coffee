@@ -950,7 +950,7 @@ class LWF
 
                 when Animation.INSTANCE_TARGET_PARENT
                   target = target.parent
-                  target = @rootMovie unless @target?
+                  target = @rootMovie unless target?
 
                 else
                   target =
