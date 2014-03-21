@@ -66,7 +66,8 @@ public:
 		if (!cocos2d::LabelBMFont::initWithString("", fontPath))
 			return false;
 
-		m_fontHeight = (float)_configuration->_commonHeight;
+		m_fontHeight =
+			((cocos2d::Label *)getChildren().front())->getCommonLineHeight();
 		m_height = height;
 		m_scale = fontHeight / m_fontHeight;
 		m_vAlignment = vAlignment;
@@ -90,13 +91,14 @@ public:
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
 			float scale = m_scale / node->lwf->scaleByStage;
-            kmScalar mat[] = {
+            kmMat4 mat = {{
 				m->scaleX * scale, m->skew1 * scale, 0, 0,
 				m->skew0 * scale, m->scaleY * scale, 0, 0,
                 0, 0, 1, 0,
 				m->translateX + m->skew0 * m_offsetY,
-                    -m->translateY - m->scaleY * m_offsetY, 0, 1};
-            kmMat4Fill(&_transform, mat);
+                    -m->translateY - m->scaleY * m_offsetY, 0, 1
+			}};
+			setNodeToParentTransform(mat);
 		}
 
 		const Color &c = cx->multi;
@@ -106,11 +108,6 @@ public:
 			(GLubyte)(c.green * m_green * dc.g),
 			(GLubyte)(c.blue * m_blue * dc.b)});
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
-	}
-
-	const kmMat4 &getNodeToParentTransform() const
-	{
-		return _transform;
 	}
 
 	void setString(const std::string &label)

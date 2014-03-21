@@ -147,11 +147,6 @@ void LWFNode::update(float dt)
 	}
 }
 
-void LWFNode::draw()
-{
-	// NOTHING TO DO
-}
-
 void LWFNode::onEnter()
 {
 	if (lwf && lwf->interactive) {

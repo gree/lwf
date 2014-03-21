@@ -133,12 +133,13 @@ public:
 	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
-            kmScalar mat[] = {
+            kmMat4 mat = {{
 				m->scaleX, -m->skew1, 0, 0,
 				m->skew0, -m->scaleY, 0, 0,
                 0, 0, 1, 0,
-				m->translateX, -m->translateY, 0, 1};
-            kmMat4Fill(&_transform, mat);
+				m->translateX, -m->translateY, 0, 1
+			}};
+			setNodeToParentTransform(mat);
 			setDirty(true);
 		}
 
@@ -150,11 +151,6 @@ public:
 			(GLubyte)(c.green * dc.g),
 			(GLubyte)(c.blue * dc.b)});
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
-	}
-
-	const kmMat4 &getNodeToParentTransform() const
-	{
-		return _transform;
 	}
 
 	void setBatchNode(cocos2d::SpriteBatchNode *spriteBatchNode)

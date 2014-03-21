@@ -89,7 +89,7 @@ void LWFResourceCache::unloadLWFDataInternal(const shared_ptr<LWFData> &data)
 	TextureCache *cache = Director::getInstance()->getTextureCache();
 	for (; it != itend; ++it) {
 		Texture2D *texture = cache->getTextureForKey(it->first.c_str());
-		if (texture && texture->retainCount() == 1)
+		if (texture && texture->getReferenceCount() == 1)
 			cache->removeTexture(texture);
 	}
 }
