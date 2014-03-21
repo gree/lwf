@@ -308,9 +308,7 @@ ColorTransform *Utility::CalcColorTransform(LWF *lwf,
 		dst->multi.green = src0->multi.green;
 		dst->multi.blue  = src0->multi.blue;
 		dst->multi.alpha = src0->multi.alpha * alphaTransform.alpha;
-#if LWF_USE_ADDITIONALCOLOR
-		dst->add.Set(src0->add);
-#endif
+		dst->add.Set(&src0->add);
 	} else {
 		int colorTransformId = src1Id & ~Constant::COLORTRANSFORM_FLAG;
 		const ColorTransform &src1 =
@@ -327,12 +325,10 @@ ColorTransform *Utility::CalcColorTransform(ColorTransform *dst,
 	dst->multi.green = src0->multi.green * src1->multi.green;
 	dst->multi.blue  = src0->multi.blue  * src1->multi.blue;
 	dst->multi.alpha = src0->multi.alpha * src1->multi.alpha;
-#if LWF_USE_ADDITIONALCOLOR
 	dst->add.red   = src0->add.red   * src1->multi.red   + src1->add.red;
 	dst->add.green = src0->add.green * src1->multi.green + src1->add.green;
 	dst->add.blue  = src0->add.blue  * src1->multi.blue  + src1->add.blue;
 	dst->add.alpha = src0->add.alpha * src1->multi.alpha + src1->add.alpha;
-#endif
 	return dst;
 }
 
@@ -348,17 +344,10 @@ ColorTransform *Utility::CopyColorTransform(
 
 void Utility::CalcColor(Color *dst, const Color *c, const ColorTransform *t)
 {
-#if LWF_USE_ADDITIONALCOLOR
 	dst->red   = c->red   * t->multi.red   + t->add.red;
 	dst->green = c->green * t->multi.green + t->add.green;
 	dst->blue  = c->blue  * t->multi.blue  + t->add.blue;
 	dst->alpha = c->alpha * t->multi.alpha + t->add.alpha;
-#else
-	dst->red   = c->red   * t->multi.red;
-	dst->green = c->green * t->multi.green;
-	dst->blue  = c->blue  * t->multi.blue;
-	dst->alpha = c->alpha * t->multi.alpha;
-#endif
 }
 
 vector<string> Utility::Split(const string &str, char d)

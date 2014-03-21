@@ -249,20 +249,15 @@ public:
 		float multiRed = 1,
 		float multiGreen = 1,
 		float multiBlue = 1,
-		float multiAlpha = 1
-#if LWF_USE_ADDITIONALCOLOR
-		,
+		float multiAlpha = 1,
 		float addRed = 0,
 		float addGreen = 0,
 		float addBlue = 0,
 		float addAlpha = 0
-#endif
 		)
 	{
 		multi.Set(multiRed, multiGreen, multiBlue, multiAlpha);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(addRed, addGreen, addBlue, addAlpha);
-#endif
 	}
 
 	ColorTransform(const ColorTransform &c)
@@ -273,17 +268,13 @@ public:
 	void Clear()
 	{
 		multi.Set(1, 1, 1, 1);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(0, 0, 0, 0);
-#endif
 	}
 
 	ColorTransform &Set(const ColorTransform *c)
 	{
 		multi.Set(&c->multi);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(&c->add);
-#endif
 		return *this;
 	}
 
@@ -291,20 +282,15 @@ public:
 		float multiRed = 1,
 		float multiGreen = 1,
 		float multiBlue = 1,
-		float multiAlpha = 1
-#if LWF_USE_ADDITIONALCOLOR
-		,
+		float multiAlpha = 1,
 		float addRed = 0,
 		float addGreen = 0,
 		float addBlue = 0,
 		float addAlpha = 0
-#endif
 		)
 	{
 		multi.Set(multiRed, multiGreen, multiBlue, multiAlpha);
-#if LWF_USE_ADDITIONALCOLOR
 		add.Set(addRed, addGreen, addBlue, addAlpha);
-#endif
 		return *this;
 	}
 
@@ -336,7 +322,7 @@ public:
 			m.alpha = alpha;
 			changed = true;
 		}
-#if LWF_USE_ADDITIONALCOLOR
+
 		const Color &ca = c->add;
 		red = ca.red;
 		green = ca.green;
@@ -359,7 +345,7 @@ public:
 			a.alpha = alpha;
 			changed = true;
 		}
-#endif
+
 		return changed;
 	}
 };

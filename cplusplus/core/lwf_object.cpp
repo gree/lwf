@@ -40,11 +40,7 @@ Object::Object(LWF *l, Movie *p, int t, int objId)
 	updated = false;
 
 	matrix.Set(0, 0, 0, 0, 0, 0);
-#if LWF_USE_ADDITIONALCOLOR
 	colorTransform.Set(0, 0, 0, 0, 0, 0, 0, 0);
-#else
-	colorTransform.Set(0, 0, 0, 0);
-#endif
 }
 
 void Object::Exec(int mId, int cId)
