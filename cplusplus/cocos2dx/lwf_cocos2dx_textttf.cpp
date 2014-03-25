@@ -82,7 +82,8 @@ public:
 				m->scaleX, -m->skew1, 0, 0,
 				m->skew0, -m->scaleY, 0, 0,
                 0, 0, 1, 0,
-				m->translateX, -m->translateY, 0, 1
+				m->translateX, -m->translateY -
+					m->scaleY * getFontSize() * 96.0f / 72.0f, 0, 1
 			}};
 			setNodeToParentTransform(mat);
 		}
