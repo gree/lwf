@@ -21,6 +21,8 @@
 class LWF
   ROUND_OFF_TICK_RATE = 0.05
 
+  @globalRenderCount = 0
+
   constructor:(lwfData, \
       rendererFactory = null, embeddedScript = null, @privateData = null) ->
     @data = lwfData
@@ -326,7 +328,7 @@ class LWF
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
     return if !@rootMovie? or !@active or @fastForwardCurrent
-    ++@renderCount
+    @renderCount = ++LWF.globalRenderCount
     renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex

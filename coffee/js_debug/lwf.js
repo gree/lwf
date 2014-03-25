@@ -5425,6 +5425,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     ROUND_OFF_TICK_RATE = 0.05;
 
+    LWF.globalRenderCount = 0;
+
     function LWF(lwfData, rendererFactory, embeddedScript, privateData) {
       if (rendererFactory == null) {
         rendererFactory = null;
@@ -5828,7 +5830,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if ((this.rootMovie == null) || !this.active || this.fastForwardCurrent) {
         return;
       }
-      ++this.renderCount;
+      this.renderCount = ++LWF.globalRenderCount;
       renderingCountBackup = this.renderingCount;
       if (rCount > 0) {
         this.renderingCount = rCount;
