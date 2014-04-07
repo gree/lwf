@@ -127,7 +127,7 @@ class HTML5TextRenderer
             x -= @measureText(line) / 2
       y = offsetY + (@fontHeight + @leading) * i * 96 / 72
       if useStroke
-        ctx.shadowColor = "rgba(0, 0, 0, 0)" if @context.shadowColor?
+        ctx.shadowColor = "rgba(0, 0, 0, 0)" if shadowColor?
         if @letterSpacing is 0
           ctx.strokeText(line, x, y)
         else
@@ -136,7 +136,7 @@ class HTML5TextRenderer
             c = line[j]
             ctx.strokeText(c, x + offset, y)
             offset += @canvasContext.measureText(c).width + @letterSpacing
-      ctx.shadowColor = shadowColor if @context.shadowColor?
+      ctx.shadowColor = shadowColor if shadowColor?
       if @letterSpacing is 0
         ctx.fillText(line, x, y)
       else
@@ -153,28 +153,14 @@ class HTML5TextRenderer
     context = @context
     canvas = @canvas
     ctx = @canvasContext
-    scale = @lwf.textScale
     lines = @adjustText(@str.split("\n"))
 
     property = context.textProperty
+    useStroke = context.strokeColor?
+    shadowColor = context.factory.convertRGB(context.shadowColor) if context.shadowColor?
 
     context.factory.clearCanvasRect(canvas, ctx)
-    @initCanvasContext(ctx)
-    ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-
-    useStroke = false
-    if context.strokeColor?
-      ctx.strokeStyle = context.factory.convertRGB(context.strokeColor)
-      ctx.lineWidth = property.strokeWidth * scale
-      useStroke = true
-
-    if context.shadowColor?
-      shadowColor = context.factory.convertRGB(context.shadowColor)
-      ctx.shadowOffsetX = property.shadowOffsetX * scale
-      ctx.shadowOffsetY = property.shadowOffsetY * scale
-      ctx.shadowBlur = property.shadowBlur * scale
+    @initCanvasContext(ctx, textColor)
 
     offsetY = @fontHeight * 1.2
     switch (property.align & Align.VERTICAL_MASK)
@@ -207,6 +193,8 @@ class HTML5TextRenderer
             when Align.VERTICAL_MIDDLE
               offsetY += (height - h) / 2 - first - @currentShadowMarginY
         context.factory.clearCanvasRect(canvas, ctx)
+        if context.factory.quirkyClearRect?
+          @initCanvasContext(ctx, textColor)
 
     @renderLines(ctx, lines, useStroke, shadowColor, offsetY)
     return
@@ -312,9 +300,27 @@ class HTML5TextRenderer
     @letterSpacing = ctx.measureText('M').width * @context.letterSpacing
     return
 
-  initCanvasContext:(ctx) ->
+  initCanvasContext:(ctx, textColor) ->
     ctx.font = "#{@fontHeight}px #{@context.fontName}"
     ctx.textAlign = @align
     ctx.textBaseline = "bottom"
-    return
+    return unless textColor?
 
+    context = @context;
+    property = context.textProperty
+    scale = @lwf.textScale
+
+    ctx.fillStyle = "rgb(#{textColor.red},#{textColor.green},#{textColor.blue})"
+    ctx.lineCap = "round"
+    ctx.lineJoin = "round"
+
+    if context.strokeColor?
+      ctx.strokeStyle = context.factory.convertRGB(context.strokeColor)
+      ctx.lineWidth = property.strokeWidth * scale
+
+    if context.shadowColor?
+      ctx.shadowOffsetX = property.shadowOffsetX * scale
+      ctx.shadowOffsetY = property.shadowOffsetY * scale
+      ctx.shadowBlur = property.shadowBlur * scale
+
+    return

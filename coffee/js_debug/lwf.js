@@ -8132,7 +8132,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         y = offsetY + (this.fontHeight + this.leading) * i * 96 / 72;
         if (useStroke) {
-          if (this.context.shadowColor != null) {
+          if (shadowColor != null) {
             ctx.shadowColor = "rgba(0, 0, 0, 0)";
           }
           if (this.letterSpacing === 0) {
@@ -8146,7 +8146,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             }
           }
         }
-        if (this.context.shadowColor != null) {
+        if (shadowColor != null) {
           ctx.shadowColor = shadowColor;
         }
         if (this.letterSpacing === 0) {
@@ -8163,31 +8163,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     HTML5TextRenderer.prototype.renderText = function(textColor) {
-      var c, canvas, context, ctx, first, h, height, img, last, lines, offsetY, property, r, scale, shadowColor, useStroke, width, _i, _j;
+      var c, canvas, context, ctx, first, h, height, img, last, lines, offsetY, property, r, shadowColor, useStroke, width, _i, _j;
       this.textRendered = true;
       context = this.context;
       canvas = this.canvas;
       ctx = this.canvasContext;
-      scale = this.lwf.textScale;
       lines = this.adjustText(this.str.split("\n"));
       property = context.textProperty;
-      context.factory.clearCanvasRect(canvas, ctx);
-      this.initCanvasContext(ctx);
-      ctx.fillStyle = "rgb(" + textColor.red + "," + textColor.green + "," + textColor.blue + ")";
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      useStroke = false;
-      if (context.strokeColor != null) {
-        ctx.strokeStyle = context.factory.convertRGB(context.strokeColor);
-        ctx.lineWidth = property.strokeWidth * scale;
-        useStroke = true;
-      }
+      useStroke = context.strokeColor != null;
       if (context.shadowColor != null) {
         shadowColor = context.factory.convertRGB(context.shadowColor);
-        ctx.shadowOffsetX = property.shadowOffsetX * scale;
-        ctx.shadowOffsetY = property.shadowOffsetY * scale;
-        ctx.shadowBlur = property.shadowBlur * scale;
       }
+      context.factory.clearCanvasRect(canvas, ctx);
+      this.initCanvasContext(ctx, textColor);
       offsetY = this.fontHeight * 1.2;
       switch (property.align & Align.VERTICAL_MASK) {
         case Align.VERTICAL_BOTTOM:
@@ -8229,6 +8217,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             }
           }
           context.factory.clearCanvasRect(canvas, ctx);
+          if (context.factory.quirkyClearRect != null) {
+            this.initCanvasContext(ctx, textColor);
+          }
       }
       this.renderLines(ctx, lines, useStroke, shadowColor, offsetY);
     };
@@ -8356,10 +8347,29 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.letterSpacing = ctx.measureText('M').width * this.context.letterSpacing;
     };
 
-    HTML5TextRenderer.prototype.initCanvasContext = function(ctx) {
+    HTML5TextRenderer.prototype.initCanvasContext = function(ctx, textColor) {
+      var context, property, scale;
       ctx.font = "" + this.fontHeight + "px " + this.context.fontName;
       ctx.textAlign = this.align;
       ctx.textBaseline = "bottom";
+      if (textColor == null) {
+        return;
+      }
+      context = this.context;
+      property = context.textProperty;
+      scale = this.lwf.textScale;
+      ctx.fillStyle = "rgb(" + textColor.red + "," + textColor.green + "," + textColor.blue + ")";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      if (context.strokeColor != null) {
+        ctx.strokeStyle = context.factory.convertRGB(context.strokeColor);
+        ctx.lineWidth = property.strokeWidth * scale;
+      }
+      if (context.shadowColor != null) {
+        ctx.shadowOffsetX = property.shadowOffsetX * scale;
+        ctx.shadowOffsetY = property.shadowOffsetY * scale;
+        ctx.shadowBlur = property.shadowBlur * scale;
+      }
     };
 
     return HTML5TextRenderer;
