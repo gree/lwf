@@ -34,6 +34,7 @@ class LWFBitmap : public cocos2d::Sprite
 protected:
 	Matrix m_matrix;
 	cocos2d::V3F_C4B_T2F_Quad m_quad;
+	cocos2d::BlendFunc m_baseBlendFunc;
 
 public:
 	static LWFBitmap *create(const char *filename,
@@ -60,9 +61,8 @@ public:
 
 		bool hasPremultipliedAlpha = getTexture()->hasPremultipliedAlpha() ||
 			t.format == Format::TEXTUREFORMAT_PREMULTIPLIEDALPHA;
-		cocos2d::BlendFunc func = {(GLenum)(hasPremultipliedAlpha ?
+		m_baseBlendFunc = {(GLenum)(hasPremultipliedAlpha ?
 			GL_ONE : GL_SRC_ALPHA), GL_ONE_MINUS_SRC_ALPHA};
-		setBlendFunc(func);
 
 		float tw = (float)t.width;
 		float th = (float)t.height;
@@ -176,6 +176,11 @@ public:
 
 		Sprite::setBatchNode(spriteBatchNode);
 	}
+
+	const cocos2d::BlendFunc &getBaseBlendFunc() const
+	{
+		return m_baseBlendFunc;
+	}
 };
 
 LWFBitmapRenderer::LWFBitmapRenderer(
@@ -270,9 +275,20 @@ void LWFBitmapRenderer::Render(
 	m_sprite->setZOrder(renderingIndex);
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
 
-	cocos2d::BlendFunc blendFunc = m_sprite->getBlendFunc();
-	blendFunc.dst = (GLenum)(m_factory->GetBlendMode() ==
-		Format::BLEND_MODE_ADD ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+	cocos2d::BlendFunc blendFunc = m_sprite->getBaseBlendFunc();
+	switch (m_factory->GetBlendMode()) {
+	case Format::BLEND_MODE_ADD:
+		blendFunc.dst = GL_ONE;
+		break;
+
+	case Format::BLEND_MODE_MULTIPLY:
+		blendFunc.src = GL_DST_COLOR;
+		break;
+
+	case Format::BLEND_MODE_SCREEN:
+		blendFunc.src = GL_ONE;
+		break;
+	}
 	m_sprite->setBlendFunc(blendFunc);
 }
 
