@@ -59,6 +59,7 @@ public:
 	void remove(Node *child);
 
 	virtual void update(float dt) override;
+	virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
 
 	virtual void onEnter() override;
 	virtual void onExit() override;

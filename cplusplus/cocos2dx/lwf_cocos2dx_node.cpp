@@ -147,6 +147,11 @@ void LWFNode::update(float dt)
 	}
 }
 
+void LWFNode::draw(
+	Renderer *renderer, const kmMat4 &transform, bool transformUpdated)
+{
+}
+
 void LWFNode::onEnter()
 {
 	if (lwf && lwf->interactive) {
