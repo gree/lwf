@@ -96,13 +96,15 @@ BLEND_ADD = 1
 BLEND_LAYER = 2
 BLEND_ERASE = 3
 BLEND_MASK = 4
+BLEND_MULTIPLY = 5
+BLEND_SCREEN = 6
 
 BLEND_MODE = {
    0 => {:type => "normal",     :supported => true, :value => BLEND_NORMAL},
    1 => {:type => "normal",     :supported => true, :value => BLEND_NORMAL},
    2 => {:type => "layer",      :supported => true, :value => BLEND_LAYER},
-   3 => {:type => "multiply",   :supported => false},
-   4 => {:type => "screen",     :supported => false},
+   3 => {:type => "multiply",   :supported => true, :value => BLEND_MULTIPLY},
+   4 => {:type => "screen",     :supported => true, :value => BLEND_SCREEN},
    5 => {:type => "lighten",    :supported => false},
    6 => {:type => "darken",     :supported => false},
    7 => {:type => "difference", :supported => false},
