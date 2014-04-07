@@ -430,10 +430,21 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @renderMesh(gl)
       @currentTexture = texture
       @currentBlendMode = blendMode
-      @blendSrcFactor =
-        if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
-      @blendDstFactor =
-        if blendMode is "add" then gl.ONE else gl.ONE_MINUS_SRC_ALPHA
+      switch blendMode
+        when "add"
+          @blendSrcFactor =
+            if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
+          @blendDstFactor = gl.ONE
+        when "multiply"
+          @blendSrcFactor = gl.DST_COLOR
+          @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
+        when "screen"
+          @blendSrcFactor = gl.ONE
+          @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
+        else
+          @blendSrcFactor =
+            if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
+          @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
 
     ###
     alpha = c.multi.alpha

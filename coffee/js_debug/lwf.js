@@ -538,6 +538,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.BLEND_MODE_MASK = 4;
 
+      Constant.BLEND_MODE_MULTIPLY = 5;
+
+      Constant.BLEND_MODE_SCREEN = 6;
+
       return Constant;
 
     })();
@@ -4058,6 +4062,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 break;
               case Format.Constant.BLEND_MODE_MASK:
                 obj.blendMode = "mask";
+                break;
+              case Format.Constant.BLEND_MODE_MULTIPLY:
+                obj.blendMode = "multiply";
+                break;
+              case Format.Constant.BLEND_MODE_SCREEN:
+                obj.blendMode = "screen";
             }
             break;
           case Type.BITMAP:
@@ -8662,7 +8672,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           url = newUrl;
         }
       }
-      if (!url.match(/^\//)) {
+      if (!(url.match(/^\//) || url.match(/^https?:\/\//))) {
         url = prefix + url;
       }
       url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1" + queryString);
@@ -10456,8 +10466,23 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.renderMesh(gl);
         this.currentTexture = texture;
         this.currentBlendMode = blendMode;
-        this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
-        this.blendDstFactor = blendMode === "add" ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA;
+        switch (blendMode) {
+          case "add":
+            this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
+            this.blendDstFactor = gl.ONE;
+            break;
+          case "multiply":
+            this.blendSrcFactor = gl.DST_COLOR;
+            this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+            break;
+          case "screen":
+            this.blendSrcFactor = gl.ONE;
+            this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+            break;
+          default:
+            this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
+            this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+        }
       }
 
       /*

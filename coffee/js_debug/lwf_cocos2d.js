@@ -541,6 +541,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.BLEND_MODE_MASK = 4;
 
+      Constant.BLEND_MODE_MULTIPLY = 5;
+
+      Constant.BLEND_MODE_SCREEN = 6;
+
       return Constant;
 
     })();
@@ -4061,6 +4065,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 break;
               case Format.Constant.BLEND_MODE_MASK:
                 obj.blendMode = "mask";
+                break;
+              case Format.Constant.BLEND_MODE_MULTIPLY:
+                obj.blendMode = "multiply";
+                break;
+              case Format.Constant.BLEND_MODE_SCREEN:
+                obj.blendMode = "screen";
             }
             break;
           case Type.BITMAP:
@@ -7540,7 +7550,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           url = newUrl;
         }
       }
-      if (!url.match(/^\//)) {
+      if (!(url.match(/^\//) || url.match(/^https?:\/\//))) {
         url = prefix + url;
       }
       url = url.replace(/(\.gif|\.png|\.jpg)/i, suffix + "$1" + queryString);

@@ -499,6 +499,10 @@ class Movie extends IObject
               obj.blendMode = "layer"
             when Format.Constant.BLEND_MODE_MASK
               obj.blendMode = "mask"
+            when Format.Constant.BLEND_MODE_MULTIPLY
+              obj.blendMode = "multiply"
+            when Format.Constant.BLEND_MODE_SCREEN
+              obj.blendMode = "screen"
         when Type.BITMAP
           obj = new Bitmap(@lwf, @, dataObjectId)
         when Type.BITMAPEX
