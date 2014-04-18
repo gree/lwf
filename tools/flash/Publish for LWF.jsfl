@@ -25,6 +25,7 @@ var flaName;
 var message;
 var buttonColors = {};
 var buttonColor = 0;
+var lineBreak = "\n";
 
 function error(msg)
 {
@@ -78,6 +79,7 @@ function main()
 		doc.setPlayerVersion(8);
 		doc.asVersion = 1;
 	}
+	adjustPublishProfile();
 
 	var items = lib.items;
 	var movies = 0;
@@ -136,6 +138,31 @@ function main()
 	doc.publish();
 
 	fl.trace(message);
+}
+
+function adjustPublishProfile()
+{
+	var allStr = doc.exportPublishProfileString().split("\n    ").join(lineBreak);
+	var xmlArray = allStr.split(lineBreak);
+
+	for (var i=0, il = xmlArray.length; i < il; i++) {
+		var s = xmlArray[i];
+		if (s.substr(0,16) == "<ExternalPlayer>") {
+			xmlArray[i] = "<ExternalPlayer></ExternalPlayer>";
+		} else if (s == "<html>1</html>") {
+			xmlArray[i] = "<html>0</html>";
+			warn("Disable HTML output." + lineBreak);
+		} else if (s == "<CompressMovie>1</CompressMovie>") {
+			xmlArray[i] = "<CompressMovie>0</CompressMovie>";
+		} else if (s == "<IncludeXMP>1</IncludeXMP>") {
+			xmlArray[i] = "<IncludeXMP>0</IncludeXMP>";
+			warn("Disable including XML." + lineBreak);
+		} else if (s == "<LoopCount></LoopCount>") {
+			xmlArray[i] = "<LoopCount>0</LoopCount>";
+		}
+	}
+
+	doc.importPublishProfileString(xmlArray.join(lineBreak));
 }
 
 function clearLinkage(item)
