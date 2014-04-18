@@ -24,6 +24,10 @@
 #include "lwf_property.h"
 #include "lwf_renderer.h"
 #include "lwf_utility.h"
+#include <cstdio>
+#if defined(_MSC_VER)
+# define snprintf(a0,a1,...) _snprintf_s(a0,a1,a1,__VA_ARGS__)
+#endif
 
 namespace LWF {
 

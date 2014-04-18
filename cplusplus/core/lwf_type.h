@@ -21,6 +21,8 @@
 #ifndef LWF_TYPE_H
 #define LWF_TYPE_H
 
+#define _USE_MATH_DEFINES
+
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
