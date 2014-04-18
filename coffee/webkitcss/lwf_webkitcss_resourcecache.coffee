@@ -402,7 +402,7 @@ class WebkitCSSResourceCache
         @newLWF(settings, imageCache, data)
     return
 
-  drawImage:(ctx, image, o, x, y, u, v, h, iw, ih) ->
+  drawImage:(ctx, image, o, x, y, u, v, w, h) ->
     if o.rotated
       m = new Matrix()
       Utility.rotateMatrix(m, new Matrix(), 1, x, y + h)
@@ -415,7 +415,7 @@ class WebkitCSSResourceCache
         m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
     else
       ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih)
+    ctx.drawImage(image, u, v, w, h, 0, 0, w, h)
     return
 
   getCanvasName: ->
@@ -437,14 +437,15 @@ class WebkitCSSResourceCache
   generateImages:(settings, imageCache, texture, image) ->
     d = settings._colorMap[texture.filename]
     if d?
-      scale = image.width / texture.width
+      scaleX = image.width / texture.width
+      scaleY = image.height / texture.height
       for o in d
         x = 0
         y = 0
-        u = Math.round(o.u * scale)
-        v = Math.round(o.v * scale)
-        w = Math.round((o.w ? texture.width) * scale)
-        h = Math.round((o.h ? texture.height) * scale)
+        u = Math.round(o.u * scaleX)
+        v = Math.round(o.v * scaleY)
+        w = Math.round((o.w ? texture.width) * scaleX)
+        h = Math.round((o.h ? texture.height) * scaleY)
         if o.rotated
           iw = h
           ih = w
@@ -452,16 +453,16 @@ class WebkitCSSResourceCache
           iw = w
           ih = h
 
-        [canvas, ctx] = @createCanvas(w, h)
+        [canvas, ctx] = @createCanvas(iw, ih)
 
         switch o.colorOp
           when "rgb"
             ctx.fillStyle = "##{o.colorValue}"
             ctx.fillRect(0, 0, w, h)
             ctx.globalCompositeOperation = 'destination-in'
-            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+            @drawImage(ctx, image, o, x, y, u, v, w, h)
           when "rgba"
-            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+            @drawImage(ctx, image, o, x, y, u, v, w, h)
             ctx.globalCompositeOperation = 'source-atop'
             val = o.colorValue
             r = parseInt(val.substr(0, 2), 16)
@@ -478,8 +479,8 @@ class WebkitCSSResourceCache
             ctxAdd.fillStyle = "##{o.colorValue}"
             ctxAdd.fillRect(0, 0, w, h)
             ctxAdd.globalCompositeOperation = 'destination-in'
-            @drawImage(ctxAdd, image, o, x, y, u, v, h, iw, ih)
-            @drawImage(ctx, image, o, x, y, u, v, h, iw, ih)
+            @drawImage(ctxAdd, image, o, x, y, u, v, w, h)
+            @drawImage(ctx, image, o, x, y, u, v, w, h)
             ctx.globalCompositeOperation = 'lighter'
             ctx.setTransform(1, 0, 0, 1, 0, 0)
             ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height,

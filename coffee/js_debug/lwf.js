@@ -9133,7 +9133,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    WebkitCSSResourceCache.prototype.drawImage = function(ctx, image, o, x, y, u, v, h, iw, ih) {
+    WebkitCSSResourceCache.prototype.drawImage = function(ctx, image, o, x, y, u, v, w, h) {
       var m;
       if (o.rotated) {
         m = new Matrix();
@@ -9146,7 +9146,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       } else {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
-      ctx.drawImage(image, u, v, iw, ih, 0, 0, iw, ih);
+      ctx.drawImage(image, u, v, w, h, 0, 0, w, h);
     };
 
     WebkitCSSResourceCache.prototype.getCanvasName = function() {
@@ -9170,18 +9170,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.generateImages = function(settings, imageCache, texture, image) {
-      var a, b, canvas, canvasAdd, ctx, ctxAdd, d, g, h, ih, iw, o, r, scale, u, v, val, w, x, y, _i, _len, _ref, _ref1, _ref2;
+      var a, b, canvas, canvasAdd, ctx, ctxAdd, d, g, h, ih, iw, o, r, scaleX, scaleY, u, v, val, w, x, y, _i, _len, _ref, _ref1, _ref2;
       d = settings._colorMap[texture.filename];
       if (d != null) {
-        scale = image.width / texture.width;
+        scaleX = image.width / texture.width;
+        scaleY = image.height / texture.height;
         for (_i = 0, _len = d.length; _i < _len; _i++) {
           o = d[_i];
           x = 0;
           y = 0;
-          u = Math.round(o.u * scale);
-          v = Math.round(o.v * scale);
-          w = Math.round(((_ref = o.w) != null ? _ref : texture.width) * scale);
-          h = Math.round(((_ref1 = o.h) != null ? _ref1 : texture.height) * scale);
+          u = Math.round(o.u * scaleX);
+          v = Math.round(o.v * scaleY);
+          w = Math.round(((_ref = o.w) != null ? _ref : texture.width) * scaleX);
+          h = Math.round(((_ref1 = o.h) != null ? _ref1 : texture.height) * scaleY);
           if (o.rotated) {
             iw = h;
             ih = w;
@@ -9189,16 +9190,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             iw = w;
             ih = h;
           }
-          _ref2 = this.createCanvas(w, h), canvas = _ref2[0], ctx = _ref2[1];
+          _ref2 = this.createCanvas(iw, ih), canvas = _ref2[0], ctx = _ref2[1];
           switch (o.colorOp) {
             case "rgb":
               ctx.fillStyle = "#" + o.colorValue;
               ctx.fillRect(0, 0, w, h);
               ctx.globalCompositeOperation = 'destination-in';
-              this.drawImage(ctx, image, o, x, y, u, v, h, iw, ih);
+              this.drawImage(ctx, image, o, x, y, u, v, w, h);
               break;
             case "rgba":
-              this.drawImage(ctx, image, o, x, y, u, v, h, iw, ih);
+              this.drawImage(ctx, image, o, x, y, u, v, w, h);
               ctx.globalCompositeOperation = 'source-atop';
               val = o.colorValue;
               r = parseInt(val.substr(0, 2), 16);
@@ -9216,8 +9217,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               ctxAdd.fillStyle = "#" + o.colorValue;
               ctxAdd.fillRect(0, 0, w, h);
               ctxAdd.globalCompositeOperation = 'destination-in';
-              this.drawImage(ctxAdd, image, o, x, y, u, v, h, iw, ih);
-              this.drawImage(ctx, image, o, x, y, u, v, h, iw, ih);
+              this.drawImage(ctxAdd, image, o, x, y, u, v, w, h);
+              this.drawImage(ctx, image, o, x, y, u, v, w, h);
               ctx.globalCompositeOperation = 'lighter';
               ctx.setTransform(1, 0, 0, 1, 0, 0);
               ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height, 0, 0, canvasAdd.width, canvasAdd.height);
