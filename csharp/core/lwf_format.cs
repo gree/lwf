@@ -50,6 +50,8 @@ public enum Constant
 	BLEND_MODE_LAYER = 2,
 	BLEND_MODE_ERASE = 3,
 	BLEND_MODE_MASK = 4,
+	BLEND_MODE_MULTIPLY = 5,
+	BLEND_MODE_SCREEN = 6,
 }
 
 public class StringBase
