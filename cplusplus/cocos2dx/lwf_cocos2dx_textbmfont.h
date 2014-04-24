@@ -50,6 +50,8 @@ public:
 		int renderingIndex, int renderingCount, bool visible);
 
 	void SetText(string text);
+
+	cocos2d::LabelBMFont *GetLabel() {return (cocos2d::LabelBMFont *)m_label;}
 };
 
 }   // namespace LWF

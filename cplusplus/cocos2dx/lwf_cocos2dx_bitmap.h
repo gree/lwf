@@ -46,6 +46,8 @@ public:
 	void Update(const Matrix *matrix, const ColorTransform *colorTransform);
 	void Render(const Matrix *matrix, const ColorTransform *colorTransform,
 		int renderingIndex, int renderingCount, bool visible);
+
+	cocos2d::Sprite *GetSprite() {return (cocos2d::Sprite *)m_sprite;}
 };
 
 }   // namespace LWF

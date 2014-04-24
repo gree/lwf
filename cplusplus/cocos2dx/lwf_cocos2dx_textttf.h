@@ -50,6 +50,8 @@ public:
 		int renderingIndex, int renderingCount, bool visible);
 
 	void SetText(string text);
+
+	cocos2d::LabelTTF *GetLabel() {return (cocos2d::LabelTTF *)m_label;}
 };
 
 }   // namespace LWF
