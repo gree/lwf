@@ -150,7 +150,7 @@ declare module LWF {
 		x:number;
 		y:number;
 
-		constructor()
+		constructor();
 
 		addEventListener(type:string, listener:Function):void;
 		addTween():Tween;
@@ -206,7 +206,7 @@ declare module LWF {
 		setAlpha(pAlpha:number):void;
 		setColorTransform(colorTransform:ColorTransform):void;
 		setEventListener(type:string, listener:Function):void;
-		setMatrix(matrix:Matrix):void
+		setMatrix(matrix:Matrix):void;
 		setPreferredFrameRate(pFrameRate:number, pSkipLimit:number):void;
 		setRenderingOffset(offset:number):void;
 		setVisible(pVisible:boolean):void;
@@ -313,6 +313,8 @@ declare module LWF {
 		setPreferredFrameRate(preferredFrameRate:number, execLimit?:number):void;
 		setProgramObjectConstructor(name:string, ctor:Function):Renderer;
 		setTextScale(textScale:number):void;
+        setEventHandler(eventId:string, eventHandler:Function):void;
+        setButtonEventHandler(instanceName:string, handlers:Object):void;
 	}
 
 	export class Tween {
