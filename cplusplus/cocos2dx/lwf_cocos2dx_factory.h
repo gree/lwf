@@ -38,7 +38,8 @@ protected:
 
 public:
 	LWFRendererFactory(cocos2d::LWFNode *node)
-		: m_node(node)
+		: m_node(node), m_blendMode(Format::BLEND_MODE_NORMAL),
+			m_maskMode(Format::BLEND_MODE_NORMAL)
 	{
 	}
 

@@ -213,7 +213,7 @@ void LWFTextBMFontRenderer::Render(
 	if (!visible)
 		return;
 
-	m_label->setZOrder(renderingIndex);
+	m_label->setLocalZOrder(renderingIndex);
 	m_label->setMatrixAndColorTransform(matrix, colorTransform);
 
 	cocos2d::BlendFunc blendFunc = m_label->getBlendFunc();

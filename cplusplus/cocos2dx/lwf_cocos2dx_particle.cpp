@@ -128,7 +128,7 @@ void LWFParticleRenderer::Render(
 	if (!visible)
 		return;
 
-	m_particle->setZOrder(renderingIndex);
+	m_particle->setLocalZOrder(renderingIndex);
 	m_particle->setMatrixAndColorTransform(matrix, colorTransform);
 }
 

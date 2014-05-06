@@ -272,7 +272,7 @@ void LWFBitmapRenderer::Render(
 	if (!visible)
 		return;
 
-	m_sprite->setZOrder(renderingIndex);
+	m_sprite->setLocalZOrder(renderingIndex);
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
 
 	cocos2d::BlendFunc blendFunc = m_sprite->getBaseBlendFunc();
