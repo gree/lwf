@@ -313,8 +313,8 @@ declare module LWF {
 		setPreferredFrameRate(preferredFrameRate:number, execLimit?:number):void;
 		setProgramObjectConstructor(name:string, ctor:Function):Renderer;
 		setTextScale(textScale:number):void;
-        setEventHandler(eventId:string, eventHandler:Function):void;
-        setButtonEventHandler(instanceName:string, handlers:Object):void;
+		setEventHandler(eventId:string, eventHandler:Function):void;
+		setButtonEventHandler(instanceName:string, handlers:Object):void;
 	}
 
 	export class Tween {
