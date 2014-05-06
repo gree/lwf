@@ -101,6 +101,8 @@ Movie.prototype.alpha;
 Movie.prototype.attachName;
 Movie.prototype.blendMode;
 Movie.prototype.currentFrame;
+Movie.prototype.currentLabel;
+Movie.prototype.currentLabels;
 Movie.prototype.data;
 Movie.prototype.depth;
 Movie.prototype.lwf;

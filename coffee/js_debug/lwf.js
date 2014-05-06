@@ -3438,6 +3438,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.eventHandlers = {};
       this.requestedCalculateBounds = false;
       this.calculateBoundsCallback = null;
+      this.currentLabelsCache = null;
+      this.currentLabelCache = {};
       this.property = new Property(lwf);
       this.matrix0 = new Matrix;
       this.matrix1 = new Matrix;
@@ -5162,6 +5164,83 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
+    Movie.prototype.cacheCurrentLabels = function() {
+      var frameNo, labels, map, stringId;
+      if (this.currentLabelsCache == null) {
+        this.currentLabelsCache = [];
+        labels = this.lwf.getMovieLabels(this);
+        if (labels != null) {
+          for (stringId in labels) {
+            frameNo = labels[stringId];
+            map = {};
+            map["frame"] = frameNo + 1;
+            map["name"] = this.lwf.data.strings[stringId];
+            this.currentLabelsCache.push(map);
+          }
+          this.currentLabelsCache.sort(function(a, b) {
+            return a["frame"] - b["frame"];
+          });
+        }
+      }
+    };
+
+    Movie.prototype.getCurrentLabel = function() {
+      var i, l, labelName, ln, m, n, nn, r, rn, _i;
+      this.cacheCurrentLabels();
+      if (this.currentLabelsCache.length === 0) {
+        return null;
+      }
+      if (this.currentFrameInternal < this.currentLabelsCache[0]["frame"]) {
+        return null;
+      }
+      m = this.currentLabelsCache[this.currentLabelsCache.length - 1];
+      if (this.currentFrameInternal >= m["frame"]) {
+        return m["name"];
+      }
+      labelName = this.currentLabelCache[this.currentFrameInternal];
+      if (labelName == null) {
+        l = 0;
+        ln = this.currentLabelsCache[l]["frame"] - 1;
+        r = this.currentLabelsCache.length - 1;
+        rn = this.currentLabelsCache[r]["frame"] - 1;
+        for (i = _i = 0; _i < 10; i = ++_i) {
+          if (l === r || r - l === 1) {
+            if (this.currentFrameInternal < ln) {
+              labelName = "";
+            } else if (this.currentFrameInternal === rn) {
+              labelName = this.currentLabelsCache[r]["name"];
+            } else {
+              labelName = this.currentLabelsCache[l]["name"];
+            }
+            break;
+          }
+          n = Math.floor((r - l) / 2) + l;
+          nn = this.currentLabelsCache[n]["frame"] - 1;
+          if (this.currentFrameInternal < nn) {
+            r = n;
+            rn = nn;
+          } else if (this.currentFrameInternal > nn) {
+            l = n;
+            ln = nn;
+          } else {
+            labelName = this.currentLabelsCache[n]["name"];
+            break;
+          }
+        }
+        this.currentLabelCache[this.currentFrameInternal] = labelName;
+      }
+      if (labelName === "") {
+        return null;
+      } else {
+        return labelName;
+      }
+    };
+
+    Movie.prototype.getCurrentLabels = function() {
+      this.cacheCurrentLabels();
+      return this.currentLabelsCache;
+    };
+
     return Movie;
 
   })(IObject);
@@ -5205,6 +5284,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     });
     Movie.prototype.__defineGetter__("currentFrame", function() {
       return this.currentFrameInternal + 1;
+    });
+    Movie.prototype.__defineGetter__("currentLabel", function() {
+      return this.getCurrentLabel();
+    });
+    Movie.prototype.__defineGetter__("currentLabels", function() {
+      return this.getCurrentLabels();
     });
   } else if (typeof Object.defineProperty !== "undefined") {
     Object.defineProperty(Movie.prototype, "x", {
@@ -5258,6 +5343,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Object.defineProperty(Movie.prototype, "currentFrame", {
       get: function() {
         return this.currentFrameInternal + 1;
+      }
+    });
+    Object.defineProperty(Movie.prototype, "currentLabel", {
+      get: function() {
+        return this.getCurrentLabel();
+      }
+    });
+    Object.defineProperty(Movie.prototype, "currentLabels", {
+      get: function() {
+        return this.getCurrentLabels();
       }
     });
   }

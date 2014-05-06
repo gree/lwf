@@ -51,6 +51,8 @@ class Movie extends IObject
     @eventHandlers = {}
     @requestedCalculateBounds = false
     @calculateBoundsCallback = null
+    @currentLabelsCache = null
+    @currentLabelCache = {}
 
     @property = new Property(lwf)
 
@@ -1248,6 +1250,58 @@ class Movie extends IObject
       instance = instance.linkInstance
     return
 
+  cacheCurrentLabels: ->
+    unless @currentLabelsCache?
+      @currentLabelsCache = []
+      labels = @lwf.getMovieLabels(@)
+      if labels?
+        for stringId, frameNo of labels
+          map = {}
+          map["frame"] = frameNo + 1
+          map["name"] = @lwf.data.strings[stringId]
+          @currentLabelsCache.push(map)
+        @currentLabelsCache.sort((a, b) -> return a["frame"] - b["frame"])
+    return
+
+  getCurrentLabel: ->
+    @cacheCurrentLabels()
+    return null if @currentLabelsCache.length is 0
+    return null if @currentFrameInternal < @currentLabelsCache[0]["frame"]
+    m = @currentLabelsCache[@currentLabelsCache.length - 1]
+    return m["name"] if @currentFrameInternal >= m["frame"]
+    labelName = @currentLabelCache[@currentFrameInternal]
+    unless labelName?
+      l = 0
+      ln = @currentLabelsCache[l]["frame"] - 1
+      r = @currentLabelsCache.length - 1
+      rn = @currentLabelsCache[r]["frame"] - 1
+      for i in [0...10]
+        if l is r or r - l is 1
+          if @currentFrameInternal < ln
+            labelName = ""
+          else if @currentFrameInternal is rn
+            labelName = @currentLabelsCache[r]["name"]
+          else
+            labelName = @currentLabelsCache[l]["name"]
+          break
+        n = Math.floor((r - l) / 2) + l
+        nn = @currentLabelsCache[n]["frame"] - 1
+        if @currentFrameInternal < nn
+          r = n
+          rn = nn
+        else if @currentFrameInternal > nn
+          l = n
+          ln = nn
+        else
+          labelName = @currentLabelsCache[n]["name"]
+          break
+      @currentLabelCache[@currentFrameInternal] = labelName
+    return if labelName is "" then null else labelName
+
+  getCurrentLabels: ->
+    @cacheCurrentLabels()
+    return @currentLabelsCache
+
 if typeof(Movie.prototype.__defineGetter__) isnt "undefined"
   Movie.prototype.__defineGetter__("x", -> @getX())
   Movie.prototype.__defineSetter__("x", (v) -> @setX(v))
@@ -1262,6 +1316,8 @@ if typeof(Movie.prototype.__defineGetter__) isnt "undefined"
   Movie.prototype.__defineGetter__("alpha", -> @getAlphaProperty())
   Movie.prototype.__defineSetter__("alpha", (v) -> @setAlphaProperty(v))
   Movie.prototype.__defineGetter__("currentFrame", -> @currentFrameInternal + 1)
+  Movie.prototype.__defineGetter__("currentLabel", -> @getCurrentLabel())
+  Movie.prototype.__defineGetter__("currentLabels", -> @getCurrentLabels())
 else if typeof(Object.defineProperty) isnt "undefined"
   Object.defineProperty(Movie.prototype, "x",
     get: -> @getX()
@@ -1283,4 +1339,8 @@ else if typeof(Object.defineProperty) isnt "undefined"
     set: (v) -> @setAlphaProperty(v))
   Object.defineProperty(Movie.prototype, "currentFrame",
     get: -> @currentFrameInternal + 1)
+  Object.defineProperty(Movie.prototype, "currentLabel",
+    get: -> @getCurrentLabel())
+  Object.defineProperty(Movie.prototype, "currentLabels",
+    get: -> @getCurrentLabels())
 
