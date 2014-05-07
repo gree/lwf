@@ -1266,36 +1266,43 @@ class Movie extends IObject
   getCurrentLabel: ->
     @cacheCurrentLabels()
     return null if @currentLabelsCache.length is 0
-    return null if @currentFrameInternal < @currentLabelsCache[0]["frame"]
-    m = @currentLabelsCache[@currentLabelsCache.length - 1]
-    return m["name"] if @currentFrameInternal >= m["frame"]
-    labelName = @currentLabelCache[@currentFrameInternal]
+    currentFrame = @currentFrameInternal + 1
+    labelName = @currentLabelCache[currentFrame]
     unless labelName?
-      l = 0
-      ln = @currentLabelsCache[l]["frame"] - 1
-      r = @currentLabelsCache.length - 1
-      rn = @currentLabelsCache[r]["frame"] - 1
-      for i in [0...10]
-        if l is r or r - l is 1
-          if @currentFrameInternal < ln
-            labelName = ""
-          else if @currentFrameInternal is rn
-            labelName = @currentLabelsCache[r]["name"]
+      firstLabel = @currentLabelsCache[0]
+      lastLabel = @currentLabelsCache[@currentLabelsCache.length - 1]
+      if currentFrame < firstLabel["frame"]
+        labelName = ""
+      else if currentFrame is firstLabel["frame"]
+        labelName = firstLabel["name"]
+      else if currentFrame >= lastLabel["frame"]
+        labelName = lastLabel["name"]
+      else
+        l = 0
+        ln = @currentLabelsCache[l]["frame"]
+        r = @currentLabelsCache.length - 1
+        rn = @currentLabelsCache[r]["frame"]
+        while true
+          if l is r or r - l is 1
+            if currentFrame < ln
+              labelName = ""
+            else if currentFrame is rn
+              labelName = @currentLabelsCache[r]["name"]
+            else
+              labelName = @currentLabelsCache[l]["name"]
+            break
+          n = Math.floor((r - l) / 2) + l
+          nn = @currentLabelsCache[n]["frame"]
+          if currentFrame < nn
+            r = n
+            rn = nn
+          else if currentFrame > nn
+            l = n
+            ln = nn
           else
-            labelName = @currentLabelsCache[l]["name"]
-          break
-        n = Math.floor((r - l) / 2) + l
-        nn = @currentLabelsCache[n]["frame"] - 1
-        if @currentFrameInternal < nn
-          r = n
-          rn = nn
-        else if @currentFrameInternal > nn
-          l = n
-          ln = nn
-        else
-          labelName = @currentLabelsCache[n]["name"]
-          break
-      @currentLabelCache[@currentFrameInternal] = labelName
+            labelName = @currentLabelsCache[n]["name"]
+            break
+      @currentLabelCache[currentFrame] = labelName
     return if labelName is "" then null else labelName
 
   getCurrentLabels: ->

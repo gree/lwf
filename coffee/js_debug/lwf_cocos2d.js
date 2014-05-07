@@ -5188,49 +5188,53 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Movie.prototype.getCurrentLabel = function() {
-      var i, l, labelName, ln, m, n, nn, r, rn, _i;
+      var currentFrame, firstLabel, l, labelName, lastLabel, ln, n, nn, r, rn;
       this.cacheCurrentLabels();
       if (this.currentLabelsCache.length === 0) {
         return null;
       }
-      if (this.currentFrameInternal < this.currentLabelsCache[0]["frame"]) {
-        return null;
-      }
-      m = this.currentLabelsCache[this.currentLabelsCache.length - 1];
-      if (this.currentFrameInternal >= m["frame"]) {
-        return m["name"];
-      }
-      labelName = this.currentLabelCache[this.currentFrameInternal];
+      currentFrame = this.currentFrameInternal + 1;
+      labelName = this.currentLabelCache[currentFrame];
       if (labelName == null) {
-        l = 0;
-        ln = this.currentLabelsCache[l]["frame"] - 1;
-        r = this.currentLabelsCache.length - 1;
-        rn = this.currentLabelsCache[r]["frame"] - 1;
-        for (i = _i = 0; _i < 10; i = ++_i) {
-          if (l === r || r - l === 1) {
-            if (this.currentFrameInternal < ln) {
-              labelName = "";
-            } else if (this.currentFrameInternal === rn) {
-              labelName = this.currentLabelsCache[r]["name"];
-            } else {
-              labelName = this.currentLabelsCache[l]["name"];
+        firstLabel = this.currentLabelsCache[0];
+        lastLabel = this.currentLabelsCache[this.currentLabelsCache.length - 1];
+        if (currentFrame < firstLabel["frame"]) {
+          labelName = "";
+        } else if (currentFrame === firstLabel["frame"]) {
+          labelName = firstLabel["name"];
+        } else if (currentFrame >= lastLabel["frame"]) {
+          labelName = lastLabel["name"];
+        } else {
+          l = 0;
+          ln = this.currentLabelsCache[l]["frame"];
+          r = this.currentLabelsCache.length - 1;
+          rn = this.currentLabelsCache[r]["frame"];
+          while (true) {
+            if (l === r || r - l === 1) {
+              if (currentFrame < ln) {
+                labelName = "";
+              } else if (currentFrame === rn) {
+                labelName = this.currentLabelsCache[r]["name"];
+              } else {
+                labelName = this.currentLabelsCache[l]["name"];
+              }
+              break;
             }
-            break;
-          }
-          n = Math.floor((r - l) / 2) + l;
-          nn = this.currentLabelsCache[n]["frame"] - 1;
-          if (this.currentFrameInternal < nn) {
-            r = n;
-            rn = nn;
-          } else if (this.currentFrameInternal > nn) {
-            l = n;
-            ln = nn;
-          } else {
-            labelName = this.currentLabelsCache[n]["name"];
-            break;
+            n = Math.floor((r - l) / 2) + l;
+            nn = this.currentLabelsCache[n]["frame"];
+            if (currentFrame < nn) {
+              r = n;
+              rn = nn;
+            } else if (currentFrame > nn) {
+              l = n;
+              ln = nn;
+            } else {
+              labelName = this.currentLabelsCache[n]["name"];
+              break;
+            }
           }
         }
-        this.currentLabelCache[this.currentFrameInternal] = labelName;
+        this.currentLabelCache[currentFrame] = labelName;
       }
       if (labelName === "") {
         return null;
