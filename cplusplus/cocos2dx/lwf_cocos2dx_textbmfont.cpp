@@ -85,6 +85,13 @@ public:
 		m_blue = blue;
 	}
 
+	virtual void setVisible(bool bVisible) override
+	{
+		if (!bVisible)
+			m_matrix.Invalidate();
+		cocos2d::LabelBMFont::setVisible(bVisible);
+	}
+
 	void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
 	{
 		cocos2d::LWFNode *node = (cocos2d::LWFNode *)getParent();

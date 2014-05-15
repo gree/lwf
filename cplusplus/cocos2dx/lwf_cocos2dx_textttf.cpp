@@ -74,6 +74,13 @@ public:
 		m_blue = blue;
 	}
 
+	virtual void setVisible(bool bVisible) override
+	{
+		if (!bVisible)
+			m_matrix.Invalidate();
+		cocos2d::LabelTTF::setVisible(bVisible);
+	}
+
 	void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
 	{
 		bool changed = m_matrix.SetWithComparing(m);

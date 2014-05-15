@@ -141,6 +141,16 @@ public:
 		translateY = 0;
 	}
 
+	void Invalidate()
+	{
+		scaleX = 0;
+		scaleY = 0;
+		skew0 = 0;
+		skew1 = 0;
+		translateX = FLT_MAX;
+		translateY = FLT_MAX;
+	}
+
 	Matrix &Set(const Matrix *m)
 	{
 		scaleX = m->scaleX;

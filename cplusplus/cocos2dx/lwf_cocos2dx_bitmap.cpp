@@ -129,6 +129,13 @@ public:
 		return true;
 	}
 
+	virtual void setVisible(bool bVisible) override
+	{
+		if (!bVisible)
+			m_matrix.Invalidate();
+		cocos2d::Sprite::setVisible(bVisible);
+	}
+
 	void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
 	{
 		bool changed = m_matrix.SetWithComparing(m);
@@ -153,7 +160,8 @@ public:
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
-	void setBatchNode(cocos2d::SpriteBatchNode *spriteBatchNode)
+	virtual void setBatchNode(
+		cocos2d::SpriteBatchNode *spriteBatchNode) override
 	{
 		if (spriteBatchNode) {
 			float x0 = m_quad.tr.vertices.x;
