@@ -18,10 +18,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "CCDirector.h"
-#include "CCFileUtils.h"
-#include "CCTextureCache.h"
-#include "CCValue.h"
+#include "base/CCDirector.h"
+#include "base/CCValue.h"
+#include "platform/CCFileUtils.h"
+#include "renderer/CCTextureCache.h"
 #include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_data.h"
 

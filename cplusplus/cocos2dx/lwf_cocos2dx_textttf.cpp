@@ -85,13 +85,12 @@ public:
 	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
-            kmMat4 mat = {{
-				m->scaleX, -m->skew1, 0, 0,
-				m->skew0, -m->scaleY, 0, 0,
-                0, 0, 1, 0,
-				m->translateX, -m->translateY -
-					m->scaleY * getFontSize() * 96.0f / 72.0f, 0, 1
-			}};
+            cocos2d::Mat4 mat = cocos2d::Mat4(
+				m->scaleX, m->skew0, 0, m->translateX,
+				-m->skew1, -m->scaleY, 0,
+					-m->translateY - m->scaleY * getFontSize() * 96.0f / 72.0f,
+				0, 0, 1, 0,
+				0, 0, 0, 1);
 			setNodeToParentTransform(mat);
 		}
 

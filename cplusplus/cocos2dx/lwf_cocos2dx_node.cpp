@@ -18,8 +18,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "CCDirector.h"
-#include "CCEventListenerTouch.h"
+#include "base/CCDirector.h"
+#include "base/CCEventListenerTouch.h"
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_resourcecache.h"
@@ -148,7 +148,7 @@ void LWFNode::update(float dt)
 }
 
 void LWFNode::draw(
-	Renderer *renderer, const kmMat4 &transform, bool transformUpdated)
+	Renderer *renderer, const Mat4 &transform, bool transformUpdated)
 {
 }
 

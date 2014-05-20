@@ -21,7 +21,7 @@
 #ifndef LWF_COCOS2DX_TEXTTTF_H
 #define LWF_COCOS2DX_TEXTTTF_H
 
-#include "CCPlatformMacros.h"
+#include "base/CCPlatformMacros.h"
 #include "lwf_renderer.h"
 
 NS_CC_BEGIN

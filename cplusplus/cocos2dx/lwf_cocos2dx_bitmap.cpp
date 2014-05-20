@@ -91,10 +91,10 @@ public:
 		float x1 = (x + w) / t.scale;
 		float y1 = (y + h) / t.scale;
 
-		m_quad.bl.vertices = cocos2d::Vertex3F(x1, y1, 0);
-		m_quad.br.vertices = cocos2d::Vertex3F(x0, y1, 0);
-		m_quad.tl.vertices = cocos2d::Vertex3F(x1, y0, 0);
-		m_quad.tr.vertices = cocos2d::Vertex3F(x0, y0, 0);
+		m_quad.bl.vertices = cocos2d::Vec3(x1, y1, 0);
+		m_quad.br.vertices = cocos2d::Vec3(x0, y1, 0);
+		m_quad.tl.vertices = cocos2d::Vec3(x1, y0, 0);
+		m_quad.tr.vertices = cocos2d::Vec3(x0, y0, 0);
 
 		if (f.rotated == 0) {
 			float u0 = u / tw;
@@ -140,12 +140,11 @@ public:
 	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
-            kmMat4 mat = {{
-				m->scaleX, -m->skew1, 0, 0,
-				m->skew0, -m->scaleY, 0, 0,
-                0, 0, 1, 0,
-				m->translateX, -m->translateY, 0, 1
-			}};
+            cocos2d::Mat4 mat = cocos2d::Mat4(
+				m->scaleX, m->skew0, 0, m->translateX,
+				-m->skew1, -m->scaleY, 0, -m->translateY,
+				0, 0, 1, 0,
+				0, 0, 0, 1);
 			setNodeToParentTransform(mat);
 			setDirty(true);
 		}

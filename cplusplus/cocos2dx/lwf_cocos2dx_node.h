@@ -21,7 +21,7 @@
 #ifndef LWF_COCOS2DX_NODE_H
 #define LWF_COCOS2DX_NODE_H
 
-#include "CCSprite.h"
+#include "2d/CCSprite.h"
 #include "lwf_type.h"
 
 namespace LWF {
@@ -59,7 +59,7 @@ public:
 	void remove(Node *child);
 
 	virtual void update(float dt) override;
-	virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
+	virtual void draw(Renderer *renderer, const Mat4 &transform, bool transformUpdated) override;
 
 	virtual void onEnter() override;
 	virtual void onExit() override;

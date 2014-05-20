@@ -98,13 +98,13 @@ public:
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
 			float scale = m_scale / node->lwf->scaleByStage;
-            kmMat4 mat = {{
-				m->scaleX * scale, m->skew1 * scale, 0, 0,
-				m->skew0 * scale, m->scaleY * scale, 0, 0,
-                0, 0, 1, 0,
-				m->translateX + m->skew0 * m_offsetY,
-                    -m->translateY - m->scaleY * m_offsetY, 0, 1
-			}};
+            cocos2d::Mat4 mat = cocos2d::Mat4(
+				m->scaleX * scale, m->skew0 * scale, 0,
+					m->translateX + m->skew0 * m_offsetY,
+				m->skew1 * scale, m->scaleY * scale, 0,
+					-m->translateY - m->scaleY * m_offsetY,
+				0, 0, 1, 0,
+				0, 0, 0, 1);
 			setNodeToParentTransform(mat);
 		}
 
