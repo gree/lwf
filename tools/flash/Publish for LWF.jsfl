@@ -71,12 +71,12 @@ function main()
 	FLfile.remove(bitmapDir);
 	FLfile.createFolder(bitmapDir);
 
-	if (doc.setPlayerVersion(20)) {
+	if (doc.setPlayerVersion("FlashPlayer11.8")) {
 		// Flash CC
 		doc.asVersion = 3;
 	} else {
 		// Flash CS6
-		doc.setPlayerVersion(8);
+		doc.setPlayerVersion("8");
 		doc.asVersion = 1;
 	}
 	adjustPublishProfile();
@@ -147,9 +147,7 @@ function adjustPublishProfile()
 
 	for (var i=0, il = xmlArray.length; i < il; i++) {
 		var s = xmlArray[i];
-		if (s.substr(0,16) == "<ExternalPlayer>") {
-			xmlArray[i] = "<ExternalPlayer></ExternalPlayer>";
-		} else if (s == "<html>1</html>") {
+		if (s == "<html>1</html>") {
 			xmlArray[i] = "<html>0</html>";
 			warn("Disable HTML output." + lineBreak);
 		} else if (s == "<CompressMovie>1</CompressMovie>") {

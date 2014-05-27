@@ -60,6 +60,7 @@ end
 
 LWF_HEADER_SIZE = 324
 
+# TODO the next version should have original width and height in tex fragment
 LWF_FORMAT_VERSION_0 = 0x13
 LWF_FORMAT_VERSION_1 = 0x12
 LWF_FORMAT_VERSION_2 = 0x11
@@ -550,7 +551,7 @@ end
 
 class LWFTextureFragment
   attr_reader :texture,
-    :stringId, :textureId, :x, :y, :u, :v, :w, :h, :textureAtlas
+    :stringId, :textureId, :x, :y, :u, :v, :w, :h, :ow, :oh, :textureAtlas
   def initialize(texture)
     @texture = texture
   end
@@ -566,6 +567,9 @@ class LWFTextureFragment
     @v = v
     @w = w
     @h = h
+    # TODO the next version should have original width and height
+    # @ow = ow
+    # @oh = oh
     @textureAtlas = textureAtlas
   end
 
@@ -579,6 +583,9 @@ class LWFTextureFragment
     to_u32(@v) +
     to_u32(@w) +
     to_u32(@h)
+    # TODO the next version should have original width and height
+    # to_u32(@ow) +
+    # to_u32(@oh)
   end
 
   def dump
@@ -2710,6 +2717,7 @@ def load_swf(filename)
   when 7
   when 8
   when 20
+  when 21
   else
     warn "SWF Format Version #{@version} is not supported"
   end
