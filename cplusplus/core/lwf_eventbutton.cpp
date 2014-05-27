@@ -157,9 +157,12 @@ public:
 
 void ButtonEventHandlers::Remove(int id)
 {
-	for (int i = 0; i < EVENTS; ++i)
-		remove_if(m_handlers[i].begin(), m_handlers[i].end(), Pred(id));
-	remove_if(m_keyPressHandler.begin(), m_keyPressHandler.end(), KPred(id));
+	for (int i = 0; i < EVENTS; ++i) {
+		ButtonEventHandlerList &list = m_handlers[i];
+		list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
+	}
+	m_keyPressHandler.erase(remove_if(m_keyPressHandler.begin(),
+		m_keyPressHandler.end(), KPred(id)), m_keyPressHandler.end());
 
 	UpdateEmpty();
 }

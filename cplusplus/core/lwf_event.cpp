@@ -83,8 +83,11 @@ void LWF::RemoveEventHandler(string eventName, int id)
 	} else {
 		GenericEventHandlerDictionary::iterator it =
 			m_genericEventHandlerDictionary.find(eventName);
-		if (it != m_genericEventHandlerDictionary.end())
-			remove_if(it->second.begin(), it->second.end(), Pred(id));
+		if (it != m_genericEventHandlerDictionary.end()) {
+			EventHandlerList &list = it->second;
+			list.erase(remove_if(
+				list.begin(), list.end(), Pred(id)), list.end());
+		}
 	}
 }
 
@@ -95,7 +98,7 @@ void LWF::RemoveEventHandler(int eventId, int id)
 	if (eventId < 0 || eventId >= (int)data->events.size())
 		return;
 	EventHandlerList &list = m_eventHandlers[eventId];
-	remove_if(list.begin(), list.end(), Pred(id));
+	list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
 }
 
 void LWF::ClearEventHandler(string eventName)

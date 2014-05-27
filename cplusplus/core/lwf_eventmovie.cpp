@@ -135,8 +135,10 @@ void MovieEventHandlers::Remove(int id)
 	if (id < 0)
 		return;
 
-	for (int i = 0; i < EVENTS; ++i)
-		remove_if(m_handlers[i].begin(), m_handlers[i].end(), Pred(id));
+	for (int i = 0; i < EVENTS; ++i) {
+		MovieEventHandlerList &list = m_handlers[i];
+		list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
+	}
 
 	UpdateEmpty();
 }

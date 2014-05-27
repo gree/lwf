@@ -990,7 +990,8 @@ void Movie::RemoveEventHandler(string eventName, int id)
 	if (it == m_eventHandlers.end())
 		return;
 
-	remove_if(it->second.begin(), it->second.end(), Pred(id));
+	MovieEventHandlerList& list = it->second;
+	list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
 }
 
 void Movie::ClearEventHandler(string eventName)

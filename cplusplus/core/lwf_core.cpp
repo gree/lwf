@@ -677,7 +677,8 @@ void LWF::RemoveExecHandler(int id)
 {
 	if (m_execHandlers.empty())
 		return;
-	remove_if(m_execHandlers.begin(), m_execHandlers.end(), Pred(id));
+	m_execHandlers.erase(remove_if(m_execHandlers.begin(),
+		m_execHandlers.end(), Pred(id)), m_execHandlers.end());
 }
 
 void LWF::ClearExecHandler()
