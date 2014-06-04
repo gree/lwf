@@ -455,6 +455,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   ColorTransform = (function() {
     function ColorTransform(mr, mg, mb, ma, ar, ag, ab, aa) {
       this.multi = new Color(mr, mg, mb, ma);
+      this.add = new Color(ar, ag, ab, aa);
       if (mr == null) {
         this.clear();
       }
@@ -462,15 +463,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     ColorTransform.prototype.clear = function() {
       this.multi.set(1, 1, 1, 1);
+      this.add.set(0, 0, 0, 0);
     };
 
     ColorTransform.prototype.set = function(c) {
       this.multi.set(c.multi);
+      this.add.set(c.add);
       return this;
     };
 
     ColorTransform.prototype.setWithComparing = function(c) {
-      var changed, cm, i, m, _i;
+      var a, ca, changed, cm, i, m, _i, _j;
       if (c === null) {
         return false;
       }
@@ -480,6 +483,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       for (i = _i = 0; _i < 4; i = ++_i) {
         if (m._[i] !== cm._[i]) {
           m._[i] = cm._[i];
+          changed = true;
+        }
+      }
+      ca = c.add;
+      a = this.add;
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        if (a._[i] !== ca._[i]) {
+          a._[i] = ca._[i];
           changed = true;
         }
       }
@@ -1274,7 +1285,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           _results = [];
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             c = _ref[_i];
-            _results.push(new ColorTransform(c.multi._[0], c.multi._[1], c.multi._[2], c.multi._[3]));
+            _results.push(new ColorTransform(c.multi._[0], c.multi._[1], c.multi._[2], c.multi._[3], c.add._[0], c.add._[1], c.add._[2], c.add._[3]));
           }
           return _results;
         })();
@@ -1429,7 +1440,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var add, multi;
       multi = this.loadColor();
       add = this.loadColor();
-      return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha);
+      return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha, add.red, add.green, add.blue, add.alpha);
     };
 
     LWFLoader.prototype.loadTexture = function() {
@@ -2273,7 +2284,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       colorTransformId = (_ref = movie.colorTransformId) != null ? _ref : 0;
       if ((colorTransformId & Constant.COLORTRANSFORM_FLAG) === 0) {
         alphaTransform = movie.lwf.data.alphaTransforms[colorTransformId];
-        colorTransform = new ColorTransform(1, 1, 1, alphaTransform._[0]);
+        colorTransform = new ColorTransform(1, 1, 1, alphaTransform._[0], 0, 0, 0, 0);
       } else {
         colorTransformId = colorTransformId & ~Constant.COLORTRANSFORM_FLAG;
         colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
@@ -2427,6 +2438,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           dst.multi._[i] = src0.multi._[i];
         }
         dst.multi._[3] = src0.multi._[3] * alphaTransform._[0];
+        dst.add.set(src0.add);
       } else {
         colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG;
         src1 = lwf.data.colorTransforms[colorTransformId];
@@ -2436,12 +2448,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColorTransform = function(dst, src0, src1) {
-      var d, i, s0, s1, _i;
+      var d, da, i, s0, s0a, s1, s1a, _i, _j;
       d = dst.multi._;
       s0 = src0.multi._;
       s1 = src1.multi._;
       for (i = _i = 0; _i < 4; i = ++_i) {
         d[i] = s0[i] * s1[i];
+      }
+      da = dst.add._;
+      s0a = src0.add._;
+      s1a = src1.add._;
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        da[i] = s0a[i] * s1[i] + s1a[i];
       }
       return dst;
     };
@@ -2456,12 +2474,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColor = function(dst, c, t) {
-      var cc, d, i, tc, _i;
+      var cc, d, i, ta, tc, _i;
       d = dst._;
       cc = c._;
       tc = t.multi._;
+      ta = t.add._;
       for (i = _i = 0; _i < 4; i = ++_i) {
-        d[i] = cc[i] * tc[i];
+        d[i] = cc[i] * tc[i] + ta[i];
       }
     };
 
@@ -2554,7 +2573,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.matrixIdChanged = true;
       this.colorTransformIdChanged = true;
       this.matrix = new Matrix(0, 0, 0, 0, 0, 0);
-      this.colorTransform = new ColorTransform(0, 0, 0, 0);
+      this.colorTransform = new ColorTransform(0, 0, 0, 0, 0, 0, 0, 0);
       this.execCount = 0;
       this.updated = false;
       this.isButton = this.type === Type.BUTTON;
@@ -10192,6 +10211,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.aVertexPosition = rendererContext.aVertexPosition;
         this.aTextureCoord = rendererContext.aTextureCoord;
         this.aColor = rendererContext.aColor;
+        this.aAdditionalColor = rendererContext.aAdditionalColor;
         this.uPMatrix = rendererContext.uPMatrix;
         this.uMatrix = rendererContext.uMatrix;
         this.uTexture = rendererContext.uTexture;
@@ -10222,8 +10242,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.bindVertexBuffer(gl, this.vertexBuffer);
       this.bindIndexBuffer(gl, this.indexBuffer);
       if (this.useVertexColor) {
-        vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec4 aColor;\nuniform mat4 uPMatrix;\nuniform mat4 uMatrix;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvoid main() {\n  gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);\n  vTextureCoord = aTextureCoord;\n  vColor = aColor;\n}");
-        fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, "precision mediump float;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nuniform sampler2D uTexture;\nvoid main() {\n  gl_FragColor = vColor * texture2D(uTexture, vTextureCoord);\n}");
+        vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec4 aColor;\nattribute vec4 aAdditionalColor;\nuniform mat4 uPMatrix;\nuniform mat4 uMatrix;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying vec4 vAdditionalColor;\nvoid main() {\n  gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);\n  vTextureCoord = aTextureCoord;\n  vColor = aColor;\n  vAdditionalColor = aAdditionalColor;\n}");
+        fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, "precision mediump float;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying vec4 vAdditionalColor;\nuniform sampler2D uTexture;\nvoid main() {\n  gl_FragColor = vColor * texture2D(uTexture, vTextureCoord) + vAdditionalColor;\n}");
       } else {
         vertexShader = this.loadShader(gl, gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\nattribute vec3 aTextureCoord;\nuniform mat4 uPMatrix;\nuniform mat4 uMatrix;\nvarying vec3 vTextureCoord;\nvoid main() {\n  gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);\n  vTextureCoord = aTextureCoord;\n}");
         fragmentShader = this.loadShader(gl, gl.FRAGMENT_SHADER, "precision mediump float;\nvarying vec3 vTextureCoord;\nuniform sampler2D uTexture;\nvoid main() {\n  gl_FragColor = vec4(1, 1, 1, vTextureCoord.z) * texture2D(uTexture, vTextureCoord.xy);\n}");
@@ -10253,9 +10273,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       gl.enableVertexAttribArray(this.aTextureCoord);
       if (this.useVertexColor) {
         this.aColor = gl.getAttribLocation(shaderProgram, "aColor");
+        this.aAdditionalColor = gl.getAttribLocation(shaderProgram, "aAdditionalColor");
         rendererContext.aColor = this.aColor;
+        rendererContext.aAdditionalColor = this.aAdditionalColor;
         gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, vertexBufferSize, 16);
+        gl.vertexAttribPointer(this.aAdditionalColor, 4, gl.FLOAT, false, vertexBufferSize, 32);
         gl.enableVertexAttribArray(this.aColor);
+        gl.enableVertexAttribArray(this.aAdditionalColor);
       }
       gl.enable(gl.BLEND);
       gl.disable(gl.DEPTH_TEST);
@@ -10333,7 +10357,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.textInSubpixel = textInSubpixel;
       this.needsClear = needsClear;
       this.useVertexColor = useVertexColor;
-      this.attributes = this.useVertexColor ? 8 : 5;
+      this.attributes = this.useVertexColor ? 12 : 5;
       this.initGL();
       this.drawCalls = 0;
       this.blendMode = "normal";
@@ -10342,7 +10366,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.propertyMatrix = new Matrix;
       this.vertexData = new Float32Array(1);
       this.indexData = new Uint16Array(1);
-      this.color = new Float32Array(4);
+      if (this.useVertexColor) {
+        this.color = new Float32Array(8);
+      }
       this.backGroundColor = [0, 0, 0, 1];
       this.bitmapContexts = [];
       _ref = data.bitmaps;
@@ -10601,6 +10627,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         red = c.multi.red
         green = c.multi.green
         blue = c.multi.blue
+        addRed = c.add.red
+        addGreen = c.add.green
+        addBlue = c.add.blue
+        addAlpha = c.add.alpha
         if context.preMultipliedAlpha
           red *= alpha
           green *= alpha
@@ -10610,12 +10640,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         green = 1
         blue = 1
        */
-      cc = this.color;
-      cc[3] = c.multi._[3];
+      alpha = c.multi._[3];
       if (this.useVertexColor) {
+        cc = this.color;
         cc[0] = c.multi._[0];
         cc[1] = c.multi._[1];
         cc[2] = c.multi._[2];
+        cc[3] = c.multi._[3];
+        cc[4] = c.add._[0];
+        cc[5] = c.add._[1];
+        cc[6] = c.add._[2];
+        cc[7] = c.add._[3];
         if (context.preMultipliedAlpha) {
           cc[0] *= cc[3];
           cc[1] *= cc[3];
@@ -10642,7 +10677,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       mm3 = m._[3];
       mm4 = m._[4];
       mm5 = m._[5];
-      alpha = cc[3];
       voffset = this.faces++ * 4 * this.attributes;
       vertexData = this.vertexData;
       for (i = _i = 0; _i < 4; i = ++_i) {
@@ -10669,7 +10703,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           vertexData[offset + 4] = cc[0];
           vertexData[offset + 5] = cc[1];
           vertexData[offset + 6] = cc[2];
-          vertexData[offset + 7] = alpha;
+          vertexData[offset + 7] = cc[3];
+          vertexData[offset + 8] = cc[4];
+          vertexData[offset + 9] = cc[5];
+          vertexData[offset + 10] = cc[6];
+          vertexData[offset + 11] = cc[7];
         } else {
           vertexData[offset + 0] = vx * mm0 + vy * mm2 + mm4;
           vertexData[offset + 1] = vx * mm1 + vy * mm3 + mm5;

@@ -37,7 +37,8 @@ class Data
       @colors = (new Color(c._[0], c._[1], c._[2], c._[3]) for c in d.colors)
       @alphaTransforms = (new AlphaTransform(a._[0]) for a in d.alphaTransforms)
       @colorTransforms = (new ColorTransform(c.multi._[0], c.multi._[1],
-        c.multi._[2], c.multi._[3]) for c in d.colorTransforms)
+        c.multi._[2], c.multi._[3], c.add._[0], c.add._[1], c.add._[2],
+        c.add._[3]) for c in d.colorTransforms)
       @objects = d.objects
       @textures = d.textures
       @textureFragments = d.textureFragments

@@ -159,3 +159,4 @@ Color.prototype.red;
 
 function ColorTransform() {}
 ColorTransform.prototype.multi;
+ColorTransform.prototype.add;

@@ -458,6 +458,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   ColorTransform = (function() {
     function ColorTransform(mr, mg, mb, ma, ar, ag, ab, aa) {
       this.multi = new Color(mr, mg, mb, ma);
+      this.add = new Color(ar, ag, ab, aa);
       if (mr == null) {
         this.clear();
       }
@@ -465,15 +466,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     ColorTransform.prototype.clear = function() {
       this.multi.set(1, 1, 1, 1);
+      this.add.set(0, 0, 0, 0);
     };
 
     ColorTransform.prototype.set = function(c) {
       this.multi.set(c.multi);
+      this.add.set(c.add);
       return this;
     };
 
     ColorTransform.prototype.setWithComparing = function(c) {
-      var changed, cm, i, m, _i;
+      var a, ca, changed, cm, i, m, _i, _j;
       if (c === null) {
         return false;
       }
@@ -483,6 +486,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       for (i = _i = 0; _i < 4; i = ++_i) {
         if (m._[i] !== cm._[i]) {
           m._[i] = cm._[i];
+          changed = true;
+        }
+      }
+      ca = c.add;
+      a = this.add;
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        if (a._[i] !== ca._[i]) {
+          a._[i] = ca._[i];
           changed = true;
         }
       }
@@ -1277,7 +1288,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           _results = [];
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             c = _ref[_i];
-            _results.push(new ColorTransform(c.multi._[0], c.multi._[1], c.multi._[2], c.multi._[3]));
+            _results.push(new ColorTransform(c.multi._[0], c.multi._[1], c.multi._[2], c.multi._[3], c.add._[0], c.add._[1], c.add._[2], c.add._[3]));
           }
           return _results;
         })();
@@ -1432,7 +1443,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var add, multi;
       multi = this.loadColor();
       add = this.loadColor();
-      return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha);
+      return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha, add.red, add.green, add.blue, add.alpha);
     };
 
     LWFLoader.prototype.loadTexture = function() {
@@ -2276,7 +2287,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       colorTransformId = (_ref = movie.colorTransformId) != null ? _ref : 0;
       if ((colorTransformId & Constant.COLORTRANSFORM_FLAG) === 0) {
         alphaTransform = movie.lwf.data.alphaTransforms[colorTransformId];
-        colorTransform = new ColorTransform(1, 1, 1, alphaTransform._[0]);
+        colorTransform = new ColorTransform(1, 1, 1, alphaTransform._[0], 0, 0, 0, 0);
       } else {
         colorTransformId = colorTransformId & ~Constant.COLORTRANSFORM_FLAG;
         colorTransform = movie.lwf.data.colorTransforms[colorTransformId];
@@ -2430,6 +2441,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           dst.multi._[i] = src0.multi._[i];
         }
         dst.multi._[3] = src0.multi._[3] * alphaTransform._[0];
+        dst.add.set(src0.add);
       } else {
         colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG;
         src1 = lwf.data.colorTransforms[colorTransformId];
@@ -2439,12 +2451,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColorTransform = function(dst, src0, src1) {
-      var d, i, s0, s1, _i;
+      var d, da, i, s0, s0a, s1, s1a, _i, _j;
       d = dst.multi._;
       s0 = src0.multi._;
       s1 = src1.multi._;
       for (i = _i = 0; _i < 4; i = ++_i) {
         d[i] = s0[i] * s1[i];
+      }
+      da = dst.add._;
+      s0a = src0.add._;
+      s1a = src1.add._;
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        da[i] = s0a[i] * s1[i] + s1a[i];
       }
       return dst;
     };
@@ -2459,12 +2477,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     Utility.calcColor = function(dst, c, t) {
-      var cc, d, i, tc, _i;
+      var cc, d, i, ta, tc, _i;
       d = dst._;
       cc = c._;
       tc = t.multi._;
+      ta = t.add._;
       for (i = _i = 0; _i < 4; i = ++_i) {
-        d[i] = cc[i] * tc[i];
+        d[i] = cc[i] * tc[i] + ta[i];
       }
     };
 
@@ -2557,7 +2576,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.matrixIdChanged = true;
       this.colorTransformIdChanged = true;
       this.matrix = new Matrix(0, 0, 0, 0, 0, 0);
-      this.colorTransform = new ColorTransform(0, 0, 0, 0);
+      this.colorTransform = new ColorTransform(0, 0, 0, 0, 0, 0, 0, 0);
       this.execCount = 0;
       this.updated = false;
       this.isButton = this.type === Type.BUTTON;

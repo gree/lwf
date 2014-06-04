@@ -141,7 +141,8 @@ class Utility
     if (colorTransformId & Constant.COLORTRANSFORM_FLAG) is 0
       alphaTransform = movie.lwf.data.alphaTransforms[colorTransformId]
       #colorTransform = new ColorTransform(1, 1, 1, alphaTransform.alpha)
-      colorTransform = new ColorTransform(1, 1, 1, alphaTransform._[0])
+      colorTransform =
+        new ColorTransform(1, 1, 1, alphaTransform._[0], 0, 0, 0, 0)
     else
       colorTransformId = colorTransformId & ~Constant.COLORTRANSFORM_FLAG
       colorTransform = movie.lwf.data.colorTransforms[colorTransformId]
@@ -351,7 +352,7 @@ class Utility
         dst.multi._[i] = src0.multi._[i]
       #dst.multi.alpha = src0.multi.alpha * alphaTransform.alpha
       dst.multi._[3] = src0.multi._[3] * alphaTransform._[0]
-      #dst.add.set(src0.add)
+      dst.add.set(src0.add)
     else
       colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG
       src1 = lwf.data.colorTransforms[colorTransformId]
@@ -372,6 +373,11 @@ class Utility
     #dst.add.green = src0.add.green * src1.multi.green + src1.add.green
     #dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue
     #dst.add.alpha = src0.add.alpha * src1.multi.alpha + src1.add.alpha
+    da = dst.add._
+    s0a = src0.add._
+    s1a = src1.add._
+    for i in [0...4]
+      da[i] = s0a[i] * s1[i] + s1a[i]
     return dst
 
   @copyColorTransform:(dst, src) ->
@@ -379,19 +385,16 @@ class Utility
     return dst
 
   @calcColor:(dst, c, t) ->
-    #dst.red   = c.red   * t.multi.red
-    #dst.green = c.green * t.multi.green
-    #dst.blue  = c.blue  * t.multi.blue
-    #dst.alpha = c.alpha * t.multi.alpha
-    d = dst._
-    cc = c._
-    tc = t.multi._
-    for i in [0...4]
-      d[i] = cc[i] * tc[i]
     #dst.red   = c.red   * t.multi.red   + t.add.red
     #dst.green = c.green * t.multi.green + t.add.green
     #dst.blue  = c.blue  * t.multi.blue  + t.add.blue
     #dst.alpha = c.alpha * t.multi.alpha + t.add.alpha
+    d = dst._
+    cc = c._
+    tc = t.multi._
+    ta = t.add._
+    for i in [0...4]
+      d[i] = cc[i] * tc[i] + ta[i]
     return
 
   @newIntArray:() ->

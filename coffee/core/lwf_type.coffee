@@ -269,17 +269,17 @@ else if typeof(Object.defineProperty) isnt "undefined"
 class ColorTransform
   constructor:(mr, mg, mb, ma, ar, ag, ab, aa) ->
     @multi = new Color(mr, mg, mb, ma)
-    #@add = new Color(ar, ag, ab, aa)
+    @add = new Color(ar, ag, ab, aa)
     @clear() unless mr?
 
   clear: ->
     @multi.set(1, 1, 1, 1)
-    #@add.set(0, 0, 0, 0)
+    @add.set(0, 0, 0, 0)
     return
 
   set:(c) ->
     @multi.set(c.multi)
-    #@add.set(c.add)
+    @add.set(c.add)
     return @
 
   setWithComparing:(c) ->
@@ -291,6 +291,12 @@ class ColorTransform
     for i in [0...4]
       if m._[i] isnt cm._[i]
         m._[i] = cm._[i]
+        changed = true
+    ca = c.add
+    a = @add
+    for i in [0...4]
+      if a._[i] isnt ca._[i]
+        a._[i] = ca._[i]
         changed = true
     return changed
 

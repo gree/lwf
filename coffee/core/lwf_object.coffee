@@ -25,7 +25,7 @@ class LObject
     @matrixIdChanged = true
     @colorTransformIdChanged = true
     @matrix = new Matrix(0, 0, 0, 0, 0, 0)
-    @colorTransform = new ColorTransform(0, 0, 0, 0)
+    @colorTransform = new ColorTransform(0, 0, 0, 0, 0, 0, 0, 0)
     @execCount = 0
     @updated = false
 

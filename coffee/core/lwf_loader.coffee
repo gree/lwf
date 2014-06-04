@@ -76,7 +76,8 @@ class LWFLoader
   loadColorTransform: ->
     multi = @loadColor()
     add = @loadColor()
-    return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha)
+    return new ColorTransform(multi.red, multi.green, multi.blue, multi.alpha,
+      add.red, add.green, add.blue, add.alpha)
 
   loadTexture: ->
     return new Format.Texture(

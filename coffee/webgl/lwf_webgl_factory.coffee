@@ -56,6 +56,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @aVertexPosition = rendererContext.aVertexPosition
       @aTextureCoord = rendererContext.aTextureCoord
       @aColor = rendererContext.aColor
+      @aAdditionalColor = rendererContext.aAdditionalColor
       @uPMatrix = rendererContext.uPMatrix
       @uMatrix = rendererContext.uMatrix
       @uTexture = rendererContext.uTexture
@@ -93,14 +94,17 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         attribute vec2 aVertexPosition;
         attribute vec2 aTextureCoord;
         attribute vec4 aColor;
+        attribute vec4 aAdditionalColor;
         uniform mat4 uPMatrix;
         uniform mat4 uMatrix;
         varying vec2 vTextureCoord;
         varying vec4 vColor;
+        varying vec4 vAdditionalColor;
         void main() {
           gl_Position = uPMatrix * uMatrix * vec4(aVertexPosition, 0, 1);
           vTextureCoord = aTextureCoord;
           vColor = aColor;
+          vAdditionalColor = aAdditionalColor;
         }
         """)
 
@@ -108,9 +112,10 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
         precision mediump float;
         varying vec2 vTextureCoord;
         varying vec4 vColor;
+        varying vec4 vAdditionalColor;
         uniform sampler2D uTexture;
         void main() {
-          gl_FragColor = vColor * texture2D(uTexture, vTextureCoord);
+          gl_FragColor = vColor * texture2D(uTexture, vTextureCoord) + vAdditionalColor;
         }
         """)
     else
@@ -165,9 +170,15 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
     if @useVertexColor
       @aColor = gl.getAttribLocation(shaderProgram, "aColor")
+      @aAdditionalColor =
+        gl.getAttribLocation(shaderProgram, "aAdditionalColor")
       rendererContext.aColor = @aColor
+      rendererContext.aAdditionalColor = @aAdditionalColor
       gl.vertexAttribPointer(@aColor, 4, gl.FLOAT, false, vertexBufferSize, 16)
+      gl.vertexAttribPointer(
+        @aAdditionalColor, 4, gl.FLOAT, false, vertexBufferSize, 32)
       gl.enableVertexAttribArray(@aColor)
+      gl.enableVertexAttribArray(@aAdditionalColor)
 
     gl.enable(gl.BLEND)
     gl.disable(gl.DEPTH_TEST)
@@ -234,7 +245,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
   constructor:(@data, @resourceCache,
       @cache, @stage, @textInSubpixel, @needsClear, @useVertexColor) ->
-    @attributes = if @useVertexColor then 8 else 5
+    @attributes = if @useVertexColor then 12 else 5
     @initGL()
     @drawCalls = 0
     @blendMode = "normal"
@@ -243,7 +254,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     @propertyMatrix = new Matrix
     @vertexData = new Float32Array(1)
     @indexData = new Uint16Array(1)
-    @color = new Float32Array(4)
+    @color = new Float32Array(8) if @useVertexColor
     @backGroundColor = [0, 0, 0, 1]
 
     @bitmapContexts = []
@@ -452,6 +463,10 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       red = c.multi.red
       green = c.multi.green
       blue = c.multi.blue
+      addRed = c.add.red
+      addGreen = c.add.green
+      addBlue = c.add.blue
+      addAlpha = c.add.alpha
       if context.preMultipliedAlpha
         red *= alpha
         green *= alpha
@@ -461,12 +476,17 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       green = 1
       blue = 1
     ###
-    cc = @color
-    cc[3] = c.multi._[3]
+    alpha = c.multi._[3]
     if @useVertexColor
+      cc = @color
       cc[0] = c.multi._[0]
       cc[1] = c.multi._[1]
       cc[2] = c.multi._[2]
+      cc[3] = c.multi._[3]
+      cc[4] = c.add._[0]
+      cc[5] = c.add._[1]
+      cc[6] = c.add._[2]
+      cc[7] = c.add._[3]
       if context.preMultipliedAlpha
         cc[0] *= cc[3]
         cc[1] *= cc[3]
@@ -492,7 +512,6 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     mm3 = m._[3]
     mm4 = m._[4]
     mm5 = m._[5]
-    alpha = cc[3]
     voffset = @faces++ * 4 * @attributes
     vertexData = @vertexData
     for i in [0...4]
@@ -512,14 +531,18 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
 
       offset = voffset + i * @attributes
       if @useVertexColor
-        vertexData[offset + 0] = vx * mm0 + vy * mm2 + mm4 # px
-        vertexData[offset + 1] = vx * mm1 + vy * mm3 + mm5 # py
-        vertexData[offset + 2] = uvx # uv[i].u
-        vertexData[offset + 3] = uvy # uv[i].v
-        vertexData[offset + 4] = cc[0] # red
-        vertexData[offset + 5] = cc[1] # green
-        vertexData[offset + 6] = cc[2] # blue
-        vertexData[offset + 7] = alpha
+        vertexData[offset +  0] = vx * mm0 + vy * mm2 + mm4 # px
+        vertexData[offset +  1] = vx * mm1 + vy * mm3 + mm5 # py
+        vertexData[offset +  2] = uvx # uv[i].u
+        vertexData[offset +  3] = uvy # uv[i].v
+        vertexData[offset +  4] = cc[0] # aColor red
+        vertexData[offset +  5] = cc[1] # aColor green
+        vertexData[offset +  6] = cc[2] # aColor blue
+        vertexData[offset +  7] = cc[3] # aColor alpha
+        vertexData[offset +  8] = cc[4] # aAdditionalColor red
+        vertexData[offset +  9] = cc[5] # aAdditionalColor green
+        vertexData[offset + 10] = cc[6] # aAdditionalColor blue
+        vertexData[offset + 11] = cc[7] # aAdditionalColor alpha
       else
         vertexData[offset + 0] = vx * mm0 + vy * mm2 + mm4 # px
         vertexData[offset + 1] = vx * mm1 + vy * mm3 + mm5 # py
