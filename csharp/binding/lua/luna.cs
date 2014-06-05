@@ -1,3 +1,5 @@
+#if LWF_USE_LUA
+
 using System;
 using System.Collections.Generic;
 using KopiLua;
@@ -43,7 +45,7 @@ public class Luna
 		public static uint Size {
 			get { return 4+4+1+1;}
 		}
-	};
+	}
 
 	public static void printStack(Lua.lua_State L, bool compact = false)
 	{
@@ -71,7 +73,7 @@ public class Luna
 	public static void dostring(Lua.lua_State L, Lua.CharPtr luacode)
 	{
 		// Lua.luaL_dostring followed by pcall error checking
-		if (Lua.luaL_dostring(L, luacode)==1)
+		if (Lua.luaL_loadstring(L, luacode) != 0 || Lua.lua_pcall(L, 0, Lua.LUA_MULTRET, 0) != 0)
 		{
 			print("Lua error: stack :");
 			printStack(L,false);
@@ -90,3 +92,5 @@ public class Luna
 		UnityEngine.Debug.Log(s);
 	}
 }
+
+#endif

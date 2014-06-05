@@ -1,3 +1,5 @@
+#if LWF_USE_LUA
+
 using System;
 using KopiLua;
 
@@ -39,3 +41,4 @@ public class LuaLWF
 	}
 }
 
+#endif

@@ -1,3 +1,5 @@
+#if LWF_USE_LUA
+
 using System;
 using System.Collections.Generic;
 using KopiLua;
@@ -13,7 +15,7 @@ public class LunaTraits_LWF_LWF
 		}
 		public Lua.CharPtr name;
 		public Lua.lua_CFunction mfunc;
-	};
+	}
 
 	public static Lua.CharPtr className = "LWF_LWF";
 	public static int uniqueID = 7105034;
@@ -46,7 +48,7 @@ public class LunaTraits_LWF_LWF
 
 	public static Dictionary<string, Lua.lua_CFunction> properties = new Dictionary<string, Lua.lua_CFunction>();
 	public static Dictionary<string, Lua.lua_CFunction> write_properties = new Dictionary<string, Lua.lua_CFunction>();
-};
+}
 
 public class impl_LunaTraits_LWF_LWF
 {
@@ -218,7 +220,7 @@ public class impl_LunaTraits_LWF_LWF
 		Lua.luaL_error(L,"__newindex doesn't allow defining non-property member");
 		return 0;
 	}
-};
+}
 
 class Luna_LWF_LWF
 {
@@ -244,7 +246,8 @@ class Luna_LWF_LWF
 		// sometimes more convenient
 		int metatable=methods;
 
-		Lua.luaL_dostring(L, "if not __luna then __luna={} end");
+		Lua.luaL_loadstring(L, "if not __luna then __luna={} end");
+		Lua.lua_pcall(L, 0, Lua.LUA_MULTRET, 0);
 
 		Lua.lua_pushstring(L, "__luna");
 		Lua.lua_gettable(L, Lua.LUA_GLOBALSINDEX);
@@ -409,5 +412,6 @@ class Luna_LWF_LWF
 		Lua.lua_pushfstring(L, "%s (%s)", new object[] {LunaTraits_LWF_LWF.className, buff});
 		return 1;
 	}
-};
+}
 
+#endif

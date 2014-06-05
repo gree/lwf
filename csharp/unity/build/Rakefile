@@ -31,6 +31,7 @@ EDITOR_LIBS="#{LIBS} -r:#{UNITYFRAMEWORKS}/Managed/UnityEditor.dll -r:lwf.dll"
 CORE="../../core"
 UNITY=".."
 RENDERER="#{UNITY}/renderer"
+LUABINDING="../../binding/lua"
 
 SRCS= %W|
   #{CORE}/lwf_animation.cs
@@ -74,6 +75,13 @@ SRCS= %W|
   #{RENDERER}/bitmapfont/bitmapfont_resourcecache.cs
   #{UNITY}/wrapper/LWFObject.cs
   #{UNITY}/wrapper/LWFPlayer.cs
+  #{LUABINDING}/lualwf.cs
+  #{LUABINDING}/luna.cs
+  #{LUABINDING}/lwf_lua.cs
+  #{LUABINDING}/lwf_luabinding_lwf_button.cs
+  #{LUABINDING}/lwf_luabinding_lwf_lwf.cs
+  #{LUABINDING}/lwf_luabinding_lwf_movie.cs
+  #{LUABINDING}/lwf_luabinding_lwf_point.cs
 |
 
 EDITOR_SRCS= %W|
@@ -95,11 +103,14 @@ task :pack do
   FileUtils.mkdir_p "Packager/Assets/Plugins/lwf"
   FileUtils.mkdir_p "Packager/Assets/Resources/LWFShaders"
   system "rsync -av ../../core Packager/Assets/Plugins/lwf"
+  system "rsync -av --exclude '*.rb' ../../binding Packager/Assets/Plugins/lwf"
   system "rsync -av ../renderer Packager/Assets/Plugins/lwf"
   system "rsync -av ../wrapper Packager/Assets/Plugins/lwf"
   system "rsync -av ../editor Packager/Assets/Editor/lwf"
   system "rsync -av ../shaders/*.shader Packager/Assets/Resources/LWFShaders"
   system "#{UNITYAPP}/MacOS/Unity -projectPath `pwd`/Packager -batchmode -quit -executeMethod Packager.Export"
+  FileUtils.rm_rf "../dist"
+  FileUtils.mkdir_p "../dist"
   FileUtils.mv "Packager/lwf.unitypackage", "../dist"
   FileUtils.rm_rf "Packager/Assets/Editor/lwf"
   FileUtils.rm_rf "Packager/Assets/Plugins"

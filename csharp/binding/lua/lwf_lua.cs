@@ -1,3 +1,5 @@
+#if LWF_USE_LUA
+
 using System;
 using System.Collections.Generic;
 using KopiLua;
@@ -1097,4 +1099,7 @@ public partial class LWF
 		/* 0 */
 	}
 }
+
 }	// namespace LWF
+
+#endif
