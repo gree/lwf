@@ -241,7 +241,8 @@ public class ResourceCache
 				TextureContext context = item.Entity();
 				if (context.material.mainTexture != null)
 					context.unloader((Texture2D)context.material.mainTexture);
-				Material.Destroy(context.material);
+				if (!Application.isEditor)
+					Material.Destroy(context.material);
 				m_textureCache.Remove(cacheName);
 			}
 		}
@@ -356,7 +357,8 @@ public class ResourceCache
 		string cacheName = string.Format("{0}/{1}", lwfName, bitmapExId);
 		if (m_meshCache.TryGetValue(cacheName, out item)) {
 			if (item.Unref() <= 0) {
-				Mesh.Destroy(item.Entity().mesh);
+				if (!Application.isEditor)
+					Mesh.Destroy(item.Entity().mesh);
 				m_meshCache.Remove(cacheName);
 			}
 		}
@@ -391,9 +393,11 @@ public class ResourceCache
 		RenderedMeshItem item;
 		if (m_renderedMeshCache.TryGetValue(lwfName, out item)) {
 			if (item.Unref() <= 0) {
-				foreach (Mesh mesh in item.Entity()) {
-					if (mesh != null)
-						Mesh.Destroy(mesh);
+				if (!Application.isEditor) {
+					foreach (Mesh mesh in item.Entity()) {
+						if (mesh != null)
+							Mesh.Destroy(mesh);
+					}
 				}
 				m_renderedMeshCache.Remove(lwfName);
 			}
@@ -403,21 +407,26 @@ public class ResourceCache
 	public void UnloadAll()
 	{
 		foreach (RenderedMeshItem item in m_renderedMeshCache.Values) {
-			foreach (Mesh mesh in item.Entity()) {
-				if (mesh != null)
-					Mesh.Destroy(mesh);
+			if (!Application.isEditor) {
+				foreach (Mesh mesh in item.Entity()) {
+					if (mesh != null)
+						Mesh.Destroy(mesh);
+				}
 			}
 		}
 		m_renderedMeshCache.Clear();
 		m_lwfDataCache.Clear();
-		foreach (MeshItem item in m_meshCache.Values)
-			Mesh.Destroy(item.Entity().mesh);
+		if (!Application.isEditor) {
+			foreach (MeshItem item in m_meshCache.Values)
+				Mesh.Destroy(item.Entity().mesh);
+		}
 		m_meshCache.Clear();
 		foreach (TextureItem item in m_textureCache.Values) {
 			TextureContext context = item.Entity();
 			if (context.material.mainTexture != null)
 				context.unloader((Texture2D)context.material.mainTexture);
-			Material.Destroy(context.material);
+			if (!Application.isEditor)
+				Material.Destroy(context.material);
 		}
 		m_textureCache.Clear();
 		m_shaderCache.Clear();

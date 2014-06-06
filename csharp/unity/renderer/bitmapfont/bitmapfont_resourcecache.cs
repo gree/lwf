@@ -153,7 +153,8 @@ public class ResourceCache
 				Material material = item.Entity();
 				if (material.mainTexture != null)
 					m_textureUnloader((Texture2D)material.mainTexture);
-				Material.Destroy(material);
+				if (!Application.isEditor)
+					Material.Destroy(material);
 				m_textureCache.Remove(name);
 			}
 		}

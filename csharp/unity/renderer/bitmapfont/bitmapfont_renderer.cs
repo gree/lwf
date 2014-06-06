@@ -167,7 +167,8 @@ public class Renderer
 		ResourceCache cache = ResourceCache.SharedInstance();
 		cache.UnloadTexture(mData.textureName);
 		cache.UnloadData(mName);
-		Mesh.Destroy(mMesh);
+		if (!Application.isEditor)
+			Mesh.Destroy(mMesh);
 		mName = null;
 	}
 

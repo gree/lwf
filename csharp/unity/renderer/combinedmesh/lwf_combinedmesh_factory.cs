@@ -84,10 +84,23 @@ public partial class Factory : UnityRenderer.Factory
 		mesh.MarkDynamic();
 #endif
 
-		meshFilter = gameObject.AddComponent<MeshFilter>();
+		if (Application.isEditor) {
+			meshFilter = gameObject.GetComponent<MeshFilter>();
+			if (meshFilter == null)
+				meshFilter = gameObject.AddComponent<MeshFilter>();
+		} else {
+			meshFilter = gameObject.AddComponent<MeshFilter>();
+		}
 		meshFilter.sharedMesh = mesh;
 
-		meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
+		if (Application.isEditor) {
+			meshRenderer = gameObject.GetComponent<UnityEngine.MeshRenderer>();
+			if (meshRenderer == null)
+				meshRenderer =
+					gameObject.AddComponent<UnityEngine.MeshRenderer>();
+		} else {
+			meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
+		}
 		meshRenderer.castShadows = false;
 		meshRenderer.receiveShadows = false;
 
@@ -112,9 +125,11 @@ public partial class Factory : UnityRenderer.Factory
 		meshRenderer.sharedMaterial = null;
 		ResourceCache.SharedInstance().UnloadTexture(data.name, textureName);
 		meshFilter.sharedMesh = null;
-		UnityEngine.MeshRenderer.Destroy(meshRenderer);
-		MeshFilter.Destroy(meshFilter);
-		Mesh.Destroy(mesh);
+		if (!Application.isEditor) {
+			UnityEngine.MeshRenderer.Destroy(meshRenderer);
+			MeshFilter.Destroy(meshFilter);
+			Mesh.Destroy(mesh);
+		}
 		base.Destruct();
 	}
 
