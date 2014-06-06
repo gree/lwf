@@ -13,10 +13,24 @@ def check_statement(type, i)
 	when "string"
 		return "Lua.lua_isstring(L,#{i})==0"
 	when "bool"
-		return "Lua.lua_isboolean(L,#{i})"
+		return "!Lua.lua_isboolean(L,#{i})"
 	else
 		type_nodot = type.gsub(".","_")
 		return "Luna.get_uniqueid(L,#{i})!= LunaTraits_#{type_nodot}.uniqueID"
+	end
+end
+
+def check_right_statement(type, i)
+	case type
+	when "float","int"
+		return "Lua.lua_isnumber(L, #{i})==1"
+	when "string"
+		return "Lua.lua_isstring(L,#{i})==1"
+	when "bool"
+		return "Lua.lua_isboolean(L,#{i})"
+	else
+		type_nodot = type.gsub(".","_")
+		return "Luna.get_uniqueid(L,#{i})== LunaTraits_#{type_nodot}.uniqueID"
 	end
 end
 
@@ -70,11 +84,20 @@ def typecheck_condition_for_setter(property_type)
 	"\n" + " "*4*3 + "|| " + check_statement(property_type, 2)
 end
 
-def typecheck_condition_for_member_function(params)
+def typecheck_condition_for_not_member_function(params)
 	s = "Lua.lua_gettop(L)!=#{params.length+1}" +
 	"\n" + " "*4*3 + "|| Luna.get_uniqueid(L,1)!=__UNIQUE_ID__ "
 	params.each_with_index do | p, i |
 		s += "\n" + " "*4*3 + "|| " + check_statement(p[0], i+2)
+	end
+	s
+end
+
+def typecheck_condition_for_member_function(params)
+	s = "Lua.lua_gettop(L)==#{params.length+1}" +
+	"\n" + " "*4*3 + "|| Luna.get_uniqueid(L,1)==__UNIQUE_ID__ "
+	params.each_with_index do | p, i |
+		s += "\n" + " "*4*3 + "|| " + check_right_statement(p[0], i+2)
 	end
 	s
 end
@@ -276,7 +299,7 @@ def output_bind_member_functions
 			alias_name += "_overload_" + id.to_s
 		else
 			typecheck =<<EOS
-	if (#{typecheck_condition_for_member_function(params)}) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:#{alias_name}(__T__ self)"); }
+	if (#{typecheck_condition_for_not_member_function(params)}) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:#{alias_name}(__T__ self)"); }
 EOS
 		end
 		result +=<<EOS

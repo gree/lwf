@@ -389,24 +389,24 @@ public class impl_LunaTraits_LWF_Movie
   }
   public static int _bind_gotoAndStop(Lua.lua_State L)
   {
-	if (Lua.lua_gettop(L)!=2
-            || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isstring(L,2)==0) return _bind_gotoAndStop_overload_1(L);
-	if (Lua.lua_gettop(L)!=2
-            || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isnumber(L, 2)==0) return _bind_gotoAndStop_overload_2(L);
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndStop_overload_1(L);
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndStop_overload_2(L);
 	Lua.luaL_error(L, "gotoAndStop cannot find overloads.");
 
 	return 0;
   }
   public static int _bind_gotoAndPlay(Lua.lua_State L)
   {
-	if (Lua.lua_gettop(L)!=2
-            || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isstring(L,2)==0) return _bind_gotoAndPlay_overload_1(L);
-	if (Lua.lua_gettop(L)!=2
-            || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isnumber(L, 2)==0) return _bind_gotoAndPlay_overload_2(L);
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndPlay_overload_1(L);
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndPlay_overload_2(L);
 	Lua.luaL_error(L, "gotoAndPlay cannot find overloads.");
 
 	return 0;
@@ -558,7 +558,7 @@ public class impl_LunaTraits_LWF_Movie
   {
 	if (Lua.lua_gettop(L)!=2
             || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isboolean(L,2)) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setVisible(LWF.Movie self ...)"); }
+            || !Lua.lua_isboolean(L,2)) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setVisible(LWF.Movie self ...)"); }
 		LWF.Movie o=Luna_LWF_Movie.check(L,1);
 		bool v=Lua.lua_toboolean(L,2) != 0;
 	try {
