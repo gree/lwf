@@ -500,7 +500,8 @@ public class Renderer
 		material.color = multColor;
 		material.SetPass(0);
 		Graphics.DrawMeshNow(mMesh, matrix);
-		Material.Destroy(material);
+		if (!Application.isEditor)
+			Material.Destroy(material);
 	}
 #endif
 }

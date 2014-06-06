@@ -220,7 +220,8 @@ public class BitmapRenderer : Renderer
 			material.SetColor("_AdditionalColor", m_colorAdd);
 		material.SetPass(0);
 		Graphics.DrawMeshNow(m_context.mesh, m_renderMatrix);
-		Material.Destroy(material);
+		if (!Application.isEditor)
+			Material.Destroy(material);
 	}
 #endif
 }
