@@ -14,6 +14,16 @@ extern "C" {
 #include <iostream>
 #include <sstream>
 
+#if LUA_VERSION_NUM >= 502
+static inline int
+luaL_typerror(lua_State *L, int narg, const char *tname)
+{
+	const char *msg = lua_pushfstring(L, "%s expected, got %s",
+		tname, luaL_typename(L, narg));
+	return luaL_argerror(L, narg, msg);
+}
+#endif
+
 struct luna_eqstr{
 	bool operator()(const char* s1, const char* s2) const {
 		return strcmp(s1,s2)==0;
@@ -55,14 +65,13 @@ public:
 
 typedef stdext::hash_map<const char*, luna_mfp, luna_stringhasher> luna__hashmap;
 #else // UNIX
-#ifndef CXX_ENABLED
+#if __cplusplus < 201103L
 #include <ext/hash_map> 
 typedef __gnu_cxx::hash<const char*> luna_hash_t;
 typedef __gnu_cxx::hash_map<const char*, luna_mfp, luna_hash_t, luna_eqstr> luna__hashmap;
 #else
 #include <unordered_map>
-typedef std::hash<const char*> luna_hash_t;
-typedef std::unordered_map<const char*, luna_mfp, luna_hash_t, luna_eqstr> luna__hashmap;
+typedef std::unordered_map<std::string, luna_mfp> luna__hashmap;
 #endif
 #endif // UNIX
 #endif // not defined NO_HASH_MAP
@@ -84,8 +93,12 @@ template <typename T_interface> class LunaModule {
 			temp+=" ={} end";
 
 			luaL_dostring(L,temp.c_str());
+#if LUA_VERSION_NUM >= 502
+			lua_getglobal(L, "__luna");
+#else
 			lua_pushstring(L, "__luna");
 			lua_gettable(L, LUA_GLOBALSINDEX);
+#endif
 			int __luna= lua_gettop(L);
 			lua_pushstring(L, T_interface::moduleName);
 			lua_gettable(L, __luna);
@@ -150,8 +163,12 @@ template <typename T> class Luna {
 
 		luaL_dostring(L, "if not __luna then __luna={} end");
 
+#if LUA_VERSION_NUM >= 502
+		lua_getglobal(L, "__luna");
+#else
 		lua_pushstring(L, "__luna");
 		lua_gettable(L, LUA_GLOBALSINDEX);
+#endif
 		// unlike original luna class, this class uses the same table for methods and metatable
 		// store methods table in __luna global table so that
 		// scripts can add functions written in Lua.
@@ -229,8 +246,12 @@ template <typename T> class Luna {
 	inline static void push(lua_State *L, const T* obj, bool gc, const char* metatable=T_interface::className)
 	{
 #if defined(METHOD_TABLE_IS_METATABLE) 
+#if LUA_VERSION_NUM >= 502
+		lua_getglobal(L,"__luna");
+#else
 		lua_pushstring(L,"__luna");
 		lua_gettable(L, LUA_GLOBALSINDEX);
+#endif
 		int __luna= lua_gettop(L);
 		userdataType *ud =
 			static_cast<userdataType*>(lua_newuserdata(L, sizeof(userdataType)));
@@ -373,8 +394,12 @@ class lunaStack
 	}
 	// stack[top]=_G[key]
 	void getglobal(const char* key){
+#if LUA_VERSION_NUM >= 502
+		lua_getglobal(L, key);
+#else
 		lua_pushstring(L, key);
 		lua_gettable(L,LUA_GLOBALSINDEX); // stack top becomes _G[key] 
+#endif
 	}
 
 	// stack[top]=_G[key1][key2]
@@ -427,6 +452,25 @@ class lunaStack
 	int beginCall(int numIn);
 	void endCall(int numOut);
 
+#if LUA_VERSION_NUM >= 502
+	template <class T> T* get(const char* key, int table_index){
+		//luna_printStack(L);
+		lua_pushstring(L, key);
+		lua_gettable(L, table_index);
+		T* ptr= topointer<T>(gettop());
+		lua_pop(L,1);
+		//luna_printStack(L);
+		return ptr;
+	}
+
+	template <class T> void set(const char* key, T* ptr, int table_index, bool garbageCollection=false) {
+		push<T>(ptr,garbageCollection);
+		lua_pushstring(L, key);
+		lua_insert(L, -2);  // swap value and key
+		lua_settable(L, table_index);
+		//printf("%x %x\n", (unsigned int)ptr,(unsigned int) get<T>(key));
+	}
+#else
 	template <class T> T* get(const char* key, int table_index=LUA_GLOBALSINDEX){
 		//luna_printStack(L);
 		lua_pushstring(L, key);
@@ -447,6 +491,7 @@ class lunaStack
 	inline void settable(int table_index=LUA_GLOBALSINDEX){
 		lua_settable(L, table_index);
 	}
+#endif
 
 	// linear search. returns #tbl
 	int arraySize(int tblindex);
