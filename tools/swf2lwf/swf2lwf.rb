@@ -4242,7 +4242,7 @@ def swf2lwf(*args)
     js.write <<-EOL
 global.LWF.Script = global.LWF.Script || {};
 global.LWF.Script["#{lwfname}"] = function() {
-	var LWF = global.LWF.LWF;
+	var LWF = global.LWF;
 	var Loader = global.LWF.Loader;
 	var Movie = global.LWF.Movie;
 	var Property = global.LWF.Property;
