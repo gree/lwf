@@ -60,6 +60,7 @@ class LWF
     @blendModes = []
     @maskModes = []
     @_tweens = null
+    @useVertexColor = false
 
     if !@interactive and @data.frames.length is 1
       if !@functions or !(@functions['_root_load'] or
@@ -223,7 +224,7 @@ class LWF
     if p.hasColorTransform
       if colorTransform?
         c = Utility.calcColorTransform(
-          @colorTransform, colorTransform, p.colorTransform)
+          @, @colorTransform, colorTransform, p.colorTransform)
       else
         c = p.colorTransform
     else

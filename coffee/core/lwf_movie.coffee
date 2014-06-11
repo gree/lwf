@@ -534,7 +534,7 @@ class Movie extends IObject
   override:(m, c) ->
     @overriding = true
     Utility.copyMatrix(@matrix, m)
-    Utility.copyColorTransform(@colorTransform, c)
+    Utility.copyColorTransform(@lwf, @colorTransform, c)
     @lwf.isPropertyDirty = true
     return
 
@@ -733,7 +733,7 @@ class Movie extends IObject
     if @property.hasColorTransform
       colorTransformChanged = true
       c = Utility.calcColorTransform(
-        @colorTransform0, @colorTransform, @property.colorTransform)
+        @lwf, @colorTransform0, @colorTransform, @property.colorTransform)
     else
       c = @colorTransform
 

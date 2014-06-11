@@ -134,16 +134,19 @@ class BitmapClip extends LObject
 
     dst = @colorTransform.multi._
     cm = c.multi._
-    #m.red = cm.red
-    #m.green = cm.green
-    #m.blue = cm.blue
-    #m.alpha = @_alpha * cm.alpha
-    if @alpha is 1
-      for i in [0...4]
-        dst[i] = cm[i]
+    if @lwf.useVertexColor
+      #m.red = cm.red
+      #m.green = cm.green
+      #m.blue = cm.blue
+      #m.alpha = @_alpha * cm.alpha
+      if @alpha is 1
+        for i in [0...4]
+          dst[i] = cm[i]
+      else
+        for i in [0...3]
+          dst[i] = cm[i]
+        dst[3] = @alpha * cm[3]
     else
-      for i in [0...3]
-        dst[i] = cm[i]
       dst[3] = @alpha * cm[3]
     @lwf.renderObject()
     return

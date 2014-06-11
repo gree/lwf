@@ -231,7 +231,7 @@ class HTML5TextRenderer
     red = @color.red
     green = @color.green
     blue = @color.blue
-    @context.factory.convertColor(@color, @context.textColor, c)
+    @context.factory.convertColor(@lwf, @color, @context.textColor, c)
     c = @color
     colorChanged = false
     if red isnt c.red or green isnt c.green or blue isnt c.blue

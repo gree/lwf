@@ -25,5 +25,6 @@ class WebGLResourceCache extends WebkitCSSResourceCache
   newFactory:(settings, cache, data) ->
     return new WebGLRendererFactory(data, @, cache, settings.stage,
       settings["textInSubpixel"] ? false, settings["needsClear"] ? true,
-      settings["useVertexColor"] ? false)
+      settings["useVertexColor"] ? true,
+      settings["useAlwaysAdditionalColorShader"] ? false)
 

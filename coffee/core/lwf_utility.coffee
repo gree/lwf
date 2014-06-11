@@ -342,59 +342,78 @@ class Utility
 
   @calcColorTransformId:(lwf, dst, src0, src1Id) ->
     if src1Id is 0
-      dst.set(src0)
+      if lwf.useVertexColor
+        dst.set(src0)
+      else
+        dst.multi._[3] = src0.multi._[3]
     else if (src1Id & Constant.COLORTRANSFORM_FLAG) is 0
       alphaTransform = lwf.data.alphaTransforms[src1Id]
-      #dst.multi.red   = src0.multi.red
-      #dst.multi.green = src0.multi.green
-      #dst.multi.blue  = src0.multi.blue
-      for i in [0...3]
-        dst.multi._[i] = src0.multi._[i]
-      #dst.multi.alpha = src0.multi.alpha * alphaTransform.alpha
-      dst.multi._[3] = src0.multi._[3] * alphaTransform._[0]
-      dst.add.set(src0.add)
+      if lwf.useVertexColor
+        #dst.multi.red   = src0.multi.red
+        #dst.multi.green = src0.multi.green
+        #dst.multi.blue  = src0.multi.blue
+        for i in [0...3]
+          dst.multi._[i] = src0.multi._[i]
+        #dst.multi.alpha = src0.multi.alpha * alphaTransform.alpha
+        dst.multi._[3] = src0.multi._[3] * alphaTransform._[0]
+        dst.add.set(src0.add)
+      else
+        dst.multi._[3] = src0.multi._[3] * alphaTransform._[0]
     else
       colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG
       src1 = lwf.data.colorTransforms[colorTransformId]
-      @calcColorTransform(dst, src0, src1)
+      @calcColorTransform(lwf, dst, src0, src1)
     return dst
 
-  @calcColorTransform:(dst, src0, src1) ->
-    #dst.multi.red   = src0.multi.red   * src1.multi.red
-    #dst.multi.green = src0.multi.green * src1.multi.green
-    #dst.multi.blue  = src0.multi.blue  * src1.multi.blue
-    #dst.multi.alpha = src0.multi.alpha * src1.multi.alpha
-    d = dst.multi._
-    s0 = src0.multi._
-    s1 = src1.multi._
-    for i in [0...4]
-      d[i] = s0[i] * s1[i]
-    #dst.add.red   = src0.add.red   * src1.multi.red   + src1.add.red
-    #dst.add.green = src0.add.green * src1.multi.green + src1.add.green
-    #dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue
-    #dst.add.alpha = src0.add.alpha * src1.multi.alpha + src1.add.alpha
-    da = dst.add._
-    s0a = src0.add._
-    s1a = src1.add._
-    for i in [0...4]
-      da[i] = s0a[i] * s1[i] + s1a[i]
+  @calcColorTransform:(lwf, dst, src0, src1) ->
+    if lwf.useVertexColor
+      #dst.multi.red   = src0.multi.red   * src1.multi.red
+      #dst.multi.green = src0.multi.green * src1.multi.green
+      #dst.multi.blue  = src0.multi.blue  * src1.multi.blue
+      #dst.multi.alpha = src0.multi.alpha * src1.multi.alpha
+      d = dst.multi._
+      s0 = src0.multi._
+      s1 = src1.multi._
+      for i in [0...4]
+        d[i] = s0[i] * s1[i]
+      #dst.add.red   = src0.add.red   * src1.multi.red   + src1.add.red
+      #dst.add.green = src0.add.green * src1.multi.green + src1.add.green
+      #dst.add.blue  = src0.add.blue  * src1.multi.blue  + src1.add.blue
+      #dst.add.alpha = src0.add.alpha * src1.multi.alpha + src1.add.alpha
+      da = dst.add._
+      s0a = src0.add._
+      s1a = src1.add._
+      for i in [0...4]
+        da[i] = s0a[i] * s1[i] + s1a[i]
+    else
+      dst.multi._[3] = src0.multi._[3] * src1.multi._[3]
     return dst
 
-  @copyColorTransform:(dst, src) ->
-    if src isnt null then dst.set(src) else dst.clear()
+  @copyColorTransform:(lwf, dst, src) ->
+    if lwf.useVertexColor
+      if src isnt null then dst.set(src) else dst.clear()
+    else
+      dst.multi.alpha = if src isnt null then src.multi.alpha else 1
     return dst
 
-  @calcColor:(dst, c, t) ->
-    #dst.red   = c.red   * t.multi.red   + t.add.red
-    #dst.green = c.green * t.multi.green + t.add.green
-    #dst.blue  = c.blue  * t.multi.blue  + t.add.blue
-    #dst.alpha = c.alpha * t.multi.alpha + t.add.alpha
-    d = dst._
-    cc = c._
-    tc = t.multi._
-    ta = t.add._
-    for i in [0...4]
-      d[i] = cc[i] * tc[i] + ta[i]
+  @calcColor:(lwf, dst, c, t) ->
+    if lwf.useVertexColor
+      #dst.red   = c.red   * t.multi.red   + t.add.red
+      #dst.green = c.green * t.multi.green + t.add.green
+      #dst.blue  = c.blue  * t.multi.blue  + t.add.blue
+      #dst.alpha = c.alpha * t.multi.alpha + t.add.alpha
+      d = dst._
+      cc = c._
+      tc = t.multi._
+      ta = t.add._
+      for i in [0...4]
+        d[i] = cc[i] * tc[i] + ta[i]
+    else
+      d = dst._
+      cc = c._
+      for i in [0...3]
+        d[i] = cc[i]
+      d[3] = cc[3] * t.multi._[3]
     return
 
   @newIntArray:() ->

@@ -51,7 +51,7 @@ class LObject
       Utility.calcMatrixId(@lwf, @matrix, m, @dataMatrixId)
       @matrixIdChanged = false
     if c isnt null
-      Utility.copyColorTransform(@colorTransform, c)
+      Utility.copyColorTransform(@lwf, @colorTransform, c)
       @colorTransformIdChanged = false
     @lwf.renderObject()
     return

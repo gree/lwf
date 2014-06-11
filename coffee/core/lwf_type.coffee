@@ -195,6 +195,9 @@ class Color
       @_[3] = a
     return
 
+  isZero: ->
+    return @_[0] is 0 and @_[1] is 0 and @_[2] is 0 and @_[3] is 0
+
   getRed: ->
     return @_[0]
 
@@ -281,6 +284,9 @@ class ColorTransform
     @multi.set(c.multi)
     @add.set(c.add)
     return @
+
+  hasAdd: ->
+    return !@add.isZero()
 
   setWithComparing:(c) ->
     return false if c is null

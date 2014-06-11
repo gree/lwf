@@ -83,7 +83,7 @@ class Cocos2dTextRenderer
     red = @color.red
     green = @color.green
     blue = @color.blue
-    @context.factory.convertColor(@color, @context.textColor, c)
+    @context.factory.convertColor(@lwf, @color, @context.textColor, c)
     c = @color3B
     c.r = @color.red
     c.g = @color.green

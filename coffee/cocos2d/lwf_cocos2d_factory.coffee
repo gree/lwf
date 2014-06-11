@@ -94,8 +94,8 @@ class Cocos2dRendererFactory
     context = @particleContexts[objectId]
     new Cocos2dParticleRenderer(context) if context
 
-  convertColor:(d, c, t) ->
-    Utility.calcColor(d, c, t)
+  convertColor:(lwf, d, c, t) ->
+    Utility.calcColor(lwf, d, c, t)
     d.red = Math.round(d.red * 255)
     d.green = Math.round(d.green * 255)
     d.blue = Math.round(d.blue * 255)

@@ -323,6 +323,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
+    Color.prototype.isZero = function() {
+      return this._[0] === 0 && this._[1] === 0 && this._[2] === 0 && this._[3] === 0;
+    };
+
     Color.prototype.getRed = function() {
       return this._[0];
     };
@@ -473,6 +477,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.multi.set(c.multi);
       this.add.set(c.add);
       return this;
+    };
+
+    ColorTransform.prototype.hasAdd = function() {
+      return !this.add.isZero();
     };
 
     ColorTransform.prototype.setWithComparing = function(c) {
@@ -2434,56 +2442,81 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Utility.calcColorTransformId = function(lwf, dst, src0, src1Id) {
       var alphaTransform, colorTransformId, i, src1, _i;
       if (src1Id === 0) {
-        dst.set(src0);
+        if (lwf.useVertexColor) {
+          dst.set(src0);
+        } else {
+          dst.multi._[3] = src0.multi._[3];
+        }
       } else if ((src1Id & Constant.COLORTRANSFORM_FLAG) === 0) {
         alphaTransform = lwf.data.alphaTransforms[src1Id];
-        for (i = _i = 0; _i < 3; i = ++_i) {
-          dst.multi._[i] = src0.multi._[i];
+        if (lwf.useVertexColor) {
+          for (i = _i = 0; _i < 3; i = ++_i) {
+            dst.multi._[i] = src0.multi._[i];
+          }
+          dst.multi._[3] = src0.multi._[3] * alphaTransform._[0];
+          dst.add.set(src0.add);
+        } else {
+          dst.multi._[3] = src0.multi._[3] * alphaTransform._[0];
         }
-        dst.multi._[3] = src0.multi._[3] * alphaTransform._[0];
-        dst.add.set(src0.add);
       } else {
         colorTransformId = src1Id & ~Constant.COLORTRANSFORM_FLAG;
         src1 = lwf.data.colorTransforms[colorTransformId];
-        this.calcColorTransform(dst, src0, src1);
+        this.calcColorTransform(lwf, dst, src0, src1);
       }
       return dst;
     };
 
-    Utility.calcColorTransform = function(dst, src0, src1) {
+    Utility.calcColorTransform = function(lwf, dst, src0, src1) {
       var d, da, i, s0, s0a, s1, s1a, _i, _j;
-      d = dst.multi._;
-      s0 = src0.multi._;
-      s1 = src1.multi._;
-      for (i = _i = 0; _i < 4; i = ++_i) {
-        d[i] = s0[i] * s1[i];
-      }
-      da = dst.add._;
-      s0a = src0.add._;
-      s1a = src1.add._;
-      for (i = _j = 0; _j < 4; i = ++_j) {
-        da[i] = s0a[i] * s1[i] + s1a[i];
-      }
-      return dst;
-    };
-
-    Utility.copyColorTransform = function(dst, src) {
-      if (src !== null) {
-        dst.set(src);
+      if (lwf.useVertexColor) {
+        d = dst.multi._;
+        s0 = src0.multi._;
+        s1 = src1.multi._;
+        for (i = _i = 0; _i < 4; i = ++_i) {
+          d[i] = s0[i] * s1[i];
+        }
+        da = dst.add._;
+        s0a = src0.add._;
+        s1a = src1.add._;
+        for (i = _j = 0; _j < 4; i = ++_j) {
+          da[i] = s0a[i] * s1[i] + s1a[i];
+        }
       } else {
-        dst.clear();
+        dst.multi._[3] = src0.multi._[3] * src1.multi._[3];
       }
       return dst;
     };
 
-    Utility.calcColor = function(dst, c, t) {
-      var cc, d, i, ta, tc, _i;
-      d = dst._;
-      cc = c._;
-      tc = t.multi._;
-      ta = t.add._;
-      for (i = _i = 0; _i < 4; i = ++_i) {
-        d[i] = cc[i] * tc[i] + ta[i];
+    Utility.copyColorTransform = function(lwf, dst, src) {
+      if (lwf.useVertexColor) {
+        if (src !== null) {
+          dst.set(src);
+        } else {
+          dst.clear();
+        }
+      } else {
+        dst.multi.alpha = src !== null ? src.multi.alpha : 1;
+      }
+      return dst;
+    };
+
+    Utility.calcColor = function(lwf, dst, c, t) {
+      var cc, d, i, ta, tc, _i, _j;
+      if (lwf.useVertexColor) {
+        d = dst._;
+        cc = c._;
+        tc = t.multi._;
+        ta = t.add._;
+        for (i = _i = 0; _i < 4; i = ++_i) {
+          d[i] = cc[i] * tc[i] + ta[i];
+        }
+      } else {
+        d = dst._;
+        cc = c._;
+        for (i = _j = 0; _j < 3; i = ++_j) {
+          d[i] = cc[i];
+        }
+        d[3] = cc[3] * t.multi._[3];
       }
     };
 
@@ -2611,7 +2644,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.matrixIdChanged = false;
       }
       if (c !== null) {
-        Utility.copyColorTransform(this.colorTransform, c);
+        Utility.copyColorTransform(this.lwf, this.colorTransform, c);
         this.colorTransformIdChanged = false;
       }
       this.lwf.renderObject();
@@ -3377,14 +3410,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       dst[5] = mm[1] * my[4] + mm[3] * my[5] + mm[5] + mm[1] * my[6] + mm[3] * my[7] + dst[1] * -my[6] + dst[3] * -my[7];
       dst = this.colorTransform.multi._;
       cm = c.multi._;
-      if (this.alpha === 1) {
-        for (i = _i = 0; _i < 4; i = ++_i) {
-          dst[i] = cm[i];
+      if (this.lwf.useVertexColor) {
+        if (this.alpha === 1) {
+          for (i = _i = 0; _i < 4; i = ++_i) {
+            dst[i] = cm[i];
+          }
+        } else {
+          for (i = _j = 0; _j < 3; i = ++_j) {
+            dst[i] = cm[i];
+          }
+          dst[3] = this.alpha * cm[3];
         }
       } else {
-        for (i = _j = 0; _j < 3; i = ++_j) {
-          dst[i] = cm[i];
-        }
         dst[3] = this.alpha * cm[3];
       }
       this.lwf.renderObject();
@@ -4130,7 +4167,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Movie.prototype.override = function(m, c) {
       this.overriding = true;
       Utility.copyMatrix(this.matrix, m);
-      Utility.copyColorTransform(this.colorTransform, c);
+      Utility.copyColorTransform(this.lwf, this.colorTransform, c);
       this.lwf.isPropertyDirty = true;
     };
 
@@ -4373,7 +4410,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       if (this.property.hasColorTransform) {
         colorTransformChanged = true;
-        c = Utility.calcColorTransform(this.colorTransform0, this.colorTransform, this.property.colorTransform);
+        c = Utility.calcColorTransform(this.lwf, this.colorTransform0, this.colorTransform, this.property.colorTransform);
       } else {
         c = this.colorTransform;
       }
@@ -5603,6 +5640,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.blendModes = [];
       this.maskModes = [];
       this._tweens = null;
+      this.useVertexColor = false;
       if (!this.interactive && this.data.frames.length === 1) {
         if (!this.functions || !(this.functions['_root_load'] || this.functions['_root_postLoad'] || this.functions['_root_unload'] || this.functions['_root_enterFrame'] || this.functions['_root_update'] || this.functions['_root_render'])) {
           this.disableExec();
@@ -5785,7 +5823,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       p = this.property;
       if (p.hasColorTransform) {
         if (colorTransform != null) {
-          c = Utility.calcColorTransform(this.colorTransform, colorTransform, p.colorTransform);
+          c = Utility.calcColorTransform(this, this.colorTransform, colorTransform, p.colorTransform);
         } else {
           c = p.colorTransform;
         }
@@ -8586,8 +8624,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    Cocos2dRendererFactory.prototype.convertColor = function(d, c, t) {
-      Utility.calcColor(d, c, t);
+    Cocos2dRendererFactory.prototype.convertColor = function(lwf, d, c, t) {
+      Utility.calcColor(lwf, d, c, t);
       d.red = Math.round(d.red * 255);
       d.green = Math.round(d.green * 255);
       d.blue = Math.round(d.blue * 255);
@@ -8828,7 +8866,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       red = this.color.red;
       green = this.color.green;
       blue = this.color.blue;
-      this.context.factory.convertColor(this.color, this.context.textColor, c);
+      this.context.factory.convertColor(this.lwf, this.color, this.context.textColor, c);
       c = this.color3B;
       c.r = this.color.red;
       c.g = this.color.green;
