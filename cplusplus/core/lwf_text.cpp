@@ -44,21 +44,22 @@ Text::Text(LWF *lwf, Movie *p, int objId, int instId)
 
 	shared_ptr<TextRenderer> textRenderer =
 		lwf->rendererFactory->ConstructText(lwf, objId, this);
-
-	string t;
-	if (text.stringId != -1)
-		t = lwf->data->strings[text.stringId];
-
-	if (text.nameStringId == -1 && name.empty()) {
+	if (textRenderer) {
+		string t;
 		if (text.stringId != -1)
-			textRenderer->SetText(t);
-	} else {
+			t = lwf->data->strings[text.stringId];
+
+		if (text.nameStringId == -1 && name.empty()) {
+			if (text.stringId != -1)
+				textRenderer->SetText(t);
+		} else {
 #if defined(LWF_USE_LUA)
-		string lt = lwf->GetTextLua(p, name);
-		if (!lt.empty())
-			t = lt;
+			string lt = lwf->GetTextLua(p, name);
+			if (!lt.empty())
+				t = lt;
 #endif
-		lwf->SetTextRenderer(p->GetFullName(), name, t, textRenderer.get());
+			lwf->SetTextRenderer(p->GetFullName(), name, t, textRenderer.get());
+		}
 	}
 
 	renderer = textRenderer;
