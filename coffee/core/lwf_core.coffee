@@ -879,7 +879,7 @@ class LWF
     @parent = parent
     @setTextScale(parent.lwf.textScale)
     func = @functions?['init']
-    func.call(@) if func?
+    func.call(@rootMovie) if func?
     return
 
   setInteractive: ->

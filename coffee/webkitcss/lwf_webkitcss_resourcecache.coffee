@@ -402,20 +402,16 @@ class WebkitCSSResourceCache
         @newLWF(settings, imageCache, data)
     return
 
-  drawImage:(ctx, image, o, x, y, u, v, w, h) ->
+  drawImage:(ctx, image, o, u, v, w, h) ->
     if o.rotated
       m = new Matrix()
-      Utility.rotateMatrix(m, new Matrix(), 1, x, y + h)
-      ctx.setTransform(
-        m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
-    else if x isnt 0 or y isnt 0
-      m = new Matrix()
-      Utility.scaleMatrix(m, new Matrix(), 1, x, y)
+      Utility.rotateMatrix(m, new Matrix(), 1, 0, w)
       ctx.setTransform(
         m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
     else
       ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.drawImage(image, u, v, w, h, 0, 0, w, h)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     return
 
   getCanvasName: ->
@@ -440,8 +436,6 @@ class WebkitCSSResourceCache
       scaleX = image.width / texture.width
       scaleY = image.height / texture.height
       for o in d
-        x = 0
-        y = 0
         u = Math.round(o.u * scaleX)
         v = Math.round(o.v * scaleY)
         w = Math.round((o.w ? texture.width) * scaleX)
@@ -453,16 +447,16 @@ class WebkitCSSResourceCache
           iw = w
           ih = h
 
-        [canvas, ctx] = @createCanvas(iw, ih)
+        [canvas, ctx] = @createCanvas(w, h)
 
         switch o.colorOp
           when "rgb"
             ctx.fillStyle = "##{o.colorValue}"
             ctx.fillRect(0, 0, w, h)
             ctx.globalCompositeOperation = 'destination-in'
-            @drawImage(ctx, image, o, x, y, u, v, w, h)
+            @drawImage(ctx, image, o, u, v, iw, ih)
           when "rgba"
-            @drawImage(ctx, image, o, x, y, u, v, w, h)
+            @drawImage(ctx, image, o, u, v, iw, ih)
             ctx.globalCompositeOperation = 'source-atop'
             val = o.colorValue
             r = parseInt(val.substr(0, 2), 16)
@@ -479,10 +473,9 @@ class WebkitCSSResourceCache
             ctxAdd.fillStyle = "##{o.colorValue}"
             ctxAdd.fillRect(0, 0, w, h)
             ctxAdd.globalCompositeOperation = 'destination-in'
-            @drawImage(ctxAdd, image, o, x, y, u, v, w, h)
-            @drawImage(ctx, image, o, x, y, u, v, w, h)
+            @drawImage(ctxAdd, image, o, u, v, iw, ih)
+            @drawImage(ctx, image, o, u, v, iw, ih)
             ctx.globalCompositeOperation = 'lighter'
-            ctx.setTransform(1, 0, 0, 1, 0, 0)
             ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height,
               0, 0, canvasAdd.width, canvasAdd.height)
         ctx.globalCompositeOperation = 'source-over'

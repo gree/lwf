@@ -37,6 +37,7 @@ class Format
     @OPTION_USE_SCRIPT = (1 << 0)
     @OPTION_USE_TEXTUREATLAS = (1 << 1)
     @OPTION_COMPRESSED = (1 << 2)
+    @OPTION_USE_LUASCRIPT = (1 << 3)
 
     @MATRIX_FLAG = (1 << 31)
     @COLORTRANSFORM_FLAG = (1 << 31)

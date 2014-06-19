@@ -539,6 +539,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.OPTION_COMPRESSED = 1 << 2;
 
+      Constant.OPTION_USE_LUASCRIPT = 1 << 3;
+
       Constant.MATRIX_FLAG = 1 << 31;
 
       Constant.COLORTRANSFORM_FLAG = 1 << 31;
@@ -6871,7 +6873,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.setTextScale(parent.lwf.textScale);
       func = (_ref = this.functions) != null ? _ref['init'] : void 0;
       if (func != null) {
-        func.call(this);
+        func.call(this.rootMovie);
       }
     };
 
@@ -9289,20 +9291,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    WebkitCSSResourceCache.prototype.drawImage = function(ctx, image, o, x, y, u, v, w, h) {
+    WebkitCSSResourceCache.prototype.drawImage = function(ctx, image, o, u, v, w, h) {
       var m;
       if (o.rotated) {
         m = new Matrix();
-        Utility.rotateMatrix(m, new Matrix(), 1, x, y + h);
-        ctx.setTransform(m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY);
-      } else if (x !== 0 || y !== 0) {
-        m = new Matrix();
-        Utility.scaleMatrix(m, new Matrix(), 1, x, y);
+        Utility.rotateMatrix(m, new Matrix(), 1, 0, w);
         ctx.setTransform(m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY);
       } else {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
       ctx.drawImage(image, u, v, w, h, 0, 0, w, h);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
     };
 
     WebkitCSSResourceCache.prototype.getCanvasName = function() {
@@ -9326,15 +9325,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSResourceCache.prototype.generateImages = function(settings, imageCache, texture, image) {
-      var a, b, canvas, canvasAdd, ctx, ctxAdd, d, g, h, ih, iw, o, r, scaleX, scaleY, u, v, val, w, x, y, _i, _len, _ref, _ref1, _ref2;
+      var a, b, canvas, canvasAdd, ctx, ctxAdd, d, g, h, ih, iw, o, r, scaleX, scaleY, u, v, val, w, _i, _len, _ref, _ref1, _ref2;
       d = settings._colorMap[texture.filename];
       if (d != null) {
         scaleX = image.width / texture.width;
         scaleY = image.height / texture.height;
         for (_i = 0, _len = d.length; _i < _len; _i++) {
           o = d[_i];
-          x = 0;
-          y = 0;
           u = Math.round(o.u * scaleX);
           v = Math.round(o.v * scaleY);
           w = Math.round(((_ref = o.w) != null ? _ref : texture.width) * scaleX);
@@ -9346,16 +9343,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             iw = w;
             ih = h;
           }
-          _ref2 = this.createCanvas(iw, ih), canvas = _ref2[0], ctx = _ref2[1];
+          _ref2 = this.createCanvas(w, h), canvas = _ref2[0], ctx = _ref2[1];
           switch (o.colorOp) {
             case "rgb":
               ctx.fillStyle = "#" + o.colorValue;
               ctx.fillRect(0, 0, w, h);
               ctx.globalCompositeOperation = 'destination-in';
-              this.drawImage(ctx, image, o, x, y, u, v, w, h);
+              this.drawImage(ctx, image, o, u, v, iw, ih);
               break;
             case "rgba":
-              this.drawImage(ctx, image, o, x, y, u, v, w, h);
+              this.drawImage(ctx, image, o, u, v, iw, ih);
               ctx.globalCompositeOperation = 'source-atop';
               val = o.colorValue;
               r = parseInt(val.substr(0, 2), 16);
@@ -9373,10 +9370,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               ctxAdd.fillStyle = "#" + o.colorValue;
               ctxAdd.fillRect(0, 0, w, h);
               ctxAdd.globalCompositeOperation = 'destination-in';
-              this.drawImage(ctxAdd, image, o, x, y, u, v, w, h);
-              this.drawImage(ctx, image, o, x, y, u, v, w, h);
+              this.drawImage(ctxAdd, image, o, u, v, iw, ih);
+              this.drawImage(ctx, image, o, u, v, iw, ih);
               ctx.globalCompositeOperation = 'lighter';
-              ctx.setTransform(1, 0, 0, 1, 0, 0);
               ctx.drawImage(canvasAdd, 0, 0, canvasAdd.width, canvasAdd.height, 0, 0, canvasAdd.width, canvasAdd.height);
           }
           ctx.globalCompositeOperation = 'source-over';
