@@ -149,7 +149,7 @@ void Movie::DetachMovie(Movie *movie)
 
 void Movie::DetachFromParent()
 {
-	if (type != Format::Object::PROGRAMOBJECT)
+	if (type != OType::ATTACHEDMOVIE)
 		return;
 
 	active = false;

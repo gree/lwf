@@ -171,6 +171,51 @@ public:                                                       // 1223
     if( lua_isnumber(L,6)==0) return false;                   // 536
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck_removeEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_clearEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_removeMovieEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_clearMovieEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_removeButtonEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_clearButtonEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
   inline static bool _lg_typecheck_getName(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=1) return false;                       // 527
@@ -468,6 +513,75 @@ static int addButtonEventListener(lua_State *L)
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
+  static int _bind_removeEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_removeEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:removeEventListener(LWF ::LWF& self,std ::string eventName,int id,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    int id=(int)lua_tonumber(L,3);                            // 512
+    try {                                                     // 254
+    self.RemoveEventHandler( eventName, id);                  // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_clearEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_clearEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:clearEventListener(LWF ::LWF& self,std ::string eventName,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    try {                                                     // 254
+    self.ClearEventHandler( eventName);                       // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_removeMovieEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_removeMovieEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:removeMovieEventListener(LWF ::LWF& self,std ::string instanceName,int id,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
+    int id=(int)lua_tonumber(L,3);                            // 512
+    try {                                                     // 254
+    self.RemoveMovieEventHandler( instanceName, id);          // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_clearMovieEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_clearMovieEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:clearMovieEventListener(LWF ::LWF& self,std ::string instanceName,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
+    try {                                                     // 254
+    self.ClearMovieEventHandler( instanceName);               // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_removeButtonEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_removeButtonEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:removeButtonEventListener(LWF ::LWF& self,std ::string instanceName,int id,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
+    int id=(int)lua_tonumber(L,3);                            // 512
+    try {                                                     // 254
+    self.RemoveButtonEventHandler( instanceName, id);         // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_clearButtonEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_clearButtonEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:clearButtonEventListener(LWF ::LWF& self,std ::string instanceName,)"); }
+                                                              // 487
+    LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
+    try {                                                     // 254
+    self.ClearButtonEventHandler( instanceName);              // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
   static int _bind_getName(lua_State *L)
   {                                                           // 1282
     if (!_lg_typecheck_getName(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getName(LWF ::LWF & o,)"); }
@@ -582,6 +696,12 @@ luna_RegType LunaTraits<LWF ::LWF >::methods[] = {            // 1487
     {"scaleToMovie", &impl_LunaTraits<LWF ::LWF >::_bind_scaleToMovie}, // 1492
     {"setAlphaMovie", &impl_LunaTraits<LWF ::LWF >::_bind_setAlphaMovie}, // 1492
     {"setColorTransformMovie", &impl_LunaTraits<LWF ::LWF >::_bind_setColorTransformMovie}, // 1492
+    {"removeEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_removeEventListener}, // 1492
+    {"clearEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_clearEventListener}, // 1492
+    {"removeMovieEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_removeMovieEventListener}, // 1492
+    {"clearMovieEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_clearMovieEventListener}, // 1492
+    {"removeButtonEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_removeButtonEventListener}, // 1492
+    {"clearButtonEventListener", &impl_LunaTraits<LWF ::LWF >::_bind_clearButtonEventListener}, // 1492
     {"getName", &impl_LunaTraits<LWF ::LWF >::_bind_getName}, // 1492
     {"getWidth", &impl_LunaTraits<LWF ::LWF >::_bind_getWidth}, // 1492
     {"getHeight", &impl_LunaTraits<LWF ::LWF >::_bind_getHeight}, // 1492
@@ -603,6 +723,21 @@ public:                                                       // 1223
   {                                                           // 1249
     if( lua_gettop(L)!=1) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=75773103) return false; // LWF ::Button // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_removeEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=75773103) return false; // LWF ::Button // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_clearEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=75773103) return false; // LWF ::Button // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_getName(lua_State *L)
@@ -663,7 +798,10 @@ static int _bind_getParent(lua_State *L)
     }
     LWF::Button const &a =
         static_cast<LWF::Button &>(*Luna<LWF::Button>::check(L, 1));
-    Luna<LWF::Movie>::push(L, a.parent, false);
+    if (a.parent)
+        Luna<LWF::Movie>::push(L, a.parent, false);
+    else
+        lua_pushnil(L);
     return 1;
 }
 
@@ -692,6 +830,29 @@ static int addEventListener(lua_State *L)
     lua_pushstring(L, ret.c_str());                           // 309
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 313
     return 1;                                                 // 314
+  }                                                           // 333
+  static int _bind_removeEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_removeEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:removeEventListener(LWF ::Button& self,std ::string eventName,int id,)"); }
+                                                              // 487
+    LWF ::Button& self=static_cast<LWF ::Button &>(*Luna<LWF ::Button >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    int id=(int)lua_tonumber(L,3);                            // 512
+    try {                                                     // 254
+    self.RemoveEventHandler( eventName, id);                  // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_clearEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_clearEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:clearEventListener(LWF ::Button& self,std ::string eventName,)"); }
+                                                              // 487
+    LWF ::Button& self=static_cast<LWF ::Button &>(*Luna<LWF ::Button >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    try {                                                     // 254
+    self.ClearEventHandler( eventName);                       // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
   }                                                           // 333
   static int _bind_getName(lua_State *L)
   {                                                           // 1282
@@ -802,6 +963,8 @@ luna__hashmap LunaTraits<LWF ::Button >::properties;          // 1484
 luna__hashmap LunaTraits<LWF ::Button >::write_properties;    // 1485
 luna_RegType LunaTraits<LWF ::Button >::methods[] = {         // 1487
     {"getFullName", &impl_LunaTraits<LWF ::Button >::_bind_getFullName}, // 1492
+    {"removeEventListener", &impl_LunaTraits<LWF ::Button >::_bind_removeEventListener}, // 1492
+    {"clearEventListener", &impl_LunaTraits<LWF ::Button >::_bind_clearEventListener}, // 1492
     {"getName", &impl_LunaTraits<LWF ::Button >::_bind_getName}, // 1492
     {"getHitX", &impl_LunaTraits<LWF ::Button >::_bind_getHitX}, // 1492
     {"getHitY", &impl_LunaTraits<LWF ::Button >::_bind_getHitY}, // 1492
@@ -940,6 +1103,49 @@ public:                                                       // 1223
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
     if( lua_isnumber(L,2)==0) return false;                   // 536
     if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_removeEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_clearEventListener(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_swapAttachedMovieDepth(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=3) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( lua_isnumber(L,2)==0) return false;                   // 536
+    if( lua_isnumber(L,3)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_detachMovie_overload_1(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_detachMovie_overload_2(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( Luna<void>::get_uniqueid(L,2)!=31780709) return false; // LWF ::Movie // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_detachFromParent(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_getName(lua_State *L)
@@ -1137,7 +1343,10 @@ static int _bind_getParent(lua_State *L)
     }
     LWF::Movie const &a =
         static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
-    Luna<LWF::Movie>::push(L, a.parent, false);
+    if (a.parent)
+        Luna<LWF::Movie>::push(L, a.parent, false);
+    else
+        lua_pushnil(L);
     return 1;
 }
 
@@ -1385,6 +1594,69 @@ static int dispatchEvent(lua_State *L)
     float vy=(float)lua_tonumber(L,3);                        // 512
     try {                                                     // 254
     self.ScaleTo( vx, vy);                                    // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_removeEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_removeEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:removeEventListener(LWF ::Movie& self,std ::string eventName,int id,)"); }
+                                                              // 487
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    int id=(int)lua_tonumber(L,3);                            // 512
+    try {                                                     // 254
+    self.RemoveEventHandler( eventName, id);                  // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_clearEventListener(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_clearEventListener(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:clearEventListener(LWF ::Movie& self,std ::string eventName,)"); }
+                                                              // 487
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
+    try {                                                     // 254
+    self.ClearEventHandler( eventName);                       // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_swapAttachedMovieDepth(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_swapAttachedMovieDepth(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:swapAttachedMovieDepth(LWF ::Movie& self,int depth0,int depth1,)"); }
+                                                              // 487
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    int depth0=(int)lua_tonumber(L,2);                        // 512
+    int depth1=(int)lua_tonumber(L,3);                        // 512
+    try {                                                     // 254
+    self.SwapAttachedMovieDepth( depth0, depth1);             // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_detachMovie_overload_1(lua_State *L)
+  {                                                           // 1282
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    std ::string aName=(std ::string)lua_tostring(L,2);       // 507
+    try {                                                     // 254
+    self.DetachMovie( aName);                                 // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_detachMovie_overload_2(lua_State *L)
+  {                                                           // 1282
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    LWF ::Movie * movie=static_cast<LWF ::Movie *>(Luna<LWF ::Movie >::check(L,2)); // 500
+    try {                                                     // 254
+    self.DetachMovie( movie);                                 // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_detachFromParent(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_detachFromParent(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:detachFromParent(LWF ::Movie& self,)"); }
+                                                              // 487
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    try {                                                     // 254
+    self.DetachFromParent();                                  // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -1641,11 +1913,11 @@ static int dispatchEvent(lua_State *L)
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
-  static int _bind_gotoAndPlay(lua_State *L)
+  static int _bind_detachMovie(lua_State *L)
   {                                                           // 195
-    if (_lg_typecheck_gotoAndPlay_overload_1(L)) return _bind_gotoAndPlay_overload_1(L); // 198
-    if (_lg_typecheck_gotoAndPlay_overload_2(L)) return _bind_gotoAndPlay_overload_2(L); // 198
-    luaL_error(L, "gotoAndPlay ( cannot find overloads:)\n(std ::string label,)\n(int frameNo,)\n");
+    if (_lg_typecheck_detachMovie_overload_1(L)) return _bind_detachMovie_overload_1(L); // 198
+    if (_lg_typecheck_detachMovie_overload_2(L)) return _bind_detachMovie_overload_2(L); // 198
+    luaL_error(L, "detachMovie ( cannot find overloads:)\n(std ::string aName,)\n(LWF ::Movie * movie,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207
@@ -1654,6 +1926,14 @@ static int dispatchEvent(lua_State *L)
     if (_lg_typecheck_gotoAndStop_overload_1(L)) return _bind_gotoAndStop_overload_1(L); // 198
     if (_lg_typecheck_gotoAndStop_overload_2(L)) return _bind_gotoAndStop_overload_2(L); // 198
     luaL_error(L, "gotoAndStop ( cannot find overloads:)\n(std ::string label,)\n(int frameNo,)\n");
+                                                              // 205
+    return 0;                                                 // 206
+  }                                                           // 207
+  static int _bind_gotoAndPlay(lua_State *L)
+  {                                                           // 195
+    if (_lg_typecheck_gotoAndPlay_overload_1(L)) return _bind_gotoAndPlay_overload_1(L); // 198
+    if (_lg_typecheck_gotoAndPlay_overload_2(L)) return _bind_gotoAndPlay_overload_2(L); // 198
+    luaL_error(L, "gotoAndPlay ( cannot find overloads:)\n(std ::string label,)\n(int frameNo,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207
@@ -1781,6 +2061,10 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"rotateTo", &impl_LunaTraits<LWF ::Movie >::_bind_rotateTo}, // 1492
     {"scale", &impl_LunaTraits<LWF ::Movie >::_bind_scale},   // 1492
     {"scaleTo", &impl_LunaTraits<LWF ::Movie >::_bind_scaleTo}, // 1492
+    {"removeEventListener", &impl_LunaTraits<LWF ::Movie >::_bind_removeEventListener}, // 1492
+    {"clearEventListener", &impl_LunaTraits<LWF ::Movie >::_bind_clearEventListener}, // 1492
+    {"swapAttachedMovieDepth", &impl_LunaTraits<LWF ::Movie >::_bind_swapAttachedMovieDepth}, // 1492
+    {"detachFromParent", &impl_LunaTraits<LWF ::Movie >::_bind_detachFromParent}, // 1492
     {"getName", &impl_LunaTraits<LWF ::Movie >::_bind_getName}, // 1492
     {"getCurrentFrame", &impl_LunaTraits<LWF ::Movie >::_bind_getCurrentFrame}, // 1492
     {"getTotalFrames", &impl_LunaTraits<LWF ::Movie >::_bind_getTotalFrames}, // 1492
@@ -1804,8 +2088,9 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"setRed", &impl_LunaTraits<LWF ::Movie >::_bind_setRed}, // 1492
     {"setGreen", &impl_LunaTraits<LWF ::Movie >::_bind_setGreen}, // 1492
     {"setBlue", &impl_LunaTraits<LWF ::Movie >::_bind_setBlue}, // 1492
-    {"gotoAndPlay", &impl_LunaTraits<LWF ::Movie >::_bind_gotoAndPlay}, // 1492
+    {"detachMovie", &impl_LunaTraits<LWF ::Movie >::_bind_detachMovie}, // 1492
     {"gotoAndStop", &impl_LunaTraits<LWF ::Movie >::_bind_gotoAndStop}, // 1492
+    {"gotoAndPlay", &impl_LunaTraits<LWF ::Movie >::_bind_gotoAndPlay}, // 1492
     {"addEventListener", &impl_LunaTraits<LWF ::Movie >::addEventListener}, // 1492
     {"attachMovie", &impl_LunaTraits<LWF ::Movie >::attachMovie}, // 1492
     {"dispatchEvent", &impl_LunaTraits<LWF ::Movie >::dispatchEvent}, // 1492

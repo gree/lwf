@@ -226,6 +226,7 @@ void LWF::InitLua()
 		lua_pop(l, 1);
 		/* -1: LWF.Script.<name> */
 	}
+
 	lua_pop(l, 1);
 	/* 0 */
 }
@@ -236,6 +237,45 @@ void LWF::DestroyLua()
 		return;
 
 	lua_State *l = (lua_State *)luaState;
+	lua_getglobal(l, "LWF");
+	/* -1: LWF */
+	if (!lua_istable(l, -1)) {
+		lua_pop(l, 1);
+		/* 0 */
+		return;
+	}
+	lua_getfield(l, -1, "Script");
+	/* -2: LWF */
+	/* -1: LWF.Script */
+	lua_remove(l, -2);
+	/* -1: LWF.Script */
+	if (!lua_istable(l, -1)) {
+		lua_pop(l, 1);
+		/* 0 */
+		return;
+	}
+	lua_getfield(l, -1, name.c_str());
+	/* -2: LWF.Script */
+	/* -1: LWF.Script.<name> */
+	lua_remove(l, -2);
+	/* -1: LWF.Script.<name> */
+	if (!lua_istable(l, -1)) {
+		lua_pop(l, 1);
+		/* 0 */
+		return;
+	}
+	lua_getfield(l, -1, "Destroy");
+	/* -2: LWF.Script.<name> */
+	/* -1: function or nil: LWF.Script.<name>.Destroy */
+	lua_remove(l, -2);
+	/* -1: function or nil: LWF.Script.<name>.Destroy */
+	if (lua_isfunction(l, -1)) {
+		Luna<LWF::LWF>::push(l, this, false);
+		/* -2: LWF.Script.<name>.Destroy */
+		/* -1: LWF instance */
+		CallLua(1);
+		/* 0 */
+	}
 	lua_getglobal(l, "LWF");
 	/* -1: LWF */
 	if (!lua_istable(l, -1)) {

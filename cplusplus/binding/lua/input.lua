@@ -49,6 +49,12 @@ void ScaleMovie(std::string instanceName, float vx, float vy) @ scaleMovie
 void ScaleToMovie(std::string instanceName, float vx, float vy) @ scaleToMovie
 void SetAlphaMovie(std::string instanceName, float v) @ setAlphaMovie
 void SetColorTransformMovieLua(std::string instanceName, float vr, float vg, float vb, float va) @ setColorTransformMovie
+void RemoveEventHandler(std::string eventName, int id) @ removeEventListener
+void ClearEventHandler(std::string eventName) @ clearEventListener
+void RemoveMovieEventHandler(std::string instanceName, int id) @ removeMovieEventListener
+void ClearMovieEventHandler(std::string instanceName) @ clearMovieEventListener
+void RemoveButtonEventHandler(std::string instanceName, int id) @ removeButtonEventListener
+void ClearButtonEventHandler(std::string instanceName) @ clearButtonEventListener
 			]]},
 			staticMemberFunctions={[[
 static std::string getName(LWF::LWF &o);
@@ -132,6 +138,8 @@ static int addButtonEventListener(lua_State *L)
 			},
 			memberFunctions={[[
 std::string GetFullName() const @ getFullName
+void RemoveEventHandler(std::string eventName, int id) @ removeEventListener
+void ClearEventHandler(std::string eventName) @ clearEventListener
 			]]},
 			staticMemberFunctions={[[
 static std::string getName(LWF::Button &o);
@@ -172,7 +180,10 @@ static int _bind_getParent(lua_State *L)
 	}
 	LWF::Button const &a =
 		static_cast<LWF::Button &>(*Luna<LWF::Button>::check(L, 1));
-	Luna<LWF::Movie>::push(L, a.parent, false);
+	if (a.parent)
+		Luna<LWF::Movie>::push(L, a.parent, false);
+	else
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -243,6 +254,12 @@ void Rotate(float degree) @ rotate
 void RotateTo(float degree) @ rotateTo
 void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
+void RemoveEventHandler(std::string eventName, int id) @ removeEventListener
+void ClearEventHandler(std::string eventName) @ clearEventListener
+void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
+void DetachMovie(std::string aName) @ detachMovie
+void DetachMovie(LWF::Movie *movie) @ detachMovie
+void DetachFromParent() @ detachFromParent
 			]]},
 			staticMemberFunctions={[[
 static std::string getName(LWF::Movie &o);
@@ -355,7 +372,10 @@ static int _bind_getParent(lua_State *L)
 	}
 	LWF::Movie const &a =
 		static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
-	Luna<LWF::Movie>::push(L, a.parent, false);
+	if (a.parent)
+		Luna<LWF::Movie>::push(L, a.parent, false);
+	else
+		lua_pushnil(L);
 	return 1;
 }
 

@@ -358,7 +358,7 @@ void Data::Load(const void *bytes, size_t length)
 		fit->SetFilename(this);
 
 	name = strings[header.nameStringId];
-	useScript = (header.option & Format::OPTION_USE_SCRIPT) != 0;
+	useScript = (header.option & Format::OPTION_USE_LUASCRIPT) != 0;
 	useTextureAtlas = (header.option & Format::OPTION_USE_TEXTUREATLAS) != 0;
 
 	valid = true;

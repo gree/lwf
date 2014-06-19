@@ -87,6 +87,8 @@ Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 
 #if defined(LWF_USE_LUA)
 	if (m_isRoot) {
+		if (!parent)
+			lwf->CallFunctionLua("Init", this);
 		lwf->GetFunctionsLua(objId, m_rootLoadFunc, m_rootPostLoadFunc,
 			m_rootUnloadFunc, m_rootEnterFrameFunc, true);
 	}
