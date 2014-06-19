@@ -1,3 +1,23 @@
+#
+# Copyright (C) 2013 GREE, Inc.
+# 
+# This software is provided 'as-is', without any express or implied
+# warranty.  In no event will the authors be held liable for any damages
+# arising from the use of this software.
+# 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+# 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be
+#    misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+#
+
 {
 	:classes=>[
 		{
@@ -11,6 +31,30 @@
 			:memberFunctions=><<-EOS,
 void SetText(string textName, string text) @ setText
 string GetText(string textName) @ getText
+void PlayMovie(string instanceName) @ playMovie
+void StopMovie(string instanceName) @ stopMovie
+void NextFrameMovie(string instanceName) @ nextFrameMovie
+void PrevFrameMovie(string instanceName) @ prevFrameMovie
+void SetVisibleMovie(string instanceName, bool visible) @ setVisibleMovie
+void GotoAndStopMovie(string instanceName, string label) @ gotoAndStopMovie
+void GotoAndStopMovie(string instanceName, int frameNo) @ gotoAndStopMovie
+void GotoAndPlayMovie(string instanceName, string label) @ gotoAndPlayMovie
+void GotoAndPlayMovie(string instanceName, int frameNo) @ gotoAndPlayMovie
+void MoveMovie(string instanceName, float vx, float vy) @ moveMovie
+void MoveToMovie(string instanceName, float vx, float vy) @ moveToMovie
+void RotateMovie(string instanceName, float degree) @ rotateMovie
+void RotateToMovie(string instanceName, float degree) @ rotateToMovie
+void ScaleMovie(string instanceName, float vx, float vy) @ scaleMovie
+void ScaleToMovie(string instanceName, float vx, float vy) @ scaleToMovie
+void SetAlphaMovie(string instanceName, float v) @ setAlphaMovie
+void SetColorTransformMovie(string instanceName, float vr, float vg, float vb, float va) @ setColorTransformMovie
+void SetColorTransformMovie(string instanceName, float vr, float vg, float vb, float va, float ar, float ag, float ab, float aa) @ setColorTransformMovie
+void RemoveEventHandler(string eventName, int id) @ removeEventListener
+void ClearEventHandler(string eventName) @ clearEventListener
+void RemoveMovieEventHandler(string instanceName, int id) @ removeMovieEventListener
+void ClearMovieEventHandler(string instanceName) @ clearMovieEventListener
+void RemoveButtonEventHandler(string instanceName, int id) @ removeButtonEventListener
+void ClearButtonEventHandler(string instanceName) @ clearButtonEventListener
 			EOS
 
 			:staticMemberFunctions=><<-EOS,
@@ -96,6 +140,8 @@ static float getHeight(LWF.LWF o);
 			],
 			:memberFunctions=><<-EOS,
 string GetFullName() @ getFullName
+void RemoveEventHandler(string eventName, int id) @ removeEventListener
+void ClearEventHandler(string eventName) @ clearEventListener
 			EOS
 
 			:staticMemberFunctions=><<-EOS,
@@ -190,6 +236,12 @@ void Rotate(float degree) @ rotate
 void RotateTo(float degree) @ rotateTo
 void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
+void RemoveEventHandler(string eventName, int id) @ removeEventListener
+void ClearEventHandler(string eventName) @ clearEventListener
+void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
+void DetachMovie(string aName) @ detachMovie
+void DetachMovie(LWF.Movie movie) @ detachMovie
+void DetachFromParent() @ detachFromParent
 			EOS
 
 			:staticMemberFunctions=><<-EOS,

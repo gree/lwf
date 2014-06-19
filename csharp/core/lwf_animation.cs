@@ -18,7 +18,12 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+using System;
+using System.Collections.Generic;
+
 namespace LWF {
+
+using EventHandlerDictionary = Dictionary<int, Action<Movie, Button>>;
 
 enum Animation {
 	END = 0,
@@ -121,8 +126,12 @@ public partial class LWF
 #if LWF_USE_LUA
 					CallEventFunctionLua(eventId, movie, button);
 #endif
-					if (m_eventHandlers[eventId] != null)
-						m_eventHandlers[eventId].ForEach(h => h(movie, button));
+					if (m_eventHandlers[eventId] != null) {
+						var handlers = new EventHandlerDictionary(
+							m_eventHandlers[eventId]);
+						foreach (var h in handlers)
+							h.Value(movie, button);
+					}
 				}
 				break;
 

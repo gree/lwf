@@ -72,7 +72,7 @@ public partial class Data
 
 	public string name {get {return strings[header.nameStringId];}}
 	public bool useScript {get {return
-		(header.option & (int)Format.Constant.OPTION_USE_SCRIPT) != 0;}}
+		(header.option & (int)Format.Constant.OPTION_USE_LUASCRIPT) != 0;}}
 	public bool useTextureAtlas {get {return
 		(header.option & (int)Format.Constant.OPTION_USE_TEXTUREATLAS) != 0;}}
 
@@ -95,7 +95,8 @@ public partial class Data
 					v0 == (byte)Constant.FORMAT_VERSION_COMPAT_0 &&
 					v1 == (byte)Constant.FORMAT_VERSION_COMPAT_1 &&
 					v2 == (byte)Constant.FORMAT_VERSION_COMPAT_2
-				))) {
+				)) &&
+				(header.option & (int)Format.Constant.OPTION_COMPRESSED) == 0) {
 			return true;
 		}
 		return false;

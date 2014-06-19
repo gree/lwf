@@ -125,7 +125,8 @@ public partial class Movie : IObject
 			return null;
 
 		MovieEventHandlers handlers = new MovieEventHandlers();
-		handlers.Add(load, postLoad, unload, enterFrame, update, render);
+		handlers.Add(m_lwf.GetEventOffset(),
+			load, postLoad, unload, enterFrame, update, render);
 		Movie movie = new Movie(m_lwf,
 			this, movieId, -1, 0, 0, true, handlers, attachName);
 		if (m_attachMovieExeced)
@@ -145,7 +146,8 @@ public partial class Movie : IObject
 		DeleteAttachedMovie(movie.parent, movie, false);
 
 		MovieEventHandlers handlers = new MovieEventHandlers();
-		handlers.Add(load, postLoad, unload, enterFrame, update, render);
+		handlers.Add(m_lwf.GetEventOffset(),
+			load, postLoad, unload, enterFrame, update, render);
 		movie.SetHandlers(handlers);
 
 		movie.m_name = attachName;

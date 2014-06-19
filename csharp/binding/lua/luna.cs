@@ -15,7 +15,7 @@ public class Luna
 
 		public int TypeId { get {return typeId;}}
 		public int ObjectId { get {return objectId;}}
-		public bool Gc { get {return Gc;}}
+		public bool Gc { get {return gc;}}
 		public bool HasEnv { get {return has_env;}}
 
 		public userdataType(int typeId, int objectId, bool gc, bool has_env)

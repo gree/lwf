@@ -22,6 +22,8 @@ public class LunaTraits_LWF_Button
 	public static RegType[] methods = new RegType[]
 	{
         new RegType("getFullName", impl_LunaTraits_LWF_Button._bind_getFullName),
+        new RegType("removeEventListener", impl_LunaTraits_LWF_Button._bind_removeEventListener),
+        new RegType("clearEventListener", impl_LunaTraits_LWF_Button._bind_clearEventListener),
         new RegType("getName", impl_LunaTraits_LWF_Button._bind_getName),
         new RegType("getParent", impl_LunaTraits_LWF_Button._bind_getParent),
         new RegType("getLWF", impl_LunaTraits_LWF_Button._bind_getLWF),
@@ -95,6 +97,34 @@ public class impl_LunaTraits_LWF_Button
 		Lua.lua_pushstring(L, ret);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 1;
+  }
+  public static int _bind_removeEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=8952431 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeEventListener(LWF.Button self)"); }
+
+	LWF.Button self=Luna_LWF_Button.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+		int id=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.RemoveEventHandler(eventName, id);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_clearEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=8952431 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:clearEventListener(LWF.Button self)"); }
+
+	LWF.Button self=Luna_LWF_Button.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.ClearEventHandler(eventName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
   }
   public static int _bind_getName(Lua.lua_State L)
   {
@@ -324,6 +354,11 @@ class Luna_LWF_Button
 	// use lunaStack::push if possible.
 	public static void push(Lua.lua_State L, LWF.Button obj, bool gc, Lua.CharPtr metatable=null)
 	{
+		if (obj == null) {
+			Lua.lua_pushnil(L);
+			return;
+		}
+
 		int objectId = -1;
 		if (!objectIdentifiers[L].TryGetValue(obj, out objectId))
 		{
@@ -370,22 +405,27 @@ class Luna_LWF_Button
 	// garbage collection metamethod
 	private static int gc_T(Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_Button.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 
 		LWF.Button obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;
 
-		if (ud.Gc)
+		if (ud.Gc) {
 			LunaTraits_LWF_Button._bind_dtor(obj);  // call constructor for T objects
+			Destroy(L, obj);
+		}
 
-		Destroy(L, obj);
 		return 0;
 	}
 
 	private static int tostring_T (Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_Button.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 		LWF.Button obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;

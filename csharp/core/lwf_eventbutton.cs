@@ -25,8 +25,8 @@ namespace LWF {
 
 using ButtonEventHandler = Action<Button>;
 using ButtonKeyPressHandler = Action<Button, int>;
-using ButtonEventHandlerList = List<Action<Button>>;
-using ButtonKeyPressHandlerList = List<Action<Button, int>>;
+using ButtonEventHandlerDictionary = Dictionary<int, Action<Button>>;
+using ButtonKeyPressHandlerDictionary = Dictionary<int, Action<Button, int>>;
 
 public class ButtonEventHandlers
 {
@@ -43,29 +43,29 @@ public class ButtonEventHandlers
 		KEYPRESS
 	}
 
-	ButtonEventHandlerList load;
-	ButtonEventHandlerList unload;
-	ButtonEventHandlerList enterFrame;
-	ButtonEventHandlerList update;
-	ButtonEventHandlerList render;
-	ButtonEventHandlerList press;
-	ButtonEventHandlerList release;
-	ButtonEventHandlerList rollOver;
-	ButtonEventHandlerList rollOut;
-	ButtonKeyPressHandlerList keyPress;
+	ButtonEventHandlerDictionary load;
+	ButtonEventHandlerDictionary unload;
+	ButtonEventHandlerDictionary enterFrame;
+	ButtonEventHandlerDictionary update;
+	ButtonEventHandlerDictionary render;
+	ButtonEventHandlerDictionary press;
+	ButtonEventHandlerDictionary release;
+	ButtonEventHandlerDictionary rollOver;
+	ButtonEventHandlerDictionary rollOut;
+	ButtonKeyPressHandlerDictionary keyPress;
 
 	public ButtonEventHandlers()
 	{
-		load = new ButtonEventHandlerList();
-		unload = new ButtonEventHandlerList();
-		enterFrame = new ButtonEventHandlerList();
-		update = new ButtonEventHandlerList();
-		render = new ButtonEventHandlerList();
-		press = new ButtonEventHandlerList();
-		release = new ButtonEventHandlerList();
-		rollOver = new ButtonEventHandlerList();
-		rollOut = new ButtonEventHandlerList();
-		keyPress = new ButtonKeyPressHandlerList();
+		load = new ButtonEventHandlerDictionary();
+		unload = new ButtonEventHandlerDictionary();
+		enterFrame = new ButtonEventHandlerDictionary();
+		update = new ButtonEventHandlerDictionary();
+		render = new ButtonEventHandlerDictionary();
+		press = new ButtonEventHandlerDictionary();
+		release = new ButtonEventHandlerDictionary();
+		rollOver = new ButtonEventHandlerDictionary();
+		rollOut = new ButtonEventHandlerDictionary();
+		keyPress = new ButtonKeyPressHandlerDictionary();
 	}
 
 	public void Clear()
@@ -103,19 +103,29 @@ public class ButtonEventHandlers
 		if (handlers == null)
 			return;
 
-		handlers.load.ForEach(h => load.Add(h));
-		handlers.unload.ForEach(h => unload.Add(h));
-		handlers.enterFrame.ForEach(h => enterFrame.Add(h));
-		handlers.update.ForEach(h => update.Add(h));
-		handlers.render.ForEach(h => render.Add(h));
-		handlers.press.ForEach(h => press.Add(h));
-		handlers.release.ForEach(h => release.Add(h));
-		handlers.rollOver.ForEach(h => rollOver.Add(h));
-		handlers.rollOut.ForEach(h => rollOut.Add(h));
-		handlers.keyPress.ForEach(h => keyPress.Add(h));
+		foreach (var h in handlers.load)
+			load.Add(h.Key, h.Value);
+		foreach (var h in handlers.unload)
+			unload.Add(h.Key, h.Value);
+		foreach (var h in handlers.enterFrame)
+			enterFrame.Add(h.Key, h.Value);
+		foreach (var h in handlers.update)
+			update.Add(h.Key, h.Value);
+		foreach (var h in handlers.render)
+			render.Add(h.Key, h.Value);
+		foreach (var h in handlers.press)
+			press.Add(h.Key, h.Value);
+		foreach (var h in handlers.release)
+			release.Add(h.Key, h.Value);
+		foreach (var h in handlers.rollOver)
+			rollOver.Add(h.Key, h.Value);
+		foreach (var h in handlers.rollOut)
+			rollOut.Add(h.Key, h.Value);
+		foreach (var h in handlers.keyPress)
+			keyPress.Add(h.Key, h.Value);
 	}
 
-	public void Add(
+	public void Add(int key,
 		ButtonEventHandler l = null, ButtonEventHandler u = null,
 		ButtonEventHandler e = null, ButtonEventHandler up = null,
 		ButtonEventHandler r = null, ButtonEventHandler p = null,
@@ -123,81 +133,68 @@ public class ButtonEventHandlers
 		ButtonEventHandler rOut = null, ButtonKeyPressHandler k = null)
 	{
 		if (l != null)
-			load.Add(l);
+			load.Add(key, l);
 		if (u != null)
-			unload.Add(u);
+			unload.Add(key, u);
 		if (e != null)
-			enterFrame.Add(e);
+			enterFrame.Add(key, e);
 		if (up != null)
-			update.Add(up);
+			update.Add(key, up);
 		if (r != null)
-			render.Add(r);
+			render.Add(key, r);
 		if (p != null)
-			press.Add(p);
+			press.Add(key, p);
 		if (rl != null)
-			release.Add(rl);
+			release.Add(key, rl);
 		if (rOver != null)
-			rollOver.Add(rOver);
+			rollOver.Add(key, rOver);
 		if (rOut != null)
-			rollOut.Add(rOut);
+			rollOut.Add(key, rOut);
 		if (k != null)
-			keyPress.Add(k);
+			keyPress.Add(key, k);
 	}
 
-	public void Remove(
-		ButtonEventHandler l = null, ButtonEventHandler u = null,
-		ButtonEventHandler e = null, ButtonEventHandler up = null,
-		ButtonEventHandler r = null, ButtonEventHandler p = null,
-		ButtonEventHandler rl = null, ButtonEventHandler rOver = null,
-		ButtonEventHandler rOut = null, ButtonKeyPressHandler k = null)
+	public void Remove(int key)
 	{
-		if (l != null)
-			load.RemoveAll(h => h == l);
-		if (u != null)
-			unload.RemoveAll(h => h == u);
-		if (e != null)
-			enterFrame.RemoveAll(h => h == e);
-		if (up != null)
-			update.RemoveAll(h => h == up);
-		if (r != null)
-			render.RemoveAll(h => h == r);
-		if (p != null)
-			press.RemoveAll(h => h == p);
-		if (rl != null)
-			release.RemoveAll(h => h == rl);
-		if (rOver != null)
-			rollOver.RemoveAll(h => h == rOver);
-		if (rOut != null)
-			rollOut.RemoveAll(h => h == rOut);
-		if (k != null)
-			keyPress.RemoveAll(h => h == k);
+		load.Remove(key);
+		unload.Remove(key);
+		enterFrame.Remove(key);
+		update.Remove(key);
+		render.Remove(key);
+		press.Remove(key);
+		release.Remove(key);
+		rollOver.Remove(key);
+		rollOut.Remove(key);
+		keyPress.Remove(key);
 	}
 
 	public void Call(Type type, Button target)
 	{
-		ButtonEventHandlerList list = null; 
+		ButtonEventHandlerDictionary dict = null; 
 		switch (type) {
-		case Type.LOAD: list = load; break;
-		case Type.UNLOAD: list = unload; break;
-		case Type.ENTERFRAME: list = enterFrame; break;
-		case Type.UPDATE: list = update; break;
-		case Type.RENDER: list = render; break;
-		case Type.PRESS: list = press; break;
-		case Type.RELEASE: list = release; break;
-		case Type.ROLLOVER: list = rollOver; break;
-		case Type.ROLLOUT: list = rollOut; break;
+		case Type.LOAD: dict = load; break;
+		case Type.UNLOAD: dict = unload; break;
+		case Type.ENTERFRAME: dict = enterFrame; break;
+		case Type.UPDATE: dict = update; break;
+		case Type.RENDER: dict = render; break;
+		case Type.PRESS: dict = press; break;
+		case Type.RELEASE: dict = release; break;
+		case Type.ROLLOVER: dict = rollOver; break;
+		case Type.ROLLOUT: dict = rollOut; break;
 		}
-		if (list != null) {
-			list = new ButtonEventHandlerList(list);
-			list.ForEach(h => h(target));
+		if (dict != null) {
+			dict = new ButtonEventHandlerDictionary(dict);
+			foreach (var h in dict)
+				h.Value(target);
 		}
 	}
 
 	public void CallKEYPRESS(Button target, int code)
 	{
-		ButtonKeyPressHandlerList list =
-			new ButtonKeyPressHandlerList(keyPress);
-		list.ForEach(h => h(target, code));
+		ButtonKeyPressHandlerDictionary dict =
+			new ButtonKeyPressHandlerDictionary(keyPress);
+		foreach (var h in dict)
+			h.Value(target, code);
 	}
 }
 

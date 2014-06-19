@@ -192,6 +192,46 @@ public partial class LWF
 			/* 0 */
 			return;
 		}
+		Lua.lua_getfield(l, -1, "Script");
+		/* -2: LWF */
+		/* -1: LWF.Script */
+		Lua.lua_remove(l, -2);
+		/* -1: LWF.Script */
+		if (!Lua.lua_istable(l, -1)) {
+			Lua.lua_pop(l, 1);
+			/* 0 */
+			return;
+		}
+		Lua.lua_getfield(l, -1, name);
+		/* -2: LWF.Script */
+		/* -1: LWF.Script.<name> */
+		Lua.lua_remove(l, -2);
+		/* -1: LWF.Script.<name> */
+		if (!Lua.lua_istable(l, -1)) {
+			Lua.lua_pop(l, 1);
+			/* 0 */
+			return;
+		}
+		Lua.lua_getfield(l, -1, "Destroy");
+		/* -2: LWF.Script.<name> */
+		/* -1: LWF.Script.<name>.Destroy */
+		Lua.lua_remove(l, -2);
+		/* -1: LWF.Script.<name>.Destroy */
+		if (Lua.lua_isfunction(l, -1)) {
+			Luna_LWF_LWF.push(l, this, false);
+			/* -2: LWF.Script.<name>.Destroy */
+			/* -1: LWF instance */
+			if (Lua.lua_pcall(l, 1, 0, 0) != 0)
+				Lua.lua_pop(l, 1);
+			/* 0 */
+		}
+		Lua.lua_getglobal(l, "LWF");
+		/* -1: LWF */
+		if (!Lua.lua_istable(l, -1)) {
+			Lua.lua_pop(l, 1);
+			/* 0 */
+			return;
+		}
 		Lua.lua_getfield(l, -1, "Instances");
 		/* -2: LWF */
 		/* -1: LWF.Instances */

@@ -211,6 +211,11 @@ class Luna___T_NODOT__
 	// use lunaStack::push if possible.
 	public static void push(Lua.lua_State L, __T__ obj, bool gc, Lua.CharPtr metatable=null)
 	{
+		if (obj == null) {
+			Lua.lua_pushnil(L);
+			return;
+		}
+
 		int objectId = -1;
 		if (!objectIdentifiers[L].TryGetValue(obj, out objectId))
 		{
@@ -257,22 +262,27 @@ class Luna___T_NODOT__
 	// garbage collection metamethod
 	private static int gc_T(Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits___T_NODOT__.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 
 		__T__ obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;
 
-		if (ud.Gc)
+		if (ud.Gc) {
 			LunaTraits___T_NODOT__._bind_dtor(obj);  // call constructor for T objects
+			Destroy(L, obj);
+		}
 
-		Destroy(L, obj);
 		return 0;
 	}
 
 	private static int tostring_T (Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits___T_NODOT__.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 		__T__ obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;

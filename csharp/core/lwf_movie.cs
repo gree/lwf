@@ -26,10 +26,11 @@ namespace LWF {
 using Constant = Format.Constant;
 using Type = Format.Object.Type;
 using EventHandler = Action;
-using EventHandlerList = List<Action>;
-using EventHandlerDictionary = Dictionary<string, List<Action>>;
+using EventHandlerDictionary = Dictionary<int, Action>;
+using EventHandlers = Dictionary<string, Dictionary<int, Action>>;
 using EventType = MovieEventHandlers.Type;
 using ClipEvent = Format.MovieClipEvent.ClipEvent;
+using MovieEventHandler = Action<Movie>;
 using AttachedMovies = Dictionary<string, Movie>;
 using AttachedMovieList = SortedDictionary<int, Movie>;
 using AttachedMovieDescendingList = SortedDictionary<int, int>;
@@ -46,7 +47,7 @@ public partial class Movie : IObject
 	private IObject m_instanceHead;
 	private IObject m_instanceTail;
 	private Object[] m_displayList;
-	private EventHandlerDictionary m_eventHandlers;
+	private EventHandlers m_eventHandlers;
 	private MovieEventHandlers m_handler;
 	private AttachedMovies m_attachedMovies;
 	private AttachedMovieList m_attachedMovieList;
@@ -138,11 +139,14 @@ public partial class Movie : IObject
 #if LWF_USE_LUA
 		m_isRoot = objId == lwf.data.header.rootMovieId;
 		if (m_isRoot) {
-			lwf.GetFunctionsLua(objId, out m_rootLoadFunc, out m_rootPostLoadFunc,
-				out m_rootUnloadFunc, out m_rootEnterFrameFunc, true);
+			if (parent == null)
+				lwf.CallFunctionLua("Init", this);
+			lwf.GetFunctionsLua(objId, out m_rootLoadFunc,
+				out m_rootPostLoadFunc, out m_rootUnloadFunc,
+					out m_rootEnterFrameFunc, true);
 		}
-		lwf.GetFunctionsLua(objId,
-			out m_loadFunc, out m_postLoadFunc, out m_unloadFunc, out m_enterFrameFunc, false);
+		lwf.GetFunctionsLua(objId, out m_loadFunc, out m_postLoadFunc,
+			out m_unloadFunc, out m_enterFrameFunc, false);
 
 		if (m_isRoot && !String.IsNullOrEmpty(m_rootLoadFunc))
 			lwf.CallFunctionLua(m_rootLoadFunc, this);
@@ -151,7 +155,7 @@ public partial class Movie : IObject
 #endif
 		PlayAnimation(ClipEvent.LOAD);
 
-		m_eventHandlers = new EventHandlerDictionary();
+		m_eventHandlers = new EventHandlers();
 		m_handler = new MovieEventHandlers();
 		m_handler.Add(lwf.GetMovieEventHandlers(this));
 		m_handler.Add(handler);
@@ -1019,41 +1023,120 @@ public partial class Movie : IObject
 		return false;
 	}
 
-	public void AddEventHandler(string eventName, EventHandler eventHandler)
+	public int AddEventHandler(string eventName, MovieEventHandler handler)
 	{
-		EventHandlerList list;
-		if (!m_eventHandlers.TryGetValue(eventName, out list)) {
-			list = new EventHandlerList();
-			m_eventHandlers[eventName] = list;
+		int id = m_lwf.GetEventOffset();
+		switch (eventName) {
+		case "load": m_handler.Add(id, l:handler); return id;
+		case "postLoad": m_handler.Add(id, p:handler); return id;
+		case "unload": m_handler.Add(id, u:handler); return id;
+		case "enterFrame": m_handler.Add(id, e:handler); return id;
+		case "update": m_handler.Add(id, up:handler); return id;
+		case "render": m_handler.Add(id, r:handler); return id;
+		default: return -1;
 		}
-		list.Add(eventHandler);
 	}
 
-	public void RemoveEventHandler(string eventName, EventHandler eventHandler)
+	public int AddEventHandler(string eventName, EventHandler eventHandler)
 	{
-		EventHandlerList list = m_eventHandlers[eventName];
-		if (list == null)
-			return;
-		list.RemoveAll(h => h == eventHandler);
+		int id = m_lwf.GetEventOffset();
+		EventHandlerDictionary dict;
+		if (!m_eventHandlers.TryGetValue(eventName, out dict)) {
+			dict = new EventHandlerDictionary();
+			m_eventHandlers[eventName] = dict;
+		}
+		dict.Add(id, eventHandler);
+
+		return id;
+	}
+
+	public void RemoveEventHandler(string eventName, int id)
+	{
+		switch (eventName) {
+		case "load":
+		case "postLoad":
+		case "unload":
+		case "enterFrame":
+		case "update":
+		case "render":
+			m_handler.Remove(id);
+			break;
+
+		default:
+			{
+				EventHandlerDictionary dict;
+				if (m_eventHandlers.TryGetValue(eventName, out dict))
+					dict.Remove(id);
+			}
+			break;
+		}
 	}
 
 	public void ClearEventHandler(string eventName)
 	{
-		m_eventHandlers.Remove(eventName);
+		switch (eventName) {
+		case "load":
+			m_handler.Clear(EventType.LOAD);
+			break;
+		case "postLoad":
+			m_handler.Clear(EventType.POSTLOAD);
+			break;
+		case "unload":
+			m_handler.Clear(EventType.UNLOAD);
+			break;
+		case "enterFrame":
+			m_handler.Clear(EventType.ENTERFRAME);
+			break;
+		case "update":
+			m_handler.Clear(EventType.UPDATE);
+			break;
+		case "render":
+			m_handler.Clear(EventType.RENDER);
+			break;
+		default:
+			m_eventHandlers.Remove(eventName);
+			break;
+		}
 	}
 
-	public void SetEventHandler(string eventName, EventHandler eventHandler)
+	public int SetEventHandler(string eventName, EventHandler eventHandler)
 	{
 		ClearEventHandler(eventName);
-		AddEventHandler(eventName, eventHandler);
+		return AddEventHandler(eventName, eventHandler);
 	}
 
 	public void DispatchEvent(string eventName)
 	{
-		EventHandlerList list =
-			new EventHandlerList(m_eventHandlers[eventName]);
-		foreach (EventHandler h in list)
-			h();
+		switch (eventName) {
+		case "load":
+			m_handler.Call(EventType.LOAD, this);
+			break;
+		case "postLoad":
+			m_handler.Call(EventType.POSTLOAD, this);
+			break;
+		case "unload":
+			m_handler.Call(EventType.UNLOAD, this);
+			break;
+		case "enterFrame":
+			m_handler.Call(EventType.ENTERFRAME, this);
+			break;
+		case "update":
+			m_handler.Call(EventType.UPDATE, this);
+			break;
+		case "render":
+			m_handler.Call(EventType.RENDER, this);
+			break;
+		default:
+			{
+				EventHandlerDictionary dict;
+				if (m_eventHandlers.TryGetValue(eventName, out dict)) {
+					dict = new EventHandlerDictionary(dict);
+					foreach (var h in dict)
+						h.Value();
+				}
+			}
+			break;
+		}
 	}
 }
 

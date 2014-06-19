@@ -23,6 +23,27 @@ public class LunaTraits_LWF_LWF
 	{
         new RegType("setText", impl_LunaTraits_LWF_LWF._bind_setText),
         new RegType("getText", impl_LunaTraits_LWF_LWF._bind_getText),
+        new RegType("playMovie", impl_LunaTraits_LWF_LWF._bind_playMovie),
+        new RegType("stopMovie", impl_LunaTraits_LWF_LWF._bind_stopMovie),
+        new RegType("nextFrameMovie", impl_LunaTraits_LWF_LWF._bind_nextFrameMovie),
+        new RegType("prevFrameMovie", impl_LunaTraits_LWF_LWF._bind_prevFrameMovie),
+        new RegType("setVisibleMovie", impl_LunaTraits_LWF_LWF._bind_setVisibleMovie),
+        new RegType("gotoAndStopMovie", impl_LunaTraits_LWF_LWF._bind_gotoAndStopMovie),
+        new RegType("gotoAndPlayMovie", impl_LunaTraits_LWF_LWF._bind_gotoAndPlayMovie),
+        new RegType("moveMovie", impl_LunaTraits_LWF_LWF._bind_moveMovie),
+        new RegType("moveToMovie", impl_LunaTraits_LWF_LWF._bind_moveToMovie),
+        new RegType("rotateMovie", impl_LunaTraits_LWF_LWF._bind_rotateMovie),
+        new RegType("rotateToMovie", impl_LunaTraits_LWF_LWF._bind_rotateToMovie),
+        new RegType("scaleMovie", impl_LunaTraits_LWF_LWF._bind_scaleMovie),
+        new RegType("scaleToMovie", impl_LunaTraits_LWF_LWF._bind_scaleToMovie),
+        new RegType("setAlphaMovie", impl_LunaTraits_LWF_LWF._bind_setAlphaMovie),
+        new RegType("setColorTransformMovie", impl_LunaTraits_LWF_LWF._bind_setColorTransformMovie),
+        new RegType("removeEventListener", impl_LunaTraits_LWF_LWF._bind_removeEventListener),
+        new RegType("clearEventListener", impl_LunaTraits_LWF_LWF._bind_clearEventListener),
+        new RegType("removeMovieEventListener", impl_LunaTraits_LWF_LWF._bind_removeMovieEventListener),
+        new RegType("clearMovieEventListener", impl_LunaTraits_LWF_LWF._bind_clearMovieEventListener),
+        new RegType("removeButtonEventListener", impl_LunaTraits_LWF_LWF._bind_removeButtonEventListener),
+        new RegType("clearButtonEventListener", impl_LunaTraits_LWF_LWF._bind_clearButtonEventListener),
         new RegType("getName", impl_LunaTraits_LWF_LWF._bind_getName),
         new RegType("getRootMovie", impl_LunaTraits_LWF_LWF._bind_getRootMovie),
         new RegType("getWidth", impl_LunaTraits_LWF_LWF._bind_getWidth),
@@ -138,6 +159,398 @@ public class impl_LunaTraits_LWF_LWF
 		Lua.lua_pushstring(L, ret);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 1;
+  }
+  public static int _bind_playMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:playMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.PlayMovie(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_stopMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:stopMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.StopMovie(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_nextFrameMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:nextFrameMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.NextFrameMovie(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_prevFrameMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:prevFrameMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.PrevFrameMovie(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_setVisibleMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || !Lua.lua_isboolean(L,3)) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setVisibleMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		bool visible=Lua.lua_toboolean(L,3) != 0;
+	try {
+		self.SetVisibleMovie(instanceName, visible);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_gotoAndStopMovie_overload_1(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		string label=Lua.lua_tostring(L,3).ToString();
+	try {
+		self.GotoAndStopMovie(instanceName, label);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_gotoAndStopMovie_overload_2(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		int frameNo=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.GotoAndStopMovie(instanceName, frameNo);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_gotoAndPlayMovie_overload_1(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		string label=Lua.lua_tostring(L,3).ToString();
+	try {
+		self.GotoAndPlayMovie(instanceName, label);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_gotoAndPlayMovie_overload_2(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		int frameNo=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.GotoAndPlayMovie(instanceName, frameNo);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_moveMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=4
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0
+            || Lua.lua_isnumber(L, 4)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:moveMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vx=(float)Lua.lua_tonumber(L,3);
+		float vy=(float)Lua.lua_tonumber(L,4);
+	try {
+		self.MoveMovie(instanceName, vx, vy);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_moveToMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=4
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0
+            || Lua.lua_isnumber(L, 4)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:moveToMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vx=(float)Lua.lua_tonumber(L,3);
+		float vy=(float)Lua.lua_tonumber(L,4);
+	try {
+		self.MoveToMovie(instanceName, vx, vy);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_rotateMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:rotateMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float degree=(float)Lua.lua_tonumber(L,3);
+	try {
+		self.RotateMovie(instanceName, degree);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_rotateToMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:rotateToMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float degree=(float)Lua.lua_tonumber(L,3);
+	try {
+		self.RotateToMovie(instanceName, degree);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_scaleMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=4
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0
+            || Lua.lua_isnumber(L, 4)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:scaleMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vx=(float)Lua.lua_tonumber(L,3);
+		float vy=(float)Lua.lua_tonumber(L,4);
+	try {
+		self.ScaleMovie(instanceName, vx, vy);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_scaleToMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=4
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0
+            || Lua.lua_isnumber(L, 4)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:scaleToMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vx=(float)Lua.lua_tonumber(L,3);
+		float vy=(float)Lua.lua_tonumber(L,4);
+	try {
+		self.ScaleToMovie(instanceName, vx, vy);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_setAlphaMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setAlphaMovie(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float v=(float)Lua.lua_tonumber(L,3);
+	try {
+		self.SetAlphaMovie(instanceName, v);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_setColorTransformMovie_overload_1(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vr=(float)Lua.lua_tonumber(L,3);
+		float vg=(float)Lua.lua_tonumber(L,4);
+		float vb=(float)Lua.lua_tonumber(L,5);
+		float va=(float)Lua.lua_tonumber(L,6);
+	try {
+		self.SetColorTransformMovie(instanceName, vr, vg, vb, va);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_setColorTransformMovie_overload_2(Lua.lua_State L)
+  {
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		float vr=(float)Lua.lua_tonumber(L,3);
+		float vg=(float)Lua.lua_tonumber(L,4);
+		float vb=(float)Lua.lua_tonumber(L,5);
+		float va=(float)Lua.lua_tonumber(L,6);
+		float ar=(float)Lua.lua_tonumber(L,7);
+		float ag=(float)Lua.lua_tonumber(L,8);
+		float ab=(float)Lua.lua_tonumber(L,9);
+		float aa=(float)Lua.lua_tonumber(L,10);
+	try {
+		self.SetColorTransformMovie(instanceName, vr, vg, vb, va, ar, ag, ab, aa);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_removeEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+		int id=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.RemoveEventHandler(eventName, id);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_clearEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:clearEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.ClearEventHandler(eventName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_removeMovieEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeMovieEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		int id=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.RemoveMovieEventHandler(instanceName, id);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_clearMovieEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:clearMovieEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.ClearMovieEventHandler(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_removeButtonEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeButtonEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+		int id=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.RemoveButtonEventHandler(instanceName, id);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_clearButtonEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=7105034 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:clearButtonEventListener(LWF.LWF self)"); }
+
+	LWF.LWF self=Luna_LWF_LWF.check(L,1);
+		string instanceName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.ClearButtonEventHandler(instanceName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_gotoAndStopMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)==3
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isstring(L,3)==1) return _bind_gotoAndStopMovie_overload_1(L);
+	if (Lua.lua_gettop(L)==3
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndStopMovie_overload_2(L);
+	Lua.luaL_error(L, "gotoAndStopMovie cannot find overloads.");
+
+	return 0;
+  }
+  public static int _bind_gotoAndPlayMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)==3
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isstring(L,3)==1) return _bind_gotoAndPlayMovie_overload_1(L);
+	if (Lua.lua_gettop(L)==3
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndPlayMovie_overload_2(L);
+	Lua.luaL_error(L, "gotoAndPlayMovie cannot find overloads.");
+
+	return 0;
+  }
+  public static int _bind_setColorTransformMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)==6
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isnumber(L, 3)==1
+            || Lua.lua_isnumber(L, 4)==1
+            || Lua.lua_isnumber(L, 5)==1
+            || Lua.lua_isnumber(L, 6)==1) return _bind_setColorTransformMovie_overload_1(L);
+	if (Lua.lua_gettop(L)==10
+            || Luna.get_uniqueid(L,1)==7105034 
+            || Lua.lua_isstring(L,2)==1
+            || Lua.lua_isnumber(L, 3)==1
+            || Lua.lua_isnumber(L, 4)==1
+            || Lua.lua_isnumber(L, 5)==1
+            || Lua.lua_isnumber(L, 6)==1
+            || Lua.lua_isnumber(L, 7)==1
+            || Lua.lua_isnumber(L, 8)==1
+            || Lua.lua_isnumber(L, 9)==1
+            || Lua.lua_isnumber(L, 10)==1) return _bind_setColorTransformMovie_overload_2(L);
+	Lua.luaL_error(L, "setColorTransformMovie cannot find overloads.");
+
+	return 0;
   }
   public static int _bind_getName(Lua.lua_State L)
   {
@@ -342,6 +755,11 @@ class Luna_LWF_LWF
 	// use lunaStack::push if possible.
 	public static void push(Lua.lua_State L, LWF.LWF obj, bool gc, Lua.CharPtr metatable=null)
 	{
+		if (obj == null) {
+			Lua.lua_pushnil(L);
+			return;
+		}
+
 		int objectId = -1;
 		if (!objectIdentifiers[L].TryGetValue(obj, out objectId))
 		{
@@ -388,22 +806,27 @@ class Luna_LWF_LWF
 	// garbage collection metamethod
 	private static int gc_T(Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_LWF.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 
 		LWF.LWF obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;
 
-		if (ud.Gc)
+		if (ud.Gc) {
 			LunaTraits_LWF_LWF._bind_dtor(obj);  // call constructor for T objects
+			Destroy(L, obj);
+		}
 
-		Destroy(L, obj);
 		return 0;
 	}
 
 	private static int tostring_T (Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_LWF.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 		LWF.LWF obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;

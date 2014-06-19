@@ -24,7 +24,7 @@ using System.Collections.Generic;
 namespace LWF {
 
 using MovieEventHandler = Action<Movie>;
-using MovieEventHandlerList = List<Action<Movie>>;
+using MovieEventHandlerDictionary = Dictionary<int, Action<Movie>>;
 
 public class MovieEventHandlers
 {
@@ -37,22 +37,22 @@ public class MovieEventHandlers
 		RENDER
 	}
 
-	MovieEventHandlerList load;
-	MovieEventHandlerList postLoad;
-	MovieEventHandlerList unload;
-	MovieEventHandlerList enterFrame;
-	MovieEventHandlerList update;
-	MovieEventHandlerList render;
+	MovieEventHandlerDictionary load;
+	MovieEventHandlerDictionary postLoad;
+	MovieEventHandlerDictionary unload;
+	MovieEventHandlerDictionary enterFrame;
+	MovieEventHandlerDictionary update;
+	MovieEventHandlerDictionary render;
 	bool empty;
 
 	public MovieEventHandlers()
 	{
-		load = new MovieEventHandlerList();
-		postLoad = new MovieEventHandlerList();
-		unload = new MovieEventHandlerList();
-		enterFrame = new MovieEventHandlerList();
-		update = new MovieEventHandlerList();
-		render = new MovieEventHandlerList();
+		load = new MovieEventHandlerDictionary();
+		postLoad = new MovieEventHandlerDictionary();
+		unload = new MovieEventHandlerDictionary();
+		enterFrame = new MovieEventHandlerDictionary();
+		update = new MovieEventHandlerDictionary();
+		render = new MovieEventHandlerDictionary();
 		empty = true;
 	}
 
@@ -85,69 +85,69 @@ public class MovieEventHandlers
 		if (handlers == null)
 			return;
 
-		handlers.load.ForEach(h => load.Add(h));
-		handlers.postLoad.ForEach(h => postLoad.Add(h));
-		handlers.unload.ForEach(h => unload.Add(h));
-		handlers.enterFrame.ForEach(h => enterFrame.Add(h));
-		handlers.update.ForEach(h => update.Add(h));
-		handlers.render.ForEach(h => render.Add(h));
+		foreach (var h in handlers.load)
+			load.Add(h.Key, h.Value);
+		foreach (var h in handlers.load)
+			load.Add(h.Key, h.Value);
+		foreach (var h in handlers.postLoad)
+			postLoad.Add(h.Key, h.Value);
+		foreach (var h in handlers.unload)
+			unload.Add(h.Key, h.Value);
+		foreach (var h in handlers.enterFrame)
+			enterFrame.Add(h.Key, h.Value);
+		foreach (var h in handlers.update)
+			update.Add(h.Key, h.Value);
+		foreach (var h in handlers.render)
+			render.Add(h.Key, h.Value);
 		UpdateEmpty();
 	}
 
-	public void Add(
+	public void Add(int key,
 		MovieEventHandler l = null, MovieEventHandler p = null,
 		MovieEventHandler u = null, MovieEventHandler e = null,
 		MovieEventHandler up = null, MovieEventHandler r = null)
 	{
 		if (l != null)
-			load.Add(l);
+			load.Add(key, l);
 		if (p != null)
-			postLoad.Add(p);
+			postLoad.Add(key, p);
 		if (u != null)
-			unload.Add(u);
+			unload.Add(key, u);
 		if (e != null)
-			enterFrame.Add(e);
+			enterFrame.Add(key, e);
 		if (up != null)
-			update.Add(up);
+			update.Add(key, up);
 		if (r != null)
-			render.Add(r);
+			render.Add(key, r);
 		UpdateEmpty();
 	}
 
-	public void Remove(
-		MovieEventHandler l = null, MovieEventHandler p = null,
-		MovieEventHandler u = null, MovieEventHandler e = null,
-		MovieEventHandler up = null, MovieEventHandler r = null)
+	public void Remove(int key)
 	{
-		if (l != null)
-			load.RemoveAll(h => h == l);
-		if (p != null)
-			postLoad.RemoveAll(h => h == p);
-		if (u != null)
-			unload.RemoveAll(h => h == u);
-		if (e != null)
-			enterFrame.RemoveAll(h => h == e);
-		if (up != null)
-			update.RemoveAll(h => h == up);
-		if (r != null)
-			render.RemoveAll(h => h == r);
+		load.Remove(key);
+		postLoad.Remove(key);
+		unload.Remove(key);
+		enterFrame.Remove(key);
+		update.Remove(key);
+		render.Remove(key);
 		UpdateEmpty();
 	}
 
 	public void Call(Type type, Movie target)
 	{
-		MovieEventHandlerList list = null;
+		MovieEventHandlerDictionary dict = null;
 		switch (type) {
-		case Type.LOAD: list = load; break;
-		case Type.POSTLOAD: list = postLoad; break;
-		case Type.UNLOAD: list = unload; break;
-		case Type.ENTERFRAME: list = enterFrame; break;
-		case Type.UPDATE: list = update; break;
-		case Type.RENDER: list = render; break;
+		case Type.LOAD: dict = load; break;
+		case Type.POSTLOAD: dict = postLoad; break;
+		case Type.UNLOAD: dict = unload; break;
+		case Type.ENTERFRAME: dict = enterFrame; break;
+		case Type.UPDATE: dict = update; break;
+		case Type.RENDER: dict = render; break;
 		}
-		if (list != null) {
-			list = new MovieEventHandlerList(list);
-			list.ForEach(h => h(target));
+		if (dict != null) {
+			dict = new MovieEventHandlerDictionary(dict);
+			foreach (var h in dict)
+				h.Value(target);
 		}
 	}
 

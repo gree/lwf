@@ -37,6 +37,11 @@ public class LunaTraits_LWF_Movie
         new RegType("rotateTo", impl_LunaTraits_LWF_Movie._bind_rotateTo),
         new RegType("scale", impl_LunaTraits_LWF_Movie._bind_scale),
         new RegType("scaleTo", impl_LunaTraits_LWF_Movie._bind_scaleTo),
+        new RegType("removeEventListener", impl_LunaTraits_LWF_Movie._bind_removeEventListener),
+        new RegType("clearEventListener", impl_LunaTraits_LWF_Movie._bind_clearEventListener),
+        new RegType("swapAttachedMovieDepth", impl_LunaTraits_LWF_Movie._bind_swapAttachedMovieDepth),
+        new RegType("detachMovie", impl_LunaTraits_LWF_Movie._bind_detachMovie),
+        new RegType("detachFromParent", impl_LunaTraits_LWF_Movie._bind_detachFromParent),
         new RegType("getName", impl_LunaTraits_LWF_Movie._bind_getName),
         new RegType("getParent", impl_LunaTraits_LWF_Movie._bind_getParent),
         new RegType("getCurrentFrame", impl_LunaTraits_LWF_Movie._bind_getCurrentFrame),
@@ -387,6 +392,80 @@ public class impl_LunaTraits_LWF_Movie
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
+  public static int _bind_removeEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeEventListener(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+		int id=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.RemoveEventHandler(eventName, id);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_clearEventListener(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:clearEventListener(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		string eventName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.ClearEventHandler(eventName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_swapAttachedMovieDepth(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isnumber(L, 2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:swapAttachedMovieDepth(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		int depth0=(int)Lua.lua_tonumber(L,2);
+		int depth1=(int)Lua.lua_tonumber(L,3);
+	try {
+		self.SwapAttachedMovieDepth(depth0, depth1);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_detachMovie_overload_1(Lua.lua_State L)
+  {
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		string aName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.DetachMovie(aName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_detachMovie_overload_2(Lua.lua_State L)
+  {
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		LWF.Movie movie=Luna_LWF_Movie.check(L,2);
+	try {
+		self.DetachMovie(movie);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_detachFromParent(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=29625181 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:detachFromParent(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+	try {
+		self.DetachFromParent();
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
   public static int _bind_gotoAndStop(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)==2
@@ -408,6 +487,18 @@ public class impl_LunaTraits_LWF_Movie
             || Luna.get_uniqueid(L,1)==29625181 
             || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndPlay_overload_2(L);
 	Lua.luaL_error(L, "gotoAndPlay cannot find overloads.");
+
+	return 0;
+  }
+  public static int _bind_detachMovie(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Lua.lua_isstring(L,2)==1) return _bind_detachMovie_overload_1(L);
+	if (Lua.lua_gettop(L)==2
+            || Luna.get_uniqueid(L,1)==29625181 
+            || Luna.get_uniqueid(L,2)== LunaTraits_LWF_Movie.uniqueID) return _bind_detachMovie_overload_2(L);
+	Lua.luaL_error(L, "detachMovie cannot find overloads.");
 
 	return 0;
   }
@@ -895,6 +986,11 @@ class Luna_LWF_Movie
 	// use lunaStack::push if possible.
 	public static void push(Lua.lua_State L, LWF.Movie obj, bool gc, Lua.CharPtr metatable=null)
 	{
+		if (obj == null) {
+			Lua.lua_pushnil(L);
+			return;
+		}
+
 		int objectId = -1;
 		if (!objectIdentifiers[L].TryGetValue(obj, out objectId))
 		{
@@ -941,22 +1037,27 @@ class Luna_LWF_Movie
 	// garbage collection metamethod
 	private static int gc_T(Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_Movie.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 
 		LWF.Movie obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;
 
-		if (ud.Gc)
+		if (ud.Gc) {
 			LunaTraits_LWF_Movie._bind_dtor(obj);  // call constructor for T objects
+			Destroy(L, obj);
+		}
 
-		Destroy(L, obj);
 		return 0;
 	}
 
 	private static int tostring_T (Lua.lua_State L)
 	{
-		Luna.userdataType ud = (Luna.userdataType)Lua.lua_touserdata(L, 1);
+		byte[] d = (byte[])Lua.lua_touserdata(L, 1);
+		if(d == null) { Luna.print("checkRaw: ud==nil\n"); Lua.luaL_typerror(L, 1, LunaTraits_LWF_Movie.className); }
+		Luna.userdataType ud = new Luna.userdataType(d);
 		LWF.Movie obj = null;
 		if (!objects[L].TryGetValue(ud.ObjectId, out obj))
 			return 0;

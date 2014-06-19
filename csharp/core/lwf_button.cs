@@ -22,6 +22,8 @@ using System;
 
 namespace LWF {
 
+using ButtonEventHandler = Action<Button>;
+using ButtonKeyPressHandler = Action<Button, int>;
 using EventType = ButtonEventHandlers.Type;
 using Condition = Format.ButtonCondition.Condition;
 
@@ -190,6 +192,67 @@ public partial class Button : IObject
 					(condition != Condition.KEYPRESS || c.keyCode == code)) {
 				m_lwf.PlayAnimation(c.animationId, m_parent, this);
 			}
+		}
+	}
+
+	public int AddEventHandler(string eventName, ButtonEventHandler handler)
+	{
+		int id = m_lwf.GetEventOffset();
+		switch (eventName) {
+		case "load": m_handler.Add(id, l:handler); return id;
+		case "unload": m_handler.Add(id, u:handler); return id;
+		case "enterFrame": m_handler.Add(id, e:handler); return id;
+		case "update": m_handler.Add(id, up:handler); return id;
+		case "render": m_handler.Add(id, r:handler); return id;
+		case "press": m_handler.Add(id, p:handler); return id;
+		case "release": m_handler.Add(id, rl:handler); return id;
+		case "rollOver": m_handler.Add(id, rOver:handler); return id;
+		case "rollOut": m_handler.Add(id, rOut:handler); return id;
+		default: return -1;
+		}
+	}
+
+	public int AddEventHandler(string eventName, ButtonKeyPressHandler handler)
+	{
+		int id = -1;
+		if (string.Compare(eventName, "keyPress") == 0) {
+			id = m_lwf.GetEventOffset();
+			m_handler.Add(id, k:handler);
+		}
+		return id;
+	}
+
+	public void RemoveEventHandler(string eventName, int id)
+	{
+		switch (eventName) {
+		case "load":
+		case "unload":
+		case "enterFrame":
+		case "update":
+		case "render":
+		case "press":
+		case "release":
+		case "rollOver":
+		case "rollOut":
+		case "keyPress":
+			m_handler.Remove(id);
+			break;
+		}
+	}
+
+	public void ClearEventHandler(string eventName)
+	{
+		switch (eventName) {
+		case "load": m_handler.Clear(EventType.LOAD); break;
+		case "unload": m_handler.Clear(EventType.UNLOAD); break;
+		case "enterFrame": m_handler.Clear(EventType.ENTERFRAME); break;
+		case "update": m_handler.Clear(EventType.UPDATE); break;
+		case "render": m_handler.Clear(EventType.RENDER); break;
+		case "press": m_handler.Clear(EventType.PRESS); break;
+		case "release": m_handler.Clear(EventType.RELEASE); break;
+		case "rollOver": m_handler.Clear(EventType.ROLLOVER); break;
+		case "rollOut": m_handler.Clear(EventType.ROLLOUT); break;
+		case "keyPress": m_handler.Clear(EventType.KEYPRESS); break;
 		}
 	}
 }
