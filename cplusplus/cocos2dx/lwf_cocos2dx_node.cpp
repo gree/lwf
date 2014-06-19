@@ -147,8 +147,7 @@ void LWFNode::update(float dt)
 	}
 }
 
-void LWFNode::draw(
-	Renderer *renderer, const Mat4 &transform, bool transformUpdated)
+void LWFNode::draw(Renderer *renderer, const Mat4& transform, uint32_t flags)
 {
 }
 
