@@ -78,6 +78,8 @@ COLORTRANSFORM_FLAG = (1 << 31)
 
 OPTION_USE_SCRIPT = (1 << 0)
 OPTION_USE_TEXTUREATLAS = (1 << 1)
+OPTION_COMPRESSED = (1 << 2)
+OPTION_USE_LUASCRIPT = (1 << 3)
 
 TEXTUREFORMAT_NORMAL = 0
 TEXTUREFORMAT_PREMULTIPLIEDALPHA = 1
@@ -4092,7 +4094,18 @@ def swf2lwf(*args)
       textureId, false, x, y, 0, 0, w, h)
   end
 
-  @option |= OPTION_USE_SCRIPT unless @using_script_funcname_map.empty?
+  unless @using_script_funcname_map.empty?
+    @using_script_funcname_map.each do |k, scripts|
+      scripts.each do |lang, script|
+        case lang
+        when :JavaScript
+          @option |= OPTION_USE_SCRIPT
+        when :Lua
+          @option |= OPTION_USE_LUASCRIPT
+        end
+      end
+    end
+  end
   @using_script_funcname_map.keys.each do |key|
     @script_funcname_map.delete(key)
   end
@@ -4238,8 +4251,19 @@ def swf2lwf(*args)
   f.close
 
   unless @using_script_funcname_map.empty?
-    js = File.open(@lwfpath + ".js", "wb")
-    js.write <<-EOL
+    if (@option & OPTION_USE_SCRIPT) != 0
+      js = File.open(@lwfpath + ".js", "wb")
+    else
+      js = nil
+    end
+    if (@option & OPTION_USE_LUASCRIPT) != 0
+      lua = File.open(@lwfpath + ".lua", "wb")
+    else
+      lua = nil
+    end
+
+    unless js.nil?
+      js.write <<-EOL
 global.LWF.Script = global.LWF.Script || {};
 global.LWF.Script["#{lwfname}"] = function() {
 	var LWF = global.LWF;
@@ -4277,18 +4301,29 @@ global.LWF.Script["#{lwfname}"] = function() {
 	Script.prototype["destroy"] = function() {
 		_root = null;
 	};
-    EOL
+      EOL
+    end
 
-    lua = File.open(@lwfpath + ".lua", "wb")
-    lua.write <<-EOL
+    unless lua.nil?
+      lua.write <<-EOL
 if not LWF then LWF={} end
 if not LWF.Script then LWF.Script={} end
 if not LWF.Script.#{lwfname} then LWF.Script.#{lwfname}={} end
 local _root
-    EOL
 
-    @using_script_funcname_map["_root_load"] ||= {}
-    @using_script_funcname_map["_root_load"][:Lua] ||= ""
+LWF.Script.#{lwfname}.Init = function(self)
+	local movie = self
+	while movie.parent ~= nil do
+		movie = movie.parent.lwf.rootMovie
+	end
+	_root = movie
+end
+
+LWF.Script.#{lwfname}.Destroy = function(self)
+	_root = nil
+end
+      EOL
+    end
 
     @using_script_funcname_map.sort{|a,b| a <=> b}.each do |k, scripts|
       scripts.each do |lang, script|
@@ -4335,11 +4370,6 @@ local _root
 
 LWF.Script.#{lwfname}.#{k} = function(self)
           EOL
-          if k == "_root_load"
-            lua.write <<-EOL
-	_root = self
-            EOL
-          end
           lua.write script.gsub(/^/, "\t")
           lua.write "\n"
           lua.write <<-EOL
@@ -4349,7 +4379,8 @@ end
       end
     end
   
-    js.write <<-EOL
+    unless js.nil?
+      js.write <<-EOL
 
 	return Script;
 
@@ -4357,12 +4388,15 @@ end
 
 	return new Script();
 };
-    EOL
-    js.close
+      EOL
+      js.close
+    end
   
-    lua.write <<-EOL
-    EOL
-    lua.close
+    unless lua.nil?
+      lua.write <<-EOL
+      EOL
+      lua.close
+    end
   end
 
   unless @disable_exporting_png
