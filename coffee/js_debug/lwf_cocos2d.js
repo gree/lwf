@@ -3895,6 +3895,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         lwf.destroy();
       }
       lwf.parent = null;
+      if (lwf.rootMovie != null) {
+        lwf.rootMovie.parent = null;
+      }
       lwf.detachHandler = null;
       lwf.attachName = null;
     };

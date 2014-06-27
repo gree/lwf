@@ -76,18 +76,32 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     context.destruct() for context in @textContexts
     return
 
-  renderMask: ->
+  resetGlobalCompositeOperation:(ctx) ->
+    ctx.globalCompositeOperation = "source-over"
+    @renderBlendMode = "normal"
+    return
+
+  setGlobalCompositeOperation:(ctx, blendMode) ->
+    if @renderBlendMode isnt blendMode
+      @renderBlendMode = blendMode
+      switch @renderBlendMode
+        when "add"
+          ctx.globalCompositeOperation = "lighter"
+        when "normal"
+          ctx.globalCompositeOperation = "source-over"
+    return
+
+  renderMask:(blendMode) ->
     ctx = @maskCanvas.getContext('2d')
-    ctx.globalAlpha = 1
     ctx.globalCompositeOperation = @maskComposition
+    @renderBlendMode = null
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.drawImage(@layerCanvas,
       0, 0, @layerCanvas.width, @layerCanvas.height,
       0, 0, @layerCanvas.width, @layerCanvas.height)
 
     ctx = @stageContext
-    ctx.globalAlpha = 1
-    ctx.globalCompositeOperation = "source-over"
+    @setGlobalCompositeOperation(ctx, blendMode)
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.drawImage(@maskCanvas,
       0, 0, @maskCanvas.width, @maskCanvas.height,
@@ -98,7 +112,8 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
     if @renderMaskMode isnt cmd.maskMode
       switch cmd.maskMode
         when "erase", "mask"
-          @renderMask() if @renderMaskMode is "layer" and @renderMasked
+          if @renderMaskMode is "layer" and @renderMasked
+            @renderMask(cmd.blendMode)
           @renderMasked = true
           @maskComposition =
             if cmd.maskMode is "erase" then "source-out" else "source-in"
@@ -110,9 +125,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
           else
             cleared = false
           ctx = @maskCanvas.getContext('2d')
-          ctx.globalAlpha = 1
-          ctx.globalCompositeOperation = "source-over"
-          @renderBlendMode = "normal"
+          @resetGlobalCompositeOperation(ctx)
           unless cleared
             ctx.setTransform(1, 0, 0, 1, 0, 0)
             @clearCanvasRect(@stage, ctx)
@@ -126,32 +139,21 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
             else
               cleared = false
             ctx = @layerCanvas.getContext('2d')
-            ctx.globalAlpha = 1
-            ctx.globalCompositeOperation = "source-over"
-            @renderBlendMode = "normal"
+            @resetGlobalCompositeOperation(ctx)
             unless cleared
               ctx.setTransform(1, 0, 0, 1, 0, 0)
               @clearCanvasRect(@stage, ctx)
           else
             ctx = @stageContext
-            ctx.globalAlpha = 1
-            ctx.globalCompositeOperation = "source-over"
-            @renderBlendMode = "normal"
+            @resetGlobalCompositeOperation(ctx)
         when "normal"
           ctx = @stageContext
-          ctx.globalAlpha = 1
-          ctx.globalCompositeOperation = "source-over"
-          @renderBlendMode = "normal"
-          @renderMask() if @renderMaskMode is "layer" and @renderMasked
+          @resetGlobalCompositeOperation(ctx)
+          if @renderMaskMode is "layer" and @renderMasked
+            @renderMask(cmd.blendMode)
       @renderMaskMode = cmd.maskMode
-    if @renderBlendMode isnt cmd.blendMode
-      @renderBlendMode = cmd.blendMode
-      switch @renderBlendMode
-        when "add"
-          ctx.globalCompositeOperation = "lighter"
-        when "normal"
-          ctx.globalCompositeOperation = "source-over"
-    ctx.globalAlpha = cmd.alpha
+    @setGlobalCompositeOperation(ctx, cmd.blendMode)
+    ctx.globalAlpha = cmd.alpha if cmd.alpha isnt 1
     m = cmd.matrix
     ctx.setTransform(
       m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY)
@@ -166,6 +168,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       ctx.fill()
     else
       ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h)
+    ctx.globalAlpha = 1 if cmd.alpha isnt 1
     return ctx
 
   endRender:(lwf) ->
@@ -184,7 +187,8 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       else
         @clearCanvasRect(@stage, ctx)
 
-    @renderBlendMode = "normal"
+    ctx.globalAlpha = 1
+    @resetGlobalCompositeOperation(ctx)
     @renderMaskMode = "normal"
     @renderMasked = false
     renderCount = lwf.renderCount
@@ -201,10 +205,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
       ctx = @render(ctx, cmd)
 
     if @renderMaskMode is "layer" and @renderMasked
-      @renderMask()
-    else
-      ctx.globalAlpha = 1
-      ctx.globalCompositeOperation = "source-over"
+      @renderMask(@renderBlendMode)
 
     @initCommands()
     return

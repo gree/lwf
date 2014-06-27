@@ -334,6 +334,7 @@ class Movie extends IObject
     else
       lwf.destroy()
     lwf.parent = null
+    lwf.rootMovie.parent = null if lwf.rootMovie?
     lwf.detachHandler = null
     lwf.attachName = null
     return

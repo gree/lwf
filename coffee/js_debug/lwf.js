@@ -3892,6 +3892,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         lwf.destroy();
       }
       lwf.parent = null;
+      if (lwf.rootMovie != null) {
+        lwf.rootMovie.parent = null;
+      }
       lwf.detachHandler = null;
       lwf.attachName = null;
     };
@@ -9741,16 +9744,33 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    CanvasRendererFactory.prototype.renderMask = function() {
+    CanvasRendererFactory.prototype.resetGlobalCompositeOperation = function(ctx) {
+      ctx.globalCompositeOperation = "source-over";
+      this.renderBlendMode = "normal";
+    };
+
+    CanvasRendererFactory.prototype.setGlobalCompositeOperation = function(ctx, blendMode) {
+      if (this.renderBlendMode !== blendMode) {
+        this.renderBlendMode = blendMode;
+        switch (this.renderBlendMode) {
+          case "add":
+            ctx.globalCompositeOperation = "lighter";
+            break;
+          case "normal":
+            ctx.globalCompositeOperation = "source-over";
+        }
+      }
+    };
+
+    CanvasRendererFactory.prototype.renderMask = function(blendMode) {
       var ctx;
       ctx = this.maskCanvas.getContext('2d');
-      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = this.maskComposition;
+      this.renderBlendMode = null;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(this.layerCanvas, 0, 0, this.layerCanvas.width, this.layerCanvas.height, 0, 0, this.layerCanvas.width, this.layerCanvas.height);
       ctx = this.stageContext;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
+      this.setGlobalCompositeOperation(ctx, blendMode);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(this.maskCanvas, 0, 0, this.maskCanvas.width, this.maskCanvas.height, 0, 0, this.maskCanvas.width, this.maskCanvas.height);
     };
@@ -9762,7 +9782,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           case "erase":
           case "mask":
             if (this.renderMaskMode === "layer" && this.renderMasked) {
-              this.renderMask();
+              this.renderMask(cmd.blendMode);
             }
             this.renderMasked = true;
             this.maskComposition = cmd.maskMode === "erase" ? "source-out" : "source-in";
@@ -9775,9 +9795,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               cleared = false;
             }
             ctx = this.maskCanvas.getContext('2d');
-            ctx.globalAlpha = 1;
-            ctx.globalCompositeOperation = "source-over";
-            this.renderBlendMode = "normal";
+            this.resetGlobalCompositeOperation(ctx);
             if (!cleared) {
               ctx.setTransform(1, 0, 0, 1, 0, 0);
               this.clearCanvasRect(this.stage, ctx);
@@ -9794,42 +9812,29 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 cleared = false;
               }
               ctx = this.layerCanvas.getContext('2d');
-              ctx.globalAlpha = 1;
-              ctx.globalCompositeOperation = "source-over";
-              this.renderBlendMode = "normal";
+              this.resetGlobalCompositeOperation(ctx);
               if (!cleared) {
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 this.clearCanvasRect(this.stage, ctx);
               }
             } else {
               ctx = this.stageContext;
-              ctx.globalAlpha = 1;
-              ctx.globalCompositeOperation = "source-over";
-              this.renderBlendMode = "normal";
+              this.resetGlobalCompositeOperation(ctx);
             }
             break;
           case "normal":
             ctx = this.stageContext;
-            ctx.globalAlpha = 1;
-            ctx.globalCompositeOperation = "source-over";
-            this.renderBlendMode = "normal";
+            this.resetGlobalCompositeOperation(ctx);
             if (this.renderMaskMode === "layer" && this.renderMasked) {
-              this.renderMask();
+              this.renderMask(cmd.blendMode);
             }
         }
         this.renderMaskMode = cmd.maskMode;
       }
-      if (this.renderBlendMode !== cmd.blendMode) {
-        this.renderBlendMode = cmd.blendMode;
-        switch (this.renderBlendMode) {
-          case "add":
-            ctx.globalCompositeOperation = "lighter";
-            break;
-          case "normal":
-            ctx.globalCompositeOperation = "source-over";
-        }
+      this.setGlobalCompositeOperation(ctx, cmd.blendMode);
+      if (cmd.alpha !== 1) {
+        ctx.globalAlpha = cmd.alpha;
       }
-      ctx.globalAlpha = cmd.alpha;
       m = cmd.matrix;
       ctx.setTransform(m.scaleX, m.skew1, m.skew0, m.scaleY, m.translateX, m.translateY);
       u = cmd.u;
@@ -9843,6 +9848,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         ctx.fill();
       } else {
         ctx.drawImage(cmd.image, u, v, w, h, 0, 0, w, h);
+      }
+      if (cmd.alpha !== 1) {
+        ctx.globalAlpha = 1;
       }
       return ctx;
     };
@@ -9866,7 +9874,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.clearCanvasRect(this.stage, ctx);
         }
       }
-      this.renderBlendMode = "normal";
+      ctx.globalAlpha = 1;
+      this.resetGlobalCompositeOperation(ctx);
       this.renderMaskMode = "normal";
       this.renderMasked = false;
       renderCount = lwf.renderCount;
@@ -9887,10 +9896,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         ctx = this.render(ctx, cmd);
       }
       if (this.renderMaskMode === "layer" && this.renderMasked) {
-        this.renderMask();
-      } else {
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = "source-over";
+        this.renderMask(this.renderBlendMode);
       }
       this.initCommands();
     };
@@ -10931,7 +10937,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       ++this.drawCalls;
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       this.bindTexture(gl, this.maskTexture);
-      this.blendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      this.blendFunc(gl, gl.ONE, this.blendDstFactor);
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
       ++this.drawCalls;
     };

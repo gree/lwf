@@ -768,7 +768,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     @bindTexture(gl, @maskTexture)
-    @blendFunc(gl, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    @blendFunc(gl, gl.ONE, @blendDstFactor)
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
     return
