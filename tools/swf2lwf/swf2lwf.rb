@@ -4405,6 +4405,7 @@ end
 
   ensure  # @logfile
   @logfile.close
+  @logfile = nil
   end  # @logfile
 
 end
