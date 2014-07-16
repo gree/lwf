@@ -21,6 +21,7 @@
 #include "cocos2d.h"
 #include "lwf_cocos2dx_bitmap.h"
 #include "lwf_cocos2dx_factory.h"
+#include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_particle.h"
 #include "lwf_cocos2dx_textbmfont.h"
 #include "lwf_cocos2dx_textttf.h"
@@ -29,9 +30,98 @@
 #include "lwf_property.h"
 #include "lwf_text.h"
 
+NS_CC_BEGIN
+
+class LWFMask : public Node
+{
+private:
+	RenderTexture *m_renderTexture;
+	BlendFunc m_blendFunc;
+
+public:
+	static LWFMask *create() {
+		LWFMask *mask = new LWFMask();
+		if (mask && mask->init()) {
+			mask->autorelease();
+			return mask;
+		}
+		CC_SAFE_DELETE(mask);
+		return NULL;
+	}
+
+	LWFMask()
+		: m_renderTexture(0)
+	{
+	}
+
+	virtual ~LWFMask()
+	{
+		CC_SAFE_RELEASE(m_renderTexture);
+	}
+
+	virtual bool init() override
+	{
+		Size size = Director::getInstance()->getVisibleSize();
+		m_renderTexture = RenderTexture::create(size.width, size.height);
+		if (!m_renderTexture)
+			return false;
+		m_renderTexture->retain();
+		m_renderTexture->setKeepMatrix(true);
+		m_renderTexture->setAnchorPoint(Vec2::ZERO);
+		m_renderTexture->getSprite()->setAnchorPoint(Vec2::ZERO);
+		return Node::init();
+	}
+
+	void setBlendFunc(BlendFunc blendFunc)
+	{
+		m_blendFunc = blendFunc;
+	}
+
+	virtual void visit(Renderer *renderer,
+		const Mat4& parentTransform, uint32_t parentFlags) override
+	{
+		m_renderTexture->beginWithClear(0, 0, 0, 0);
+		Node::visit(renderer, parentTransform, parentFlags);
+		m_renderTexture->end();
+
+		m_renderTexture->getSprite()->setBlendFunc(m_blendFunc);
+		m_renderTexture->setLocalZOrder(getLocalZOrder());
+		m_renderTexture->visit(renderer, Mat4::IDENTITY, 0);
+	}
+};
+
+NS_CC_END
+
 USING_NS_CC;
 
 namespace LWF {
+
+static void PlaceNode(Node *newParent, Node *node)
+{
+	if (newParent && node && node->getParent() != newParent) {
+		node->retain();
+		node->removeFromParentAndCleanup(false);
+		newParent->addChild(node);
+		node->release();
+	}
+}
+
+static GLenum GetBlendDstFactor(int blendMode)
+{
+	switch (blendMode) {
+	case Format::BLEND_MODE_ADD:
+		return GL_ONE;
+
+	case Format::BLEND_MODE_MULTIPLY:
+		return GL_DST_COLOR;
+
+	case Format::BLEND_MODE_SCREEN:
+		return GL_ONE;
+
+	default:
+		return GL_ONE_MINUS_SRC_ALPHA;
+	}
+}
 
 shared_ptr<Renderer> LWFRendererFactory::ConstructBitmap(
 	LWF *lwf, int objId, Bitmap *bitmap)
@@ -75,14 +165,28 @@ void LWFRendererFactory::Init(LWF *lwf)
 
 void LWFRendererFactory::BeginRender(LWF *lwf)
 {
+	m_maskMode = Format::BLEND_MODE_NORMAL;
+	m_lastMaskMode = Format::BLEND_MODE_NORMAL;
+	m_maskNo = -1;
 }
 
 void LWFRendererFactory::EndRender(LWF *lwf)
 {
+	if (!m_masks.empty()) {
+		for (int i = ++m_maskNo; i < m_masks.size(); ++i) {
+			auto& children = m_masks[i]->getChildren();
+			for (auto& node : children)
+				PlaceNode(m_node, node);
+			m_masks[i]->removeFromParentAndCleanup(true);
+		}
+		m_masks.resize(m_maskNo);
+	}
 }
 
 void LWFRendererFactory::Destruct()
 {
+	for (auto& mask : m_masks)
+		mask->removeFromParentAndCleanup(true);
 }
 
 void LWFRendererFactory::FitForHeight(class LWF *lwf, float w, float h)
@@ -113,6 +217,95 @@ void LWFRendererFactory::ScaleForWidth(class LWF *lwf, float w, float h)
 	float scale = w / lwf->width;
 	lwf->scaleByStage = scale;
 	lwf->property->Scale(scale, scale);
+}
+
+bool LWFRendererFactory::Render(class LWF *lwf,
+	Node *node, int renderingIndex, bool visible, BlendFunc *baseBlendFunc)
+{
+	m_renderingIndex = renderingIndex;
+
+	node->setVisible(visible);
+	if (!visible)
+		return false;
+
+	Node *target;
+	switch (m_maskMode) {
+	case Format::BLEND_MODE_ERASE:
+	case Format::BLEND_MODE_MASK:
+	case Format::BLEND_MODE_LAYER:
+		{
+			LWFMask *mask;
+			if (m_lastMaskMode != m_maskMode) {
+				++m_maskNo;
+				if (m_masks.size() > m_maskNo) {
+					mask = m_masks[m_maskNo];
+				} else {
+					mask = LWFMask::create();
+					m_masks.push_back(mask);
+				}
+				PlaceNode(m_node, mask);
+
+				LWFMask *layer = nullptr;
+				if (m_lastMaskMode == Format::BLEND_MODE_LAYER &&
+						(m_maskMode == Format::BLEND_MODE_ERASE ||
+							m_maskMode == Format::BLEND_MODE_MASK) &&
+						m_maskNo > 0) {
+					layer = m_masks[m_maskNo - 1];
+					if (layer)
+						layer->setLocalZOrder(INT_MAX);
+					PlaceNode(mask, layer);
+				}
+
+				if (layer && mask) {
+					switch (m_maskMode) {
+					case Format::BLEND_MODE_ERASE:
+					case Format::BLEND_MODE_MASK:
+						switch (m_maskMode) {
+						case Format::BLEND_MODE_ERASE:
+							layer->setBlendFunc(
+								{GL_ONE_MINUS_DST_ALPHA, GL_ZERO});
+							break;
+						case Format::BLEND_MODE_MASK:
+							layer->setBlendFunc(
+								{GL_DST_ALPHA, GL_ZERO});
+							break;
+						}
+						mask->setBlendFunc(
+							{GL_ONE, GetBlendDstFactor(m_blendMode)});
+						break;
+					}
+				}
+
+				m_lastMaskMode = m_maskMode;
+			} else {
+				mask = m_masks[m_maskNo];
+			}
+			if (mask)
+				mask->setLocalZOrder(m_renderingIndex + 1);
+			target = mask;
+
+		}
+		break;
+
+	default:
+		target = m_node;
+		break;
+	}
+
+	PlaceNode(target, node);
+
+	node->setLocalZOrder(renderingIndex);
+
+	BlendProtocol *p = dynamic_cast<BlendProtocol *>(node);
+	if (!p)
+		return true;
+
+	cocos2d::BlendFunc blendFunc =
+		baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
+	blendFunc.dst = GetBlendDstFactor(m_blendMode);
+	p->setBlendFunc(blendFunc);
+
+	return true;
 }
 
 }	// namespace LWF

@@ -181,17 +181,10 @@ void LWFTextTTFRenderer::Render(
 	if (!m_label)
 		return;
 
-	m_label->setVisible(visible);
-	if (!visible)
+	if (!m_factory->Render(lwf, m_label, renderingIndex, visible))
 		return;
 
-	m_label->setLocalZOrder(renderingIndex);
 	m_label->setMatrixAndColorTransform(matrix, colorTransform);
-
-	cocos2d::BlendFunc blendFunc = m_label->getBlendFunc();
-	blendFunc.dst = (GLenum)(m_factory->GetBlendMode() ==
-		Format::BLEND_MODE_ADD ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
-	m_label->setBlendFunc(blendFunc);
 }
 
 void LWFTextTTFRenderer::SetText(string text)

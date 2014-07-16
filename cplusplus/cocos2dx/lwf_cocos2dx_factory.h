@@ -25,6 +25,7 @@
 
 namespace cocos2d {
 class LWFNode;
+class LWFMask;
 }
 
 namespace LWF {
@@ -32,14 +33,22 @@ namespace LWF {
 class LWFRendererFactory : public IRendererFactory
 {
 protected:
+	typedef std::vector<cocos2d::LWFMask *> Masks_t;
+
+protected:
 	cocos2d::LWFNode *m_node;
+	Masks_t m_masks;
 	int m_blendMode;
 	int m_maskMode;
+	int m_lastMaskMode;
+	int m_maskNo;
+	int m_renderingIndex;
 
 public:
 	LWFRendererFactory(cocos2d::LWFNode *node)
 		: m_node(node), m_blendMode(Format::BLEND_MODE_NORMAL),
-			m_maskMode(Format::BLEND_MODE_NORMAL)
+			m_maskMode(Format::BLEND_MODE_NORMAL),
+			m_lastMaskMode(Format::BLEND_MODE_NORMAL)
 	{
 	}
 
@@ -59,12 +68,14 @@ public:
 	void SetBlendMode(int blendMode) {m_blendMode = blendMode;}
 	void SetMaskMode(int maskMode) {m_maskMode = maskMode;}
 	int GetBlendMode() {return m_blendMode;}
-	int GetMaskMode() {return m_maskMode;}
 
 	void FitForHeight(LWF *lwf, float w, float h);
 	void FitForWidth(LWF *lwf, float w, float h);
 	void ScaleForHeight(LWF *lwf, float w, float h);
 	void ScaleForWidth(LWF *lwf, float w, float h);
+
+	bool Render(LWF *lwf, cocos2d::Node *node, int renderingIndex,
+		bool visible, cocos2d::BlendFunc *baseBlendFunc = 0);
 };
 
 }	// namespace LWF

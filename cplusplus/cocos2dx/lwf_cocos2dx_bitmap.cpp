@@ -149,7 +149,7 @@ public:
 			setDirty(true);
 		}
 
-		cocos2d::LWFNode *node = (cocos2d::LWFNode *)getParent();
+		cocos2d::Node *node = getParent();
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor((cocos2d::Color3B){
@@ -275,28 +275,12 @@ void LWFBitmapRenderer::Render(
 	if (!m_sprite)
 		return;
 
-	m_sprite->setVisible(visible);
-	if (!visible)
+    cocos2d::BlendFunc baseBlendFunc = m_sprite->getBaseBlendFunc();
+	if (!m_factory->Render(
+			lwf, m_sprite, renderingIndex, visible, &baseBlendFunc))
 		return;
 
-	m_sprite->setLocalZOrder(renderingIndex);
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
-
-	cocos2d::BlendFunc blendFunc = m_sprite->getBaseBlendFunc();
-	switch (m_factory->GetBlendMode()) {
-	case Format::BLEND_MODE_ADD:
-		blendFunc.dst = GL_ONE;
-		break;
-
-	case Format::BLEND_MODE_MULTIPLY:
-		blendFunc.src = GL_DST_COLOR;
-		break;
-
-	case Format::BLEND_MODE_SCREEN:
-		blendFunc.src = GL_ONE;
-		break;
-	}
-	m_sprite->setBlendFunc(blendFunc);
 }
 
 }   // namespace LWF
