@@ -50,13 +50,13 @@ public:
 	LWFNode();
 	virtual ~LWFNode();
 
+	bool isDestructed() const {return _destructed;}
+
     bool initWithLWFFile(const std::string &filename, void *l = 0);
 
 	virtual LWF::shared_ptr<LWF::LWF> attachLWF(
 		const char *pszFilename, const char *pszTarget,
 		const char *pszAttachName);
-
-	void remove(Node *child);
 
 	virtual void update(float dt) override;
 	virtual void draw(Renderer *renderer, const Mat4& transform, uint32_t flags) override;
@@ -65,6 +65,8 @@ public:
 	virtual void onExit() override;
 
 	virtual bool handleTouch(Touch *touch, Event *event);
+
+	static void removeFromParent(Node *node);
 };
 
 NS_CC_END

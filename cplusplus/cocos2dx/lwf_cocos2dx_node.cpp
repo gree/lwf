@@ -133,12 +133,6 @@ shared_ptr<class LWF> LWFNode::attachLWF(
 	return child;
 }
 
-void LWFNode::remove(Node *child)
-{
-	if (!_destructed)
-		child->removeFromParent();
-}
-
 void LWFNode::update(float dt)
 {
 	if (lwf) {
@@ -194,6 +188,15 @@ bool LWFNode::handleTouch(Touch *touch, Event *event)
 	Button *button = lwf->InputPoint(point.x, -point.y);
 
 	return button ? true : false;
+}
+
+void LWFNode::removeFromParent(Node *node)
+{
+	LWFNode *lwfNode = dynamic_cast<LWFNode *>(node->getParent());
+	if (lwfNode && lwfNode->isDestructed())
+		return;
+
+	node->removeFromParent();
 }
 
 NS_CC_END
