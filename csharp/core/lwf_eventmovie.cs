@@ -87,8 +87,6 @@ public class MovieEventHandlers
 
 		foreach (var h in handlers.load)
 			load.Add(h.Key, h.Value);
-		foreach (var h in handlers.load)
-			load.Add(h.Key, h.Value);
 		foreach (var h in handlers.postLoad)
 			postLoad.Add(h.Key, h.Value);
 		foreach (var h in handlers.unload)
