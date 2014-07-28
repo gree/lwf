@@ -29,7 +29,8 @@ namespace UnityRenderer {
 public partial class Factory : IRendererFactory
 {
 	public GameObject gameObject;
-	public Camera camera;
+	public Camera renderCamera;
+	public Camera inputCamera;
 	public string texturePrefix;
 	public string fontPrefix;
 	public float zOffset;
@@ -42,8 +43,8 @@ public partial class Factory : IRendererFactory
 	public TextureUnloader textureUnloader;
 	private Matrix4x4 matrix;
 
-	protected Factory(GameObject gObj,
-		float zOff, float zR, int rQOff, bool uAC, Camera cam,
+	protected Factory(GameObject gObj, float zOff, float zR, int rQOff,
+		bool uAC, Camera renderCam, Camera inputCam,
 		string texturePrfx = "", string fontPrfx = "",
 		TextureLoader textureLdr = null,
 		TextureUnloader textureUnldr = null)
@@ -53,7 +54,8 @@ public partial class Factory : IRendererFactory
 		zRate = zR;
 		renderQueueOffset = rQOff;
 		useAdditionalColor = uAC;
-		camera = cam;
+		renderCamera = renderCam;
+		inputCamera = inputCam;
 		texturePrefix = texturePrfx;
 		fontPrefix = fontPrfx;
 		textureLoader = textureLdr;

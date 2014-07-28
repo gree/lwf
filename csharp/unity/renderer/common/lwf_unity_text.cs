@@ -264,7 +264,7 @@ public class UnityTextRenderer : TextRenderer
 		factory.ConvertColorTransform(
 			ref m_colorMult, ref m_colorAdd, colorTransform);
 		m_context.Render(m_renderMatrix, m_colorMult, m_colorAdd,
-			m_context.parent.layer, factory.camera);
+			m_context.parent.layer, factory.renderCamera);
 	}
 
 #if UNITY_EDITOR

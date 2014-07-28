@@ -83,7 +83,7 @@ public class LWFPlayer : MonoBehaviour
 	public virtual bool Load(string path,
 		string texturePrefix = "", string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
-		int cachingFrames = 0, Camera camera = null, bool autoPlay = true,
+		int cachingFrames = 0, Camera renderCamera = null, bool autoPlay = true,
 		bool useAdditionalColor = false,
 		LWFDataCallback lwfDataCallback = null,
 		LWFCallback lwfLoadCallback = null,
@@ -93,8 +93,6 @@ public class LWFPlayer : MonoBehaviour
 		TextureUnloader textureUnloader = null)
 	{
 		lwfName = path;
-		if (camera == null)
-			camera = Camera.main;
 
 		if (lwfLoadCallback != null)
 			lwfLoadCallbacks.Add(lwfLoadCallback);
@@ -110,8 +108,8 @@ public class LWFPlayer : MonoBehaviour
 			return false;
 
 		factory = new LWF.CombinedMeshRenderer.Factory(data, gameObject,
-			zOffset, zRate, renderQueueOffset, useAdditionalColor, camera,
-			texturePrefix, fontPrefix, textureLoader, textureUnloader);
+			zOffset, zRate, renderQueueOffset, useAdditionalColor, renderCamera,
+			null, texturePrefix, fontPrefix, textureLoader, textureUnloader);
 
 		lwf = new LWF.LWF(data, factory);
 

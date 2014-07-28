@@ -71,11 +71,12 @@ public partial class Factory : UnityRenderer.Factory
 
 	public Factory(Data d, GameObject gObj,
 			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
-			Camera cam = null, string texturePrfx = "", string fontPrfx = "",
+			Camera renderCam = null, Camera inputCam = null,
+			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null)
-		: base(gObj, zOff, zR, rQOff, uAC,
-			cam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
+		: base(gObj, zOff, zR, rQOff, uAC, renderCam, inputCam, texturePrfx,
+			fontPrfx, textureLdr, textureUnldr)
 	{
 		data = d;
 		mesh = new Mesh();

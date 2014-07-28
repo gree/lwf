@@ -315,7 +315,7 @@ public class LWFObjectButtonInspector : MonoBehaviour
 		factory.ConvertMatrix(ref matrix, button.matrix, 0, button.height);
 		Factory.MultiplyMatrix(ref renderMatrix,
 			factory.gameObject.transform.localToWorldMatrix, matrix);
-		Camera camera = factory.camera;
+		Camera camera = factory.inputCamera;
 
 		Matrix4x4 m = renderMatrix;
 		Vector2 lt = GUIUtility.ScreenToGUIPoint(camera.WorldToScreenPoint(

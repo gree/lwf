@@ -199,12 +199,12 @@ public class BitmapRenderer : Renderer
 						m_context.material.shader);
 			}
 			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
-				m_additiveMaterial, factory.gameObject.layer, factory.camera, 0,
-				m_property);
+				m_additiveMaterial, factory.gameObject.layer,
+				factory.renderCamera, 0, m_property);
 		} else {
 			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
-				m_context.material, factory.gameObject.layer, factory.camera, 0,
-				m_property);
+				m_context.material, factory.gameObject.layer,
+				factory.renderCamera, 0, m_property);
 		}
 	}
 
