@@ -24,6 +24,7 @@
 #include "renderer/CCTextureCache.h"
 #include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_data.h"
+#include <regex>
 
 using namespace LWF;
 using LWFData = ::LWF::Data;
@@ -53,14 +54,12 @@ LWFResourceCache::~LWFResourceCache()
 
 shared_ptr<LWFData> LWFResourceCache::loadLWFDataInternal(const string &path)
 {
-    long size;
-	unsigned char *buffer =
-		FileUtils::getInstance()->getFileData(path.c_str(), "r", &size);
-	if (!buffer)
+	Data fileData = FileUtils::getInstance()->getDataFromFile(path.c_str());
+	if (fileData.isNull())
 		return shared_ptr<LWFData>();
 
-	shared_ptr<LWFData> data = make_shared<LWFData>(buffer, size);
-	delete [] buffer;
+	shared_ptr<LWFData> data =
+		make_shared<LWFData>(fileData.getBytes(), fileData.getSize());
 	if (!data->Check())
 		return shared_ptr<LWFData>();
 
@@ -137,6 +136,54 @@ void LWFResourceCache::unloadParticle(const string &path)
 
 	if (--it->second.first <= 0)
 		m_particleCache.erase(it);
+}
+
+LWFTextRendererContext LWFResourceCache::getTextRendererContext(
+	const string &font)
+{
+	TextRendererCache_t::iterator it = m_textRendererCache.find(font);
+	if (it != m_textRendererCache.end())
+		return it->second;
+
+	FileUtils *fileUtils = FileUtils::getInstance();
+	string fontPath = getFontPathPrefix() + font;
+
+	std::regex eFnt(".*\\.fnt$", std::regex_constants::icase);
+	if (std::regex_match(font, eFnt)) {
+		LWFTextRendererContext c(LWFTextRendererContext::BMFONT, fontPath);
+		m_textRendererCache[font] = c;
+		return c;
+	}
+
+	std::regex eTtf(".*\\.ttf$", std::regex_constants::icase);
+	if (std::regex_match(font, eTtf)) {
+		LWFTextRendererContext c(LWFTextRendererContext::TTF, fontPath);
+		m_textRendererCache[font] = c;
+		return c;
+	}
+
+	fontPath = getFontPathPrefix() + font + ".fnt";
+	if (fileUtils->isFileExist(font)) {
+		LWFTextRendererContext c(LWFTextRendererContext::BMFONT, fontPath);
+		m_textRendererCache[font] = c;
+		return c;
+	}
+
+	fontPath = getFontPathPrefix() + font + ".ttf";
+	if (fileUtils->isFileExist(font)) {
+		LWFTextRendererContext c(LWFTextRendererContext::TTF, fontPath);
+		m_textRendererCache[font] = c;
+		return c;
+	}
+
+	if (font[0] == '_')
+		fontPath = font.substr(1);
+	else
+		fontPath = font;
+
+	LWFTextRendererContext c(LWFTextRendererContext::SYSTEMFONT, fontPath);
+	m_textRendererCache[font] = c;
+	return c;
 }
 
 

@@ -21,7 +21,6 @@
 #include "cocos2d.h"
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
-#include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_cocos2dx_textbmfont.h"
 #include "lwf_core.h"
 #include "lwf_data.h"
@@ -29,13 +28,12 @@
 
 namespace LWF {
 
-class LWFTextBMFont : public cocos2d::LabelBMFont
+class LWFTextBMFont : public cocos2d::Label
 {
 protected:
+	cocos2d::Mat4 m_nodeToParentTransform;
 	Matrix m_matrix;
-	float m_fontHeight;
 	float m_offsetY;
-	float m_height;
 	float m_scale;
 	float m_red;
 	float m_green;
@@ -48,64 +46,78 @@ public:
 		cocos2d::TextHAlignment hAlignment, cocos2d::TextVAlignment vAlignment,
 		float red, float green, float blue)
 	{
-		LWFTextBMFont *text = new LWFTextBMFont();
-		if (text && text->initWithString(string, fontPath, fontHeight,
-				width, height, hAlignment, vAlignment, red, green, blue)) {
-			text->autorelease();
-			return text;
+		LWFTextBMFont *ret = new LWFTextBMFont(nullptr, hAlignment);
+		if (!ret)
+			return nullptr;
+
+		if (!ret->setBMFontFilePath(fontPath)) {
+			delete ret;
+			return nullptr;
 		}
-		CC_SAFE_DELETE(text);
-		return NULL;
+
+		ret->setParameter(
+			fontHeight, width, height, vAlignment, red, green, blue);
+		ret->setString(string);
+		ret->autorelease();
+
+		return ret;
 	}
 
-	bool initWithString(const char *string, const char *fontPath,
-		float fontHeight, float width, float height,
-		cocos2d::TextHAlignment hAlignment, cocos2d::TextVAlignment vAlignment,
-		float red, float green, float blue)
+	LWFTextBMFont(cocos2d::FontAtlas *atlas, cocos2d::TextHAlignment hAlignment)
+		: Label(atlas, hAlignment)
 	{
-		if (!cocos2d::LabelBMFont::initWithString("", fontPath))
-			return false;
+		m_matrix.Invalidate();
+	}
 
-		m_fontHeight =
-			((cocos2d::Label *)getChildren().front())->getCommonLineHeight();
-		m_height = height;
-		m_scale = fontHeight / m_fontHeight;
+	virtual ~LWFTextBMFont()
+	{
+	}
+
+	void setParameter(float fontHeight, float width, float height,
+		cocos2d::TextVAlignment vAlignment, float red, float green, float blue)
+	{
+		cocos2d::Size visibleSize =
+			cocos2d::Director::getInstance()->getVisibleSize();
+		cocos2d::Size winSize =
+			cocos2d::Director::getInstance()->getWinSize();
+		float contentScaleFactor =
+			cocos2d::Director::getInstance()->getContentScaleFactor();
+		m_scale = fontHeight / getLineHeight() * 96.0f / 72.0f *
+			visibleSize.height / winSize.height;
 		m_vAlignment = vAlignment;
-		setAlignment(hAlignment);
-		setWidth(width / m_scale);
-		setString(string);
-		setRGB(red, green, blue);
-		return true;
-	}
-
-	void setRGB(float red, float green, float blue)
-	{
 		m_red = red;
 		m_green = green;
 		m_blue = blue;
+		setDimensions(width / m_scale / contentScaleFactor,
+			height / m_scale / contentScaleFactor);
 	}
 
 	virtual void setVisible(bool bVisible) override
 	{
-		if (!bVisible)
+		if (bVisible && !isVisible())
 			m_matrix.Invalidate();
-		cocos2d::LabelBMFont::setVisible(bVisible);
+		cocos2d::Label::setVisible(bVisible);
 	}
 
-	void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
+	virtual const cocos2d::Mat4& getNodeToParentTransform() const override
 	{
-		cocos2d::LWFNode *node = (cocos2d::LWFNode *)getParent();
+		return m_nodeToParentTransform;
+	}
+
+	void setMatrixAndColorTransform(
+		cocos2d::LWFNode *node, const Matrix *m, const ColorTransform *cx)
+	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
 			float scale = m_scale / node->lwf->scaleByStage;
-            cocos2d::Mat4 mat = cocos2d::Mat4(
+			m_nodeToParentTransform = cocos2d::Mat4(
 				m->scaleX * scale, m->skew0 * scale, 0,
 					m->translateX + m->skew0 * m_offsetY,
 				m->skew1 * scale, m->scaleY * scale, 0,
-					-m->translateY - m->scaleY * m_offsetY,
+					-m->translateY - m->scaleY * m_offsetY -
+						m->scaleY * getHeight() * scale,
 				0, 0, 1, 0,
 				0, 0, 0, 1);
-			setNodeToParentTransform(mat);
 		}
 
 		const Color &c = cx->multi;
@@ -119,18 +131,18 @@ public:
 
 	void setString(const std::string &label)
 	{
-		cocos2d::LabelBMFont::setString(label);
-		
-		float height = getContentSize().height;
+		cocos2d::Label::setString(label);
+
+		float height = (float)getHeight();
 		switch (m_vAlignment) {
 		case cocos2d::TextVAlignment::TOP:
-			m_offsetY = m_fontHeight;
+			m_offsetY = 0;
 			break;
 		case cocos2d::TextVAlignment::BOTTOM:
-			m_offsetY = height + m_fontHeight;
+			m_offsetY = height;
 			break;
 		case cocos2d::TextVAlignment::CENTER:
-			m_offsetY = height / 2 + m_fontHeight;
+			m_offsetY = height / 2.0f;
 			break;
 		}
 	}
@@ -171,14 +183,8 @@ LWFTextBMFontRenderer::LWFTextBMFontRenderer(
 		break;
 	}
 
-	cocos2d::LWFResourceCache *cache =
-		cocos2d::LWFResourceCache::sharedLWFResourceCache();
-	string fontPath = cache->getFontPathPrefix();
-	fontPath += fontName;
-	fontPath += ".fnt";
-
 	m_label = LWFTextBMFont::create(l->data->strings[t.stringId].c_str(),
-		fontPath.c_str(), p.fontHeight, t.width, t.height,
+		fontName, p.fontHeight, t.width, t.height,
 		hAlignment, vAlignment, c.red, c.green, c.blue);
 
 	if (!m_label)
@@ -216,7 +222,8 @@ void LWFTextBMFontRenderer::Render(
 	if (!m_factory->Render(lwf, m_label, renderingIndex, visible))
 		return;
 
-	m_label->setMatrixAndColorTransform(matrix, colorTransform);
+	m_label->setMatrixAndColorTransform(
+		m_factory->GetNode(), matrix, colorTransform);
 }
 
 void LWFTextBMFontRenderer::SetText(string text)

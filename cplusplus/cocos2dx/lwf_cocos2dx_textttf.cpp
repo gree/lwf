@@ -28,47 +28,63 @@
 
 namespace LWF {
 
-class LWFTextTTF : public cocos2d::LabelTTF
+class LWFTextTTF : public cocos2d::Label
 {
 protected:
+	cocos2d::Mat4 m_nodeToParentTransform;
 	Matrix m_matrix;
+	float m_fontHeight;
 	float m_red;
 	float m_green;
 	float m_blue;
 
 public:
-	static LWFTextTTF *create(const char *string,
+	static LWFTextTTF *create(bool useTTF, const char *string,
 		const char *fontName, float fontSize,
 		const cocos2d::Size& dimensions, cocos2d::TextHAlignment hAlignment, 
 		cocos2d::TextVAlignment vAlignment, float red, float green, float blue)
 	{
-		LWFTextTTF *text = new LWFTextTTF();
-		if (text && text->initWithString(string, fontName, fontSize,
-				dimensions, hAlignment, vAlignment, red, green, blue)) {
-			text->autorelease();
-			return text;
+		LWFTextTTF *ret = new LWFTextTTF(nullptr, hAlignment, vAlignment);
+		if (!ret)
+			return nullptr;
+
+		if (useTTF) {
+			cocos2d::TTFConfig ttfConfig(
+				fontName, fontSize, cocos2d::GlyphCollection::DYNAMIC);
+			if (!ret->setTTFConfig(ttfConfig)) {
+				delete ret;
+				return nullptr;
+			}
+		} else {
+			ret->setSystemFontName(fontName);
+			ret->setSystemFontSize(fontSize);
 		}
-		CC_SAFE_DELETE(text);
-		return NULL;
+
+		ret->setDimensions(dimensions.width, dimensions.height);
+		ret->setParameter(useTTF, fontSize, red, green, blue);
+		ret->setString(string);
+		ret->autorelease();
+
+		return ret;
 	}
 
-	bool initWithString(const char *string, const char *fontName,
-			float fontSize, const cocos2d::Size& dimensions,
-			cocos2d::TextHAlignment hAlignment,
-			cocos2d::TextVAlignment vAlignment,
-			float red, float green, float blue)
+	LWFTextTTF(cocos2d::FontAtlas *atlas, cocos2d::TextHAlignment hAlignment,
+			cocos2d::TextVAlignment vAlignment)
+		: Label(atlas, hAlignment, vAlignment)
 	{
-		if (!cocos2d::LabelTTF::initWithString(string,
-				fontName, fontSize, dimensions, hAlignment, vAlignment))
-			return false;
-
-		setFlippedY(true);
-		setRGB(red, green, blue);
-		return true;
+		m_matrix.Invalidate();
 	}
 
-	void setRGB(float red, float green, float blue)
+	virtual ~LWFTextTTF()
 	{
+	}
+
+	void setParameter(
+		bool useTTF, float fontHeight, float red, float green, float blue)
+	{
+		m_fontHeight = fontHeight;
+		if (!useTTF)
+			m_fontHeight *= 96.0f / 72.0f;
 		m_red = red;
 		m_green = green;
 		m_blue = blue;
@@ -76,25 +92,28 @@ public:
 
 	virtual void setVisible(bool bVisible) override
 	{
-		if (!bVisible)
+		if (bVisible && !isVisible())
 			m_matrix.Invalidate();
-		cocos2d::LabelTTF::setVisible(bVisible);
+		cocos2d::Label::setVisible(bVisible);
 	}
 
-	void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
+	virtual const cocos2d::Mat4& getNodeToParentTransform() const override
+	{
+		return m_nodeToParentTransform;
+	}
+
+	void setMatrixAndColorTransform(
+		cocos2d::LWFNode *node, const Matrix *m, const ColorTransform *cx)
 	{
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
-            cocos2d::Mat4 mat = cocos2d::Mat4(
-				m->scaleX, m->skew0, 0, m->translateX,
-				-m->skew1, -m->scaleY, 0,
-					-m->translateY - m->scaleY * getFontSize() * 96.0f / 72.0f,
+			m_nodeToParentTransform = cocos2d::Mat4(
+				m->scaleX, -m->skew0, 0, m->translateX,
+				-m->skew1, m->scaleY, 0, -m->translateY - m->scaleY * getHeight(),
 				0, 0, 1, 0,
 				0, 0, 0, 1);
-			setNodeToParentTransform(mat);
 		}
 
-		cocos2d::LWFNode *node = (cocos2d::LWFNode *)getParent();
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor((cocos2d::Color3B){
@@ -105,8 +124,8 @@ public:
 	}
 };
 
-LWFTextTTFRenderer::LWFTextTTFRenderer(
-		LWF *l, Text *text, const char *fontName, cocos2d::LWFNode *node)
+LWFTextTTFRenderer::LWFTextTTFRenderer(LWF *l, Text *text, bool useTTF,
+		const char *fontName, cocos2d::LWFNode *node)
 	: TextRenderer(l), m_label(0)
 {
 	const Format::Text &t = l->data->texts[text->objectId];
@@ -142,7 +161,7 @@ LWFTextTTFRenderer::LWFTextTTFRenderer(
 
 	cocos2d::Size s = cocos2d::Size(t.width, t.height);
 
-	m_label = LWFTextTTF::create(l->data->strings[t.stringId].c_str(),
+	m_label = LWFTextTTF::create(useTTF, l->data->strings[t.stringId].c_str(),
 		fontName, p.fontHeight, s, hAlignment, vAlignment,
 		c.red, c.green, c.blue);
 
@@ -181,7 +200,8 @@ void LWFTextTTFRenderer::Render(
 	if (!m_factory->Render(lwf, m_label, renderingIndex, visible))
 		return;
 
-	m_label->setMatrixAndColorTransform(matrix, colorTransform);
+	m_label->setMatrixAndColorTransform(
+		m_factory->GetNode(), matrix, colorTransform);
 }
 
 void LWFTextTTFRenderer::SetText(string text)

@@ -131,7 +131,7 @@ public:
 
 	virtual void setVisible(bool bVisible) override
 	{
-		if (!bVisible)
+		if (bVisible && !isVisible())
 			m_matrix.Invalidate();
 		cocos2d::Sprite::setVisible(bVisible);
 	}
@@ -146,7 +146,6 @@ public:
 				0, 0, 1, 0,
 				0, 0, 0, 1);
 			setNodeToParentTransform(mat);
-			setDirty(true);
 		}
 
 		cocos2d::Node *node = getParent();

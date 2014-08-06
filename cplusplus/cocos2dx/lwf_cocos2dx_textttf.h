@@ -40,8 +40,8 @@ protected:
 	LWFTextTTF *m_label;
 
 public:
-	LWFTextTTFRenderer(
-		LWF *l, Text *text, const char *fontName, cocos2d::LWFNode *node);
+	LWFTextTTFRenderer(LWF *l,
+		Text *text, bool useTTF, const char *fontName, cocos2d::LWFNode *node);
 	virtual ~LWFTextTTFRenderer();
 
 	void Destruct();
@@ -51,7 +51,7 @@ public:
 
 	void SetText(string text);
 
-	cocos2d::LabelTTF *GetLabel() {return (cocos2d::LabelTTF *)m_label;}
+	cocos2d::Label *GetLabel() {return (cocos2d::Label *)m_label;}
 };
 
 }   // namespace LWF

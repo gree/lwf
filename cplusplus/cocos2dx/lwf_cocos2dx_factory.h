@@ -52,6 +52,10 @@ public:
 	{
 	}
 
+	virtual ~LWFRendererFactory()
+	{
+	}
+
 	shared_ptr<Renderer> ConstructBitmap(
 		LWF *lwf, int objId, Bitmap *bitmap);
 	shared_ptr<Renderer> ConstructBitmapEx(
@@ -76,6 +80,8 @@ public:
 
 	bool Render(LWF *lwf, cocos2d::Node *node, int renderingIndex,
 		bool visible, cocos2d::BlendFunc *baseBlendFunc = 0);
+
+	cocos2d::LWFNode *GetNode() {return m_node;}
 };
 
 }	// namespace LWF

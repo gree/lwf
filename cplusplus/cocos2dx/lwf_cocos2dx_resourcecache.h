@@ -33,6 +33,21 @@ class Data;
 NS_CC_BEGIN
 
 
+struct LWFTextRendererContext
+{
+	enum {
+		BMFONT,
+		SYSTEMFONT,
+		TTF,
+	};
+
+	int type;
+	std::string font;
+
+	LWFTextRendererContext() {}
+	LWFTextRendererContext(int t, std::string f) : type(t), font(f) {}
+};
+
 class LWFResourceCache
 {
 private:
@@ -42,6 +57,7 @@ private:
 	typedef LWF::pair<int, LWF::vector<LWF::PreloadCallback> > DataCallbackList;
 	typedef LWF::map<LWF::string, DataCallbackList> DataCallbackMap;
 	typedef LWF::map<LWF::string, LWF::pair<int, ValueMap> > ParticleCache;
+	typedef LWF::map<std::string, LWFTextRendererContext> TextRendererCache_t;
 
 private:
 	static LWFResourceCache *m_instance;
@@ -51,6 +67,7 @@ private:
 	DataCacheMap m_dataCacheMap;
 	DataCallbackMap m_dataCallbackMap;
 	ParticleCache m_particleCache;
+	TextRendererCache_t m_textRendererCache;
 	LWF::string m_fontPathPrefix;
 	LWF::string m_particlePathPrefix;
 
@@ -64,7 +81,7 @@ public:
 	LWF::shared_ptr<LWF::Data> loadLWFData(const LWF::string &path);
 	void unloadLWFData(const LWF::shared_ptr<LWF::Data> &data);
 
-    ValueMap loadParticle(const LWF::string &path, bool retain = true);
+	ValueMap loadParticle(const LWF::string &path, bool retain = true);
 	void unloadParticle(const LWF::string &path);
 
 	void unloadAll();
@@ -72,6 +89,8 @@ public:
 
 	const LWF::string &getFontPathPrefix() {return m_fontPathPrefix;}
 	void setFontPathPrefix(const LWF::string path) {m_fontPathPrefix = path;}
+	LWFTextRendererContext getTextRendererContext(const LWF::string &font);
+
 	const LWF::string &getDefaultParticlePathPrefix()
 		{return m_particlePathPrefix;}
 	void setDefaultParticlePathPrefix(const LWF::string path)

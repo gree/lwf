@@ -23,6 +23,7 @@
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_particle.h"
+#include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_cocos2dx_textbmfont.h"
 #include "lwf_cocos2dx_textttf.h"
 #include "lwf_core.h"
@@ -142,14 +143,21 @@ shared_ptr<TextRenderer> LWFRendererFactory::ConstructText(
 	const Format::TextProperty &p = lwf->data->textProperties[t.textPropertyId];
 	const Format::Font &f = lwf->data->fonts[p.fontId];
 	string fontName = lwf->data->strings[f.stringId];
+	LWFResourceCache *cache = LWFResourceCache::sharedLWFResourceCache();
+	LWFTextRendererContext c = cache->getTextRendererContext(fontName);
 
-	if (fontName[0] == '_') {
-		fontName = fontName.substr(1);
-		return make_shared<LWFTextTTFRenderer>(
-			lwf, text, fontName.c_str(), m_node);
-	} else {
+	switch (c.type) {
+	case LWFTextRendererContext::BMFONT:
 		return make_shared<LWFTextBMFontRenderer>(
-			lwf, text, fontName.c_str(), m_node);
+			lwf, text, c.font.c_str(), m_node);
+	case LWFTextRendererContext::TTF:
+		return make_shared<LWFTextTTFRenderer>(
+			lwf, text, true, c.font.c_str(), m_node);
+	case LWFTextRendererContext::SYSTEMFONT:
+		return make_shared<LWFTextTTFRenderer>(
+			lwf, text, false, c.font.c_str(), m_node);
+	default:
+		return 0;
 	}
 }
 
@@ -300,8 +308,7 @@ bool LWFRendererFactory::Render(class LWF *lwf,
 	if (!p)
 		return true;
 
-	cocos2d::BlendFunc blendFunc =
-		baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
+	BlendFunc blendFunc = baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
 	blendFunc.dst = GetBlendDstFactor(m_blendMode);
 	p->setBlendFunc(blendFunc);
 
