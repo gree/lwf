@@ -361,6 +361,9 @@ class Movie extends IObject
       @detachedLWFs = {}
       @attachedLWFList = {}
       @attachedLWFListKeys = Utility.newIntArray()
+      @needsUpdateAttchedLWFs = false
+      @matrixForAttachedLWFs = new Matrix
+      @colorTransformForAttachedLWFs = new ColorTransform
 
     if attachLWF.parent?
       lwfContainer = attachLWF.parent.attachedLWFs[attachLWF.attachName]
@@ -377,7 +380,6 @@ class Movie extends IObject
 
     @lwf.setInteractive() if attachLWF.interactive
     attachLWF.setParent(@)
-    attachLWF.rootMovie.parent = @
     attachLWF.detachHandler = detachHandler
     attachLWF.attachName = attachName
     depth = @getDepth(@attachedLWFListKeys) unless depth?
@@ -390,6 +392,7 @@ class Movie extends IObject
     delete @lwf.loadedLWFs[attachLWF.lwfInstanceId] if attachLWF.lwfInstanceId?
 
     @lwf.isLWFAttached = true
+    @lwf.needsUpdateForAttachLWF = true
     return
 
   swapAttachedLWFDepth:(depth0, depth1) ->
@@ -697,6 +700,33 @@ class Movie extends IObject
     @postExecCount = @lwf.execCount
     return
 
+  execAttachedLWF:(tick, currentProgress) ->
+    hasButton = false
+    instance = @instanceHead
+    while instance isnt null
+      if instance.isMovie
+        hasButton |= instance.execAttachedLWF(tick, currentProgress)
+      instance = instance.linkInstance
+
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        hasButton |= movie.execAttachedLWF(tick, currentProgress)
+
+    if @attachedLWFs?
+      for attachName, v of @detachedLWFs
+        lwfContainer = @attachedLWFs[attachName]
+        @deleteAttachedLWF(@, lwfContainer, true, false) if lwfContainer?
+
+      @detachedLWFs = {}
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        child = lwfContainer.child
+        child.progress = currentProgress if child.tick is @lwf.tick
+        @lwf.renderObject(child.execInternal(tick))
+        hasButton |= child.hasButton
+    return hasButton
+
   updateObject:(obj, m, c, matrixChanged, colorTransformChanged) ->
     if obj.isMovie and obj.property.hasMatrix
       objm = m
@@ -714,6 +744,7 @@ class Movie extends IObject
       objc = null
 
     obj.update(objm, objc)
+    return
 
   update:(m, c) ->
     return unless @active
@@ -738,6 +769,12 @@ class Movie extends IObject
     else
       c = @colorTransform
 
+    if @attachedLWFs?
+      @needsUpdateAttchedLWFs = false
+      @needsUpdateAttchedLWFs |= @matrixForAttachedLWFs.setWithComparing(m)
+      @needsUpdateAttchedLWFs |=
+        @colorTransformForAttachedLWFs.setWithComparing(c)
+
     for depth in [0...@data.depths]
       obj = @displayList[depth]
       @updateObject(obj, m, c, matrixChanged, colorTransformChanged) if obj?
@@ -746,21 +783,18 @@ class Movie extends IObject
       for bitmapClip in @bitmapClips
         bitmapClip.update(m, c) if bitmapClip?
 
-    if @attachedMovies? or @attachedLWFs?
-      if @attachedMovies?
-        for k in @attachedMovieListKeys
-          movie = @attachedMovieList[k]
-          @updateObject(movie, m, c, matrixChanged, colorTransformChanged)
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        @updateObject(movie, m, c, matrixChanged, colorTransformChanged)
+    return
 
-      if @attachedLWFs?
-        for attachName, v of @detachedLWFs
-          lwfContainer = @attachedLWFs[attachName]
-          @deleteAttachedLWF(@, lwfContainer, true, false) if lwfContainer?
-
-        @detachedLWFs = {}
-        for k in @attachedLWFListKeys
-          lwfContainer = @attachedLWFList[k]
-          @lwf.renderObject(lwfContainer.child.exec(@lwf.thisTick, m, c))
+  postUpdate: ->
+    instance = @instanceHead
+    while instance isnt null
+      if instance.isMovie
+        instance.postUpdate()
+      instance = instance.linkInstance
 
     if @requestedCalculateBounds
       @xMin = Number.MAX_VALUE
@@ -789,7 +823,31 @@ class Movie extends IObject
         @calculateBoundsCallback = null
 
     @handler.call("update", @) unless @handler.empty
+    return
 
+  updateAttachedLWF: ->
+    instance = @instanceHead
+    while instance isnt null
+      if instance.isMovie
+        instance.updateAttachedLWF()
+      instance = instance.linkInstance
+
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        movie.updateAttachedLWF()
+
+    if @attachedLWFs?
+      for k in @attachedLWFListKeys
+        lwfContainer = @attachedLWFList[k]
+        child = lwfContainer.child
+        needsUpdateAttchedLWFs = child.needsUpdate or @needsUpdateAttchedLWFs
+        if needsUpdateAttchedLWFs
+          child.update(@matrixForAttachedLWFs, @colorTransformForAttachedLWFs)
+        if child.isLWFAttached
+          child.rootMovie.updateAttachedLWF()
+        if needsUpdateAttchedLWFs
+          child.rootMovie.postUpdate()
     return
 
   calculateBounds:(o) ->
@@ -861,7 +919,7 @@ class Movie extends IObject
         when "add"
           @lwf.beginBlendMode(@blendMode)
           useBlendMode = true
-        when "erase", "layer", "mask"
+        when "erase", "layer", "mask", "alpha"
           @lwf.beginMaskMode(@blendMode)
           useMaskMode = true
 
@@ -1268,6 +1326,7 @@ class Movie extends IObject
     @cacheCurrentLabels()
     return null if @currentLabelsCache.length is 0
     currentFrame = @currentFrameInternal + 1
+    currentFrame = 1 if currentFrame < 1
     labelName = @currentLabelCache[currentFrame]
     unless labelName?
       firstLabel = @currentLabelsCache[0]

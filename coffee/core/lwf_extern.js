@@ -37,6 +37,7 @@ LWF.prototype.property;
 LWF.prototype.rendererFactory;
 LWF.prototype.resourceCache;
 LWF.prototype.rootMovie;
+LWF.prototype.roundOffTick;
 LWF.prototype.stage;
 LWF.prototype.tick;
 LWF.prototype.time;

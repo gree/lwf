@@ -79,7 +79,7 @@ class WebkitCSSRendererFactory
 
   isMask:(cmd) ->
     switch cmd.maskMode
-      when "erase", "mask"
+      when "erase", "mask", "alpha"
         return true
     return false
 
@@ -176,10 +176,10 @@ class WebkitCSSRendererFactory
     m = cmd.matrix
 
     switch cmd.maskMode
-      when "mask"
+      when "mask", "alpha"
         @renderMasked = true
         style.opacity = 0
-        if @renderMaskMode isnt "mask"
+        if @renderMaskMode isnt "mask" and @renderMaskMode isnt "alpha"
           if node.mask?
             @mask = node.mask
             style = @mask.style

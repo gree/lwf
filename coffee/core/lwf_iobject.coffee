@@ -63,7 +63,11 @@ class IObject extends LObject
     o = @
     while o?
       return null unless o.name?
-      fullPath = o.name + splitter + fullPath
+      if (o.parent? and o.objectId is o.lwf.data.header.rootMovieId)
+        name = o.lwf.attachName
+      else
+        name = o.name
+      fullPath = name + splitter + fullPath
       splitter = "."
       o = o.parent
     return fullPath

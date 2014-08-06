@@ -78,7 +78,7 @@ class EventHandlers
     handlers = @[type]
     if handlers? and handlers.length > 0
       handlers = (handler for handler in handlers)
-      handler.call(target) for handler in handlers
+      handler.call(target, target) for handler in handlers
     return
 
   updateEmpty: ->

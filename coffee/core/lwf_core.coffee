@@ -19,7 +19,7 @@
 #
 
 class LWF
-  ROUND_OFF_TICK_RATE = 0.05
+  ROUND_OFF_TICK_RATE = 1.0 / 60.0 * 0.05
 
   @globalRenderCount = 0
 
@@ -41,9 +41,8 @@ class LWF
     @frameSkip = true
     @execLimit = 3
     @tick = 1.0 / @frameRate
-    @roundOffTick = @tick * ROUND_OFF_TICK_RATE
+    @roundOffTick = ROUND_OFF_TICK_RATE
     @time = 0
-    @thisTick = 0
     @attachVisible = true
     @execCount = 0
     @renderCount = 0
@@ -52,6 +51,8 @@ class LWF
     @isLWFAttached = false
     @interceptByNotAllowOrDenyButtons = true
     @intercepted = false
+    @needsUpdate = false
+    @needsUpdateForAttachLWF = false
     @textScale = 1
     @pointX = Number.MIN_VALUE
     @pointY = Number.MIN_VALUE
@@ -88,8 +89,10 @@ class LWF
 
     @matrix = new Matrix
     @matrixIdentity = new Matrix
+    @execMatrix = new Matrix
     @colorTransform = new ColorTransform
     @colorTransformIdentity = new ColorTransform
+    @execColorTransform = new ColorTransform
 
     @setRendererFactory(rendererFactory)
 
@@ -231,11 +234,20 @@ class LWF
       c = colorTransform ? @colorTransformIdentity
     return c
 
-  execInternal:(tick, matrix, colorTransform) ->
+  linkButton: ->
+    @buttonHead = null
+    if @interactive and @rootMovie.hasButton
+      @focusOnLink = false
+      @rootMovie.linkButton()
+      if @focus isnt null and !@focusOnLink
+        @focus.rollOut()
+        @focus = null
+    return
+
+  execInternal:(tick) ->
     return 0 unless @rootMovie? and @active
     execed = false
     currentProgress = @progress
-    @thisTick = tick
 
     if @isExecDisabled and @_tweens is null
       unless @executedForExecDisabled
@@ -277,19 +289,16 @@ class LWF
       if @progress < @roundOffTick
         @progress = 0
 
-      @buttonHead = null
-      if @interactive and @rootMovie.hasButton
-        @focusOnLink = false
-        @rootMovie.linkButton()
-        if @focus isnt null and !@focusOnLink
-          @focus.rollOut()
-          @focus = null
+      @linkButton()
 
-    needUpdate = @isLWFAttached
+    if @isLWFAttached
+      hasButton = @rootMovie.execAttachedLWF(tick, currentProgress)
+      @linkButton() if hasButton
+
+    @needsUpdate = false
     unless @fastForward
-      if execed or @isPropertyDirty or matrix? or colorTransform?
-        needUpdate = true
-    @update(matrix, colorTransform) if needUpdate
+      if execed or @isPropertyDirty or @needsUpdateForAttachLWF
+        @needsUpdate = true
 
     unless @execDisabled
       if tick < 0
@@ -298,13 +307,22 @@ class LWF
     return @renderingCount
 
   exec:(tick = 0, matrix = null, colorTransform = null) ->
+    needsUpdate = false
+    if matrix?
+      needsUpdate |= @execMatrix.setWithComparing(matrix)
+    if colorTransform?
+      needsUpdate |= @execColorTransform.setWithComparing(colorTransform)
     unless @parent?
       @fastForwardCurrent = @fastForward
       if @fastForwardCurrent
         tick = @tick
         startTime = Date.now()
     loop
-      renderingCount = @execInternal(tick, matrix, colorTransform)
+      renderingCount = @execInternal(tick)
+      needsUpdate |= @needsUpdate
+      @update(matrix, colorTransform) if needsUpdate
+      @rootMovie.updateAttachedLWF() if @isLWFAttached
+      @rootMovie.postUpdate() if needsUpdate
       if @fastForwardCurrent and @fastForward and !@parent?
         break if Date.now() - startTime >= @fastForwardTimeout
       else
@@ -325,6 +343,7 @@ class LWF
     @rootMovie.update(m, c)
     @renderingCount = @renderingIndex
     @isPropertyDirty = false
+    @needsUpdateForAttachLWF = false
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
@@ -877,6 +896,7 @@ class LWF
   setParent:(parent) ->
     @active = true
     @parent = parent
+    @rootMovie.parent = parent
     @setTextScale(parent.lwf.textScale)
     func = @functions?['init']
     func.call(@rootMovie) if func?

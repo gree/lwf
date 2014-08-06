@@ -2926,7 +2926,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     IObject.prototype.linkButton = function() {};
 
     IObject.prototype.getFullName = function() {
-      var fullPath, o, splitter;
+      var fullPath, name, o, splitter;
       fullPath = "";
       splitter = "";
       o = this;
@@ -2934,7 +2934,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         if (o.name == null) {
           return null;
         }
-        fullPath = o.name + splitter + fullPath;
+        if ((o.parent != null) && o.objectId === o.lwf.data.header.rootMovieId) {
+          name = o.lwf.attachName;
+        } else {
+          name = o.name;
+        }
+        fullPath = name + splitter + fullPath;
         splitter = ".";
         o = o.parent;
       }
@@ -3937,6 +3942,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.detachedLWFs = {};
         this.attachedLWFList = {};
         this.attachedLWFListKeys = Utility.newIntArray();
+        this.needsUpdateAttchedLWFs = false;
+        this.matrixForAttachedLWFs = new Matrix;
+        this.colorTransformForAttachedLWFs = new ColorTransform;
       }
       if (attachLWF.parent != null) {
         lwfContainer = attachLWF.parent.attachedLWFs[attachLWF.attachName];
@@ -3957,7 +3965,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.lwf.setInteractive();
       }
       attachLWF.setParent(this);
-      attachLWF.rootMovie.parent = this;
       attachLWF.detachHandler = detachHandler;
       attachLWF.attachName = attachName;
       if (depth == null) {
@@ -3973,6 +3980,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         delete this.lwf.loadedLWFs[attachLWF.lwfInstanceId];
       }
       this.lwf.isLWFAttached = true;
+      this.lwf.needsUpdateForAttachLWF = true;
     };
 
     Movie.prototype.swapAttachedLWFDepth = function(depth0, depth1) {
@@ -4373,6 +4381,49 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.postExecCount = this.lwf.execCount;
     };
 
+    Movie.prototype.execAttachedLWF = function(tick, currentProgress) {
+      var attachName, child, hasButton, instance, k, lwfContainer, movie, v, _i, _j, _len, _len1, _ref, _ref1, _ref2;
+      hasButton = false;
+      instance = this.instanceHead;
+      while (instance !== null) {
+        if (instance.isMovie) {
+          hasButton |= instance.execAttachedLWF(tick, currentProgress);
+        }
+        instance = instance.linkInstance;
+      }
+      if (this.attachedMovies != null) {
+        _ref = this.attachedMovieListKeys;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          k = _ref[_i];
+          movie = this.attachedMovieList[k];
+          hasButton |= movie.execAttachedLWF(tick, currentProgress);
+        }
+      }
+      if (this.attachedLWFs != null) {
+        _ref1 = this.detachedLWFs;
+        for (attachName in _ref1) {
+          v = _ref1[attachName];
+          lwfContainer = this.attachedLWFs[attachName];
+          if (lwfContainer != null) {
+            this.deleteAttachedLWF(this, lwfContainer, true, false);
+          }
+        }
+        this.detachedLWFs = {};
+        _ref2 = this.attachedLWFListKeys;
+        for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+          k = _ref2[_j];
+          lwfContainer = this.attachedLWFList[k];
+          child = lwfContainer.child;
+          if (child.tick === this.lwf.tick) {
+            child.progress = currentProgress;
+          }
+          this.lwf.renderObject(child.execInternal(tick));
+          hasButton |= child.hasButton;
+        }
+      }
+      return hasButton;
+    };
+
     Movie.prototype.updateObject = function(obj, m, c, matrixChanged, colorTransformChanged) {
       var objc, objm;
       if (obj.isMovie && obj.property.hasMatrix) {
@@ -4389,11 +4440,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       } else {
         objc = null;
       }
-      return obj.update(objm, objc);
+      obj.update(objm, objc);
     };
 
     Movie.prototype.update = function(m, c) {
-      var attachName, bitmapClip, colorTransformChanged, depth, inspector, invert, k, lwfContainer, matrixChanged, movie, obj, p, v, _i, _j, _k, _l, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3, _ref4;
+      var bitmapClip, colorTransformChanged, depth, k, matrixChanged, movie, obj, _i, _j, _k, _len, _len1, _ref, _ref1, _ref2;
       if (!this.active) {
         return;
       }
@@ -4416,6 +4467,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       } else {
         c = this.colorTransform;
       }
+      if (this.attachedLWFs != null) {
+        this.needsUpdateAttchedLWFs = false;
+        this.needsUpdateAttchedLWFs |= this.matrixForAttachedLWFs.setWithComparing(m);
+        this.needsUpdateAttchedLWFs |= this.colorTransformForAttachedLWFs.setWithComparing(c);
+      }
       for (depth = _i = 0, _ref = this.data.depths; 0 <= _ref ? _i < _ref : _i > _ref; depth = 0 <= _ref ? ++_i : --_i) {
         obj = this.displayList[depth];
         if (obj != null) {
@@ -4431,32 +4487,24 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           }
         }
       }
-      if ((this.attachedMovies != null) || (this.attachedLWFs != null)) {
-        if (this.attachedMovies != null) {
-          _ref2 = this.attachedMovieListKeys;
-          for (_k = 0, _len1 = _ref2.length; _k < _len1; _k++) {
-            k = _ref2[_k];
-            movie = this.attachedMovieList[k];
-            this.updateObject(movie, m, c, matrixChanged, colorTransformChanged);
-          }
+      if (this.attachedMovies != null) {
+        _ref2 = this.attachedMovieListKeys;
+        for (_k = 0, _len1 = _ref2.length; _k < _len1; _k++) {
+          k = _ref2[_k];
+          movie = this.attachedMovieList[k];
+          this.updateObject(movie, m, c, matrixChanged, colorTransformChanged);
         }
-        if (this.attachedLWFs != null) {
-          _ref3 = this.detachedLWFs;
-          for (attachName in _ref3) {
-            v = _ref3[attachName];
-            lwfContainer = this.attachedLWFs[attachName];
-            if (lwfContainer != null) {
-              this.deleteAttachedLWF(this, lwfContainer, true, false);
-            }
-          }
-          this.detachedLWFs = {};
-          _ref4 = this.attachedLWFListKeys;
-          for (_l = 0, _len2 = _ref4.length; _l < _len2; _l++) {
-            k = _ref4[_l];
-            lwfContainer = this.attachedLWFList[k];
-            this.lwf.renderObject(lwfContainer.child.exec(this.lwf.thisTick, m, c));
-          }
+      }
+    };
+
+    Movie.prototype.postUpdate = function() {
+      var inspector, instance, invert, p;
+      instance = this.instanceHead;
+      while (instance !== null) {
+        if (instance.isMovie) {
+          instance.postUpdate();
         }
+        instance = instance.linkInstance;
       }
       if (this.requestedCalculateBounds) {
         this.xMin = Number.MAX_VALUE;
@@ -4493,6 +4541,43 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
       if (!this.handler.empty) {
         this.handler.call("update", this);
+      }
+    };
+
+    Movie.prototype.updateAttachedLWF = function() {
+      var child, instance, k, lwfContainer, movie, needsUpdateAttchedLWFs, _i, _j, _len, _len1, _ref, _ref1;
+      instance = this.instanceHead;
+      while (instance !== null) {
+        if (instance.isMovie) {
+          instance.updateAttachedLWF();
+        }
+        instance = instance.linkInstance;
+      }
+      if (this.attachedMovies != null) {
+        _ref = this.attachedMovieListKeys;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          k = _ref[_i];
+          movie = this.attachedMovieList[k];
+          movie.updateAttachedLWF();
+        }
+      }
+      if (this.attachedLWFs != null) {
+        _ref1 = this.attachedLWFListKeys;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          k = _ref1[_j];
+          lwfContainer = this.attachedLWFList[k];
+          child = lwfContainer.child;
+          needsUpdateAttchedLWFs = child.needsUpdate || this.needsUpdateAttchedLWFs;
+          if (needsUpdateAttchedLWFs) {
+            child.update(this.matrixForAttachedLWFs, this.colorTransformForAttachedLWFs);
+          }
+          if (child.isLWFAttached) {
+            child.rootMovie.updateAttachedLWF();
+          }
+          if (needsUpdateAttchedLWFs) {
+            child.rootMovie.postUpdate();
+          }
+        }
       }
     };
 
@@ -4607,6 +4692,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           case "erase":
           case "layer":
           case "mask":
+          case "alpha":
             this.lwf.beginMaskMode(this.blendMode);
             useMaskMode = true;
         }
@@ -5252,6 +5338,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return null;
       }
       currentFrame = this.currentFrameInternal + 1;
+      if (currentFrame < 1) {
+        currentFrame = 1;
+      }
       labelName = this.currentLabelCache[currentFrame];
       if (labelName == null) {
         firstLabel = this.currentLabelsCache[0];
@@ -5536,7 +5625,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         })();
         for (_i = 0, _len = handlers.length; _i < _len; _i++) {
           handler = handlers[_i];
-          handler.call(target);
+          handler.call(target, target);
         }
       }
     };
@@ -5593,7 +5682,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   LWF = (function() {
     var ROUND_OFF_TICK_RATE;
 
-    ROUND_OFF_TICK_RATE = 0.05;
+    ROUND_OFF_TICK_RATE = 1.0 / 60.0 * 0.05;
 
     LWF.globalRenderCount = 0;
 
@@ -5623,9 +5712,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.frameSkip = true;
       this.execLimit = 3;
       this.tick = 1.0 / this.frameRate;
-      this.roundOffTick = this.tick * ROUND_OFF_TICK_RATE;
+      this.roundOffTick = ROUND_OFF_TICK_RATE;
       this.time = 0;
-      this.thisTick = 0;
       this.attachVisible = true;
       this.execCount = 0;
       this.renderCount = 0;
@@ -5634,6 +5722,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.isLWFAttached = false;
       this.interceptByNotAllowOrDenyButtons = true;
       this.intercepted = false;
+      this.needsUpdate = false;
+      this.needsUpdateForAttachLWF = false;
       this.textScale = 1;
       this.pointX = Number.MIN_VALUE;
       this.pointY = Number.MIN_VALUE;
@@ -5663,8 +5753,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.depth = null;
       this.matrix = new Matrix;
       this.matrixIdentity = new Matrix;
+      this.execMatrix = new Matrix;
       this.colorTransform = new ColorTransform;
       this.colorTransformIdentity = new ColorTransform;
+      this.execColorTransform = new ColorTransform;
       this.setRendererFactory(rendererFactory);
       this.init();
     }
@@ -5835,14 +5927,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       return c;
     };
 
-    LWF.prototype.execInternal = function(tick, matrix, colorTransform) {
-      var currentProgress, execLimit, execed, handler, handlers, needUpdate, progressing, _i, _len;
+    LWF.prototype.linkButton = function() {
+      this.buttonHead = null;
+      if (this.interactive && this.rootMovie.hasButton) {
+        this.focusOnLink = false;
+        this.rootMovie.linkButton();
+        if (this.focus !== null && !this.focusOnLink) {
+          this.focus.rollOut();
+          this.focus = null;
+        }
+      }
+    };
+
+    LWF.prototype.execInternal = function(tick) {
+      var currentProgress, execLimit, execed, handler, handlers, hasButton, progressing, _i, _len;
       if (!((this.rootMovie != null) && this.active)) {
         return 0;
       }
       execed = false;
       currentProgress = this.progress;
-      this.thisTick = tick;
       if (this.isExecDisabled && this._tweens === null) {
         if (!this.executedForExecDisabled) {
           ++this.execCount;
@@ -5892,24 +5995,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         if (this.progress < this.roundOffTick) {
           this.progress = 0;
         }
-        this.buttonHead = null;
-        if (this.interactive && this.rootMovie.hasButton) {
-          this.focusOnLink = false;
-          this.rootMovie.linkButton();
-          if (this.focus !== null && !this.focusOnLink) {
-            this.focus.rollOut();
-            this.focus = null;
-          }
+        this.linkButton();
+      }
+      if (this.isLWFAttached) {
+        hasButton = this.rootMovie.execAttachedLWF(tick, currentProgress);
+        if (hasButton) {
+          this.linkButton();
         }
       }
-      needUpdate = this.isLWFAttached;
+      this.needsUpdate = false;
       if (!this.fastForward) {
-        if (execed || this.isPropertyDirty || (matrix != null) || (colorTransform != null)) {
-          needUpdate = true;
+        if (execed || this.isPropertyDirty || this.needsUpdateForAttachLWF) {
+          this.needsUpdate = true;
         }
-      }
-      if (needUpdate) {
-        this.update(matrix, colorTransform);
       }
       if (!this.execDisabled) {
         if (tick < 0) {
@@ -5920,7 +6018,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.exec = function(tick, matrix, colorTransform) {
-      var renderingCount, startTime;
+      var needsUpdate, renderingCount, startTime;
       if (tick == null) {
         tick = 0;
       }
@@ -5930,6 +6028,13 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (colorTransform == null) {
         colorTransform = null;
       }
+      needsUpdate = false;
+      if (matrix != null) {
+        needsUpdate |= this.execMatrix.setWithComparing(matrix);
+      }
+      if (colorTransform != null) {
+        needsUpdate |= this.execColorTransform.setWithComparing(colorTransform);
+      }
       if (this.parent == null) {
         this.fastForwardCurrent = this.fastForward;
         if (this.fastForwardCurrent) {
@@ -5938,7 +6043,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
       }
       while (true) {
-        renderingCount = this.execInternal(tick, matrix, colorTransform);
+        renderingCount = this.execInternal(tick);
+        needsUpdate |= this.needsUpdate;
+        if (needsUpdate) {
+          this.update(matrix, colorTransform);
+        }
+        if (this.isLWFAttached) {
+          this.rootMovie.updateAttachedLWF();
+        }
+        if (needsUpdate) {
+          this.rootMovie.postUpdate();
+        }
         if (this.fastForwardCurrent && this.fastForward && (this.parent == null)) {
           if (Date.now() - startTime >= this.fastForwardTimeout) {
             break;
@@ -5985,6 +6100,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.rootMovie.update(m, c);
       this.renderingCount = this.renderingIndex;
       this.isPropertyDirty = false;
+      this.needsUpdateForAttachLWF = false;
     };
 
     LWF.prototype.render = function(rIndex, rCount, rOffset) {
@@ -6873,6 +6989,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       var func, _ref;
       this.active = true;
       this.parent = parent;
+      this.rootMovie.parent = parent;
       this.setTextScale(parent.lwf.textScale);
       func = (_ref = this.functions) != null ? _ref['init'] : void 0;
       if (func != null) {
@@ -7581,6 +7698,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       switch (cmd.maskMode) {
         case "erase":
         case "mask":
+        case "alpha":
           return true;
       }
       return false;
@@ -7736,9 +7854,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       m = cmd.matrix;
       switch (cmd.maskMode) {
         case "mask":
+        case "alpha":
           this.renderMasked = true;
           style.opacity = 0;
-          if (this.renderMaskMode !== "mask") {
+          if (this.renderMaskMode !== "mask" && this.renderMaskMode !== "alpha") {
             if (node.mask != null) {
               this.mask = node.mask;
               style = this.mask.style;
@@ -9781,6 +9900,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         switch (cmd.maskMode) {
           case "erase":
           case "mask":
+          case "alpha":
             if (this.renderMaskMode === "layer" && this.renderMasked) {
               this.renderMask(cmd.blendMode);
             }
@@ -10665,6 +10785,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         switch (cmd.maskMode) {
           case "erase":
           case "mask":
+          case "alpha":
             if (this.renderMaskMode === "layer" && this.renderMasked) {
               this.renderMask(gl);
             }

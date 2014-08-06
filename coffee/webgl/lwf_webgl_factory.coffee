@@ -500,7 +500,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @renderMesh(gl)
       @generateMask(gl)
       switch cmd.maskMode
-        when "erase", "mask"
+        when "erase", "mask", "alpha"
           @renderMask(gl) if @renderMaskMode is "layer" and @renderMasked
           @renderMasked = true
           @maskSrcFactor = if cmd.maskMode is "erase" then \

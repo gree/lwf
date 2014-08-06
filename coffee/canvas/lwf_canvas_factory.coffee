@@ -111,7 +111,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
   render:(ctx, cmd) ->
     if @renderMaskMode isnt cmd.maskMode
       switch cmd.maskMode
-        when "erase", "mask"
+        when "erase", "mask", "alpha"
           if @renderMaskMode is "layer" and @renderMasked
             @renderMask(cmd.blendMode)
           @renderMasked = true
