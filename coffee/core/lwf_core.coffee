@@ -349,7 +349,6 @@ class LWF
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
     return if !@rootMovie? or !@active or @fastForwardCurrent
     @renderCount = ++LWF.globalRenderCount
-    renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
     @renderingIndexOffsetted = rIndex
@@ -359,12 +358,10 @@ class LWF
     @rendererFactory.beginRender(@)
     @rootMovie.render(@attachVisible, rOffset)
     @rendererFactory.endRender(@)
-    @renderingCount = renderingCountBackup
-    return @renderingCount
+    return @renderingIndex - rIndex
 
   inspect:(inspector, hierarchy = 0, \
       depth = 0, rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
-    renderingCountBackup = @renderingCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
     @renderingIndexOffsetted = rIndex
@@ -373,8 +370,7 @@ class LWF
       rOffset = @property.renderingOffset
 
     @rootMovie.inspect(inspector, hierarchy, depth, rOffset)
-    @renderingCount = renderingCountBackup
-    return @renderingCount
+    return @renderingIndex - rIndex
 
   destroy: ->
     return unless @rootMovie?
@@ -911,6 +907,12 @@ class LWF
     @frameSkip = frameSkip
     @progress = 0
     @parent.lwf.setFrameSkip(frameSkip) if @parent?
+    return
+
+  setLWFAttached: ->
+    @isLWFAttached = true
+    @needsUpdateForAttachLWF = true
+    @parent.lwf.setLWFAttached() if @parent?
     return
 
   setFastForwardTimeout:(fastForwardTimeout) ->

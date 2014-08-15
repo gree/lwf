@@ -3979,8 +3979,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (attachLWF.lwfInstanceId != null) {
         delete this.lwf.loadedLWFs[attachLWF.lwfInstanceId];
       }
-      this.lwf.isLWFAttached = true;
-      this.lwf.needsUpdateForAttachLWF = true;
+      this.lwf.setLWFAttached();
     };
 
     Movie.prototype.swapAttachedLWFDepth = function(depth0, depth1) {
@@ -6104,7 +6103,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.render = function(rIndex, rCount, rOffset) {
-      var renderingCountBackup;
       if (rIndex == null) {
         rIndex = 0;
       }
@@ -6118,7 +6116,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return;
       }
       this.renderCount = ++LWF.globalRenderCount;
-      renderingCountBackup = this.renderingCount;
       if (rCount > 0) {
         this.renderingCount = rCount;
       }
@@ -6131,12 +6128,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.rendererFactory.beginRender(this);
       this.rootMovie.render(this.attachVisible, rOffset);
       this.rendererFactory.endRender(this);
-      this.renderingCount = renderingCountBackup;
-      return this.renderingCount;
+      return this.renderingIndex - rIndex;
     };
 
     LWF.prototype.inspect = function(inspector, hierarchy, depth, rIndex, rCount, rOffset) {
-      var renderingCountBackup;
       if (hierarchy == null) {
         hierarchy = 0;
       }
@@ -6152,7 +6147,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (rOffset == null) {
         rOffset = Number.MIN_VALUE;
       }
-      renderingCountBackup = this.renderingCount;
       if (rCount > 0) {
         this.renderingCount = rCount;
       }
@@ -6163,8 +6157,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         rOffset = this.property.renderingOffset;
       }
       this.rootMovie.inspect(inspector, hierarchy, depth, rOffset);
-      this.renderingCount = renderingCountBackup;
-      return this.renderingCount;
+      return this.renderingIndex - rIndex;
     };
 
     LWF.prototype.destroy = function() {
@@ -7009,6 +7002,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.progress = 0;
       if (this.parent != null) {
         this.parent.lwf.setFrameSkip(frameSkip);
+      }
+    };
+
+    LWF.prototype.setLWFAttached = function() {
+      this.isLWFAttached = true;
+      this.needsUpdateForAttachLWF = true;
+      if (this.parent != null) {
+        this.parent.lwf.setLWFAttached();
       }
     };
 

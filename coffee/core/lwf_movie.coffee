@@ -391,8 +391,7 @@ class Movie extends IObject
     @[attachName] = attachLWF.rootMovie
     delete @lwf.loadedLWFs[attachLWF.lwfInstanceId] if attachLWF.lwfInstanceId?
 
-    @lwf.isLWFAttached = true
-    @lwf.needsUpdateForAttachLWF = true
+    @lwf.setLWFAttached()
     return
 
   swapAttachedLWFDepth:(depth0, depth1) ->
