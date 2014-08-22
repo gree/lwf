@@ -825,7 +825,8 @@ public partial class LWF
 		string attachName;
 		int attachDepth = -1;
 		bool reorder = false;
-		MovieEventHandlerDictionary handlers = new MovieEventHandlerDictionary() {
+		MovieEventHandlerDictionary handlers =
+				new MovieEventHandlerDictionary() {
 			{"load",null},
 			{"postLoad",null},
 			{"unload",null},
@@ -946,6 +947,47 @@ public partial class LWF
 	error:
 		Lua.lua_pushnil(l);
 		/* -1: nil */
+		return 1;
+	}
+
+	public int AttachLWFLua(Movie movie)
+	{
+		if (luaState == null)
+			return 0;
+
+		Lua.lua_State l = (Lua.lua_State)luaState;
+		int args = Lua.lua_gettop(l);
+		string attachName;
+		string path;
+		int attachDepth = -1;
+		bool reorder = false;
+		string texturePrefix = null;
+
+		/* 1: LWF_Movie instance */
+		/* 2: path:string */
+		/* 3: attachName:string */
+		/* 4: attachDepth:number (option) */
+		/* 5: reorder:boolean (option) */
+		/* 6: texturePrefix:string (option) */
+		path = Lua.lua_tostring(l, 2).ToString();
+		attachName = Lua.lua_tostring(l, 3).ToString();
+		if (args >= 4)
+			attachDepth = (int)Lua.lua_tonumber(l, 4);
+		if (args >= 5)
+			reorder = Lua.lua_toboolean(l, 5) != 0;
+		if (args >= 6)
+			texturePrefix = Lua.lua_tostring(l, 6).ToString();
+
+		LWF child = movie.AttachLWF(
+			path, attachName, attachDepth, reorder, texturePrefix);
+
+		if (child != null) {
+			Luna_LWF_LWF.push(l, child, false);
+			/* -1: LWF_LWF child */
+		} else {
+			Lua.lua_pushnil(l);
+			/* -1: nil */
+		}
 		return 1;
 	}
 

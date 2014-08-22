@@ -71,6 +71,7 @@ public class LunaTraits_LWF_Movie
         new RegType("setGreen", impl_LunaTraits_LWF_Movie._bind_setGreen),
         new RegType("setBlue", impl_LunaTraits_LWF_Movie._bind_setBlue),
         new RegType("attachMovie", impl_LunaTraits_LWF_Movie.attachMovie),
+        new RegType("attachLWF", impl_LunaTraits_LWF_Movie.attachLWF),
 
 		new RegType("__index", impl_LunaTraits_LWF_Movie.__index),
 		new RegType("__newindex", impl_LunaTraits_LWF_Movie.__newindex),
@@ -167,6 +168,32 @@ public class impl_LunaTraits_LWF_Movie
 	error:
 		Luna.printStack(L);
 		Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.attachMovie");
+		return 1;
+	}
+
+	public static int attachLWF(Lua.lua_State L)
+	{
+		LWF.Movie a;
+		int args = Lua.lua_gettop(L);
+		if (args < 3 || args > 6)
+			goto error;
+		if (Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID)
+			goto error;
+		if (Lua.lua_isstring(L, 2)==0 || Lua.lua_isstring(L, 3)==0)
+			goto error;
+		if (args >= 4 && Lua.lua_isnumber(L, 4)==0)
+			goto error;
+		if (args >= 5 && !Lua.lua_isboolean(L, 5))
+			goto error;
+		if (args >= 6 && Lua.lua_isstring(L, 6)==0)
+			goto error;
+
+		a = Luna_LWF_Movie.check(L, 1);
+		return a.lwf.AttachLWFLua(a);
+
+	error:
+		Luna.printStack(L);
+		Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.attachLWF");
 		return 1;
 	}
 

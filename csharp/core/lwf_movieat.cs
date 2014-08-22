@@ -276,19 +276,37 @@ public partial class Movie : IObject
 		parent.m_attachedLWFDescendingList.Remove(attachDepth);
 		if (deleteFromDetachedLWFs)
 			parent.m_detachedLWFs.Remove(attachName);
-		if (destroy && lwfContainer.child.detachHandler != null) {
-			lwfContainer.child.detachHandler(lwfContainer.child);
-			lwfContainer.child.parent = null;
-			lwfContainer.child.detachHandler = null;
-			lwfContainer.child.attachName = null;
-			lwfContainer.child.depth = -1;
+		if (destroy) {
+			if (lwfContainer.child.detachHandler != null) {
+				lwfContainer.child.detachHandler(lwfContainer.child);
+				lwfContainer.child.parent = null;
+				lwfContainer.child.detachHandler = null;
+				lwfContainer.child.attachName = null;
+				lwfContainer.child.depth = -1;
+			} else {
+				lwfContainer.child.Destroy();
+			}
 			lwfContainer.Destroy();
 		}
 	}
 
-	public void AttachLWF(LWF attachLWF, string attachName,
-		int attachDepth = -1, bool reorder = false,
-		DetachHandler detachHandler = null)
+	public LWF AttachLWF(string path, string attachName,
+		int attachDepth = -1, bool reorder = false, string texturePrefix = null)
+	{
+		if (m_lwf.lwfLoader == null)
+			return null;
+
+		LWF child = m_lwf.lwfLoader(path, texturePrefix);
+		if (child == null)
+			return null;
+
+		AttachLWF(child,
+			attachName, attachDepth, reorder, (l) => {l.Destroy();});
+		return child;
+	}
+
+	public void AttachLWF(LWF child, string attachName, int attachDepth = -1,
+		bool reorder = false, DetachHandler detachHandler = null)
 	{
 		if (m_attachedLWFs == null) {
 			m_attachedLWFs = new AttachedLWFs();
@@ -299,10 +317,10 @@ public partial class Movie : IObject
 		}
 
 		LWFContainer lwfContainer;
-		if (attachLWF.parent != null) {
-			attachLWF.parent.m_attachedLWFs.TryGetValue(
-				attachLWF.attachName, out lwfContainer);
-			DeleteAttachedLWF(attachLWF.parent, lwfContainer, false);
+		if (child.parent != null) {
+			child.parent.m_attachedLWFs.TryGetValue(
+				child.attachName, out lwfContainer);
+			DeleteAttachedLWF(child.parent, lwfContainer, false);
 		}
 		if (m_attachedLWFs.TryGetValue(attachName, out lwfContainer))
 			DeleteAttachedLWF(this, lwfContainer);
@@ -311,27 +329,29 @@ public partial class Movie : IObject
 			if (m_attachedLWFList.TryGetValue(attachDepth, out lwfContainer))
 				DeleteAttachedLWF(this, lwfContainer);
 
-		lwfContainer = new LWFContainer(this, attachLWF);
+		lwfContainer = new LWFContainer(this, child);
 
-		if (attachLWF.interactive == true)
-			m_lwf.interactive = true;
-		attachLWF.parent = this;
-		attachLWF.detachHandler = detachHandler;
-		attachLWF.attachName = attachName;
+		if (child.interactive == true)
+			m_lwf.SetInteractive();
+		child.parent = this;
+		child.detachHandler = detachHandler;
+		child.attachName = attachName;
 		if (attachDepth >= 0) {
-			attachLWF.depth = attachDepth;
+			child.depth = attachDepth;
 		} else {
 			AttachedLWFDescendingList.KeyCollection.Enumerator e =
 				m_attachedLWFDescendingList.Keys.GetEnumerator();
 			if (e.MoveNext())
-				attachLWF.depth = e.Current + 1;
+				child.depth = e.Current + 1;
 			else
-				attachLWF.depth = 0;
+				child.depth = 0;
 		}
 		m_attachedLWFs[attachName] = lwfContainer;
-		ReorderAttachedLWFList(reorder, attachLWF.depth, lwfContainer);
+		ReorderAttachedLWFList(reorder, child.depth, lwfContainer);
 
-		m_lwf.isLWFAttached = true;
+		m_lwf.SetLWFAttached();
+
+		return;
 	}
 
 	public void SwapAttachedLWFDepth(int depth0, int depth1)

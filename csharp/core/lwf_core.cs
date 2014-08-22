@@ -37,6 +37,8 @@ using ExecHandlerList = List<Action<LWF>>;
 using TextDictionary = Dictionary<string, TextDictionaryItem>;
 using BlendModes = List<int>;
 using MaskModes = List<int>;
+using LWFLoader = Func<string, string, LWF>;
+using LWFUnloader = Action;
 
 public class TextDictionaryItem
 {
@@ -129,6 +131,8 @@ public partial class LWF
 	public bool attachVisible {get {return m_attachVisible;}}
 	public bool isPropertyDirty {get {return m_propertyDirty;}}
 	public bool isLWFAttached {get; set;}
+	public LWFLoader lwfLoader {get; set;}
+	public LWFUnloader lwfUnloader {get; set;}
 	public object privateData {get; set;}
 	public TweenMode tweenMode {get; set;}
 	public object tweens {get; set;}
@@ -614,7 +618,15 @@ public partial class LWF
 #if LWF_USE_LUA
 		DestroyLua();
 #endif
+		if (m_rendererFactory != null) {
+			m_rendererFactory.Destruct();
+			m_rendererFactory = null;
+		}
+
 		m_alive = false;
+
+		if (lwfUnloader != null)
+			lwfUnloader();
 	}
 
 	public int GetIObjectOffset()
@@ -884,6 +896,19 @@ public partial class LWF
 		m_propertyDirty = true;
 		if (m_parent != null)
 			m_parent.lwf.SetPropertyDirty();
+	}
+
+	public LWF GetParent()
+	{
+		if (m_parent == null)
+			return null;
+
+		LWF lwfParent = m_parent.lwf;
+		for (;;) {
+			if (lwfParent == null || lwfParent.m_parent == null)
+				return lwfParent;
+			lwfParent = lwfParent.m_parent.lwf;
+		}
 	}
 
 	public void SetInteractive()

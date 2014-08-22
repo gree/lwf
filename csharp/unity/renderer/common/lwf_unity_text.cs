@@ -67,7 +67,9 @@ public class TextContext
 		float fontHeight = (float)textProperty.fontHeight;
 		float width = (float)text.width;
 		m_height = (float)text.height;
-		//float lineSpacing = 1.0f + (float)textProperty.leading / fontHeight;
+#if !UNITY_4_5
+		float lineSpacing = 1.0f + (float)textProperty.leading / fontHeight;
+#endif
 		//float letterSpacing = fontProperty.letterspacing;
 		float leftMargin = textProperty.leftMargin / fontHeight;
 		float rightMargin = textProperty.rightMargin / fontHeight;
@@ -127,15 +129,26 @@ public class TextContext
 		}
 
 		var s = new TextGenerationSettings();
+#if UNITY_4_5
 		s.anchor = textAnchor;
-		s.color = factory.ConvertColor(data.colors[text.colorId]);
 		s.extents = new Vector2(width - leftMargin - rightMargin, m_height);
+		s.style = FontStyle.Normal;
+		s.size = (int)fontHeight;
+		s.wrapMode = TextWrapMode.Wrap;
+#else
+		s.textAnchor = textAnchor;
+		s.generationExtents =
+			new Vector2(width - leftMargin - rightMargin, m_height);
+		s.fontStyle = FontStyle.Normal;
+		s.fontSize = (int)fontHeight;
+		s.lineSpacing = lineSpacing;
+		s.horizontalOverflow = HorizontalWrapMode.Wrap;
+		s.verticalOverflow = VerticalWrapMode.Overflow;
+#endif
+		s.color = factory.ConvertColor(data.colors[text.colorId]);
 		s.pivot = new Vector2(-leftMargin, 0);
 		s.richText = true;
 		s.font = font;
-		s.size = (int)fontHeight;
-		s.style = FontStyle.Normal;
-		s.wrapMode = TextWrapMode.Wrap;
 		m_textGenerationSettings = s;
 	}
 
@@ -179,7 +192,11 @@ public class UnityTextRenderer : TextRenderer
 			int j = (int)(i / 4) * 4;
 			int k = table[i % 4];
 			m_vertices[i] = m_textGenerator.verts[j + k].position;
+#if UNITY_4_5
 			m_uv[i] = m_textGenerator.verts[j + k].uv;
+#else
+			m_uv[i] = m_textGenerator.verts[j + k].uv0;
+#endif
 			m_colors32[i] = m_textGenerator.verts[j + k].color;
 		}
 	}

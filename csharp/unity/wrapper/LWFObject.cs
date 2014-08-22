@@ -20,6 +20,7 @@
 
 using UnityEngine;
 using System;
+using System.IO;
 
 using ResourceCache = LWF.UnityRenderer.ResourceCache;
 using LWFDataLoader = System.Func<string, byte[]>;
@@ -55,8 +56,6 @@ public class LWFObject : MonoBehaviour
 	public LWF.UnityRenderer.Factory factory;
 	public LWF.CombinedMeshRenderer.Factory combinedMeshRendererfactory;
 	[HideInInspector]
-	public string lwfName;
-	[HideInInspector]
 	public bool isAlive;
 	protected bool callUpdate;
 	protected bool useCombinedMeshRenderer;
@@ -80,20 +79,10 @@ public class LWFObject : MonoBehaviour
 		lwfDestroyCallbacks.ForEach(c => c(this));
 		lwfDestroyCallbacks = null;
 
-		if (lwfName == null)
-			return;
-
 		if (lwf != null) {
 			lwf.Destroy();
 			lwf = null;
 		}
-
-		if (factory != null) {
-			factory.Destruct();
-			factory = null;
-		}
-
-		ResourceCache.SharedInstance().UnloadLWFData(lwfName);
 	}
 
 	public void UseCombinedMeshRenderer()
@@ -112,7 +101,7 @@ public class LWFObject : MonoBehaviour
 	}
 
 	public virtual bool Load(string path,
-		string texturePrefix = "", string fontPrefix = "",
+		string texturePrefix = null, string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
 		string sortingLayerName = null, int sortingOrder = 0,
 		Camera renderCamera = null, Camera inputCamera = null,
@@ -128,18 +117,19 @@ public class LWFObject : MonoBehaviour
 #endif
 		)
 	{
-		lwfName = path;
 		callUpdate = autoUpdate;
 		if (inputCamera == null)
 			inputCamera = Camera.main;
 
+		if (texturePrefix == null)
+			texturePrefix = Path.GetDirectoryName(path) + "/";
 		if (lwfLoadCallback != null)
 			lwfLoadCallbacks.Add(lwfLoadCallback);
 		if (lwfDestroyCallback != null)
 			lwfDestroyCallbacks.Add(lwfDestroyCallback);
 
-		LWF.Data data =
-			ResourceCache.SharedInstance().LoadLWFData(lwfName, lwfDataLoader);
+		ResourceCache cache = ResourceCache.SharedInstance();
+		LWF.Data data = cache.LoadLWFData(path, lwfDataLoader);
 		if (data == null || !data.Check())
 			return false;
 
@@ -170,6 +160,55 @@ public class LWFObject : MonoBehaviour
 #else
 		lwf = new LWF.LWF(data, factory);
 #endif
+
+		lwf.lwfLoader = (childPath, childTexturePrefix) => {
+			LWF.Data childData = cache.LoadLWFData(childPath, lwfDataLoader);
+			if (childData == null || !childData.Check())
+				return null;
+
+			if (lwfDataCallback != null && !lwfDataCallback(childData))
+				return null;
+
+			if (childTexturePrefix == null)
+				childTexturePrefix = Path.GetDirectoryName(childPath) + "/";
+
+			LWF.UnityRenderer.Factory f;
+			if (useCombinedMeshRenderer
+#if UNITY_EDITOR
+				&& Application.isPlaying
+#endif
+			) {
+				f = new LWF.CombinedMeshRenderer.Factory(
+					childData, gameObject, factory.zOffset, factory.zRate,
+					factory.renderQueueOffset, factory.sortingLayerName,
+					factory.sortingOrder, factory.useAdditionalColor,
+					factory.renderCamera, factory.inputCamera,
+					childTexturePrefix, factory.fontPrefix,
+					factory.textureLoader, factory.textureUnloader, true);
+			} else {
+				f = new LWF.DrawMeshRenderer.Factory(
+					childData, gameObject, factory.zOffset, factory.zRate,
+					factory.renderQueueOffset, factory.sortingLayerName,
+					factory.sortingOrder, factory.useAdditionalColor,
+					factory.renderCamera, factory.inputCamera,
+					childTexturePrefix, factory.fontPrefix,
+					factory.textureLoader, factory.textureUnloader);
+			}
+
+#if LWF_USE_LUA
+			LWF.LWF child = new LWF.LWF(childData, f, lwf.luaState);
+#else
+			LWF.LWF child = new LWF.LWF(childData, f);
+#endif
+			child.lwfLoader = lwf.lwfLoader;
+			child.lwfUnloader = () => {
+				ResourceCache.SharedInstance().UnloadLWFData(childPath);
+			};
+			return child;
+		};
+		lwf.lwfUnloader = () => {
+			ResourceCache.SharedInstance().UnloadLWFData(path);
+		};
 
 		OnLoad();
 
@@ -326,35 +365,13 @@ public class LWFObject : MonoBehaviour
 		return WorldToLWFPoint(worldPoint);
 	}
 
-	public void AttachLWF(string instanceName, LWFObject lwfObject,
-		string attachName, int attachDepth = -1, bool reorder = false,
-		LWFObjectAttachHandler attachHandler = null,
-		LWFObjectDetachHandler detachHandler = null)
+	public void AttachLWF(string instanceName, string path, string attachName,
+		int attachDepth = -1, bool reorder = false, string texturePrefix = null)
 	{
 		AddLoadCallback((o) => {
-			lwfObject.AddLoadCallback((lo) => {
-				AddMovieLoadHandler(instanceName, (m) => {
-					m.AttachLWF(lwfObject.lwf,
-							attachName, attachDepth, reorder, (attachedLWF) => {
-						if (detachHandler == null) {
-							if (lwfObject.isAlive)
-								Destroy(lwfObject.gameObject);
-						} else {
-							if (detachHandler(lwfObject) && lwfObject.isAlive)
-								Destroy(lwfObject.gameObject);
-						}
-					});
-					if (attachHandler != null)
-						attachHandler(lwfObject);
-				});
-
-				lwfObject.callUpdate = false;
-
-				Transform transform = lwfObject.gameObject.transform;
-				transform.parent = gameObject.transform;
-				transform.localPosition = Vector3.zero;
-				transform.localRotation = Quaternion.identity;
-				transform.localScale = Vector3.one;
+			AddMovieLoadHandler(instanceName, (m) => {
+				m.AttachLWF(path,
+					attachName, attachDepth, reorder, texturePrefix);
 			});
 		});
 	}

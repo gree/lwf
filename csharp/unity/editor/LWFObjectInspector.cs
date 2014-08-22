@@ -183,8 +183,9 @@ public class LWFObjectInspector : EditorWindow
 
 			case Type.TEXT:
 				LWF.Text text = (LWF.Text)obj;
-				string textName = lwf.data.strings[
-					lwf.data.texts[text.objectId].nameStringId];
+				int nameStringId = lwf.data.texts[text.objectId].nameStringId;
+				string textName = nameStringId == -1 ?
+					"" : lwf.data.strings[nameStringId];
 				EditorGUILayout.LabelField("Text:", textName);
 				EditorGUI.indentLevel = container.hierarchy + 3;
 				DrawInfo(container, obj);
@@ -250,8 +251,7 @@ public class LWFObjectInspector : EditorWindow
 			if (lwf == null)
 				continue;
 
-			string name =
-				string.Format("{0} / {1}", lwfObject.lwfName, lwf.name);
+			string name = lwf.name;
 			if (lwf.parent != null) {
 				string parentName = lwf.parent.name;
 				if (parentName == null)

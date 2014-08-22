@@ -178,6 +178,7 @@ public partial class Factory : UnityRenderer.Factory
 	private int usedMeshComponentNo;
 	private List<CombinedMeshComponent> meshComponents;
 	private CombinedMeshComponent currentMeshComponent;
+	private Factory parent;
 
 	public Factory(Data d, GameObject gObj,
 			float zOff = 0, float zR = 1, int rQOff = 0,
@@ -185,7 +186,8 @@ public partial class Factory : UnityRenderer.Factory
 			Camera renderCam = null, Camera inputCam = null,
 			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
-			TextureUnloader textureUnldr = null)
+			TextureUnloader textureUnldr = null,
+			bool attaching = false)
 		: base(d, gObj, zOff, zR, rQOff, sLayerName, sOrder, uAC, renderCam,
 			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
 	{
@@ -193,7 +195,8 @@ public partial class Factory : UnityRenderer.Factory
 		CreateTextContexts();
 
 		meshComponents = new List<CombinedMeshComponent>();
-		AddMeshComponent();
+		if (!attaching)
+			AddMeshComponent();
 		usedMeshComponentNo = -1;
 
 		updateCount = -1;
@@ -228,6 +231,13 @@ public partial class Factory : UnityRenderer.Factory
 	{
 		base.BeginRender(lwf);
 
+		parent = null;
+		var lwfParent = lwf.GetParent();
+		if (lwfParent != null)
+			parent = lwfParent.rendererFactory as Factory;
+		if (parent != null)
+			return;
+
 		updateCount = lwf.updateCount;
 		meshComponentNo = -1;
 		currentMeshComponent = null;
@@ -236,6 +246,11 @@ public partial class Factory : UnityRenderer.Factory
 	public void Render(
 		IMeshRenderer renderer, int rectangleCount, Material material)
 	{
+		if (parent != null) {
+			parent.Render(renderer, rectangleCount, material);
+			return;
+		}
+
 		if (currentMeshComponent == null) {
 			meshComponentNo = 0;
 			currentMeshComponent = meshComponents[meshComponentNo];
@@ -258,6 +273,9 @@ public partial class Factory : UnityRenderer.Factory
 	public override void EndRender(LWF lwf)
 	{
 		base.EndRender(lwf);
+
+		if (parent != null)
+			return;
 
 		if (currentMeshComponent == null) {
 			for (int i = 0; i <= usedMeshComponentNo; ++i)
