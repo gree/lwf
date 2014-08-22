@@ -31,178 +31,247 @@ namespace CombinedMeshRenderer {
 
 public class CombinedMeshBuffer
 {
-	public int[] objects;
 	public Vector3[] vertices;
 	public Vector2[] uv;
 	public int[] triangles;
 	public Color32[] colors32;
 	public Vector3[] additionalColors;
+	public int[] objects;
 	public int index;
-	public bool clean;
-	public bool changed;
+	public bool modified;
+	public bool initialized;
 
 	public void Alloc(int n)
 	{
-		objects = new int[n];
 		vertices = new Vector3[n * 4];
 		uv = new Vector2[n * 4];
 		triangles = new int[n * 6];
 		colors32 = new Color32[n * 4];
 		additionalColors = new Vector3[n * 4];
+		objects = new int[n];
 		index = 0;
-		clean = true;
-		changed = true;
+		modified = true;
+		initialized = true;
+
+		for (int i = 0, j = 0; i < triangles.Length; i += 6, j += 4) {
+			triangles[i + 0] = j + 0;
+			triangles[i + 1] = j + 1;
+			triangles[i + 2] = j + 2;
+			triangles[i + 3] = j + 2;
+			triangles[i + 4] = j + 1;
+			triangles[i + 5] = j + 3;
+		}
+	}
+}
+
+public interface IMeshRenderer
+{
+	void UpdateMesh(CombinedMeshBuffer buffer);
+}
+
+public class CombinedMeshComponent : MonoBehaviour
+{
+	public int updateCount;
+	public UnityEngine.MeshRenderer meshRenderer;
+	public MeshFilter meshFilter;
+	public CombinedMeshBuffer buffer;
+	public Mesh mesh;
+	public List<IMeshRenderer> renderers;
+	public int rendererCount;
+	public int rectangleCount;
+
+	public void Init(Factory factory)
+	{
+		renderers = new List<IMeshRenderer>();
+
+		mesh = new Mesh();
+		mesh.name = "LWF/" + factory.data.name;
+		mesh.MarkDynamic();
+
+		meshFilter = gameObject.AddComponent<MeshFilter>();
+		meshFilter.sharedMesh = mesh;
+
+		meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
+		if (!string.IsNullOrEmpty(factory.sortingLayerName))
+			meshRenderer.sortingLayerName = factory.sortingLayerName;
+		meshRenderer.sortingOrder = factory.sortingOrder;
+		meshRenderer.castShadows = false;
+		meshRenderer.receiveShadows = false;
+
+		buffer = new CombinedMeshBuffer();
+	}
+
+	public void AddRenderer(IMeshRenderer renderer, int rc, int uc)
+	{
+		if (updateCount != uc) {
+			updateCount = uc;
+			rendererCount = 0;
+			rectangleCount = 0;
+		}
+
+		int i = rendererCount++;
+		if (i < renderers.Count)
+			renderers[i] = renderer;
+		else
+			renderers.Add(renderer);
+
+		rectangleCount += rc;
+	}
+
+	public void SetMaterial(Material material)
+	{
+		if (meshRenderer.sharedMaterial != material) {
+			meshRenderer.sharedMaterial = material;
+			buffer.modified = true;
+		}
+	}
+
+	public void Disable()
+	{
+		updateCount = 0;
+		rendererCount = 0;
+		rectangleCount = 0;
+		meshRenderer.sharedMaterial = null;
+		mesh.Clear(true);
+		gameObject.SetActive(false);
+	}
+
+	public void UpdateMesh()
+	{
+		gameObject.SetActive(true);
+
+		if (buffer.objects == null || buffer.objects.Length != rectangleCount) {
+			buffer.Alloc(rectangleCount);
+		} else {
+			buffer.index = 0;
+		}
+
+		for (int i = 0; i < rendererCount; ++i)
+			renderers[i].UpdateMesh(buffer);
+
+		if (buffer.modified) {
+			buffer.modified = false;
+			mesh.Clear(true);
+			mesh.vertices = buffer.vertices;
+			mesh.uv = buffer.uv;
+			mesh.triangles = buffer.triangles;
+			mesh.colors32 = buffer.colors32;
+			mesh.normals = buffer.additionalColors;
+			mesh.RecalculateBounds();
+		}
+	}
+
+	void OnDestroy()
+	{
+		meshRenderer.sharedMaterial = null;
+		meshFilter.sharedMesh = null;
+		UnityEngine.MeshRenderer.Destroy(meshRenderer);
+		MeshFilter.Destroy(meshFilter);
+		Mesh.Destroy(mesh);
 	}
 }
 
 public partial class Factory : UnityRenderer.Factory
 {
-	public UnityEngine.MeshRenderer meshRenderer;
-	public MeshFilter meshFilter;
-	public CombinedMeshBuffer buffer;
-	public Mesh mesh;
-	public bool updated;
-	public bool premultipliedAlpha;
-	private Data data;
-	private string textureName;
-	private int updateCount;
-	private int bitmapCount;
-	private bool usingAdditiveShader;
+	public int updateCount;
+	private int meshComponentNo;
+	private int usedMeshComponentNo;
+	private List<CombinedMeshComponent> meshComponents;
+	private CombinedMeshComponent currentMeshComponent;
 
 	public Factory(Data d, GameObject gObj,
-			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
+			float zOff = 0, float zR = 1, int rQOff = 0,
+			string sLayerName = null, int sOrder = 0, bool uAC = false,
 			Camera renderCam = null, Camera inputCam = null,
 			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null)
-		: base(gObj, zOff, zR, rQOff, uAC, renderCam, inputCam, texturePrfx,
-			fontPrfx, textureLdr, textureUnldr)
+		: base(d, gObj, zOff, zR, rQOff, sLayerName, sOrder, uAC, renderCam,
+			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
 	{
-		data = d;
-		mesh = new Mesh();
-		mesh.name = "LWF/" + data.name;
-#if !UNITY_3_5
-		mesh.MarkDynamic();
-#endif
+		CreateBitmapContexts();
+		CreateTextContexts();
 
-		if (Application.isEditor) {
-			meshFilter = gameObject.GetComponent<MeshFilter>();
-			if (meshFilter == null)
-				meshFilter = gameObject.AddComponent<MeshFilter>();
-		} else {
-			meshFilter = gameObject.AddComponent<MeshFilter>();
-		}
-		meshFilter.sharedMesh = mesh;
+		meshComponents = new List<CombinedMeshComponent>();
+		AddMeshComponent();
+		usedMeshComponentNo = -1;
 
-		if (Application.isEditor) {
-			meshRenderer = gameObject.GetComponent<UnityEngine.MeshRenderer>();
-			if (meshRenderer == null)
-				meshRenderer =
-					gameObject.AddComponent<UnityEngine.MeshRenderer>();
-		} else {
-			meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
-		}
-		meshRenderer.castShadows = false;
-		meshRenderer.receiveShadows = false;
-
-		textureName = texturePrefix + data.textures[0].filename;
-		meshRenderer.sharedMaterial =
-			ResourceCache.SharedInstance().LoadTexture(
-				data.name, textureName, data.textures[0].format, true,
-					useAdditionalColor, textureLoader, textureUnloader);
-		if (renderQueueOffset != 0)
-			meshRenderer.sharedMaterial.renderQueue += renderQueueOffset;
-
-		premultipliedAlpha = (data.textures[0].format ==
-			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
-
-		buffer = new CombinedMeshBuffer();
-
-		CreateBitmapContexts(data);
+		updateCount = -1;
 	}
 
 	public override void Destruct()
 	{
-		meshRenderer.sharedMaterial = null;
-		ResourceCache.SharedInstance().UnloadTexture(data.name, textureName);
-		meshFilter.sharedMesh = null;
-		if (!Application.isEditor) {
-			UnityEngine.MeshRenderer.Destroy(meshRenderer);
-			MeshFilter.Destroy(meshFilter);
-			Mesh.Destroy(mesh);
-		}
+		foreach (CombinedMeshComponent meshComponent in meshComponents)
+			GameObject.Destroy(meshComponent.gameObject);
+
+		DestructBitmapContexts();
+		DestructTextContexts();
+
 		base.Destruct();
 	}
 
-	public override void SetBlendMode(int m)
+	private CombinedMeshComponent AddMeshComponent()
 	{
-		base.SetBlendMode(m);
-
-		if (m == (int)Format.Constant.BLEND_MODE_ADD && !usingAdditiveShader) {
-			usingAdditiveShader = true;
-			meshRenderer.sharedMaterial.shader =
-				ResourceCache.SharedInstance().GetAdditiveShader(
-					meshRenderer.sharedMaterial.shader);
-		}
-	}
-
-	public void AddBitmap()
-	{
-		++bitmapCount;
-	}
-
-	public void DeleteBitmap()
-	{
-		--bitmapCount;
+		GameObject gobj = new GameObject(
+			"LWF/" + data.name + "/Mesh/" + meshComponents.Count);
+		gobj.SetActive(false);
+		gobj.transform.parent = gameObject.transform;
+		gobj.transform.position = gameObject.transform.position;
+		CombinedMeshComponent meshComponent =
+			gobj.AddComponent<CombinedMeshComponent>();
+		meshComponent.Init(this);
+		meshComponents.Add(meshComponent);
+		return meshComponent;
 	}
 
 	public override void BeginRender(LWF lwf)
 	{
 		base.BeginRender(lwf);
 
-		if (buffer.objects == null || buffer.objects.Length != bitmapCount) {
-			updated = true;
-			updateCount = lwf.updateCount;
-			buffer.Alloc(bitmapCount);
+		updateCount = lwf.updateCount;
+		meshComponentNo = -1;
+		currentMeshComponent = null;
+	}
+
+	public void Render(
+		IMeshRenderer renderer, int rectangleCount, Material material)
+	{
+		if (currentMeshComponent == null) {
+			meshComponentNo = 0;
+			currentMeshComponent = meshComponents[meshComponentNo];
+			currentMeshComponent.SetMaterial(material);
 		} else {
-			buffer.clean = false;
-			buffer.changed = false;
-			if (updateCount != lwf.updateCount) {
-				updated = true;
-				updateCount = lwf.updateCount;
-			} else {
-				updated = false;
+			Material componentMaterial =
+				currentMeshComponent.meshRenderer.sharedMaterial;
+			if (componentMaterial != material) {
+				int no = ++meshComponentNo;
+				if (no >= meshComponents.Count)
+					AddMeshComponent();
+				currentMeshComponent = meshComponents[no];
+				currentMeshComponent.SetMaterial(material);
 			}
 		}
 
-		buffer.index = 0;
+		currentMeshComponent.AddRenderer(renderer, rectangleCount, updateCount);
 	}
 
 	public override void EndRender(LWF lwf)
 	{
 		base.EndRender(lwf);
 
-		if (!updated)
-			return;
-
-		if (buffer.index == 0) {
-			if (mesh.vertices != null && mesh.vertices.Length > 0)
-				mesh.Clear(true);
+		if (currentMeshComponent == null) {
+			for (int i = 0; i <= usedMeshComponentNo; ++i)
+				meshComponents[i].Disable();
+			usedMeshComponentNo = -1;
 			return;
 		}
 
-		if (buffer.changed) {
-			mesh.Clear(true);
-			mesh.vertices = buffer.vertices;
-			mesh.uv = buffer.uv;
-			mesh.triangles = buffer.triangles;
-		} else {
-			mesh.vertices = buffer.vertices;
-		}
-		mesh.colors32 = buffer.colors32;
-		mesh.normals = buffer.additionalColors;
-		mesh.RecalculateBounds();
-		//mesh.Optimize();
+		for (int i = 0; i <= meshComponentNo; ++i)
+			meshComponents[i].UpdateMesh();
+
+		for (int i = meshComponentNo + 1; i <= usedMeshComponentNo; ++i)
+			meshComponents[i].Disable();
+		usedMeshComponentNo = meshComponentNo;
 	}
 
 	public override Renderer ConstructBitmap(
@@ -219,7 +288,7 @@ public partial class Factory : UnityRenderer.Factory
 
 	public override TextRenderer ConstructText(LWF lwf, int objectId, Text text)
 	{
-		return new UnityRenderer.UnityTextRenderer(lwf, objectId);
+		return new TextMeshRenderer(lwf, m_textContexts[objectId]);
 	}
 }
 

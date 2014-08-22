@@ -117,6 +117,8 @@ public partial class Button : IObject
 
 	public override void LinkButton()
 	{
+		if (m_lwf.focus == this)
+			m_lwf.focusOnLink = true;
 		m_buttonLink = m_lwf.buttonHead;
 		m_lwf.buttonHead = this;
 	}

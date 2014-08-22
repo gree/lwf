@@ -42,6 +42,9 @@ public class LunaTraits_LWF_Movie
         new RegType("swapAttachedMovieDepth", impl_LunaTraits_LWF_Movie._bind_swapAttachedMovieDepth),
         new RegType("detachMovie", impl_LunaTraits_LWF_Movie._bind_detachMovie),
         new RegType("detachFromParent", impl_LunaTraits_LWF_Movie._bind_detachFromParent),
+        new RegType("attachBitmap", impl_LunaTraits_LWF_Movie._bind_attachBitmap),
+        new RegType("detachBitmap", impl_LunaTraits_LWF_Movie._bind_detachBitmap),
+        new RegType("getAttachedBitmap", impl_LunaTraits_LWF_Movie._bind_getAttachedBitmap),
         new RegType("getName", impl_LunaTraits_LWF_Movie._bind_getName),
         new RegType("getParent", impl_LunaTraits_LWF_Movie._bind_getParent),
         new RegType("getCurrentFrame", impl_LunaTraits_LWF_Movie._bind_getCurrentFrame),
@@ -466,6 +469,49 @@ public class impl_LunaTraits_LWF_Movie
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
+  public static int _bind_attachBitmap(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=3
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isstring(L,2)==0
+            || Lua.lua_isnumber(L, 3)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:attachBitmap(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		string linkageName=Lua.lua_tostring(L,2).ToString();
+		int depth=(int)Lua.lua_tonumber(L,3);
+	try {
+		LWF.BitmapClip ret=self.AttachBitmap(linkageName, depth);
+		Luna_LWF_BitmapClip.push(L,ret,true,"LWF_BitmapClip");
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 1;
+  }
+  public static int _bind_detachBitmap(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isnumber(L, 2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:detachBitmap(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		int depth=(int)Lua.lua_tonumber(L,2);
+	try {
+		self.DetachBitmap(depth);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_getAttachedBitmap(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isnumber(L, 2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:getAttachedBitmap(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		int depth=(int)Lua.lua_tonumber(L,2);
+	try {
+		LWF.BitmapClip ret=self.GetAttachedBitmap(depth);
+		Luna_LWF_BitmapClip.push(L,ret,true,"LWF_BitmapClip");
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 1;
+  }
   public static int _bind_gotoAndStop(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)==2
@@ -651,7 +697,7 @@ public class impl_LunaTraits_LWF_Movie
             || Luna.get_uniqueid(L,1)!=29625181 
             || !Lua.lua_isboolean(L,2)) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setVisible(LWF.Movie self ...)"); }
 		LWF.Movie o=Luna_LWF_Movie.check(L,1);
-		bool v=Lua.lua_toboolean(L,2) != 0;
+		bool v=(Lua.lua_toboolean(L,2) != 0);
 	try {
 		setVisible(o, v);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }

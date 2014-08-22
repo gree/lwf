@@ -242,6 +242,9 @@ void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(string aName) @ detachMovie
 void DetachMovie(LWF.Movie movie) @ detachMovie
 void DetachFromParent() @ detachFromParent
+LWF.BitmapClip AttachBitmap(string linkageName, int depth) @ attachBitmap
+void DetachBitmap(int depth) @ detachBitmap
+LWF.BitmapClip GetAttachedBitmap(int depth) @ getAttachedBitmap
 			EOS
 
 			:staticMemberFunctions=><<-EOS,
@@ -390,8 +393,64 @@ static void setBlue(LWF.Movie o, float v);
 	}
 
 			EOS
-		},
-		{
+		},{
+			:name=>'LWF.BitmapClip',
+			:properties=>[
+				'int depth',
+				'bool visible',
+				'float width',
+				'float height',
+				'float regX',
+				'float regY',
+				'float x',
+				'float y',
+				'float scaleX',
+				'float scaleY',
+				'float rotation',
+				'float alpha',
+			],
+			:readProperties=>[
+				['name', 'getName'],
+				['parent', 'getParent'],
+				['lwf', 'getLWF'],
+			],
+			:memberFunctions=><<-EOS,
+void DetachFromParent() @ detachFromParent
+			EOS
+			:staticMemberFunctions=><<-EOS,
+static string getName(LWF.BitmapClip o);
+      EOS
+			:wrapperCode=><<-EOS,
+	static string getName(LWF.BitmapClip o){return o.name;}
+
+	public static int _bind_getLWF(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 1 || Luna.get_uniqueid(L, 1) !=
+				LunaTraits_LWF_BitmapClip.uniqueID) {
+			Luna.printStack(L);
+			Lua.luaL_error(L, "luna typecheck failed: LWF.BitmapClip.lwf");
+		}
+		LWF.BitmapClip a =
+			Luna_LWF_BitmapClip.check(L, 1);
+		Luna_LWF_LWF.push(L, a.lwf, false);
+		return 1;
+	}
+
+	public static int _bind_getParent(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 1 || Luna.get_uniqueid(L, 1) !=
+				LunaTraits_LWF_BitmapClip.uniqueID) {
+			Luna.printStack(L);
+			Lua.luaL_error(L, "luna typecheck failed: LWF.BitmapClip.parent");
+		}
+		LWF.BitmapClip a =
+			Luna_LWF_BitmapClip.check(L, 1);
+		Luna_LWF_Movie.push(L, a.parent, false);
+		return 1;
+	}
+
+			EOS
+		},{
 			:name=>'LWF.Point',
 			:ctors=>['()', '(float x, float y)'],
 			:properties=>[

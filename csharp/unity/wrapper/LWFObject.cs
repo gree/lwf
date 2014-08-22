@@ -26,9 +26,6 @@ using LWFDataLoader = System.Func<string, byte[]>;
 using TextureLoader = System.Func<string, UnityEngine.Texture2D>;
 using TextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFDataCallback = System.Func<LWF.Data, bool>;
-using BitmapFontDataLoader = System.Func<string, byte[]>;
-using BitmapFontTextureLoader = System.Func<string, UnityEngine.Texture2D>;
-using BitmapFontTextureUnloader = System.Action<UnityEngine.Texture2D>;
 using LWFCallback = System.Action<LWFObject>;
 using LWFCallbacks = System.Collections.Generic.List<System.Action<LWFObject>>;
 
@@ -42,8 +39,6 @@ using ProgramObjectConstructor =
 	System.Func<LWF.ProgramObject, int, int, int, LWF.Renderer>;
 using LWFObjectAttachHandler = System.Action<LWFObject>;
 using LWFObjectDetachHandler = System.Func<LWFObject, bool>;
-using RendererFactoryConstructor =
-	System.Func<RendererFactoryArguments, LWF.UnityRenderer.Factory>;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -54,48 +49,15 @@ class HandlerWrapper
 	public int id;
 }
 
-public class RendererFactoryArguments
-{
-	public LWF.Data data;
-	public GameObject gameObject;
-	public float zOffset;
-	public float zRate;
-	public int renderQueueOffset;
-	public bool useAdditionalColor;
-	public Camera renderCamera;
-	public Camera inputCamera;
-	public string texturePrefix;
-	public string fontPrefix;
-	public TextureLoader textureLoader;
-	public TextureUnloader textureUnloader;
-
-	public RendererFactoryArguments(LWF.Data d, GameObject gObj, float zOff,
-		float zR, int rQOff, bool uAC, Camera renderCam, Camera inputCam,
-		string texturePrfx, string fontPrfx, TextureLoader textureLdr,
-		TextureUnloader textureUnldr)
-	{
-		data = d;
-		gameObject = gObj;
-		zOffset = zOff;
-		zRate = zR;
-		renderQueueOffset = rQOff;
-		useAdditionalColor = uAC;
-		renderCamera = renderCam;
-		inputCamera = inputCam;
-		texturePrefix = texturePrfx;
-		fontPrefix = fontPrfx;
-		textureLoader = textureLdr;
-		textureUnloader = textureUnldr;
-	}
-}
-
 public class LWFObject : MonoBehaviour
 {
 	public LWF.LWF lwf;
 	public LWF.UnityRenderer.Factory factory;
+	public LWF.CombinedMeshRenderer.Factory combinedMeshRendererfactory;
+	[HideInInspector]
 	public string lwfName;
+	[HideInInspector]
 	public bool isAlive;
-	protected RendererFactoryConstructor rendererFactoryConstructor;
 	protected bool callUpdate;
 	protected bool useCombinedMeshRenderer;
 	protected LWFCallbacks lwfLoadCallbacks;
@@ -134,11 +96,6 @@ public class LWFObject : MonoBehaviour
 		ResourceCache.SharedInstance().UnloadLWFData(lwfName);
 	}
 
-	public void SetRendererFactoryConstructor(RendererFactoryConstructor c)
-	{
-		rendererFactoryConstructor = c;
-	}
-
 	public void UseCombinedMeshRenderer()
 	{
 		useCombinedMeshRenderer = true;
@@ -157,6 +114,7 @@ public class LWFObject : MonoBehaviour
 	public virtual bool Load(string path,
 		string texturePrefix = "", string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
+		string sortingLayerName = null, int sortingOrder = 0,
 		Camera renderCamera = null, Camera inputCamera = null,
 		bool autoUpdate = true, bool useAdditionalColor = false,
 		LWFDataCallback lwfDataCallback = null,
@@ -188,22 +146,23 @@ public class LWFObject : MonoBehaviour
 		if (lwfDataCallback != null && !lwfDataCallback(data))
 			return false;
 
-		if (rendererFactoryConstructor != null) {
-			RendererFactoryArguments arg = new RendererFactoryArguments(
+		if (useCombinedMeshRenderer
+#if UNITY_EDITOR
+			&& Application.isPlaying
+#endif
+		) {
+			combinedMeshRendererfactory = new LWF.CombinedMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
-				useAdditionalColor, renderCamera, inputCamera, texturePrefix,
-				fontPrefix, textureLoader, textureUnloader);
-			factory = rendererFactoryConstructor(arg);
-		} else if (useCombinedMeshRenderer && data.textures.Length == 1) {
-			factory = new LWF.CombinedMeshRenderer.Factory(
-				data, gameObject, zOffset, zRate, renderQueueOffset,
-				useAdditionalColor, renderCamera, inputCamera, texturePrefix,
-				fontPrefix, textureLoader, textureUnloader);
+				sortingLayerName, sortingOrder, useAdditionalColor,
+				renderCamera, inputCamera, texturePrefix, fontPrefix,
+				textureLoader, textureUnloader);
+			factory = combinedMeshRendererfactory;
 		} else {
 			factory = new LWF.DrawMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
-				useAdditionalColor, renderCamera, inputCamera, texturePrefix,
-				fontPrefix, textureLoader, textureUnloader);
+				sortingLayerName, sortingOrder, useAdditionalColor,
+				renderCamera, inputCamera, texturePrefix, fontPrefix,
+				textureLoader, textureUnloader);
 		}
 
 #if LWF_USE_LUA
@@ -291,7 +250,14 @@ public class LWFObject : MonoBehaviour
 		if (lwf == null)
 			return;
 
-		lwf.Render();
+		if (combinedMeshRendererfactory != null) {
+			if (combinedMeshRendererfactory.updateCount != lwf.updateCount) {
+				combinedMeshRendererfactory.updateCount = lwf.updateCount;
+				lwf.Render();
+			}
+		} else {
+			lwf.Render();
+		}
 	}
 
 	public virtual void Update()
@@ -433,11 +399,7 @@ public class LWFObject : MonoBehaviour
 				lwf.SetAttachVisible(true);
 				lwf.Render();
 				lwf.SetAttachVisible(attachVisible);
-#if UNITY_3_5
-				gameObject.active = true;
-#else
 				gameObject.SetActive(true);
-#endif
 			}
 		});
 	}
@@ -451,11 +413,7 @@ public class LWFObject : MonoBehaviour
 				lwf.SetAttachVisible(false);
 				lwf.Render();
 				lwf.SetAttachVisible(attachVisible);
-#if UNITY_3_5
-				gameObject.active = false;
-#else
 				gameObject.SetActive(false);
-#endif
 			}
 		});
 	}
@@ -466,16 +424,6 @@ public class LWFObject : MonoBehaviour
 	{
 		ResourceCache cache = ResourceCache.SharedInstance();
 		cache.SetLoader(lwfDataLoader, textureLoader, textureUnloader);
-	}
-
-	public static void SetBitmapFontLoader(
-		BitmapFontDataLoader dataLoader = null,
-		BitmapFontTextureLoader textureLoader = null,
-		BitmapFontTextureUnloader textureUnloader = null)
-	{
-		BitmapFont.ResourceCache cache =
-			BitmapFont.ResourceCache.SharedInstance();
-		cache.SetLoader(dataLoader, textureLoader, textureUnloader);
 	}
 
 	public void AddEventHandler(string eventName,
@@ -838,5 +786,4 @@ public class LWFObject : MonoBehaviour
 			lwf.RenderNow();
 	}
 #endif
-
 }

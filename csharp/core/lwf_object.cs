@@ -157,6 +157,7 @@ public class Object
 	public bool IsProgramObject()
 		{return m_type == Type.PROGRAMOBJECT ? true : false;}
 	public bool IsText() {return m_type == Type.TEXT ? true : false;}
+	public virtual bool IsBitmapClip() {return false;}
 }
 
 }	// namespace LWF

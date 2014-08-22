@@ -28,16 +28,26 @@ namespace DrawMeshRenderer {
 
 public partial class Factory : UnityRenderer.Factory
 {
-	public Factory(Data data, GameObject gObj,
-			float zOff = 0, float zR = 1, int rQOff = 0, bool uAC = false,
+	public Factory(Data d, GameObject gObj,
+			float zOff = 0, float zR = 1, int rQOff = 0,
+			string sLayerName = null, int sOrder = 0, bool uAC = false,
 			Camera renderCam = null, Camera inputCam = null,
 			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null)
-		: base(gObj, zOff, zR, rQOff, uAC, renderCam, inputCam, texturePrfx,
-			fontPrfx, textureLdr, textureUnldr)
+		: base(d, gObj, zOff, zR, rQOff, sLayerName, sOrder, uAC, renderCam,
+			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
 	{
-		CreateBitmapContexts(data);
+		CreateBitmapContexts();
+		CreateTextContexts();
+	}
+
+	public override void Destruct()
+	{
+		DestructBitmapContexts();
+		DestructTextContexts();
+
+		base.Destruct();
 	}
 
 	public override Renderer ConstructBitmap(LWF lwf,
@@ -54,7 +64,7 @@ public partial class Factory : UnityRenderer.Factory
 
 	public override TextRenderer ConstructText(LWF lwf, int objectId, Text text)
 	{
-		return new UnityRenderer.UnityTextRenderer(lwf, objectId);
+		return new TextMeshRenderer(lwf, m_textContexts[objectId]);
 	}
 }
 

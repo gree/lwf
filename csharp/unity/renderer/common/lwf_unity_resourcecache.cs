@@ -50,6 +50,7 @@ namespace UnityRenderer {
 public class TextureContext
 {
 	public UnityEngine.Material material;
+	public UnityEngine.Material additiveMaterial;
 	public TextureUnloader unloader;
 
 	public TextureContext(UnityEngine.Material m, TextureUnloader u)
@@ -232,23 +233,7 @@ public class ResourceCache
 		return item.Entity().material;
 	}
 
-	public void UnloadTexture(string lwfName, string filename)
-	{
-		TextureItem item;
-		string cacheName = lwfName + "/" + filename;
-		if (m_textureCache.TryGetValue(cacheName, out item)) {
-			if (item.Unref() <= 0) {
-				TextureContext context = item.Entity();
-				if (context.material.mainTexture != null)
-					context.unloader((Texture2D)context.material.mainTexture);
-				if (!Application.isEditor)
-					Material.Destroy(context.material);
-				m_textureCache.Remove(cacheName);
-			}
-		}
-	}
-
-	public Shader GetAdditiveShader(Shader shader)
+	private Shader GetAdditiveShader(Shader shader)
 	{
 		string shaderName = shader.name;
 		Regex r = new Regex("Additive");
@@ -261,6 +246,40 @@ public class ResourceCache
 			return s + "Additive";
 		});
 		return GetShader(shaderName);
+	}
+
+	public Material GetAdditiveMaterial(string lwfName, string filename)
+	{
+		TextureItem item;
+		string cacheName = lwfName + "/" + filename;
+		if (m_textureCache.TryGetValue(cacheName, out item)) {
+			TextureContext context = item.Entity();
+			if (context.additiveMaterial == null) {
+				context.additiveMaterial = new Material(context.material);
+				context.additiveMaterial.shader =
+					GetAdditiveShader(context.material.shader);
+			}
+			return context.additiveMaterial;
+		}
+		return null;
+	}
+
+	public void UnloadTexture(string lwfName, string filename)
+	{
+		TextureItem item;
+		string cacheName = lwfName + "/" + filename;
+		if (m_textureCache.TryGetValue(cacheName, out item)) {
+			if (item.Unref() <= 0) {
+				TextureContext context = item.Entity();
+				if (context.additiveMaterial != null)
+					Material.Destroy(context.additiveMaterial);
+				if (context.material.mainTexture != null)
+					context.unloader((Texture2D)context.material.mainTexture);
+				if (!Application.isEditor)
+					Material.Destroy(context.material);
+				m_textureCache.Remove(cacheName);
+			}
+		}
 	}
 
 	public MeshContext LoadMesh(string lwfName,

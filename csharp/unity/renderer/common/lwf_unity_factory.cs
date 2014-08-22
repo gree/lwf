@@ -28,6 +28,7 @@ namespace UnityRenderer {
 
 public partial class Factory : IRendererFactory
 {
+	public Data data;
 	public GameObject gameObject;
 	public Camera renderCamera;
 	public Camera inputCamera;
@@ -36,6 +37,8 @@ public partial class Factory : IRendererFactory
 	public float zOffset;
 	public float zRate;
 	public int renderQueueOffset;
+	public string sortingLayerName;
+	public int sortingOrder;
 	public int blendMode;
 	public int maskMode;
 	public bool useAdditionalColor;
@@ -43,16 +46,18 @@ public partial class Factory : IRendererFactory
 	public TextureUnloader textureUnloader;
 	private Matrix4x4 matrix;
 
-	protected Factory(GameObject gObj, float zOff, float zR, int rQOff,
-		bool uAC, Camera renderCam, Camera inputCam,
-		string texturePrfx = "", string fontPrfx = "",
-		TextureLoader textureLdr = null,
-		TextureUnloader textureUnldr = null)
+	protected Factory(Data d, GameObject gObj, float zOff, float zR, int rQOff,
+		string sLayerName, int sOrder, bool uAC, Camera renderCam,
+		Camera inputCam, string texturePrfx = "", string fontPrfx = "",
+		TextureLoader textureLdr = null, TextureUnloader textureUnldr = null)
 	{
+		data = d;
 		gameObject = gObj;
 		zOffset = zOff;
 		zRate = zR;
 		renderQueueOffset = rQOff;
+		sortingLayerName = sLayerName;
+		sortingOrder = sOrder;
 		useAdditionalColor = uAC;
 		renderCamera = renderCam;
 		inputCamera = inputCam;

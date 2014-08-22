@@ -31,7 +31,7 @@ public partial class Factory : IRendererFactory
 	private BitmapContext[] m_bitmapContexts;
 	private BitmapContext[] m_bitmapExContexts;
 
-	private void CreateBitmapContexts(Data data)
+	private void CreateBitmapContexts()
 	{
 		m_bitmapContexts = new BitmapContext[data.bitmaps.Length];
 		for (int i = 0; i < data.bitmaps.Length; ++i) {
@@ -61,7 +61,7 @@ public partial class Factory : IRendererFactory
 		}
 	}
 
-	public override void Destruct()
+	private void DestructBitmapContexts()
 	{
 		for (int i = 0; i < m_bitmapContexts.Length; ++i)
 			if (m_bitmapContexts[i] != null)
@@ -69,7 +69,6 @@ public partial class Factory : IRendererFactory
 		for (int i = 0; i < m_bitmapExContexts.Length; ++i)
 			if (m_bitmapExContexts[i] != null)
 				m_bitmapExContexts[i].Destruct();
-		base.Destruct();
 	}
 }
 
@@ -87,16 +86,18 @@ public class BitmapContext
 	public Factory factory {get {return m_factory;}}
 	public Material material {get {return m_material;}}
 	public Mesh mesh {get {return m_mesh;}}
+	public Data data {get {return m_data;}}
+	public string textureName {get {return m_textureName;}}
 	public float height {get {return m_height;}}
 	public int bitmapExId {get {return m_bitmapExId;}}
 	public bool premultipliedAlpha {get {return m_premultipliedAlpha;}}
 
-	public BitmapContext(Factory factory,
-		Data data, Format.BitmapEx bitmapEx, int bitmapExId)
+	public BitmapContext(Factory f,
+		Data d, Format.BitmapEx bitmapEx, int bId)
 	{
-		m_factory = factory;
-		m_data = data;
-		m_bitmapExId = bitmapExId;
+		m_factory = f;
+		m_data = d;
+		m_bitmapExId = bId;
 
 		Format.TextureFragment fragment =
 			data.textureFragments[bitmapEx.textureFragmentId];
@@ -151,15 +152,6 @@ public class BitmapRenderer : Renderer
 		m_colorAdd = new UnityEngine.Color();
 	}
 
-	public override void Destruct()
-	{
-		if (m_additiveMaterial != null) {
-			Material.Destroy(m_additiveMaterial);
-			m_additiveMaterial = null;
-		}
-		base.Destruct();
-	}
-
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
 		int renderingIndex, int renderingCount, bool visible)
 	{
@@ -193,10 +185,9 @@ public class BitmapRenderer : Renderer
 
 		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
 			if (m_additiveMaterial == null) {
-				m_additiveMaterial = new Material(m_context.material);
-				m_additiveMaterial.shader =
-					ResourceCache.SharedInstance().GetAdditiveShader(
-						m_context.material.shader);
+				m_additiveMaterial =
+					ResourceCache.SharedInstance().GetAdditiveMaterial(
+						m_context.data.name, m_context.textureName);
 			}
 			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
 				m_additiveMaterial, factory.gameObject.layer,

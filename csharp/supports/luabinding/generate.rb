@@ -41,7 +41,7 @@ def conv_func(type, i)
 	when "int"
 		return "(int)Lua.lua_tonumber(L,#{i})"
 	when "bool"
-		return "Lua.lua_toboolean(L,#{i}) != 0"
+		return "(Lua.lua_toboolean(L,#{i}) != 0)"
 	when "string"
 		return "Lua.lua_tostring(L,#{i}).ToString()"
 	else

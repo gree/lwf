@@ -36,6 +36,7 @@ LUABINDING="../../binding/lua"
 SRCS= %W|
   #{CORE}/lwf_animation.cs
   #{CORE}/lwf_bitmap.cs
+  #{CORE}/lwf_bitmapclip.cs
   #{CORE}/lwf_bitmapex.cs
   #{CORE}/lwf_button.cs
   #{CORE}/lwf_core.cs
@@ -65,20 +66,19 @@ SRCS= %W|
   #{CORE}/lwf_utility.cs
   #{RENDERER}/combinedmesh/lwf_combinedmesh_bitmap.cs
   #{RENDERER}/combinedmesh/lwf_combinedmesh_factory.cs
+  #{RENDERER}/combinedmesh/lwf_combinedmesh_text.cs
   #{RENDERER}/common/lwf_unity_factory.cs
   #{RENDERER}/common/lwf_unity_resourcecache.cs
-  #{RENDERER}/common/lwf_unity_systemfontrenderer.cs
   #{RENDERER}/common/lwf_unity_text.cs
   #{RENDERER}/drawmesh/lwf_drawmesh_bitmap.cs
   #{RENDERER}/drawmesh/lwf_drawmesh_factory.cs
-  #{RENDERER}/bitmapfont/bitmapfont_loader.cs
-  #{RENDERER}/bitmapfont/bitmapfont_renderer.cs
-  #{RENDERER}/bitmapfont/bitmapfont_resourcecache.cs
+  #{RENDERER}/drawmesh/lwf_drawmesh_text.cs
   #{UNITY}/wrapper/LWFObject.cs
   #{UNITY}/wrapper/LWFPlayer.cs
   #{LUABINDING}/lualwf.cs
   #{LUABINDING}/luna.cs
   #{LUABINDING}/lwf_lua.cs
+  #{LUABINDING}/lwf_luabinding_lwf_bitmapclip.cs
   #{LUABINDING}/lwf_luabinding_lwf_button.cs
   #{LUABINDING}/lwf_luabinding_lwf_lwf.cs
   #{LUABINDING}/lwf_luabinding_lwf_movie.cs

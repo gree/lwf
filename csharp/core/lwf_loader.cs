@@ -679,8 +679,16 @@ public partial class Data
 
 		for (int i = 0; i < textures.Length; ++i)
 			textures[i].SetFilename(this);
-		for (int i = 0; i < textureFragments.Length; ++i)
+
+		bitmapMap = new Dictionary<string, int>();
+		var bitmapList = new List<Format.Bitmap>(bitmaps);
+		for (int i = 0; i < textureFragments.Length; ++i) {
 			textureFragments[i].SetFilename(this);
+			bitmapMap[textureFragments[i].filename] = bitmapList.Count;
+			bitmapList.Add(
+				new Format.Bitmap{matrixId = 0, textureFragmentId = i});
+		}
+		bitmaps = bitmapList.ToArray();
 	}
 
 	int[] ReadAnimation(byte[] bytes, int offset, int length)

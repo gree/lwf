@@ -26,255 +26,163 @@ namespace UnityRenderer {
 
 using Align = Format.TextProperty.Align;
 
+public partial class Factory : IRendererFactory
+{
+	protected TextContext[] m_textContexts;
+
+	protected void CreateTextContexts()
+	{
+		m_textContexts = new TextContext[data.texts.Length];
+		for (int i = 0; i < data.texts.Length; ++i)
+			m_textContexts[i] = new TextContext(this, data, data.texts[i]);
+	}
+
+	protected void DestructTextContexts()
+	{
+		for (int i = 0; i < m_textContexts.Length; ++i)
+			if (m_textContexts[i] != null)
+				m_textContexts[i].Destruct();
+	}
+}
+
 public class TextContext
 {
-	public Factory factory;
-	public GameObject parent;
-	public BitmapFont.Renderer bitmapFontRenderer;
-	public ISystemFontRenderer systemFontRenderer;
-	public ISystemFontRenderer.Parameter systemFontRendererParameter;
-	public UnityEngine.Color color;
+	private Factory m_factory;
+	private TextGenerationSettings m_textGenerationSettings;
+	private float m_height;
 
-	public TextContext(Factory f, GameObject p, Data data, int objectId)
+	public Factory factory {get {return m_factory;}}
+	public TextGenerationSettings settings
+		{get {return m_textGenerationSettings;}}
+	public float height {get {return m_height;}}
+
+	public TextContext(Factory f, Data data, Format.Text text)
 	{
-		factory = f;
-		parent = p;
-
-		Format.Text text = data.texts[objectId];
+		m_factory = f;
 		Format.TextProperty textProperty =
 			data.textProperties[text.textPropertyId];
 		Format.Font fontProperty = data.fonts[textProperty.fontId];
-		color = factory.ConvertColor(data.colors[text.colorId]);
 
 		string fontName = data.strings[fontProperty.stringId];
-		string fontPath = factory.fontPrefix + fontName;
 		float fontHeight = (float)textProperty.fontHeight;
 		float width = (float)text.width;
-		float height = (float)text.height;
-		float lineSpacing = 1.0f + (float)textProperty.leading / fontHeight;
-		float letterSpacing = fontProperty.letterspacing;
-		float tabSpacing = 4.0f;
+		m_height = (float)text.height;
+		//float lineSpacing = 1.0f + (float)textProperty.leading / fontHeight;
+		//float letterSpacing = fontProperty.letterspacing;
 		float leftMargin = textProperty.leftMargin / fontHeight;
 		float rightMargin = textProperty.rightMargin / fontHeight;
 
-		if (fontName.StartsWith("_")) {
+		var font = Resources.Load<Font>(fontName);
+		if (font == null)
+			font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
-			ISystemFontRenderer.Style style;
-			if (fontName == "_bold")
-				style = ISystemFontRenderer.Style.BOLD;
-			else if (fontName == "_italic")
-				style = ISystemFontRenderer.Style.ITALIC;
-			else if (fontName == "_bold_italic")
-				style = ISystemFontRenderer.Style.BOLD_ITALIC;
-			else
-				style = ISystemFontRenderer.Style.NORMAL;
-
-			ISystemFontRenderer.Align align;
-			int a = textProperty.align & (int)Align.ALIGN_MASK;
+		int va = textProperty.align & (int)Align.VERTICAL_MASK;
+		int a = textProperty.align & (int)Align.ALIGN_MASK;
+		TextAnchor textAnchor = TextAnchor.UpperLeft;
+		switch (va) {
+		default:
 			switch (a) {
 			default:
 			case (int)Align.LEFT:
-				align = ISystemFontRenderer.Align.LEFT;   break;
+				textAnchor = TextAnchor.UpperLeft;
+				break;
 			case (int)Align.RIGHT:
-				align = ISystemFontRenderer.Align.RIGHT;  break;
+				textAnchor = TextAnchor.UpperRight;
+				break;
 			case (int)Align.CENTER:
-				align = ISystemFontRenderer.Align.CENTER; break;
-			}
-
-			ISystemFontRenderer.VerticalAlign valign;
-			int va = textProperty.align & (int)Align.VERTICAL_MASK;
-			switch (va) {
-			default:
-				valign = ISystemFontRenderer.VerticalAlign.TOP;
-				break;
-			case (int)Align.VERTICAL_BOTTOM:
-				valign = ISystemFontRenderer.VerticalAlign.BOTTOM;
-				break;
-			case (int)Align.VERTICAL_MIDDLE:
-				valign = ISystemFontRenderer.VerticalAlign.MIDDLE;
+				textAnchor = TextAnchor.UpperCenter;
 				break;
 			}
+			break;
 
-			systemFontRendererParameter = new ISystemFontRenderer.Parameter(
-				fontHeight, width, height, style, align, valign, lineSpacing,
-				letterSpacing, leftMargin, rightMargin);
-			systemFontRenderer = ISystemFontRenderer.Construct();
-
-		} else {
-
-			BitmapFont.Renderer.Align align;
-			int a = textProperty.align & (int)Align.ALIGN_MASK;
+		case (int)Align.VERTICAL_BOTTOM:
 			switch (a) {
 			default:
 			case (int)Align.LEFT:
-				align = BitmapFont.Renderer.Align.LEFT;   break;
+				textAnchor = TextAnchor.LowerLeft;
+				break;
 			case (int)Align.RIGHT:
-				align = BitmapFont.Renderer.Align.RIGHT;  break;
+				textAnchor = TextAnchor.LowerRight;
+				break;
 			case (int)Align.CENTER:
-				align = BitmapFont.Renderer.Align.CENTER; break;
+				textAnchor = TextAnchor.LowerCenter;
+				break;
 			}
+			break;
 
-			BitmapFont.Renderer.VerticalAlign valign;
-			int va = textProperty.align & (int)Align.VERTICAL_MASK;
-			switch (va) {
+		case (int)Align.VERTICAL_MIDDLE:
+			switch (a) {
 			default:
-				valign = BitmapFont.Renderer.VerticalAlign.TOP;
+			case (int)Align.LEFT:
+				textAnchor = TextAnchor.MiddleLeft;
 				break;
-			case (int)Align.VERTICAL_BOTTOM:
-				valign = BitmapFont.Renderer.VerticalAlign.BOTTOM;
+			case (int)Align.RIGHT:
+				textAnchor = TextAnchor.MiddleRight;
 				break;
-			case (int)Align.VERTICAL_MIDDLE:
-				valign = BitmapFont.Renderer.VerticalAlign.MIDDLE;
+			case (int)Align.CENTER:
+				textAnchor = TextAnchor.MiddleCenter;
 				break;
 			}
-
-			bitmapFontRenderer = new BitmapFont.Renderer(fontPath,
-				fontHeight,
-				width,
-				height,
-				align,
-				valign,
-				0.25f,
-				lineSpacing,
-				letterSpacing,
-				tabSpacing,
-				leftMargin,
-				rightMargin);
-
+			break;
 		}
+
+		var s = new TextGenerationSettings();
+		s.anchor = textAnchor;
+		s.color = factory.ConvertColor(data.colors[text.colorId]);
+		s.extents = new Vector2(width - leftMargin - rightMargin, m_height);
+		s.pivot = new Vector2(-leftMargin, 0);
+		s.richText = true;
+		s.font = font;
+		s.size = (int)fontHeight;
+		s.style = FontStyle.Normal;
+		s.wrapMode = TextWrapMode.Wrap;
+		m_textGenerationSettings = s;
 	}
 
 	public void Destruct()
 	{
-		if (systemFontRenderer != null)
-			systemFontRenderer.Destruct();
-		if (bitmapFontRenderer != null)
-			bitmapFontRenderer.Destruct();
 	}
-
-	public void SetText(string text)
-	{
-		if (bitmapFontRenderer != null)
-			bitmapFontRenderer.SetText(text, color);
-		if (systemFontRenderer != null)
-			systemFontRenderer.SetText(text, color);
-	}
-
-	public void Render(Matrix4x4 m, UnityEngine.Color colorMult,
-		UnityEngine.Color colorAdd,
-		int layer, Camera camera)
-	{
-		if (bitmapFontRenderer != null)
-			bitmapFontRenderer.Render(m, colorMult, colorAdd, layer, camera);
-		if (systemFontRenderer != null)
-			systemFontRenderer.Render(m, colorMult, layer, camera);
-	}
-
-#if UNITY_EDITOR
-	public void RenderNow(Matrix4x4 m, UnityEngine.Color c)
-	{
-		if (bitmapFontRenderer != null)
-			bitmapFontRenderer.RenderNow(m, c);
-		if (systemFontRenderer != null)
-			systemFontRenderer.RenderNow(m, c);
-	}
-#endif
 }
 
 public class UnityTextRenderer : TextRenderer
 {
-	private TextContext m_context;
-	private Matrix4x4 m_matrix;
-	private Matrix4x4 m_renderMatrix;
-	private UnityEngine.Color m_colorMult;
-	private UnityEngine.Color m_colorAdd;
-#if UNITY_EDITOR
-	private bool m_visible;
-#endif
-	private bool m_shouldBeOnTop;
-	private float m_zOffset;
+	protected TextContext m_context;
+	protected TextGenerator m_textGenerator;
+	protected Vector3[] m_vertices;
+	protected Vector2[] m_uv;
+	protected Color32[] m_colors32;
+	protected bool m_empty;
 
-	public UnityTextRenderer(LWF lwf, int objectId) : base(lwf)
+	public UnityTextRenderer(LWF lwf, TextContext context) : base(lwf)
 	{
-		Factory factory = lwf.rendererFactory as Factory;
-		m_context = new TextContext(
-			factory, factory.gameObject, lwf.data, objectId);
-		m_matrix = new Matrix4x4();
-		m_renderMatrix = new Matrix4x4();
-		m_colorMult = new UnityEngine.Color();
-		m_colorAdd = new UnityEngine.Color();
-		if (m_context != null && m_context.systemFontRenderer != null) {
-			ISystemFontRenderer.Parameter p =
-				m_context.systemFontRendererParameter;
-			float scale = lwf.scaleByStage;
-			m_context.systemFontRenderer.Init(
-				p.mSize * scale,
-				p.mWidth * scale,
-				p.mHeight * scale,
-				p.mStyle,
-				p.mAlign,
-				p.mVerticalAlign,
-				p.mLineSpacing * scale,
-				p.mLetterSpacing * scale,
-				p.mLeftMargin * scale,
-				p.mRightMargin * scale);
-		}
-
-		CombinedMeshRenderer.Factory c =
-			lwf.rendererFactory as CombinedMeshRenderer.Factory;
-		if (c != null) {
-			m_shouldBeOnTop = true;
-			m_zOffset = Mathf.Abs(c.zRate);
-		}
-	}
-
-	public override void Destruct()
-	{
-		if (m_context != null)
-			m_context.Destruct();
-		base.Destruct();
+		m_context = context;
+		m_textGenerator = new TextGenerator();
+		m_empty = true;
 	}
 
 	public override void SetText(string text)
 	{
-		if (m_context == null)
+		if (string.IsNullOrEmpty(text)) {
+			m_empty = true;
 			return;
-		m_context.SetText(text);
+		}
+
+		m_empty = false;
+		m_textGenerator.Populate(text, m_context.settings);
+
+		var n = m_textGenerator.verts.Count;
+		m_vertices = new Vector3[n];
+		m_uv = new Vector2[n];
+		m_colors32 = new Color32[n];
+		var table = new int[]{1, 2, 0, 3};
+		for (int i = 0; i < n; ++i) {
+			int j = (int)(i / 4) * 4;
+			int k = table[i % 4];
+			m_vertices[i] = m_textGenerator.verts[j + k].position;
+			m_uv[i] = m_textGenerator.verts[j + k].uv;
+			m_colors32[i] = m_textGenerator.verts[j + k].color;
+		}
 	}
-
-	public override void Render(Matrix matrix, ColorTransform colorTransform,
-		int renderingIndex, int renderingCount, bool visible)
-	{
-#if UNITY_EDITOR
-		m_visible = visible;
-#endif
-		if (m_context == null || !visible)
-			return;
-
-		float scale = 1;
-		if (m_context.systemFontRenderer != null)
-			scale /= m_lwf.scaleByStage;
-
-		Factory factory = m_context.factory;
-		factory.ConvertMatrix(ref m_matrix, matrix, scale,
-			m_shouldBeOnTop ? m_zOffset : renderingCount - renderingIndex);
-		Factory.MultiplyMatrix(ref m_renderMatrix,
-			m_context.parent.transform.localToWorldMatrix, m_matrix);
-
-		factory.ConvertColorTransform(
-			ref m_colorMult, ref m_colorAdd, colorTransform);
-		m_context.Render(m_renderMatrix, m_colorMult, m_colorAdd,
-			m_context.parent.layer, factory.renderCamera);
-	}
-
-#if UNITY_EDITOR
-	public override void RenderNow()
-	{
-		if (m_context == null || !m_visible)
-			return;
-		m_context.RenderNow(m_renderMatrix, m_colorMult);
-	}
-#endif
 }
 
 }	// namespace UnityRenderer

@@ -221,7 +221,7 @@ public class impl_LunaTraits_LWF_LWF
 
 	LWF.LWF self=Luna_LWF_LWF.check(L,1);
 		string instanceName=Lua.lua_tostring(L,2).ToString();
-		bool visible=Lua.lua_toboolean(L,3) != 0;
+		bool visible=(Lua.lua_toboolean(L,3) != 0);
 	try {
 		self.SetVisibleMovie(instanceName, visible);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }

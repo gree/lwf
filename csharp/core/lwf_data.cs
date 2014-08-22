@@ -69,6 +69,7 @@ public partial class Data
 	public Dictionary<int, int> movieLinkageNameMap;
 	public Dictionary<int, int> programObjectMap;
 	public Dictionary<int, int>[] labelMap;
+	public Dictionary<string, int> bitmapMap;
 
 	public string name {get {return strings[header.nameStringId];}}
 	public bool useScript {get {return

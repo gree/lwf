@@ -83,6 +83,10 @@ public partial class LWF
 	private BlendModes m_blendModes;
 	private MaskModes m_maskModes;
 	private int m_frameRate;
+	private int m_fastForwardTimeout;
+	private bool m_fastForward;
+	private bool m_fastForwardCurrent;
+	private bool m_frameSkip;
 	private int m_execLimit;
 	private int m_renderingIndex;
 	private int m_renderingIndexOffsetted;
@@ -95,7 +99,6 @@ public partial class LWF
 	private float m_progress;
 	private float m_tick;
 	private float m_roundOffTick;
-	private float m_thisTick;
 	private Movie m_parent;
 	private string m_attachName;
 	private bool m_attachVisible;
@@ -104,13 +107,18 @@ public partial class LWF
 	private bool m_interceptByNotAllowOrDenyButtons;
 	private bool m_intercepted;
 	private bool m_propertyDirty;
+	private bool m_focusOnLink;
+	private bool m_needsUpdate;
+	private bool m_needsUpdateForAttachLWF;
 	private float m_pointX;
 	private float m_pointY;
 	private bool m_pressing;
 	private Matrix m_matrix;
 	private Matrix m_matrixIdentity;
+	private Matrix m_execMatrix;
 	private ColorTransform m_colorTransform;
 	private ColorTransform m_colorTransformIdentity;
+	private ColorTransform m_execColorTransform;
 	private bool m_alive;
 	private int m_eventOffset;
 
@@ -134,6 +142,9 @@ public partial class LWF
 		get {return m_buttonHead;}
 		set {m_buttonHead = value;}
 	}
+	public bool needsUpdate {get {return m_needsUpdate;}}
+	public bool needsUpdateForAttachLWF
+		{get {return m_needsUpdateForAttachLWF;}}
 	public float pointX {get {return m_pointX;}}
 	public float pointY {get {return m_pointY;}}
 	public bool pressing {get {return m_pressing;}}
@@ -147,9 +158,16 @@ public partial class LWF
 	public float width {get {return m_data.header.width;}}
 	public float height {get {return m_data.header.height;}}
 	public double time {get {return m_time;}}
+	public float progress {
+		get {return m_progress;}
+		set {m_progress = value;}
+	}
 	public float tick {get {return m_tick;}}
-	public float thisTick {get {return m_thisTick;}}
 	public bool alive {get {return m_alive;}}
+	public bool focusOnLink {
+		get {return m_focusOnLink;}
+		set {m_focusOnLink = value;}
+	}
 	public Movie parent {
 		get {return m_parent;}
 		set {m_parent = value;}
@@ -185,12 +203,15 @@ public partial class LWF
 		interactive = m_data.buttonConditions.Length > 0;
 		m_frameRate = m_data.header.frameRate;
 		m_execLimit = 3;
+		m_frameSkip = true;
 		m_tick = 1.0f / m_frameRate;
 		m_roundOffTick = m_tick * ROUND_OFF_TICK_RATE;
 		m_attachVisible = true;
 		m_interceptByNotAllowOrDenyButtons = true;
 		m_intercepted = false;
 		scaleByStage = 1.0f;
+		m_needsUpdate = false;
+		m_needsUpdateForAttachLWF = false;
 		m_pointX = Single.MinValue;
 		m_pointY = Single.MinValue;
 		m_pressing = false;
@@ -215,8 +236,10 @@ public partial class LWF
 
 		m_matrix = new Matrix();
 		m_matrixIdentity = new Matrix();
+		m_execMatrix = new Matrix();
 		m_colorTransform = new ColorTransform();
 		m_colorTransformIdentity = new ColorTransform();
+		m_execColorTransform = new ColorTransform();
 		m_blendModes = new BlendModes();
 		m_maskModes = new MaskModes();
 
@@ -387,12 +410,25 @@ public partial class LWF
 		return c;
 	}
 
-	public int Exec(float tick = 0,
-		Matrix matrix = null, ColorTransform colorTransform = null)
+	private void LinkButton()
 	{
+		m_buttonHead = null;
+		if (interactive && m_rootMovie.hasButton) {
+			m_focusOnLink = false;
+			m_rootMovie.LinkButton();
+			if (m_focus != null && !m_focusOnLink) {
+				m_focus.RollOut();
+				m_focus = null;
+			}
+		}
+	}
+
+	public int ExecInternal(float tick)
+	{
+		if (m_rootMovie == null)
+			return 0;
 		bool execed = false;
 		float currentProgress = m_progress;
-		m_thisTick = tick;
 
 		if (m_execDisabled && tweens == null) {
 			if (!m_executedForExecDisabled) {
@@ -433,19 +469,27 @@ public partial class LWF
 				m_rootMovie.Exec();
 				m_rootMovie.PostExec(progressing);
 				execed = true;
+				if (!m_frameSkip)
+					break;
 			}
 
 			if (m_progress < m_roundOffTick)
 				m_progress = 0;
 
-			m_buttonHead = null;
-			if (interactive && m_rootMovie.hasButton)
-				m_rootMovie.LinkButton();
+			LinkButton();
 		}
 
-		if (execed || isLWFAttached ||
-				isPropertyDirty || matrix != null || colorTransform != null)
-			Update(matrix, colorTransform);
+		if (isLWFAttached) {
+			bool hasButton = m_rootMovie.ExecAttachedLWF(tick, currentProgress);
+			if (hasButton)
+				LinkButton();
+		}
+
+		m_needsUpdate = false;
+		if (!m_fastForward) {
+			if (execed || m_propertyDirty || m_needsUpdateForAttachLWF)
+				m_needsUpdate = true;
+		}
 
 		if (!m_execDisabled) {
 			if (tick < 0)
@@ -453,6 +497,46 @@ public partial class LWF
 		}
 
 		return m_renderingCount;
+	}
+
+	public int Exec(float tick = 0,
+		Matrix matrix = null, ColorTransform colorTransform = null)
+	{
+		bool needsToUpdate = false;
+		if (matrix != null)
+			needsToUpdate |= m_execMatrix.SetWithComparing(matrix);
+		if (colorTransform != null)
+			needsToUpdate |=
+				m_execColorTransform.SetWithComparing(colorTransform);
+		DateTime startTime = default(DateTime);
+		if (m_parent == null) {
+			m_fastForwardCurrent = m_fastForward;
+			if (m_fastForwardCurrent) {
+				tick = m_tick;
+				startTime = DateTime.Now;
+			}
+		}
+
+		int renderingCount = 0;
+		for (;;) {
+			renderingCount = ExecInternal(tick);
+			needsToUpdate |= m_needsUpdate;
+			if (needsToUpdate)
+				Update(matrix, colorTransform);
+			if (isLWFAttached)
+				m_rootMovie.UpdateAttachedLWF();
+			if (needsToUpdate)
+				m_rootMovie.PostUpdate();
+			if (m_fastForwardCurrent && m_fastForward && m_parent == null) {
+				var diff = DateTime.Now - startTime;
+				if (diff.TotalMilliseconds >= m_fastForwardTimeout)
+					break;
+			} else {
+				break;
+			}
+		}
+
+		return renderingCount;
 	}
 
 	public int ForceExec(
@@ -478,12 +562,14 @@ public partial class LWF
 		m_rootMovie.Update(m, c);
 		m_renderingCount = m_renderingIndex;
 		m_propertyDirty = false;
+		m_needsUpdateForAttachLWF = false;
 	}
 
 	public int Render(int rIndex = 0,
 		int rCount = 0, int rOffset = Int32.MinValue)
 	{
-		int renderingCountBackup = m_renderingCount;
+		if (m_rootMovie == null || m_fastForwardCurrent)
+			return 0;
 		if (rCount > 0)
 			m_renderingCount = rCount;
 		m_renderingIndex = rIndex;
@@ -495,8 +581,7 @@ public partial class LWF
 		m_rendererFactory.BeginRender(this);
 		m_rootMovie.Render(m_attachVisible, rOffset);
 		m_rendererFactory.EndRender(this);
-		m_renderingCount = renderingCountBackup;
-		return m_renderingCount;
+		return m_renderingCount - rIndex;
 	}
 
 #if UNITY_EDITOR
@@ -510,7 +595,6 @@ public partial class LWF
 		int inspectDepth = 0, int rIndex = 0, int rCount = 0,
 		int rOffset = Int32.MinValue)
 	{
-		int renderingCountBackup = m_renderingCount;
 		if (rCount > 0)
 			m_renderingCount = rCount;
 		m_renderingIndex = rIndex;
@@ -521,8 +605,7 @@ public partial class LWF
 		}
 
 		m_rootMovie.Inspect(inspector, hierarchy, inspectDepth, rOffset);
-		m_renderingCount = renderingCountBackup;
-		return m_renderingCount;
+		return m_renderingIndex - rIndex;
 	}
 
 	public void Destroy()
@@ -801,6 +884,41 @@ public partial class LWF
 		m_propertyDirty = true;
 		if (m_parent != null)
 			m_parent.lwf.SetPropertyDirty();
+	}
+
+	public void SetInteractive()
+	{
+		interactive = true;
+		if (m_parent != null)
+			m_parent.lwf.SetInteractive();
+	}
+
+	public void SetFrameSkip(bool frameSkip)
+	{
+		m_frameSkip = frameSkip;
+		m_progress = 0;
+		if (m_parent != null)
+			m_parent.lwf.SetFrameSkip(frameSkip);
+	}
+
+	public void SetLWFAttached()
+	{
+		isLWFAttached = true;
+		m_needsUpdateForAttachLWF = true;
+		if (m_parent != null)
+			m_parent.lwf.SetLWFAttached();
+	}
+
+	public void SetFastForwardTimeout(int fastForwardTimeout)
+	{
+		m_fastForwardTimeout = fastForwardTimeout;
+	}
+
+	public void SetFastForward(bool fastForward)
+	{
+		m_fastForward = fastForward;
+		if (m_parent != null)
+			m_parent.lwf.SetFastForward(fastForward);
 	}
 
 	public void AddExecHandler(ExecHandler execHandler)

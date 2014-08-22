@@ -33,6 +33,7 @@ using AttachedLWFs = Dictionary<string, LWFContainer>;
 using AttachedLWFList = SortedDictionary<int, LWFContainer>;
 using AttachedLWFDescendingList = SortedDictionary<int, int>;
 using DetachDict = Dictionary<string, bool>;
+using BitmapClips = SortedDictionary<int, BitmapClip>;
 
 class DescendingComparer<T> : IComparer<T> where T : IComparable<T>
 {
@@ -418,6 +419,47 @@ public partial class Movie : IObject
 		if (m_detachedLWFs != null)
 			foreach (LWFContainer lwfContainer in m_attachedLWFs.Values)
 				m_detachedLWFs[lwfContainer.child.attachName] = true;
+	}
+
+	public BitmapClip AttachBitmap(string linkageName, int depth)
+	{
+		int bitmapId;
+		if (!m_lwf.data.bitmapMap.TryGetValue(linkageName, out bitmapId))
+			return null;
+		var bitmap = new BitmapClip(m_lwf, this, bitmapId);
+		if (m_bitmapClips != null)
+			DetachBitmap(depth);
+		else
+			m_bitmapClips = new BitmapClips();
+		m_bitmapClips[depth] = bitmap;
+		bitmap.depth = depth;
+		bitmap.name = linkageName;
+		return bitmap;
+	}
+
+	public BitmapClips GetAttachedBitmaps()
+	{
+		return m_bitmapClips;
+	}
+
+	public BitmapClip GetAttachedBitmap(int depth)
+	{
+		if (m_bitmapClips == null)
+			return null;
+		BitmapClip bitmap = null;
+		m_bitmapClips.TryGetValue(depth, out bitmap);
+		return bitmap;
+	}
+
+	public void DetachBitmap(int depth)
+	{
+		if (m_bitmapClips == null)
+			return;
+		BitmapClip bitmapClip = null;
+		if (!m_bitmapClips.TryGetValue(depth, out bitmapClip))
+			return;
+		bitmapClip.Destroy();
+		m_bitmapClips.Remove(depth);
 	}
 }
 
