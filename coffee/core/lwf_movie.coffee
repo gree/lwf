@@ -723,7 +723,7 @@ class Movie extends IObject
         child = lwfContainer.child
         child.progress = currentProgress if child.tick is @lwf.tick
         @lwf.renderObject(child.execInternal(tick))
-        hasButton |= child.hasButton
+        hasButton |= child.rootMovie.hasButton
     return hasButton
 
   updateObject:(obj, m, c, matrixChanged, colorTransformChanged) ->

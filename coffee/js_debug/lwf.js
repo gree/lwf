@@ -4417,7 +4417,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             child.progress = currentProgress;
           }
           this.lwf.renderObject(child.execInternal(tick));
-          hasButton |= child.hasButton;
+          hasButton |= child.rootMovie.hasButton;
         }
       }
       return hasButton;
@@ -6113,7 +6113,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         rOffset = Number.MIN_VALUE;
       }
       if ((this.rootMovie == null) || !this.active || this.fastForwardCurrent) {
-        return;
+        return 0;
       }
       this.renderCount = ++LWF.globalRenderCount;
       if (rCount > 0) {

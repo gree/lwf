@@ -347,7 +347,7 @@ class LWF
     return
 
   render:(rIndex = 0, rCount = 0, rOffset = Number.MIN_VALUE) ->
-    return if !@rootMovie? or !@active or @fastForwardCurrent
+    return 0 if !@rootMovie? or !@active or @fastForwardCurrent
     @renderCount = ++LWF.globalRenderCount
     @renderingCount = rCount if rCount > 0
     @renderingIndex = rIndex
