@@ -111,13 +111,15 @@ public:
 		if (changed) {
 			float scale = m_scale / node->lwf->scaleByStage;
 			m_nodeToParentTransform = cocos2d::Mat4(
-				m->scaleX * scale, m->skew0 * scale, 0,
-					m->translateX + m->skew0 * m_offsetY,
-				m->skew1 * scale, m->scaleY * scale, 0,
+				m->scaleX * scale, -m->skew0 * scale, 0,
+					m->translateX + m->skew0 * m_offsetY -
+						m->skew1 * getHeight() * scale,
+				-m->skew1 * scale, m->scaleY * scale, 0,
 					-m->translateY - m->scaleY * m_offsetY -
 						m->scaleY * getHeight() * scale,
 				0, 0, 1, 0,
 				0, 0, 0, 1);
+			setNodeToParentTransform(m_nodeToParentTransform);
 		}
 
 		const Color &c = cx->multi;

@@ -108,10 +108,13 @@ public:
 		bool changed = m_matrix.SetWithComparing(m);
 		if (changed) {
 			m_nodeToParentTransform = cocos2d::Mat4(
-				m->scaleX, -m->skew0, 0, m->translateX,
-				-m->skew1, m->scaleY, 0, -m->translateY - m->scaleY * getHeight(),
+				m->scaleX, -m->skew0, 0,
+					m->translateX + m->skew0 * getHeight(),
+				-m->skew1, m->scaleY, 0,
+					-m->translateY - m->scaleY * getHeight(),
 				0, 0, 1, 0,
 				0, 0, 0, 1);
+			setNodeToParentTransform(m_nodeToParentTransform);
 		}
 
 		const Color &c = cx->multi;
