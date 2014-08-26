@@ -19,6 +19,8 @@
  */
 
 #include "cocos2d.h"
+#include "cocos-ext.h"
+#include "lwf_movie.h"
 #include "lwf_bitmap.h"
 #include "lwf_bitmapex.h"
 #include "lwf_cocos2dx_bitmap.h"
@@ -28,8 +30,98 @@
 #include "lwf_data.h"
 
 namespace LWF {
+    
+class ILWFBitmap
+{
+public:
+    virtual ~ILWFBitmap(){};
+    virtual void setVisible(bool bVisible) = 0;
+    virtual void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx) = 0;
+    virtual const cocos2d::BlendFunc &getBaseBlendFunc() const = 0;
+};
+    
+class LWFScale9Bitmap : public cocos2d::extension::Scale9Sprite, public ILWFBitmap
+{
+protected:
+	Matrix m_matrix;
+    cocos2d::BlendFunc m_baseBlendFunc;
+public:
+    static LWFScale9Bitmap *create(const cocos2d::Rect &capInsets,
+                                   const std::string &filename,
+                                   const Format::Texture &texture,
+                                   const Format::TextureFragment &fragment,
+                                   const Format::BitmapEx &bitmapEx)
+    {
+        LWFScale9Bitmap *bitmap = new LWFScale9Bitmap();
+        
+        cocos2d::Texture2D *texture2d = cocos2d::Director::getInstance()->getTextureCache()->addImage(filename);
+        cocos2d::SpriteBatchNode *batchnode = cocos2d::SpriteBatchNode::createWithTexture(texture2d, 9);
+        cocos2d::Rect rect = cocos2d::Rect(fragment.u, fragment.v, fragment.w, fragment.h);
+        if (bitmap && bitmap->initWithBatchNode(batchnode, rect, fragment.rotated, capInsets, texture)) {
+            bitmap->autorelease();
+            return bitmap;
+        }
+        
+        CC_SAFE_DELETE(bitmap);
+        return NULL;
+    }
+    
+    bool initWithBatchNode(cocos2d::SpriteBatchNode* batchnode,
+                           const cocos2d::Rect& rect,
+                           bool rotated,
+                           const cocos2d::Rect& capInsets,
+                           const Format::Texture &t)
+    {
+        if (!Scale9Sprite::initWithBatchNode(batchnode, rect, rotated, capInsets)) {
+            return false;
+        }
+        
+        bool hasPremultipliedAlpha = _scale9Image->getTexture()->hasPremultipliedAlpha() ||
+        t.format == Format::TEXTUREFORMAT_PREMULTIPLIEDALPHA;
+		m_baseBlendFunc = {(GLenum)(hasPremultipliedAlpha ?
+                                    GL_ONE : GL_SRC_ALPHA), GL_ONE_MINUS_SRC_ALPHA};
+        
+        return true;
+    }
+    
+    virtual void setVisible(bool bVisible) override
+	{
+		if (bVisible && !isVisible())
+			m_matrix.Invalidate();
+		cocos2d::Node::setVisible(bVisible);
+	}
+    
+    void setMatrixAndColorTransform(const Matrix *m, const ColorTransform *cx)
+	{
+		bool changed = m_matrix.SetWithComparing(m);
+		if (changed) {
+            cocos2d::Mat4 mat = cocos2d::Mat4(
+                                              m->scaleX, m->skew0, 0, m->translateX,
+                                              -m->skew1, -m->scaleY, 0, -m->translateY,
+                                              0, 0, 1, 0,
+                                              0, 0, 0, 1);
+			setNodeToParentTransform(mat);
+		}
+        
+		cocos2d::Node *node = getParent();
+		const Color &c = cx->multi;
+		const cocos2d::Color3B &dc = node->getDisplayedColor();
+		setColor((cocos2d::Color3B){
+			(GLubyte)(c.red * dc.r),
+			(GLubyte)(c.green * dc.g),
+			(GLubyte)(c.blue * dc.b)});
+		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
+	}
+    
+    const cocos2d::BlendFunc &getBaseBlendFunc() const
+	{
+		return m_baseBlendFunc;
+	}
+    
+    
+};
 
-class LWFBitmap : public cocos2d::Sprite
+class LWFBitmap : public cocos2d::Sprite, public ILWFBitmap
 {
 protected:
 	Matrix m_matrix;
@@ -214,10 +306,8 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	if (LWF::GetTextureLoadHandler())
 		filename = LWF::GetTextureLoadHandler()(
 			filename, node->basePath, texturePath);
-
-	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
-	if (!m_sprite)
-		return;
+    
+    createNodeBitmap(bitmap->parent, filename.c_str(), t, f, bx);
 
 	l->data->resourceCache[filename] = true;
 	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
@@ -242,9 +332,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 		filename = LWF::GetTextureLoadHandler()(
 			filename, node->basePath, texturePath);
 
-	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
-	if (!m_sprite)
-		return;
+    createNodeBitmap(bitmapEx->parent, filename.c_str(), t, f, bx);
 
 	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_sprite);
@@ -271,12 +359,35 @@ void LWFBitmapRenderer::Render(
 	if (!m_sprite)
 		return;
 
-    cocos2d::BlendFunc baseBlendFunc = m_sprite->getBaseBlendFunc();
+    cocos2d::BlendFunc baseBlendFunc = dynamic_cast<ILWFBitmap *>(m_sprite)->getBaseBlendFunc();
 	if (!m_factory->Render(
 			lwf, m_sprite, renderingIndex, visible, &baseBlendFunc))
 		return;
 
-	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
+	dynamic_cast<ILWFBitmap *>(m_sprite)->setMatrixAndColorTransform(matrix, colorTransform);
+}
+    
+void LWFBitmapRenderer::createNodeBitmap(
+    Movie * parent,
+    const char *filename,
+    const Format::Texture &t,
+    const Format::TextureFragment &f,
+    const Format::BitmapEx &bx)
+{
+    if (parent->data->scalingGridId > 0)
+    {
+        const Rect &rect = lwf->data->rects[parent->data->scalingGridId];
+        const cocos2d::Rect &cocosRect = cocos2d::Rect(rect.x, rect.y, rect.width, rect.height);
+        m_sprite = LWFScale9Bitmap::create(cocosRect, filename, t, f, bx);
+        if (!m_sprite)
+            return;
+    }
+    else
+    {
+        m_sprite = LWFBitmap::create(filename, t, f, bx);
+        if (!m_sprite)
+            return;
+    }
 }
 
 }   // namespace LWF

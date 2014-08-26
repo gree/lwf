@@ -29,14 +29,14 @@ NS_CC_END
 
 namespace LWF {
 
-class LWFBitmap;
+class ILWFBitmap;
 class LWFRendererFactory;
 
 class LWFBitmapRenderer : public Renderer
 {
 protected:
 	LWFRendererFactory *m_factory;
-	LWFBitmap *m_sprite;
+	cocos2d::Node *m_sprite;
 
 public:
 	LWFBitmapRenderer(LWF *l, Bitmap *bitmap, cocos2d::LWFNode *node);
@@ -47,7 +47,13 @@ public:
 	void Render(const Matrix *matrix, const ColorTransform *colorTransform,
 		int renderingIndex, int renderingCount, bool visible);
 
-	cocos2d::Sprite *GetSprite() {return (cocos2d::Sprite *)m_sprite;}
+	cocos2d::Node *GetNode() {return m_sprite;}
+    
+private:
+    void createNodeBitmap(Movie * parent, const char *filename,
+          const Format::Texture &t,
+          const Format::TextureFragment &f,
+          const Format::BitmapEx &bx);
 };
 
 }   // namespace LWF

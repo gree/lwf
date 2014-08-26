@@ -58,7 +58,7 @@ rescue LoadError
   exit
 end
 
-LWF_HEADER_SIZE = 324
+LWF_HEADER_SIZE = 332
 
 # TODO the next version should have original width and height in tex fragment
 LWF_FORMAT_VERSION_0 = 0x13
@@ -386,6 +386,22 @@ end
 class LWFData
   def to_a
     instance_variables.map{|v| eval v.to_s}
+  end
+end
+
+class LWFRect < LWFData
+  attr_reader :x, :y, :width, :height
+  def initialize(rect)
+    @x = rect.x
+    @y = rect.y
+    @width = rect.width
+    @height = rect.height
+  end
+  def to_bytes
+    to_u32(@x) +
+    to_u32(@y) +
+    to_u32(@width) +
+    to_u32(@height)
   end
 end
 
@@ -873,7 +889,7 @@ end
 
 class LWFMovie < LWFData
   attr_reader :linkage_name
-  def initialize(depths, labelOffset, labels, frameOffset, frames, linkage_name, clipEventId, clipEvents)
+  def initialize(depths, labelOffset, labels, frameOffset, frames, linkage_name, clipEventId, clipEvents, scalingGridId)
     @depths = depths
     @labelOffset = labelOffset
     @labels = labels
@@ -882,6 +898,7 @@ class LWFMovie < LWFData
     @linkage_name = linkage_name
     @clipEventId = clipEventId
     @clipEvents = clipEvents
+    @scalingGridId = scalingGridId
   end
   def to_bytes
     to_u32(@depths) +
@@ -890,7 +907,8 @@ class LWFMovie < LWFData
     to_u32(@frameOffset) +
     to_u32(@frames) +
     to_u32(@clipEventId) +
-    to_u32(@clipEvents)
+    to_u32(@clipEvents) +
+    to_u32(@scalingGridId)
   end
 end
 
@@ -967,10 +985,12 @@ class Stage
 end
 
 class Rect
-  attr_accessor :width, :height
+  attr_accessor :width, :height, :x, :y
   def initialize(width, height)
     @width = width
     @height = height
+    @x = 0
+    @y = 0
   end
 end
 
@@ -1248,6 +1268,7 @@ end
 
 class Movie < SWFObject
   attr_accessor :frames, :labels, :depth_max,
+    :scaling_grid,
     :display_list_prev, :display_list, :parent_movie, :linkage_name, :actions,
     :linkage_name_lambdas
   def initialize(movie)
@@ -1263,6 +1284,7 @@ class Movie < SWFObject
     @linkage_name = nil
     @linkage_name_lambdas = []
     @actions = Array.new
+    @scaling_grid = nil
   end
 
   def clear
@@ -1452,6 +1474,18 @@ def get_argb
   color.green = get_byte / 255.0
   color.blue = get_byte / 255.0
   color
+end
+
+def get_rect
+  nbits = get_bits(6)
+  xmin = get_sbits(nbits) / 20.0
+  xmax = get_sbits(nbits) / 20.0
+  ymin = get_sbits(nbits) / 20.0
+  ymax = get_sbits(nbits) / 20.0
+  rect = Rect.new((xmax - xmin), (ymax - ymin))
+  rect.x = xmin
+  rect.y = ymin
+  rect
 end
 
 def get_matrix
@@ -2608,6 +2642,14 @@ def parse_export
 end
 alias parse_symbol_class parse_export
 
+def parse_define_scaling_grid
+  obj_id = get_word
+  object = @objects[obj_id]
+  if object.is_a?(Movie)
+    object.scaling_grid = get_rect
+  end
+end
+
 Tags = {
    1 => :parse_show_frame,
    2 => :parse_define_shape,
@@ -2768,6 +2810,17 @@ def parse_swf()
   @objects[empty_movie_id] = empty_movie
 end
 
+def add_rect(rect)
+  lwfRect = LWFRect.new(rect)
+  rectId = @map_rect[lwfRect.to_a]
+  if rectId.nil?
+    rectId = @data_rect.size
+    @data_rect.push lwfRect
+    @map_rect[lwfRect.to_a] = rectId
+  end
+  rectId
+end
+
 def add_matrix(matrix)
   if matrix.is_translate_only?
     lwfTranslate = LWFTranslate.new(matrix)
@@ -2908,6 +2961,7 @@ def add_object(obj, objectType, objectId)
 end
 
 LWFObjects = [
+  :rect,
   :translate,
   :matrix,
   :color,
@@ -3656,6 +3710,7 @@ def swf2lwf(*args)
     @data_event.push LWFEvent.new(@strings[n])
   end
 
+  add_rect(Rect.new(0, 0))
   add_matrix(Matrix.new)
   add_colorTransform(ColorTransform.new)
   @map_objectId = Hash.new
@@ -3988,9 +4043,16 @@ def swf2lwf(*args)
         clipEvents += 1
       end
 
+      scalingGridId = nil
+      if obj.scaling_grid.nil?
+        scalingGridId = 0
+      else
+        scalingGridId = add_rect(obj.scaling_grid)
+      end
+
       lwfMovie = LWFMovie.new(obj.depth_max, label_offset,
         obj.labels.size, frame_offset, obj.frames.size, obj.linkage_name,
-        clipEventId || 0, clipEvents)
+        clipEventId || 0, clipEvents, scalingGridId)
       lwfMovieId = @map_movie[lwfMovie.to_a]
       if lwfMovieId.nil?
         lwfMovieId = @data_movie.size

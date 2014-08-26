@@ -235,6 +235,7 @@ void Data::Load(const void *bytes, size_t length)
 	vector<Format::String> stringData;
 	vector<Format::Animation> animationData;
 
+    READ(rects, rect, Rect);
 	READ(translates, translate, Translate);
 	READ(matrices, matrix, Matrix);
 	READ(colors, color, Color);
