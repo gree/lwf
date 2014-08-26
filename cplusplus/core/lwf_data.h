@@ -27,6 +27,7 @@ namespace LWF {
 
 struct Data {
 	Format::Header header;
+    vector<Rect> rects;
 	vector<Translate> translates;
 	vector<Matrix> matrices;
 	vector<Color> colors;

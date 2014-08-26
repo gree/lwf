@@ -435,6 +435,7 @@ struct Movie
 	int frames;
 	int clipEventId;
 	int clipEvents;
+    unsigned int scalingGridId;
 };
 
 struct MovieLinkage : public StringBase
@@ -466,6 +467,7 @@ struct Header
 	int backgroundColor;
 	ItemArray stringBytes;
 	ItemArray animationBytes;
+    ItemArray rect;
 	ItemArray translate;
 	ItemArray matrix;
 	ItemArray color;

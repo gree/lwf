@@ -87,6 +87,15 @@ public:
 		y = py;
 	}
 };
+    
+class Rect
+{
+public:
+    int x;
+    int y;
+    int width;
+    int height;
+};
 
 class Translate
 {
