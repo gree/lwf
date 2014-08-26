@@ -26,6 +26,8 @@ public class Graphic : Object
 {
 	private Object[] m_displayList;
 
+	public Object[] displayList {get {return m_displayList;}}
+
 	public Graphic(LWF lwf, Movie parent, int objId)
 		: base(lwf, parent, Format.Object.Type.GRAPHIC, objId)
 	{

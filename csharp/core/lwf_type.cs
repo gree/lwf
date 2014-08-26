@@ -274,4 +274,21 @@ public partial class ColorTransform
 	}
 }
 
+public class Bounds
+{
+	public float xMin;
+	public float xMax;
+	public float yMin;
+	public float yMax;
+
+	public Bounds(
+		float pxMin = 0, float pxMax = 0, float pyMin = 0, float pyMax = 0)
+	{
+		xMin = pxMin;
+		xMax = pxMax;
+		yMin = pyMin;
+		yMax = pyMax;
+	}
+}
+
 }	// namespace LWF

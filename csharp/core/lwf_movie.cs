@@ -50,6 +50,7 @@ public partial class Movie : IObject
 	private Object[] m_displayList;
 	private EventHandlers m_eventHandlers;
 	private MovieEventHandlers m_handler;
+	private MovieEventHandler m_calculateBoundsCallback;
 	private AttachedMovies m_attachedMovies;
 	private AttachedMovieList m_attachedMovieList;
 	private AttachedMovieDescendingList m_attachedMovieDescendingList;
@@ -60,6 +61,8 @@ public partial class Movie : IObject
 	private DetachDict m_detachedLWFs;
 	private Texts m_texts;
 	private BitmapClips m_bitmapClips;
+	private Bounds m_bounds;
+	private Bounds m_currentBounds;
 	private string m_attachName;
 	private int m_totalFrames;
 	private int m_currentFrameInternal;
@@ -85,6 +88,7 @@ public partial class Movie : IObject
 	private bool m_attachMovieExeced;
 	private bool m_attachMoviePostExeced;
 	private bool m_needsUpdateAttachedLWFs;
+	private bool m_requestedCalculateBounds;
 #if LWF_USE_LUA
 	private bool m_isRoot;
 #endif
@@ -131,6 +135,8 @@ public partial class Movie : IObject
 		m_movieExecCount = -1;
 		m_postExecCount = -1;
 		m_blendMode = (int)Constant.BLEND_MODE_NORMAL;
+		m_requestedCalculateBounds = false;
+		m_calculateBoundsCallback = null;
 
 		m_property = new Property(lwf);
 
@@ -673,6 +679,33 @@ public partial class Movie : IObject
 			}
 		}
 
+		if (m_requestedCalculateBounds) {
+			m_currentBounds = new Bounds(
+				float.MaxValue, float.MinValue, float.MaxValue, float.MinValue);
+			Inspect((o, h, d, r) => {CalculateBounds(o);}, 0, 0, 0);
+			if (lwf.property.hasMatrix) {
+				Matrix invert = new Matrix();
+				Utility.InvertMatrix(invert, lwf.property.matrix);
+				float x;
+				float y;
+				Utility.CalcMatrixToPoint(out x, out y,
+					m_currentBounds.xMin, m_currentBounds.yMin, invert);
+				m_currentBounds.xMin = x;
+				m_currentBounds.yMin = y;
+				Utility.CalcMatrixToPoint(out x, out y,
+					m_currentBounds.xMax, m_currentBounds.yMax, invert);
+				m_currentBounds.xMax = x;
+				m_currentBounds.yMax = y;
+				m_bounds = m_currentBounds;
+				m_currentBounds = null;
+				m_requestedCalculateBounds = false;
+				if (m_calculateBoundsCallback != null) {
+					m_calculateBoundsCallback(this);
+					m_calculateBoundsCallback = null;
+				}
+			}
+		}
+
 		if (!m_handler.Empty())
 			m_handler.Call(EventType.UPDATE, this);
 	}
@@ -710,6 +743,71 @@ public partial class Movie : IObject
 					child.rootMovie.PostUpdate();
 			}
 		}
+	}
+
+	private void CalculateBounds(Object o)
+	{
+		switch (o.type) {
+		case Type.GRAPHIC:
+			foreach (Object obj in ((Graphic)o).displayList)
+				CalculateBounds(obj);
+			break;
+
+		case Type.BITMAP:
+		case Type.BITMAPEX:
+			int tfId = -1;
+			if (o.type == Type.BITMAP) {
+				if (o.objectId < o.lwf.data.bitmaps.Length)
+					tfId = o.lwf.data.bitmaps[o.objectId].textureFragmentId;
+			} else {
+				if (o.objectId < o.lwf.data.bitmapExs.Length)
+					tfId = o.lwf.data.bitmapExs[o.objectId].textureFragmentId;
+			}
+			if (tfId >= 0) {
+				var tf = o.lwf.data.textureFragments[tfId];
+				UpdateBounds(o.matrix, tf.x, tf.x + tf.w, tf.y, tf.y + tf.h);
+			}
+			break;
+
+		case Type.BUTTON:
+			var button = (Button)o;
+			UpdateBounds(o.matrix, 0, button.width, 0, button.height);
+			break;
+
+		case Type.TEXT:
+			var text = o.lwf.data.texts[o.objectId];
+			UpdateBounds(o.matrix, 0, text.width, 0, text.height);
+			break;
+
+		case Type.PROGRAMOBJECT:
+			var pobj = o.lwf.data.programObjects[o.objectId];
+			UpdateBounds(o.matrix, 0, pobj.width, 0, pobj.height);
+			break;
+		}
+	}
+
+	private void UpdateBounds(
+		Matrix m, float xMin, float xMax, float yMin, float yMax)
+	{
+		UpdateBounds(m, xMin, yMin);
+		UpdateBounds(m, xMin, yMax);
+		UpdateBounds(m, xMax, yMin);
+		UpdateBounds(m, xMax, yMax);
+	}
+
+	private void UpdateBounds(Matrix m, float sx, float sy)
+	{
+		float x;
+		float y;
+		Utility.CalcMatrixToPoint(out x, out y, sx, sy, m);
+		if (x < m_currentBounds.xMin)
+			m_currentBounds.xMin = x;
+		else if (x > m_currentBounds.xMax)
+			m_currentBounds.xMax = x;
+		if (y < m_currentBounds.yMin)
+			m_currentBounds.yMin = y;
+		else if (y > m_currentBounds.yMax)
+			m_currentBounds.yMax = y;
 	}
 
 	public override void LinkButton()
@@ -1249,6 +1347,19 @@ public partial class Movie : IObject
 			}
 			break;
 		}
+	}
+
+	public void RequestCalculateBounds(MovieEventHandler callback = null)
+	{
+		m_requestedCalculateBounds = true;
+		m_calculateBoundsCallback = callback;
+		m_bounds = null;
+		return;
+	}
+
+	public Bounds GetBounds()
+	{
+		return m_bounds;
 	}
 }
 

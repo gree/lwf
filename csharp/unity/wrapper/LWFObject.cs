@@ -786,6 +786,13 @@ public class LWFObject : MonoBehaviour
 			instanceName, (m) => {m.SetRenderingOffset(rOffset);}, immortal);
 	}
 
+	public void RequestCalculateBoundsMovie(string instanceName,
+		MovieEventHandler callback = null)
+	{
+		AddMovieLoadHandler(
+			instanceName, (m) => {m.RequestCalculateBounds(callback);});
+	}
+
 #if UNITY_EDITOR
 	public virtual void OnEnable()
 	{
