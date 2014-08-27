@@ -679,6 +679,13 @@ public partial class Movie : IObject
 			}
 		}
 
+		if (m_attachedMovies != null) {
+			foreach (Movie movie in m_attachedMovieList.Values) {
+				if (movie != null)
+					movie.PostUpdate();
+			}
+		}
+
 		if (m_requestedCalculateBounds) {
 			m_currentBounds = new Bounds(
 				float.MaxValue, float.MinValue, float.MaxValue, float.MinValue);
@@ -722,7 +729,7 @@ public partial class Movie : IObject
 
 		if (m_attachedMovies != null) {
 			foreach (Movie movie in m_attachedMovieList.Values) {
-				if (movie != null && movie.m_hasButton)
+				if (movie != null)
 					movie.UpdateAttachedLWF();
 			}
 		}

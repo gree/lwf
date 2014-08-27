@@ -155,6 +155,16 @@ public partial class Movie : IObject
 		return AttachMovieInternal(movie, attachName, attachDepth, reorder);
 	}
 
+	public Movie AttachEmptyMovie(string attachName,
+		int attachDepth = -1, bool reorder = false,
+		MovieEventHandler load = null, MovieEventHandler postLoad = null,
+		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
+		MovieEventHandler update = null, MovieEventHandler render = null)
+	{
+		return AttachMovie("_empty", attachName, attachDepth, reorder,
+			load, postLoad, unload, enterFrame, update, render);
+	}
+
 	public void SwapAttachedMovieDepth(int depth0, int depth1)
 	{
 		if (m_attachedMovies == null)

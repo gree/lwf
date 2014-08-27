@@ -365,14 +365,72 @@ public class LWFObject : MonoBehaviour
 		return WorldToLWFPoint(worldPoint);
 	}
 
+	public void AttachMovie(string instanceName, string linkageName,
+		string attachName, int attachDepth = -1, bool reorder = false,
+		MovieEventHandler load = null, MovieEventHandler postLoad = null,
+		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
+		MovieEventHandler update = null, MovieEventHandler render = null)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.AttachMovie(linkageName, attachName, attachDepth, reorder,
+				load, postLoad, unload, enterFrame, update, render);
+		});
+	}
+
+	public void AttachEmptyMovie(string instanceName,
+		string attachName, int attachDepth = -1, bool reorder = false,
+		MovieEventHandler load = null, MovieEventHandler postLoad = null,
+		MovieEventHandler unload = null, MovieEventHandler enterFrame = null,
+		MovieEventHandler update = null, MovieEventHandler render = null)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.AttachEmptyMovie(attachName, attachDepth, reorder,
+				load, postLoad, unload, enterFrame, update, render);
+		});
+	}
+
+	public void SwapAttachedMovieDepth(
+		string instanceName, int depth0, int depth1)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.SwapAttachedMovieDepth(depth0, depth1);
+		});
+	}
+
+	public void DetachMovie(string instanceName, string attachName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachMovie(attachName);
+		});
+	}
+
+	public void DetachMovie(string instanceName, int attachDepth)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachMovie(attachDepth);
+		});
+	}
+
+	public void DetachFromParent(string instanceName)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.DetachFromParent();
+		});
+	}
+
 	public void AttachLWF(string instanceName, string path, string attachName,
 		int attachDepth = -1, bool reorder = false, string texturePrefix = null)
 	{
-		AddLoadCallback((o) => {
-			AddMovieLoadHandler(instanceName, (m) => {
-				m.AttachLWF(path,
-					attachName, attachDepth, reorder, texturePrefix);
-			});
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.AttachLWF(path, attachName, attachDepth, reorder, texturePrefix);
+		});
+	}
+
+	public void SwapAttachedLWFDepth(
+		string instanceName, int depth0, int depth1)
+	{
+		AddMovieLoadHandler(instanceName, (m) => {
+			m.SwapAttachedLWFDepth(depth0, depth1);
 		});
 	}
 
