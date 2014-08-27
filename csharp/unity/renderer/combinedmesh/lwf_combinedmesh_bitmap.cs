@@ -117,7 +117,7 @@ public class BitmapContext
 			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
 
 		m_material = ResourceCache.SharedInstance().LoadTexture(
-			data.name, m_textureName, texture.format, false,
+			data.name, m_textureName, texture.format, true,
 			factory.useAdditionalColor, factory.textureLoader,
 			factory.textureUnloader);
 		if (factory.renderQueueOffset != 0)
