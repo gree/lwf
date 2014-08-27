@@ -180,7 +180,7 @@ rule ".js" => lambda{|o| DEPENDS[o]} do |t|
     system "uglifyjs -mt -nc --unsafe -o #{t.name} #{tmp0}"
     FileUtils.rm_f [tmp0, tmp1]
   else
-    system "coffee -j #{t.name} -c #{t.sources.join(' ')}"
+    system "cat #{t.sources.join(' ')}|coffee --compile --stdio > #{t.name}"
     if t.name =~ /lwf/
       FileUtils.mv t.name, tmp
       system "sed -e \"s/^\\((function() {\\)/\\1 var __FILE__ = '#{File.basename(t.name)}';/\" #{tmp} > #{t.name}"

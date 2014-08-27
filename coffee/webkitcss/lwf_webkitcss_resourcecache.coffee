@@ -328,8 +328,9 @@ class WebkitCSSResourceCache
     xhr.onreadystatechange = =>
       return if xhr.readyState isnt 4
       if xhr.status is 0
-        if url.match(/^([a-zA-Z][a-zA-Z0-9\+\-\.]*\:)./i)
-          protocol = RegExp.$1
+        mm = url.match(/^([a-zA-Z][a-zA-Z0-9\+\-\.]*\:)./i)
+        if mm?
+          protocol = mm[1]
         else
           protocol = global?.location?.protocol
         if protocol is 'http:' or protocol is 'https:'

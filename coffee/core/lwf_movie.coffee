@@ -361,7 +361,7 @@ class Movie extends IObject
       @detachedLWFs = {}
       @attachedLWFList = {}
       @attachedLWFListKeys = Utility.newIntArray()
-      @needsUpdateAttchedLWFs = false
+      @needsUpdateAttachedLWFs = false
       @matrixForAttachedLWFs = new Matrix
       @colorTransformForAttachedLWFs = new ColorTransform
 
@@ -769,9 +769,9 @@ class Movie extends IObject
       c = @colorTransform
 
     if @attachedLWFs?
-      @needsUpdateAttchedLWFs = false
-      @needsUpdateAttchedLWFs |= @matrixForAttachedLWFs.setWithComparing(m)
-      @needsUpdateAttchedLWFs |=
+      @needsUpdateAttachedLWFs = false
+      @needsUpdateAttachedLWFs |= @matrixForAttachedLWFs.setWithComparing(m)
+      @needsUpdateAttachedLWFs |=
         @colorTransformForAttachedLWFs.setWithComparing(c)
 
     for depth in [0...@data.depths]
@@ -794,6 +794,11 @@ class Movie extends IObject
       if instance.isMovie
         instance.postUpdate()
       instance = instance.linkInstance
+
+    if @attachedMovies?
+      for k in @attachedMovieListKeys
+        movie = @attachedMovieList[k]
+        movie.postUpdate()
 
     if @requestedCalculateBounds
       @xMin = Number.MAX_VALUE
@@ -840,12 +845,12 @@ class Movie extends IObject
       for k in @attachedLWFListKeys
         lwfContainer = @attachedLWFList[k]
         child = lwfContainer.child
-        needsUpdateAttchedLWFs = child.needsUpdate or @needsUpdateAttchedLWFs
-        if needsUpdateAttchedLWFs
+        needsUpdateAttachedLWFs = child.needsUpdate or @needsUpdateAttachedLWFs
+        if needsUpdateAttachedLWFs
           child.update(@matrixForAttachedLWFs, @colorTransformForAttachedLWFs)
         if child.isLWFAttached
           child.rootMovie.updateAttachedLWF()
-        if needsUpdateAttchedLWFs
+        if needsUpdateAttachedLWFs
           child.rootMovie.postUpdate()
     return
 
