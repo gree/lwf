@@ -297,10 +297,10 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 		}
 
 		bool needsUpdate = m_updated;
-		if (buffer.initialized ||
-				buffer.objects[bufferIndex] != m_context.objectId) {
+		int objId = m_context.objectId + 1;
+		if (buffer.initialized || buffer.objects[bufferIndex] != objId) {
 			buffer.modified = true;
-			buffer.objects[bufferIndex] = m_context.objectId;
+			buffer.objects[bufferIndex] = objId;
 			for (int i = 0; i < 4; ++i)
 				buffer.uv[index + i] = m_context.uv[i];
 			needsUpdate = true;
