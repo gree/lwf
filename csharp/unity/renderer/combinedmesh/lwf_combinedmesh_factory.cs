@@ -35,7 +35,6 @@ public class CombinedMeshBuffer
 	public Vector2[] uv;
 	public int[] triangles;
 	public Color32[] colors32;
-	public Vector3[] additionalColors;
 	public int[] objects;
 	public int index;
 	public bool modified;
@@ -47,7 +46,6 @@ public class CombinedMeshBuffer
 		uv = new Vector2[n * 4];
 		triangles = new int[n * 6];
 		colors32 = new Color32[n * 4];
-		additionalColors = new Vector3[n * 4];
 		objects = new int[n];
 		index = 0;
 		modified = true;
@@ -74,11 +72,14 @@ public class CombinedMeshComponent : MonoBehaviour
 	public int updateCount;
 	public UnityEngine.MeshRenderer meshRenderer;
 	public MeshFilter meshFilter;
+	public MaterialPropertyBlock property;
 	public CombinedMeshBuffer buffer;
 	public Mesh mesh;
+	public UnityEngine.Color additionalColor;
 	public List<IMeshRenderer> renderers;
 	public int rendererCount;
 	public int rectangleCount;
+	private int additionalColorId;
 
 	public void Init(Factory factory)
 	{
@@ -97,6 +98,12 @@ public class CombinedMeshComponent : MonoBehaviour
 		meshRenderer.sortingOrder = factory.sortingOrder;
 		meshRenderer.castShadows = false;
 		meshRenderer.receiveShadows = false;
+
+		if (factory.useAdditionalColor) {
+			additionalColor = UnityEngine.Color.clear;
+			property = new MaterialPropertyBlock();
+			additionalColorId = Shader.PropertyToID("_AdditionalColor");
+		}
 
 		buffer = new CombinedMeshBuffer();
 	}
@@ -118,12 +125,12 @@ public class CombinedMeshComponent : MonoBehaviour
 		rectangleCount += rc;
 	}
 
-	public void SetMaterial(Material material)
+	public void SetMaterial(Material material, UnityEngine.Color ac)
 	{
-		if (meshRenderer.sharedMaterial != material) {
+		if (meshRenderer.sharedMaterial != material)
 			meshRenderer.sharedMaterial = material;
-			buffer.modified = true;
-		}
+		additionalColor = ac;
+		buffer.modified = true;
 	}
 
 	public void Disable()
@@ -156,8 +163,12 @@ public class CombinedMeshComponent : MonoBehaviour
 			mesh.uv = buffer.uv;
 			mesh.triangles = buffer.triangles;
 			mesh.colors32 = buffer.colors32;
-			mesh.normals = buffer.additionalColors;
 			mesh.RecalculateBounds();
+		}
+
+		if (property != null) {
+			property.AddColor(additionalColorId, additionalColor);
+			meshRenderer.SetPropertyBlock(property);
 		}
 	}
 
@@ -243,27 +254,29 @@ public partial class Factory : UnityRenderer.Factory
 		currentMeshComponent = null;
 	}
 
-	public void Render(
-		IMeshRenderer renderer, int rectangleCount, Material material)
+	public void Render(IMeshRenderer renderer, int rectangleCount,
+		Material material, UnityEngine.Color additionalColor)
 	{
 		if (parent != null) {
-			parent.Render(renderer, rectangleCount, material);
+			parent.Render(renderer, rectangleCount, material, additionalColor);
 			return;
 		}
 
 		if (currentMeshComponent == null) {
 			meshComponentNo = 0;
 			currentMeshComponent = meshComponents[meshComponentNo];
-			currentMeshComponent.SetMaterial(material);
+			currentMeshComponent.SetMaterial(material, additionalColor);
 		} else {
 			Material componentMaterial =
 				currentMeshComponent.meshRenderer.sharedMaterial;
-			if (componentMaterial != material) {
+			if (componentMaterial != material ||
+					(currentMeshComponent.property != null &&
+					currentMeshComponent.additionalColor != additionalColor)) {
 				int no = ++meshComponentNo;
 				if (no >= meshComponents.Count)
 					AddMeshComponent();
 				currentMeshComponent = meshComponents[no];
-				currentMeshComponent.SetMaterial(material);
+				currentMeshComponent.SetMaterial(material, additionalColor);
 			}
 		}
 

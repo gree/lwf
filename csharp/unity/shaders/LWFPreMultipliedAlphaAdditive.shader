@@ -38,14 +38,19 @@ Shader "LWF/PreMultipliedAlphaAdditive" {
 			#pragma fragment frag
 			#include "UnityCG.cginc"
 			sampler2D _MainTex;
-			uniform half4 _MainTex_ST;
+			half4 _MainTex_ST;
 			fixed4 _Color;
+			struct appdata {
+				float4 vertex: POSITION;
+				float2 texcoord: TEXCOORD0;
+				fixed4 color: COLOR;
+			};
 			struct v2f {
 				float4 pos: SV_POSITION;
 				float2 uv: TEXCOORD0;
 				fixed4 color: COLOR;
 			};
-			v2f vert(appdata_full v)
+			v2f vert(appdata v)
 			{
 				v2f o;
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
@@ -53,7 +58,7 @@ Shader "LWF/PreMultipliedAlphaAdditive" {
 				o.color = v.color * _Color;
 				return o;
 			}
-			fixed4 frag(v2f i): COLOR0
+			fixed4 frag(v2f i): COLOR
 			{
 				return tex2D(_MainTex, i.uv.xy) * i.color;
 			}

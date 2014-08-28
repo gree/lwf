@@ -65,8 +65,8 @@ public class TextMeshRenderer : UnityRenderer.UnityTextRenderer, IMeshRenderer
 				ref m_matrixForRender, matrix, 1, z, m_context.height);
 		}
 
-		factory.Render(this,
-			m_vertices.Length / 4, m_context.settings.font.material);
+		factory.Render(this, m_vertices.Length / 4,
+			m_context.settings.font.material, m_colorAdd);
 	}
 
 	void IMeshRenderer.UpdateMesh(CombinedMeshBuffer buffer)

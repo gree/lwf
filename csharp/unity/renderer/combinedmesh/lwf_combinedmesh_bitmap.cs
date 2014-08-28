@@ -117,7 +117,7 @@ public class BitmapContext
 			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
 
 		m_material = ResourceCache.SharedInstance().LoadTexture(
-			data.name, m_textureName, texture.format, true,
+			data.name, m_textureName, texture.format,
 			factory.useAdditionalColor, factory.textureLoader,
 			factory.textureUnloader);
 		if (factory.renderQueueOffset != 0)
@@ -261,14 +261,13 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 			material = m_context.material;
 		}
 
-		factory.Render(this, 1, material);
+		factory.Render(this, 1, material, m_colorAdd);
 	}
 
 	void IMeshRenderer.UpdateMesh(CombinedMeshBuffer buffer)
 	{
 		int bufferIndex = buffer.index++;
 
-		Factory factory = m_context.factory;
 		Color32 color32 = m_colorMult;
 
 		int index = bufferIndex * 4;
@@ -281,19 +280,6 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 			buffer.modified = true;
 			for (int i = 0; i < 4; ++i)
 				buffer.colors32[index + i] = color32;
-		}
-
-		if (factory.useAdditionalColor) {
-			Vector3 bac = buffer.additionalColors[index];
-			if (buffer.initialized ||
-					bac.x != m_colorAdd.r ||
-					bac.y != m_colorAdd.g ||
-					bac.z != m_colorAdd.b) {
-				buffer.modified = true;
-				for (int i = 0; i < 4; ++i)
-					buffer.additionalColors[index + i] =
-						new Vector3(m_colorAdd.r, m_colorAdd.g, m_colorAdd.b);
-			}
 		}
 
 		bool needsUpdate = m_updated;

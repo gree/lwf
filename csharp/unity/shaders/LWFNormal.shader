@@ -40,12 +40,17 @@ Shader "LWF/Normal" {
 			sampler2D _MainTex;
 			half4 _MainTex_ST;
 			fixed4 _Color;
-			struct v2f {
-				half4 pos: SV_POSITION;
-				half2 uv: TEXCOORD0;
+			struct appdata {
+				float4 vertex: POSITION;
+				float2 texcoord: TEXCOORD0;
 				fixed4 color: COLOR;
 			};
-			v2f vert(appdata_full v)
+			struct v2f {
+				float4 pos: SV_POSITION;
+				float2 uv: TEXCOORD0;
+				fixed4 color: COLOR;
+			};
+			v2f vert(appdata v)
 			{
 				v2f o;
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);

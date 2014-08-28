@@ -108,7 +108,7 @@ public class BitmapContext
 			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
 
 		m_material = ResourceCache.SharedInstance().LoadTexture(
-			data.name, m_textureName, texture.format, false,
+			data.name, m_textureName, texture.format,
 			factory.useAdditionalColor, factory.textureLoader,
 			factory.textureUnloader);
 		if (factory.renderQueueOffset != 0)
@@ -138,6 +138,8 @@ public class BitmapRenderer : Renderer
 	Matrix4x4 m_renderMatrix;
 	UnityEngine.Color m_colorMult;
 	UnityEngine.Color m_colorAdd;
+	int m_colorId;
+	int m_additionalColorId;
 #if UNITY_EDITOR
 	bool m_visible;
 #endif
@@ -150,6 +152,8 @@ public class BitmapRenderer : Renderer
 		m_renderMatrix = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
 		m_colorAdd = new UnityEngine.Color();
+		m_colorId = Shader.PropertyToID("_Color");
+		m_additionalColorId = Shader.PropertyToID("_AdditionalColor");
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
@@ -179,9 +183,9 @@ public class BitmapRenderer : Renderer
 			factory.gameObject.transform.localToWorldMatrix, m_matrix);
 
 		m_property.Clear();
-		m_property.AddColor("_Color", m_colorMult);
+		m_property.AddColor(m_colorId, m_colorMult);
 		if (factory.useAdditionalColor)
-			m_property.AddColor("_AdditionalColor", m_colorAdd);
+			m_property.AddColor(m_additionalColorId, m_colorAdd);
 
 		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
 			if (m_additiveMaterial == null) {
