@@ -41,18 +41,16 @@ public class BitmapClip : Bitmap
 	private float _rotation;
 	private float _cos;
 	private float _sin;
-	public Matrix _matrix;
+	private Matrix _matrix;
 
 	public BitmapClip(LWF lwf, Movie parent, int objId)
 		: base(lwf, parent, objId)
 	{
-		m_dataMatrixId = lwf.data.bitmaps[objId].matrixId;
 		var data = lwf.data.bitmaps[objId];
 		var fragment = lwf.data.textureFragments[data.textureFragmentId];
 		var texdata = lwf.data.textures[fragment.textureId];
 		width = fragment.w / texdata.scale;
 		height = fragment.h / texdata.scale;
-		m_renderer = lwf.rendererFactory.ConstructBitmap(lwf, objId, this);
 
 		depth = -1;
 		visible = true;
@@ -127,7 +125,7 @@ public class BitmapClip : Bitmap
 				m_matrix.skew1 * -regX + m_matrix.scaleY * -regY;
 
 		m_colorTransform.Set(c);
-		c.multi.alpha *= alpha;
+		m_colorTransform.multi.alpha *= alpha;
 
 		m_lwf.RenderObject();
 	}

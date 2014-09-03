@@ -231,6 +231,7 @@ public partial class Factory : UnityRenderer.Factory
 		gobj.SetActive(false);
 		gobj.transform.parent = gameObject.transform;
 		gobj.transform.position = gameObject.transform.position;
+		gobj.transform.localScale = Vector3.one;
 		CombinedMeshComponent meshComponent =
 			gobj.AddComponent<CombinedMeshComponent>();
 		meshComponent.Init(this);
