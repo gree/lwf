@@ -481,6 +481,29 @@ public partial class Movie : IObject
 		return bitmap;
 	}
 
+	public void SwapAttachedBitmapDepth(int depth0, int depth1)
+	{
+		if (m_bitmapClips == null)
+			return;
+
+		BitmapClip bitmapClip0;
+		m_bitmapClips.TryGetValue(depth0, out bitmapClip0);
+		BitmapClip bitmapClip1;
+		m_bitmapClips.TryGetValue(depth1, out bitmapClip1);
+		if (bitmapClip0 != null) {
+			bitmapClip0.depth = depth1;
+			m_bitmapClips[depth1] = bitmapClip0;
+		} else {
+			m_bitmapClips.Remove(depth1);
+		}
+		if (bitmapClip1 != null) {
+			bitmapClip1.depth = depth0;
+			m_bitmapClips[depth0] = bitmapClip1;
+		} else {
+			m_bitmapClips.Remove(depth0);
+		}
+	}
+
 	public void DetachBitmap(int depth)
 	{
 		if (m_bitmapClips == null)

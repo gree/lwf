@@ -39,6 +39,7 @@ using BlendModes = List<int>;
 using MaskModes = List<int>;
 using LWFLoader = Func<string, string, LWF>;
 using LWFUnloader = Action;
+using TextureLoadHandler = Func<string, string, string, string>;
 
 public class TextDictionaryItem
 {
@@ -65,6 +66,7 @@ public partial class LWF
 	private static int m_instanceOffset = 0;
 	private static int m_iObjectOffset = 0;
 	private static float ROUND_OFF_TICK_RATE = 0.05f;
+	private static TextureLoadHandler m_textureLoadHandler;
 
 	private Data m_data;
 	private IRendererFactory m_rendererFactory;
@@ -136,6 +138,7 @@ public partial class LWF
 	public object privateData {get; set;}
 	public TweenMode tweenMode {get; set;}
 	public object tweens {get; set;}
+	public int tweenEventId {get; set;}
 	public IRendererFactory rendererFactory
 		{get {return m_rendererFactory;}}
 	public Property property {get {return m_property;}}
@@ -459,8 +462,10 @@ public partial class LWF
 				}
 			}
 
-			if (m_execHandlers != null)
-				m_execHandlers.ForEach(h => h(this));
+			if (m_execHandlers != null) {
+				foreach (var h in m_execHandlers)
+					h(this);
+			}
 
 			int execLimit = m_execLimit;
 			while (m_progress >= m_tick - m_roundOffTick) {
@@ -1028,6 +1033,16 @@ public partial class LWF
 		TextDictionaryItem item;
 		if (!m_textDictionary.TryGetValue(textName, out item))
 			item.renderer = null;
+	}
+
+	public static void SetTextureLoadHandler(TextureLoadHandler h)
+	{
+		m_textureLoadHandler = h;
+	}
+
+	public static TextureLoadHandler GetTextureLoadHandler()
+	{
+		return m_textureLoadHandler;
 	}
 }
 

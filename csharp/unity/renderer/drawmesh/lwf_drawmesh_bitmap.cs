@@ -104,6 +104,10 @@ public class BitmapContext
 		Format.Texture texture = data.textures[fragment.textureId];
 
 		m_textureName = factory.texturePrefix + texture.filename;
+		if (LWF.GetTextureLoadHandler() != null)
+			m_textureName = LWF.GetTextureLoadHandler()(
+				m_textureName, factory.texturePrefix, texture.filename);
+
 		m_premultipliedAlpha = (texture.format ==
 			(int)Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA);
 

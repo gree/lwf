@@ -97,6 +97,10 @@ public partial class Factory : IRendererFactory
 		maskMode = m;
 	}
 
+	public virtual void UpdateSortingLayerAndOrder()
+	{
+	}
+
 	public virtual Renderer ConstructBitmap(LWF lwf,
 		int objectId, Bitmap bitmap)
 	{

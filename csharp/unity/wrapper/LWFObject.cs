@@ -55,14 +55,37 @@ public class LWFObject : MonoBehaviour
 	public LWF.LWF lwf;
 	public LWF.UnityRenderer.Factory factory;
 	public LWF.CombinedMeshRenderer.Factory combinedMeshRendererfactory;
-	[HideInInspector]
-	public bool isAlive;
+	[HideInInspector] [NonSerialized] public bool isAlive;
+
+	public string sortingLayerName {
+		get {return mSortingLayerName;}
+		set {
+			if (string.Compare(mSortingLayerName, value) != 0) {
+				mSortingLayerName = value;
+				mDirty = true;
+			}
+		}
+	}
+
+	public int sortingOrder {
+		get {return mSortingOrder;}
+		set {
+			if (mSortingOrder != value) {
+				mSortingOrder = value;
+				mDirty = true;
+			}
+		}
+	}
+
 	protected bool callUpdate;
 	protected bool useCombinedMeshRenderer;
 	protected LWFCallbacks lwfLoadCallbacks;
 	protected LWFCallbacks lwfDestroyCallbacks;
 	protected int activateCount = 1;
 	protected int resumeCount = 1;
+	[HideInInspector] [SerializeField] private string mSortingLayerName;
+	[HideInInspector] [SerializeField] private int mSortingOrder;
+	private bool mDirty;
 
 	public LWFObject()
 	{
@@ -76,7 +99,8 @@ public class LWFObject : MonoBehaviour
 	{
 		isAlive = false;
 
-		lwfDestroyCallbacks.ForEach(c => c(this));
+		foreach (var c in lwfDestroyCallbacks)
+			c(this);
 		lwfDestroyCallbacks = null;
 
 		if (lwf != null) {
@@ -103,7 +127,6 @@ public class LWFObject : MonoBehaviour
 	public virtual bool Load(string path,
 		string texturePrefix = null, string fontPrefix = "",
 		float zOffset = 0, float zRate = 1, int renderQueueOffset = 0,
-		string sortingLayerName = null, int sortingOrder = 0,
 		Camera renderCamera = null, Camera inputCamera = null,
 		bool autoUpdate = true, bool useAdditionalColor = false,
 		LWFDataCallback lwfDataCallback = null,
@@ -143,14 +166,14 @@ public class LWFObject : MonoBehaviour
 		) {
 			combinedMeshRendererfactory = new LWF.CombinedMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
-				sortingLayerName, sortingOrder, useAdditionalColor,
+				mSortingLayerName, mSortingOrder, useAdditionalColor,
 				renderCamera, inputCamera, texturePrefix, fontPrefix,
 				textureLoader, textureUnloader);
 			factory = combinedMeshRendererfactory;
 		} else {
 			factory = new LWF.DrawMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
-				sortingLayerName, sortingOrder, useAdditionalColor,
+				mSortingLayerName, mSortingOrder, useAdditionalColor,
 				renderCamera, inputCamera, texturePrefix, fontPrefix,
 				textureLoader, textureUnloader);
 		}
@@ -180,18 +203,16 @@ public class LWFObject : MonoBehaviour
 			) {
 				f = new LWF.CombinedMeshRenderer.Factory(
 					childData, gameObject, factory.zOffset, factory.zRate,
-					factory.renderQueueOffset, factory.sortingLayerName,
-					factory.sortingOrder, factory.useAdditionalColor,
-					factory.renderCamera, factory.inputCamera,
-					childTexturePrefix, factory.fontPrefix,
+					factory.renderQueueOffset, mSortingLayerName, mSortingOrder,
+					factory.useAdditionalColor, factory.renderCamera,
+					factory.inputCamera, childTexturePrefix, factory.fontPrefix,
 					factory.textureLoader, factory.textureUnloader, true);
 			} else {
 				f = new LWF.DrawMeshRenderer.Factory(
 					childData, gameObject, factory.zOffset, factory.zRate,
-					factory.renderQueueOffset, factory.sortingLayerName,
-					factory.sortingOrder, factory.useAdditionalColor,
-					factory.renderCamera, factory.inputCamera,
-					childTexturePrefix, factory.fontPrefix,
+					factory.renderQueueOffset, mSortingLayerName, mSortingOrder,
+					factory.useAdditionalColor, factory.renderCamera,
+					factory.inputCamera, childTexturePrefix, factory.fontPrefix,
 					factory.textureLoader, factory.textureUnloader);
 			}
 
@@ -230,7 +251,8 @@ public class LWFObject : MonoBehaviour
 
 	public virtual void OnLoad()
 	{
-		lwfLoadCallbacks.ForEach(c => c(this));
+		foreach (var c in lwfLoadCallbacks)
+			c(this);
 		lwfLoadCallbacks = null;
 	}
 
@@ -288,6 +310,13 @@ public class LWFObject : MonoBehaviour
 
 		if (lwf == null)
 			return;
+
+		if (mDirty) {
+			factory.sortingLayerName = mSortingLayerName;
+			factory.sortingOrder = mSortingOrder;
+			factory.UpdateSortingLayerAndOrder();
+			mDirty = false;
+		}
 
 		if (combinedMeshRendererfactory != null) {
 			if (combinedMeshRendererfactory.updateCount != lwf.updateCount) {

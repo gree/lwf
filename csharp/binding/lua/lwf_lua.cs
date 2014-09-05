@@ -814,7 +814,7 @@ public partial class LWF
 		return 1;
 	}
 
-	public int AttachMovieLua(Movie movie)
+	public int AttachMovieLua(Movie movie, bool empty)
 	{
 		if (luaState==null)
 			return 0;
@@ -825,6 +825,7 @@ public partial class LWF
 		string attachName;
 		int attachDepth = -1;
 		bool reorder = false;
+		int offset = empty ? 2 : 3;
 		MovieEventHandlerDictionary handlers =
 				new MovieEventHandlerDictionary() {
 			{"load",null},
@@ -843,9 +844,15 @@ public partial class LWF
 		/* 4: table {key:string, handler:function} */
 		/* 5: attachDepth:number (option) */
 		/* 6: reorder:boolean (option) */
-		linkageName = Lua.lua_tostring(l, 2).ToString();
-		attachName = Lua.lua_tostring(l, 3).ToString();
-		if (args >= 4) {
+		/* or */
+		/* 1: LWF_Movie instance */
+		/* 2: attachName:string */
+		/* 3: table {key:string, handler:function} */
+		/* 4: attachDepth:number (option) */
+		/* 5: reorder:boolean (option) */
+		linkageName = empty ? "_empty" : Lua.lua_tostring(l, 2).ToString();
+		attachName = Lua.lua_tostring(l, offset).ToString();
+		if (args >= offset + 1) {
 			Lua.lua_getglobal(l, "LWF");
 			/* -1: LWF */
 			if (!Lua.lua_istable(l, -1)) {
@@ -924,10 +931,10 @@ public partial class LWF
 			Lua.lua_pop(l, 1);
 			/* 0 */
 		}
-		if (args >= 5)
-			attachDepth = (int)Lua.lua_tonumber(l, 5);
-		if (args >= 6)
-			reorder = Lua.lua_toboolean(l, 6)!=0;
+		if (args >= offset + 2)
+			attachDepth = (int)Lua.lua_tonumber(l, offset + 2);
+		if (args >= offset + 3)
+			reorder = Lua.lua_toboolean(l, offset + 3)!=0;
 
 		child = movie.AttachMovie(
 			linkageName,

@@ -93,11 +93,9 @@ public class CombinedMeshComponent : MonoBehaviour
 		meshFilter.sharedMesh = mesh;
 
 		meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
-		if (!string.IsNullOrEmpty(factory.sortingLayerName))
-			meshRenderer.sortingLayerName = factory.sortingLayerName;
-		meshRenderer.sortingOrder = factory.sortingOrder;
 		meshRenderer.castShadows = false;
 		meshRenderer.receiveShadows = false;
+		UpdateSortingLayerAndOrder(factory);
 
 		if (factory.useAdditionalColor) {
 			additionalColor = UnityEngine.Color.clear;
@@ -106,6 +104,12 @@ public class CombinedMeshComponent : MonoBehaviour
 		}
 
 		buffer = new CombinedMeshBuffer();
+	}
+
+	public void UpdateSortingLayerAndOrder(Factory factory)
+	{
+		meshRenderer.sortingLayerName = factory.sortingLayerName;
+		meshRenderer.sortingOrder = factory.sortingOrder;
 	}
 
 	public void AddRenderer(IMeshRenderer renderer, int rc, int uc)
@@ -230,8 +234,9 @@ public partial class Factory : UnityRenderer.Factory
 			"LWF/" + data.name + "/Mesh/" + meshComponents.Count);
 		gobj.SetActive(false);
 		gobj.transform.parent = gameObject.transform;
-		gobj.transform.position = gameObject.transform.position;
+		gobj.transform.localPosition = Vector3.zero;
 		gobj.transform.localScale = Vector3.one;
+		gobj.transform.localRotation = Quaternion.identity;
 		CombinedMeshComponent meshComponent =
 			gobj.AddComponent<CombinedMeshComponent>();
 		meshComponent.Init(this);
@@ -304,6 +309,12 @@ public partial class Factory : UnityRenderer.Factory
 		for (int i = meshComponentNo + 1; i <= usedMeshComponentNo; ++i)
 			meshComponents[i].Disable();
 		usedMeshComponentNo = meshComponentNo;
+	}
+
+	public override void UpdateSortingLayerAndOrder()
+	{
+		foreach (CombinedMeshComponent meshComponent in meshComponents)
+			meshComponent.UpdateSortingLayerAndOrder(this);
 	}
 
 	public override Renderer ConstructBitmap(

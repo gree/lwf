@@ -108,7 +108,7 @@ public class Tween
 			if (m_lwf.tweenMode == LWF.LWF.TweenMode.LWF) {
 				m_lwf.AddExecHandler(LWFTween.TweenExecHandler);
 			} else {
-				m_lwf.AddMovieEventHandler(
+				m_lwf.tweenEventId = m_lwf.AddMovieEventHandler(
 					"_root", enterFrame:LWFTween.TweenMovieHandler);
 			}
 		}
@@ -422,7 +422,8 @@ public class Tween
 			if (m_onCompleteCallback != null)
 				m_onCompleteCallback(m_target);
 
-			m_chainedTweens.ForEach(t => t.Start());
+			foreach (var t in m_chainedTweens)
+				t.Start();
 
 			return false;
 		}
@@ -826,8 +827,7 @@ public static class LWFTween
 			lwf.tweens = null;
 
 			lwf.RemoveExecHandler(LWFTween.TweenExecHandler);
-			lwf.RemoveMovieEventHandler(
-				"_root", enterFrame:LWFTween.TweenMovieHandler);
+			lwf.RemoveMovieEventHandler("_root", lwf.tweenEventId);
 		}
 	}
 

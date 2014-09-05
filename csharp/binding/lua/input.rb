@@ -238,13 +238,15 @@ void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
 void RemoveEventHandler(string eventName, int id) @ removeEventListener
 void ClearEventHandler(string eventName) @ clearEventListener
+void DispatchEvent(string eventName) @ dispatchEvent
 void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(string aName) @ detachMovie
 void DetachMovie(LWF.Movie movie) @ detachMovie
 void DetachFromParent() @ detachFromParent
 LWF.BitmapClip AttachBitmap(string linkageName, int depth) @ attachBitmap
-void DetachBitmap(int depth) @ detachBitmap
 LWF.BitmapClip GetAttachedBitmap(int depth) @ getAttachedBitmap
+void SwapAttachedBitmapDepth(int depth0, int depth1) @ swapAttachedBitmapDepth
+void DetachBitmap(int depth) @ detachBitmap
 			EOS
 
 			:staticMemberFunctions=><<-EOS,
@@ -312,6 +314,7 @@ static void setBlue(LWF.Movie o, float v);
 
 			:customFunctionsToRegister=>[
 				'attachMovie',
+				'attachEmptyMovie',
 				'attachLWF',
 			],
 
@@ -385,7 +388,33 @@ static void setBlue(LWF.Movie o, float v);
 			goto error;
 
 		a = Luna_LWF_Movie.check(L, 1);
-		return a.lwf.AttachMovieLua(a);
+		return a.lwf.AttachMovieLua(a, false);
+
+	error:
+		Luna.printStack(L);
+		Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.attachMovie");
+		return 1;
+	}
+
+	public static int attachEmptyMovie(Lua.lua_State L)
+	{
+		LWF.Movie a;
+		int args = Lua.lua_gettop(L);
+		if (args < 2 || args > 5)
+			goto error;
+		if (Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID)
+			goto error;
+		if (Lua.lua_isstring(L, 2)==0)
+			goto error;
+		if (args >= 3 && !Lua.lua_istable(L, 3))
+			goto error;
+		if (args >= 4 && Lua.lua_isnumber(L, 4)==0)
+			goto error;
+		if (args >= 5 && !Lua.lua_isboolean(L, 5))
+			goto error;
+
+		a = Luna_LWF_Movie.check(L, 1);
+		return a.lwf.AttachMovieLua(a, true);
 
 	error:
 		Luna.printStack(L);
