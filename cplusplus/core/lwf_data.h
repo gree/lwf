@@ -69,6 +69,7 @@ struct Data {
 	map<int, int> movieLinkageNameMap;
 	map<int, int> programObjectMap;
 	vector<map<int, int> > labelMap;
+	map<string, int> bitmapMap;
 
 	map<string, bool> resourceCache;
 

@@ -352,10 +352,14 @@ void Data::Load(const void *bytes, size_t length)
 		tit(textures.begin()), titend(textures.end());
 	for (; tit != titend; ++tit)
 		tit->SetFilename(this);
+
 	vector<Format::TextureFragment>::iterator
 		fit(textureFragments.begin()), fitend(textureFragments.end());
-	for (; fit != fitend; ++fit)
+	for (int tfId = 0; fit != fitend; ++fit, ++tfId) {
 		fit->SetFilename(this);
+		bitmapMap[fit->filename] = (int)bitmaps.size();
+		bitmaps.push_back(Format::Bitmap(0, tfId));
+	}
 
 	name = strings[header.nameStringId];
 	useScript = (header.option & Format::OPTION_USE_LUASCRIPT) != 0;

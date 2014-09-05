@@ -362,6 +362,31 @@ public:
 	}
 };
 
+class Bounds
+{
+public:
+	float xMin;
+	float xMax;
+	float yMin;
+	float yMax;
+
+	Bounds(float pxMin = 0, float pxMax = 0, float pyMin = 0, float pyMax = 0)
+	{
+		xMin = pxMin;
+		xMax = pxMax;
+		yMin = pyMin;
+		yMax = pyMax;
+	}
+
+	void Clear()
+	{
+		xMin = 0;
+		xMax = 0;
+		yMin = 0;
+		yMax = 0;
+	}
+};
+
 }	// namespace LWF
 
 #endif

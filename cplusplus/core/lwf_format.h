@@ -176,6 +176,9 @@ struct Bitmap
 {
 	int matrixId;
 	int textureFragmentId;
+
+	Bitmap() {}
+	Bitmap(int mId, int tfId) : matrixId(mId), textureFragmentId(tfId) {}
 };
 
 struct BitmapEx

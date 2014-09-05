@@ -256,10 +256,13 @@ void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
 void RemoveEventHandler(std::string eventName, int id) @ removeEventListener
 void ClearEventHandler(std::string eventName) @ clearEventListener
+void DispatchEvent(std::string eventName) @ dispatchEvent
 void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(std::string aName) @ detachMovie
 void DetachMovie(LWF::Movie *movie) @ detachMovie
 void DetachFromParent() @ detachFromParent
+void SwapAttachedBitmapDepth(int depth0, int depth1) @ swapAttachedBitmapDepth
+void DetachBitmap(int depth) @ detachBitmap
 			]]},
 			staticMemberFunctions={[[
 static std::string getName(LWF::Movie &o);
@@ -322,7 +325,10 @@ if (lua_gettop(L) == 3 && Luna<void>::get_uniqueid(L, 1) ==
 			customFunctionsToRegister={
 				'addEventListener',
 				'attachMovie',
-				'dispatchEvent',
+				'attachEmptyMovie',
+				'attachLWF',
+				'attachBitmap',
+				'getAttachedBitmap',
 			},
 			wrapperCode=[[
 static std::string getName(LWF::Movie &o){return o.name;}
@@ -397,11 +403,99 @@ static int attachMovie(lua_State *L)
 		goto error;
 
 	a = Luna<LWF::Movie>::check(L, 1);
-	return a->lwf->AttachMovieLua(a);
+	return a->lwf->AttachMovieLua(a, false);
 
 error:
 	luna_printStack(L);
 	luaL_error(L, "luna typecheck failed: LWF.Movie.attachMovie");
+	return 1;
+}
+
+static int attachEmptyMovie(lua_State *L)
+{ 
+	LWF::Movie *a;
+	int args = lua_gettop(L);
+	if (args < 2 || args > 5)
+		goto error;
+	if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
+		goto error;
+	if (!lua_isstring(L, 2))
+		goto error;
+	if (args >= 3 && !lua_istable(L, 3))
+		goto error;
+	if (args >= 4 && !lua_isnumber(L, 4))
+		goto error;
+	if (args >= 5 && !lua_isboolean(L, 5))
+		goto error;
+
+	a = Luna<LWF::Movie>::check(L, 1);
+	return a->lwf->AttachMovieLua(a, true);
+
+error:
+	luna_printStack(L);
+	luaL_error(L, "luna typecheck failed: LWF.Movie.attachEmptyMovie");
+	return 1;
+}
+
+static int attachLWF(lua_State *L)
+{ 
+	LWF::Movie *a;
+	int args = lua_gettop(L);
+	if (args < 3 || args > 5)
+		goto error;
+	if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
+		goto error;
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3))
+		goto error;
+	if (args >= 4 && !lua_isnumber(L, 4))
+		goto error;
+	if (args >= 5 && !lua_isboolean(L, 5))
+		goto error;
+
+	a = Luna<LWF::Movie>::check(L, 1);
+	return a->lwf->AttachLWFLua(a);
+
+error:
+	luna_printStack(L);
+	luaL_error(L, "luna typecheck failed: LWF.Movie.attachLWF");
+	return 1;
+}
+
+static int attachBitmap(lua_State *L)
+{
+	LWF::Movie *a;
+	int args = lua_gettop(L);
+	if (args != 3)
+		goto error;
+	if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
+		goto error;
+	if (!lua_isstring(L, 2) || !lua_isnumber(L, 3))
+		goto error;
+
+	a = Luna<LWF::Movie>::check(L, 1);
+	return a->lwf->AttachBitmapLua(a);
+
+error:
+	luna_printStack(L);
+	luaL_error(L, "luna typecheck failed: LWF.Movie.attachBitmap");
+	return 1;
+}
+
+static int getAttachedBitmap(lua_State *L)
+{
+	LWF::Movie *a;
+	if (lua_gettop(L) != 2 || Luna<void>::get_uniqueid(L, 1) !=
+			LunaTraits<LWF::Movie>::uniqueID || !lua_isnumber(L, 2)) {
+		luna_printStack(L);
+		luaL_error(L, "luna typecheck failed: LWF.Movie.getAttachedBitmap");
+	}
+	a = Luna<LWF::Movie>::check(L, 1);
+	LWF::shared_ptr<LWF::BitmapClip> bitmapClip =
+		a->GetAttachedBitmap(lua_tonumber(L, 2));
+	if (bitmapClip)
+		Luna<LWF::BitmapClip>::push(L, bitmapClip.get(), false);
+	else
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -418,21 +512,64 @@ static int addEventListener(lua_State *L)
 	return a.lwf->AddEventHandlerLua(&a);
 }
 
-static int dispatchEvent(lua_State *L)
-{
-	if (lua_gettop(L) != 2 || Luna<void>::get_uniqueid(L, 1) !=
-			LunaTraits<LWF::Movie>::uniqueID ||
-			!lua_isstring(L, 2)) {
-		luna_printStack(L);
-		luaL_error(L, "luna typecheck failed: LWF.Movie.dispatchEvent");
-	}
+			]],
+		},
+		{
+			name='LWF.BitmapClip',
+			className='LWF::BitmapClip',
+			properties={
+				'int depth',
+				'bool visible',
+				'float width',
+				'float height',
+				'float regX',
+				'float regY',
+				'float x',
+				'float y',
+				'float scaleX',
+				'float scaleY',
+				'float rotation',
+				'float alpha',
+			},
+			read_properties={
+				{'name', 'getName'},
+				{'parent', 'getParent'},
+				{'lwf', 'getLWF'},
+			},
+			staticMemberFunctions={[[
+static std::string getName(LWF::BitmapClip &o);
+			]]},
+			wrapperCode=[[
+static std::string getName(LWF::BitmapClip &o){return o.name;}
 
-	LWF::Movie &a = static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
-	std::string eventName = lua_tostring(L, 2);
-	a.DispatchEvent(eventName);
-	return 0;
+static int _bind_getLWF(lua_State *L)
+{
+	if (lua_gettop(L) != 1 || Luna<void>::get_uniqueid(L, 1) !=
+			LunaTraits<LWF::BitmapClip>::uniqueID) {
+		luna_printStack(L);
+		luaL_error(L, "luna typecheck failed: LWF.BitmapClip.lwf");
+	}
+	LWF::BitmapClip const &a =
+		static_cast<LWF::BitmapClip &>(*Luna<LWF::BitmapClip>::check(L, 1));
+	Luna<LWF::LWF>::push(L, a.lwf, false);
+	return 1;
 }
 
+static int _bind_getParent(lua_State *L)
+{
+	if (lua_gettop(L) != 1 || Luna<void>::get_uniqueid(L, 1) !=
+			LunaTraits<LWF::BitmapClip>::uniqueID) {
+		luna_printStack(L);
+		luaL_error(L, "luna typecheck failed: LWF.BitmapClip.parent");
+	}
+	LWF::BitmapClip const &a =
+		static_cast<LWF::BitmapClip &>(*Luna<LWF::BitmapClip>::check(L, 1));
+	if (a.parent)
+		Luna<LWF::Movie>::push(L, a.parent, false);
+	else
+		lua_pushnil(L);
+	return 1;
+}
 			]],
 		},
 		{
@@ -450,14 +587,24 @@ static int dispatchEvent(lua_State *L)
 function generate()
 	buildDefinitionDB(bindTarget)
 	write([[
-		#include "lwf.h"
+#if defined(LWF_USE_LUA)
+#include "lwf.h"
 	]])
 	writeHeader(bindTarget)
+	write([[
+#endif // LWF_USE_LUA
+	]])
 	flushWritten('lwf_luabinding.h')
+	write([[
+#if defined(LWF_USE_LUA)
+	]])
 	writeIncludeBlock()
 	write([[
-		#include "lwf_luabinding.h"
+#include "lwf_luabinding.h"
 	]])
 	writeDefinitions(bindTarget, 'luaopen_LWF')
+	write([[
+#endif // LWF_USE_LUA
+	]])
 	flushWritten('lwf_luabinding.cpp')
 end

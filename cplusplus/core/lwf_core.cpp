@@ -19,12 +19,16 @@
  */
 
 #include "lwf_core.h"
+#include "lwf_button.h"
 #include "lwf_data.h"
 #include "lwf_movie.h"
 #include "lwf_property.h"
 #include "lwf_renderer.h"
 #include "lwf_utility.h"
 #include <cstdio>
+#if !defined(LWF_DISABLE_FASTFORWARD)
+# include <sys/time.h>
+#endif
 #if defined(_MSC_VER)
 # define snprintf(a0,a1,...) _snprintf_s(a0,a1,a1,__VA_ARGS__)
 #endif
@@ -45,6 +49,9 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	name = data->strings[data->header.nameStringId];
 
 	frameRate = data->header.frameRate;
+	m_fastForwardTimeout = 15;
+	m_fastForward = false;
+	m_frameSkip = true;
 	execLimit = 3;
 	renderingIndex = 0;
 	renderingIndexOffsetted = 0;
@@ -55,7 +62,6 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 
 	scaleByStage = 1.0f;
 	tick = 1.0f / frameRate;
-	thisTick = 0;
 	height = data->header.height;
 	width = data->header.width;
 	pointX = FLT_MIN;
@@ -68,6 +74,8 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	isLWFAttached = false;
 	interceptByNotAllowOrDenyButtons = true;
 	intercepted = false;
+	needsUpdate = false;
+	m_needsUpdateForAttachLWF = false;
 	playing = true;
 	alive = true;
 	privateData = 0;
@@ -121,6 +129,34 @@ void LWF::SetInteractive()
 	interactive = true;
 	if (parent)
 		parent->lwf->SetInteractive();
+}
+
+void LWF::SetFrameSkip(bool frameSkip)
+{
+	m_frameSkip = frameSkip;
+	m_progress = 0;
+	if (parent)
+		parent->lwf->SetFrameSkip(frameSkip);
+}
+
+void LWF::SetLWFAttached()
+{
+	isLWFAttached = true;
+	m_needsUpdateForAttachLWF = true;
+	if (parent)
+		parent->lwf->SetLWFAttached();
+}
+
+void LWF::SetFastForwardTimeout(int fastForwardTimeout)
+{
+	m_fastForwardTimeout = fastForwardTimeout;
+}
+
+void LWF::SetFastForward(bool fastForward)
+{
+	m_fastForward = fastForward;
+	if (parent)
+		parent->lwf->SetFastForward(fastForward);
 }
 
 void LWF::FitForHeight(float stageWidth, float stageHeight)
@@ -262,15 +298,26 @@ const ColorTransform *LWF::CalcColorTransform(
 	return c;
 }
 
-int LWF::Exec(
-	float t, const Matrix *matrix, const ColorTransform *colorTransform)
+void LWF::LinkButton()
+{
+	buttonHead = 0;
+	if (interactive && rootMovie->hasButton) {
+		focusOnLink = false;
+		rootMovie->LinkButton();
+		if (focus && !focusOnLink) {
+			focus->RollOut();
+			focus = 0;
+		}
+	}
+}
+
+int LWF::ExecInternal(float t)
 {
 	if (!playing)
 		return renderingCount;
 
 	bool execed = false;
 	float currentProgress = m_progress;
-	thisTick = t;
 
 	if (isExecDisabled/* TODO && tweens == 0 */) {
 		if (!m_executedForExecDisabled) {
@@ -313,18 +360,27 @@ int LWF::Exec(
 			rootMovie->Exec();
 			rootMovie->PostExec(progressing);
 			execed = true;
+			if (!m_frameSkip)
+				break;
 		}
 
 		if (m_progress < m_roundOffTick)
 			m_progress = 0;
+
+		LinkButton();
 	}
 
-	buttonHead = 0;
-	if (interactive && rootMovie->hasButton)
-		rootMovie->LinkButton();
+	if (isLWFAttached) {
+		bool hasButton = rootMovie->ExecAttachedLWF(t, currentProgress);
+		if (hasButton)
+			LinkButton();
+	}
 
-	if (execed || isLWFAttached || isPropertyDirty || matrix || colorTransform)
-		Update(matrix, colorTransform);
+	needsUpdate = false;
+	if (!m_fastForward) {
+		if (execed || isPropertyDirty || m_needsUpdateForAttachLWF)
+			needsUpdate = true;
+	}
 
 	if (!isExecDisabled) {
 		if (t < 0)
@@ -332,6 +388,56 @@ int LWF::Exec(
 	}
 
 	return renderingCount;
+}
+
+int LWF::Exec(float t,
+	const Matrix *matrix, const ColorTransform *colorTransform)
+{
+	bool needsToCallUpdate = false;
+	if (matrix)
+		needsToCallUpdate |= m_execMatrix.SetWithComparing(matrix);
+	if (colorTransform)
+		needsToCallUpdate |=
+			m_execColorTransform.SetWithComparing(colorTransform);
+
+#if !defined(LWF_DISABLE_FASTFORWARD)
+	struct timeval startTime;
+#endif
+	if (!parent) {
+		m_fastForwardCurrent = m_fastForward;
+		if (m_fastForwardCurrent) {
+			t = tick;
+			gettimeofday(&startTime, NULL);
+		}
+	}
+
+	int rCount = 0;
+	for (;;) {
+		rCount = ExecInternal(t);
+		needsToCallUpdate |= needsUpdate;
+		if (needsToCallUpdate)
+			Update(matrix, colorTransform);
+		if (isLWFAttached)
+			rootMovie->UpdateAttachedLWF();
+		if (needsToCallUpdate)
+			rootMovie->PostUpdate();
+#if !defined(LWF_DISABLE_FASTFORWARD)
+		if (m_fastForwardCurrent && m_fastForward && !parent) {
+			struct timeval now;
+			gettimeofday(&now, NULL);
+			int diff = (int)((now.tv_sec * 1000 + now.tv_usec / 1000) -
+				(startTime.tv_sec * 1000 + startTime.tv_usec / 1000));
+			if (diff > m_fastForwardTimeout)
+				break;
+		} else {
+			break;
+		}
+#else
+		break;
+#endif
+	}
+
+	return rCount;
 }
 
 int LWF::ForceExec(const Matrix *matrix, const ColorTransform *colorTransform)
@@ -355,11 +461,13 @@ void LWF::Update(const Matrix *matrix, const ColorTransform *colorTransform)
 	rootMovie->Update(m, c);
 	renderingCount = renderingIndex;
 	isPropertyDirty = false;
+	m_needsUpdateForAttachLWF = false;
 }
 
 int LWF::Render(int rIndex, int rCount, int rOffset)
 {
-	int renderingCountBackup = renderingCount;
+	if (m_fastForwardCurrent)
+		return 0;
 	if (rCount > 0)
 		renderingCount = rCount;
 	renderingIndex = rIndex;
@@ -371,14 +479,12 @@ int LWF::Render(int rIndex, int rCount, int rOffset)
 	rendererFactory->BeginRender(this);
 	rootMovie->Render(attachVisible, rOffset);
 	rendererFactory->EndRender(this);
-	renderingCount = renderingCountBackup;
-	return renderingCount;
+	return renderingIndex - rIndex;
 }
 
 int LWF::Inspect(Inspector inspector,
 	int hierarchy, int inspectDepth, int rIndex, int rCount, int rOffset)
 {
-	int renderingCountBackup = renderingCount;
 	if (rCount > 0)
 		renderingCount = rCount;
 	renderingIndex = rIndex;
@@ -389,8 +495,7 @@ int LWF::Inspect(Inspector inspector,
 	}
 
 	rootMovie->Inspect(inspector, hierarchy, inspectDepth, rOffset);
-	renderingCount = renderingCountBackup;
-	return renderingCount;
+	return renderingIndex - rIndex;
 }
 
 void LWF::Destroy()
@@ -400,6 +505,9 @@ void LWF::Destroy()
 	DestroyLua();
 #endif
 	alive = false;
+
+	if (lwfUnloader)
+		lwfUnloader();
 }
 
 Movie *LWF::SearchMovieInstance(int stringId) const

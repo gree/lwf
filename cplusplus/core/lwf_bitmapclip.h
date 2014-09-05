@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 GREE, Inc.
+ * Copyright (C) 2014 GREE, Inc.
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -18,26 +18,51 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LWF_GRAPHIC_H
-#define LWF_GRAPHIC_H
+#ifndef LWF_BITMAPCLIP_H
+#define	LWF_BITMAPCLIP_H
 
 #include "lwf_object.h"
+#include "lwf_bitmap.h"
 
 namespace LWF {
 
-class Graphic : public Object
+class LWF;
+class Movie;
+
+class BitmapClip : public Bitmap
 {
 public:
-	typedef vector<shared_ptr<Object> > DisplayList;
+	int depth;
+	bool visible;
+	string name;
+	float width;
+	float height;
+	float regX;
+	float regY;
+	float x;
+	float y;
+	float scaleX;
+	float scaleY;
+	float rotation;
+	float alpha;
+
+private:
+	float _scaleX;
+	float _scaleY;
+	float _rotation;
+	float _cos;
+	float _sin;
+	Matrix _matrix;
 
 public:
-	DisplayList displayList;
+	BitmapClip(LWF *lwf, Movie *p, int objId);
 
-public:
-	Graphic(LWF *l, Movie *p, int objId);
+	void Exec(int mId = 0, int cId = 0);
 	void Update(const Matrix *m, const ColorTransform *c);
-	void Render(bool v, int rOffset);
-	void Destroy();
+
+	void DetachFromParent();
+
+	bool IsBitmapClip() {return true;}
 };
 
 }	// namespace LWF

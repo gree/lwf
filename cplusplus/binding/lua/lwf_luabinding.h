@@ -1,4 +1,5 @@
-		#include "lwf.h"
+#if defined(LWF_USE_LUA)
+#include "lwf.h"
 	
 #ifndef genlua_input_lua471589_def1                           // 1141
 #define genlua_input_lua471589_def1                           // 1142
@@ -43,6 +44,18 @@ static luna__hashmap properties;                              // 1183
 static luna__hashmap write_properties;                        // 1184
 };                                                            // 1187
 template<>                                                    // 1163
+ class LunaTraits<LWF ::BitmapClip > {
+public:                                                       // 1165
+    static const char className[];                            // 1174
+    static const int uniqueID;                                // 1175
+    static luna_RegType methods[];                            // 1176
+    static LWF ::BitmapClip* _bind_ctor(lua_State *L);        // 1178
+    static void _bind_dtor(LWF ::BitmapClip* obj);            // 1179
+    typedef LWF ::BitmapClip base_t;                          // 1181
+static luna__hashmap properties;                              // 1183
+static luna__hashmap write_properties;                        // 1184
+};                                                            // 1187
+template<>                                                    // 1163
  class LunaTraits<LWF ::Point > {
 public:                                                       // 1165
     static const char className[];                            // 1174
@@ -55,3 +68,5 @@ static luna__hashmap properties;                              // 1183
 static luna__hashmap write_properties;                        // 1184
 };                                                            // 1187
 #endif                                                        // 1192
+#endif // LWF_USE_LUA
+	

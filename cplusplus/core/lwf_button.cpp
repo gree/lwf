@@ -93,6 +93,8 @@ void Button::Destroy()
 
 void Button::LinkButton()
 {
+	if (lwf->focus == this)
+		lwf->focusOnLink = true;
 	buttonLink = lwf->buttonHead;
 	lwf->buttonHead = this;
 }

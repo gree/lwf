@@ -21,6 +21,7 @@
 #ifndef LWF_MOVIE_H
 #define LWF_MOVIE_H
 
+#include "lwf_bitmapclip.h"
 #include "lwf_eventmovie.h"
 #include "lwf_iobject.h"
 
@@ -36,6 +37,7 @@ typedef map<string, shared_ptr<LWFContainer> > AttachedLWFs;
 typedef map<int, shared_ptr<LWFContainer> > AttachedLWFList;
 typedef map<string, bool> DetachDict;
 typedef map<string, bool> Texts;
+typedef map<int, shared_ptr<BitmapClip> > BitmapClips;
 typedef map<string, MovieEventHandlerList> MovieEventHandlerListDictionary;
 
 class Movie : public IObject
@@ -68,6 +70,8 @@ private:
 	AttachedLWFs m_attachedLWFs;
 	AttachedLWFList m_attachedLWFList;
 	DetachDict m_detachedLWFs;
+	BitmapClips m_bitmapClips;
+	MovieEventHandler m_calculateBoundsCallback;
 	shared_ptr<Texts> m_texts;
 	int m_currentFrameInternal;
 	int m_currentFrameCurrent;
@@ -86,10 +90,16 @@ private:
 	bool m_attachMovieExeced;
 	bool m_attachMoviePostExeced;
 	bool m_isRoot;
+	bool m_needsUpdateAttachedLWFs;
+	bool m_requestedCalculateBounds;
 	Matrix m_matrix0;
 	Matrix m_matrix1;
+	Matrix m_matrixForAttachedLWFs;
 	ColorTransform m_colorTransform0;
 	ColorTransform m_colorTransform1;
+	ColorTransform m_colorTransformForAttachedLWFs;
+	Bounds m_bounds;
+	Bounds m_currentBounds;
 #if defined(LWF_USE_LUA)
 	string m_rootLoadFunc;
 	string m_rootPostLoadFunc;
@@ -114,8 +124,12 @@ public:
 	void Override(bool overriding);
 	void Exec(int matrixId = 0, int colorTransformId = 0);
 	void PostExec(bool progressing);
+	bool ExecAttachedLWF(float tick, float currentProgress);
 
 	void Update(const Matrix *m, const ColorTransform *c);
+	void PostUpdate();
+	void UpdateAttachedLWF();
+	void CalculateBounds(Object *o);
 	void LinkButton();
 	void Render(bool v, int rOffset);
 	void Inspect(Inspector inspector,
@@ -197,12 +211,19 @@ public:
 		int attachDepth = -1, bool reorder = false);
 	Movie *AttachMovie(string linkageName, string attachName,
 		int attachDepth = -1, bool reorder = false);
+	Movie *AttachEmptyMovie(string attachName,
+		const MovieEventHandlerDictionary &h,
+		int attachDepth = -1, bool reorder = false);
+	Movie *AttachEmptyMovie(string attachName,
+		int attachDepth = -1, bool reorder = false);
 	void SwapAttachedMovieDepth(int depth0, int depth1);
 	void DetachMovie(string aName);
 	void DetachMovie(int aDepth);
 	void DetachMovie(Movie *movie);
 	void DetachFromParent();
 
+	shared_ptr<LWF> AttachLWF(
+		string path, string aName, int aDepth = -1, bool reorder = false);
 	void AttachLWF(shared_ptr<LWF> attachLWF, string aName,
 		DetachHandler detachHandler, int aDepth = -1, bool reorder = false);
 	void AttachLWF(shared_ptr<LWF> attachLWF, string aName,
@@ -212,6 +233,15 @@ public:
 	void DetachLWF(int aDepth);
 	void DetachLWF(shared_ptr<LWF> detachLWF);
 	void DetachAllLWFs();
+
+	shared_ptr<BitmapClip> AttachBitmap(string linkageName, int depth);
+	BitmapClips GetAttachedBitmaps();
+	shared_ptr<BitmapClip> GetAttachedBitmap(int depth);
+	void SwapAttachedBitmapDepth(int depth0, int depth1);
+	void DetachBitmap(int depth);
+
+	void RequestCalculateBounds(MovieEventHandler callback = 0);
+	Bounds GetBounds();
 
 private:
 	void ExecObject(int dlDepth, int objId,
@@ -227,6 +257,9 @@ private:
 		int index, shared_ptr<LWFContainer> lwfContainer);
 	void DeleteAttachedLWF(Movie *p, shared_ptr<LWFContainer> lwfContainer,
 		bool destroy = true, bool deleteFromDetachedLWFs = true);
+	void UpdateBounds(
+		const Matrix *m, float xmin, float xmax, float ymin, float ymax);
+	void UpdateBounds(const Matrix *m, float sx, float sy);
 };
 
 }	// namespace LWF

@@ -1,3 +1,5 @@
+#if defined(LWF_USE_LUA)
+
 /*
  * Copyright (C) 2013 GREE, Inc.
  * 
@@ -868,7 +870,7 @@ error:
 	return 1;
 }
 
-int LWF::AttachMovieLua(Movie *movie)
+int LWF::AttachMovieLua(Movie *movie, bool empty)
 {
 	if (!luaState)
 		return 0;
@@ -881,6 +883,7 @@ int LWF::AttachMovieLua(Movie *movie)
 	bool reorder = false;
 	MovieEventHandlerDictionary handlers;
 	Movie *child;
+	int offset = empty ? 2 : 3;
 
 	/* 1: LWF_Movie instance */
 	/* 2: linkageName:string */
@@ -888,9 +891,15 @@ int LWF::AttachMovieLua(Movie *movie)
 	/* 4: table {key:string, handler:function} */
 	/* 5: attachDepth:number (option) */
 	/* 6: reorder:boolean (option) */
-	linkageName = lua_tostring(l, 2);
-	aName = lua_tostring(l, 3);
-	if (args >= 4) {
+	/* or */
+	/* 1: LWF_Movie instance */
+	/* 2: aName:string */
+	/* 3: table {key:string, handler:function} */
+	/* 4: attachDepth:number (option) */
+	/* 5: reorder:boolean (option) */
+	linkageName = empty ? "_empty" : lua_tostring(l, 2);
+	aName = lua_tostring(l, offset);
+	if (args >= offset + 1) {
 		lua_getglobal(l, "LWF");
 		/* -1: LWF */
 		if (!lua_istable(l, -1)) {
@@ -957,15 +966,82 @@ int LWF::AttachMovieLua(Movie *movie)
 		lua_pop(l, 1);
 		/* 0 */
 	}
-	if (args >= 5)
-		attachDepth = lua_tonumber(l, 5);
-	if (args >= 6)
-		reorder = lua_toboolean(l, 6);
+	if (args >= offset + 2)
+		attachDepth = lua_tonumber(l, offset + 2);
+	if (args >= offset + 3)
+		reorder = lua_toboolean(l, offset + 3);
 
 	child = movie->AttachMovie(
 		linkageName, aName, handlers, attachDepth, reorder);
 	Luna<Movie>::push(l, child, false);
 	/* -1: LWF_Movie child */
+	return 1;
+
+error:
+	lua_pushnil(l);
+	/* -1: nil */
+	return 1;
+}
+
+int LWF::AttachLWFLua(Movie *movie)
+{
+	if (!luaState)
+		return 0;
+
+	lua_State *l = (lua_State *)luaState;
+	int args = lua_gettop(l);
+	string path;
+	string aName;
+	int attachDepth = -1;
+	bool reorder = false;
+	shared_ptr<LWF> child;
+
+	/* 1: LWF_Movie instance */
+	/* 2: path:string */
+	/* 3: aName:string */
+	/* 4: attachDepth:number (option) */
+	/* 5: reorder:boolean (option) */
+	path = lua_tostring(l, 2);
+	aName = lua_tostring(l, 3);
+	if (args >= 4)
+		attachDepth = lua_tonumber(l, 4);
+	if (args >= 5)
+		reorder = lua_toboolean(l, 5);
+
+	child = movie->AttachLWF(path, aName, attachDepth, reorder);
+	if (!child)
+		goto error;
+	Luna<LWF>::push(l, child.get(), false);
+	/* -1: LWF_LWF child */
+	return 1;
+
+error:
+	lua_pushnil(l);
+	/* -1: nil */
+	return 1;
+}
+
+int LWF::AttachBitmapLua(Movie *movie)
+{
+	if (!luaState)
+		return 0;
+
+	lua_State *l = (lua_State *)luaState;
+	string linkageName;
+	int attachDepth;
+	shared_ptr<BitmapClip> bitmapClip;
+
+	/* 1: LWF_Movie instance */
+	/* 2: linkageName:string */
+	/* 3: attachDepth:number */
+	linkageName = lua_tostring(l, 2);
+	attachDepth = lua_tonumber(l, 3);
+
+	bitmapClip = movie->AttachBitmap(linkageName, attachDepth);
+	if (!bitmapClip)
+		goto error;
+	Luna<BitmapClip>::push(l, bitmapClip.get(), false);
+	/* -1: LWF_BitmapClip bitmapClip */
 	return 1;
 
 error:
@@ -1161,3 +1237,5 @@ void LWF::CallEventFunctionLua(int eventId, Movie *movie, Button *button)
 }
 
 }	// namespace LWF
+
+#endif // LWF_USE_LUA

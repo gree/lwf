@@ -19,6 +19,7 @@
  */
 
 #include "lwf_core.h"
+#include "lwf_data.h"
 #include "lwf_movie.h"
 #include "lwf_lwfcontainer.h"
 
@@ -100,6 +101,18 @@ Movie *Movie::AttachMovie(
 {
 	MovieEventHandlerDictionary h;
 	return AttachMovie(linkageName, aName, h, aDepth, reorder);
+}
+
+Movie *Movie::AttachEmptyMovie(string aName,
+	const MovieEventHandlerDictionary &h, int aDepth, bool reorder)
+{
+	return AttachMovie("_empty", aName, h, aDepth, reorder);
+}
+
+Movie *Movie::AttachEmptyMovie(string aName, int aDepth, bool reorder)
+{
+	MovieEventHandlerDictionary h;
+	return AttachEmptyMovie(aName, h, aDepth, reorder);
 }
 
 void Movie::SwapAttachedMovieDepth(int depth0, int depth1)
@@ -199,14 +212,29 @@ void Movie::DeleteAttachedLWF(Movie *p, shared_ptr<LWFContainer> lwfContainer,
 	}
 }
 
-void Movie::AttachLWF(shared_ptr<LWF> attachLWF, string aName,
+shared_ptr<LWF> Movie::AttachLWF(
+	string path, string aName, int aDepth, bool reorder)
+{
+	if (!lwf->lwfLoader)
+		return shared_ptr<LWF>();
+
+	shared_ptr<LWF> child = lwf->lwfLoader(path);
+	if (!child)
+		return child;
+
+	AttachLWF(child, aName, aDepth, reorder);
+
+	return child;
+}
+
+void Movie::AttachLWF(shared_ptr<LWF> child, string aName,
 	DetachHandler detachHandler, int aDepth, bool reorder)
 {
 	AttachedLWFs::iterator it;
-	if (attachLWF->parent) {
-		it = attachLWF->parent->m_attachedLWFs.find(attachLWF->attachName);
-		if (it != attachLWF->parent->m_attachedLWFs.end())
-			DeleteAttachedLWF(attachLWF->parent, it->second, false);
+	if (child->parent) {
+		it = child->parent->m_attachedLWFs.find(child->attachName);
+		if (it != child->parent->m_attachedLWFs.end())
+			DeleteAttachedLWF(child->parent, it->second, false);
 	}
 
 	it = m_attachedLWFs.find(aName);
@@ -220,9 +248,9 @@ void Movie::AttachLWF(shared_ptr<LWF> attachLWF, string aName,
 	}
 
 	shared_ptr<LWFContainer> lwfContainer =
-		make_shared<LWFContainer>(this, attachLWF);
+		make_shared<LWFContainer>(this, child);
 
-	if (attachLWF->interactive == true)
+	if (child->interactive == true)
 		lwf->interactive = true;
 
 	if (aDepth < 0) {
@@ -232,22 +260,22 @@ void Movie::AttachLWF(shared_ptr<LWF> attachLWF, string aName,
 			aDepth = m_attachedLWFList.rbegin()->first + 1;
 	}
 
-	attachLWF->parent = this;
-	attachLWF->scaleByStage = lwf->scaleByStage;
-	attachLWF->detachHandler = detachHandler;
-	attachLWF->attachName = aName;
-	attachLWF->depth = aDepth;
+	child->parent = this;
+	child->scaleByStage = lwf->scaleByStage;
+	child->detachHandler = detachHandler;
+	child->attachName = aName;
+	child->depth = aDepth;
 	m_attachedLWFs[aName] = lwfContainer;
-	ReorderAttachedLWFList(reorder, attachLWF->depth, lwfContainer);
+	ReorderAttachedLWFList(reorder, child->depth, lwfContainer);
 
-	lwf->isLWFAttached = true;
+	lwf->SetLWFAttached();
 }
 
-void Movie::AttachLWF(shared_ptr<LWF> attachLWF,
+void Movie::AttachLWF(shared_ptr<LWF> child,
 	string aName, int aDepth, bool reorder)
 {
 	DetachHandler detachHandler;
-	AttachLWF(attachLWF, aName, detachHandler, aDepth, reorder);
+	AttachLWF(child, aName, detachHandler, aDepth, reorder);
 }
 
 void Movie::SwapAttachedLWFDepth(int depth0, int depth1)
@@ -301,6 +329,72 @@ void Movie::DetachAllLWFs()
 		it(m_attachedLWFs.begin()), itend(m_attachedLWFs.end());
 	for (; it != itend; ++it)
 		m_detachedLWFs[it->second->child->attachName] = true;
+}
+
+shared_ptr<BitmapClip> Movie::AttachBitmap(string linkageName, int aDepth)
+{
+	map<string, int>::iterator it = lwf->data->bitmapMap.find(linkageName);
+	if (it == lwf->data->bitmapMap.end())
+		return shared_ptr<BitmapClip>();
+
+	shared_ptr<BitmapClip> bitmapClip =
+		make_shared<BitmapClip>(lwf, this, it->second);
+
+	DetachBitmap(aDepth);
+	m_bitmapClips[aDepth] = bitmapClip;
+	bitmapClip->depth = aDepth;
+	bitmapClip->name = linkageName;
+
+	return bitmapClip;
+}
+
+BitmapClips Movie::GetAttachedBitmaps()
+{
+	return m_bitmapClips;
+}
+
+shared_ptr<BitmapClip> Movie::GetAttachedBitmap(int aDepth)
+{
+	BitmapClips::iterator it = m_bitmapClips.find(aDepth);
+	if (it == m_bitmapClips.end())
+		return shared_ptr<BitmapClip>();
+	return it->second;
+}
+
+void Movie::SwapAttachedBitmapDepth(int depth0, int depth1)
+{
+	if (m_bitmapClips.empty())
+		return;
+
+	shared_ptr<BitmapClip> attachedBitmapClip0;
+	shared_ptr<BitmapClip> attachedBitmapClip1;
+	BitmapClips::iterator it0 = m_bitmapClips.find(depth0);
+	BitmapClips::iterator it1 = m_bitmapClips.find(depth1);
+	if (it0 != m_bitmapClips.end())
+		attachedBitmapClip0 = it0->second;
+	if (it1 != m_bitmapClips.end())
+		attachedBitmapClip1 = it1->second;
+	if (attachedBitmapClip0) {
+		attachedBitmapClip0->depth = depth1;
+		m_bitmapClips[depth1] = attachedBitmapClip0;
+	} else {
+		m_bitmapClips.erase(depth1);
+	}
+	if (attachedBitmapClip1) {
+		attachedBitmapClip1->depth = depth0;
+		m_bitmapClips[depth0] = attachedBitmapClip1;
+	} else {
+		m_bitmapClips.erase(depth0);
+	}
+}
+
+void Movie::DetachBitmap(int aDepth)
+{
+	BitmapClips::iterator it = m_bitmapClips.find(aDepth);
+	if (it == m_bitmapClips.end())
+		return;
+	it->second->Destroy();
+	m_bitmapClips.erase(aDepth);
 }
 
 }	// namespace LWF

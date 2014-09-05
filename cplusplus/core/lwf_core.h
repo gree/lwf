@@ -54,6 +54,8 @@ typedef map<string, pair<string, TextRenderer *> > TextDictionary;
 typedef map<int, bool> EventFunctions;
 typedef vector<int> RenderingModes;
 typedef function<string (string, string, string)> TextureLoadHandler;
+typedef function<shared_ptr<LWF> (string)> LWFLoader;
+typedef function<void ()> LWFUnloader;
 
 class LWF
 {
@@ -76,11 +78,14 @@ public:
 	shared_ptr<Property> property;
 	shared_ptr<Movie> rootMovie;
 	Button *focus;
+	bool focusOnLink;
 	Button *pressed;
 	Button *buttonHead;
 	DetachHandler detachHandler;
 	Movie *parent;
 	EventFunctions eventFunctions;
+	LWFLoader lwfLoader;
+	LWFUnloader lwfUnloader;
 	string name;
 	string attachName;
 	int frameRate;
@@ -96,7 +101,6 @@ public:
 	double time;
 	float scaleByStage;
 	float tick;
-	float thisTick;
 	float height;
 	float width;
 	float pointX;
@@ -109,6 +113,7 @@ public:
 	bool isLWFAttached;
 	bool interceptByNotAllowOrDenyButtons;
 	bool intercepted;
+	bool needsUpdate;
 	bool playing;
 	bool alive;
 	void *privateData;
@@ -140,10 +145,17 @@ private:
 	bool m_executedForExecDisabled;
 	Matrix m_matrix;
 	Matrix m_matrixIdentity;
+	Matrix m_execMatrix;
 	ColorTransform m_colorTransform;
 	ColorTransform m_colorTransformIdentity;
+	ColorTransform m_execColorTransform;
 	int m_rootMovieStringId;
 	int m_eventOffset;
+	bool m_frameSkip;
+	bool m_fastForward;
+	bool m_fastForwardCurrent;
+	int m_fastForwardTimeout;
+	bool m_needsUpdateForAttachLWF;
 
 public:
 	LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l = 0);
@@ -152,6 +164,10 @@ public:
 	void SetFrameRate(int f);
 	void SetPreferredFrameRate(int f, int eLimit = 2);
 	void SetInteractive();
+	void SetFrameSkip(bool frameSkip);
+	void SetLWFAttached();
+	void SetFastForwardTimeout(int fastForwardTimeout);
+	void SetFastForward(bool fastForward);
 
 	void FitForHeight(float stageWidth, float stageHeight);
 	void FitForWidth(float stageWidth, float stageHeight);
@@ -174,6 +190,7 @@ public:
 
 	void Init();
 
+	int ExecInternal(float tick);
 	int Exec(float tick = 0,
 		const Matrix *matrix = 0, const ColorTransform *colorTransform = 0);
 	int ForceExec(
@@ -186,6 +203,7 @@ public:
 	int Inspect(Inspector inspector, int hierarchy = 0, int inspectDepth = 0,
 		int rIndex = 0, int rCount = 0, int rOffset = INT_MIN);
 
+	void SetProgress(float progress) {m_progress = progress;}
 	void Destroy();
 
 	int GetIObjectOffset() {return ++m_iObjectOffset;}
@@ -336,7 +354,9 @@ public:
 	int AddEventHandlerLua(Movie *movie = 0, Button *button = 0);
 	int AddMovieEventHandlerLua();
 	int AddButtonEventHandlerLua();
-	int AttachMovieLua(Movie *movie);
+	int AttachMovieLua(Movie *movie, bool empty);
+	int AttachLWFLua(Movie *movie);
+	int AttachBitmapLua(Movie *movie);
 	bool PushHandlerLua(int handlerId);
 	void GetFunctionsLua(int movieId, string &loadFunc, string &postLoadFunc,
 		string &unloadFunc, string &enterFrameFunc, bool forRoot);
@@ -355,6 +375,7 @@ private:
 	const Matrix *CalcMatrix(const Matrix *matrix);
 	const ColorTransform *CalcColorTransform(
 		const ColorTransform *colorTransform);
+	void LinkButton();
 };
 
 }	// namespace LWF

@@ -39,6 +39,18 @@ namespace LWF {
 typedef ButtonEventHandlers BEType;
 typedef MovieEventHandlers METype;
 
+class CalculateBoundsWrapper
+{
+private:
+	Movie *m_movie;
+public:
+	CalculateBoundsWrapper(Movie *m) : m_movie(m) {}
+	void operator()(Object *o, int, int, int)
+	{
+		m_movie->CalculateBounds(o);
+	}
+};
+
 Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 		bool attached, const MovieEventHandlers *handler, string n)
 	: IObject(l, p,
@@ -82,6 +94,8 @@ Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 	m_attachMovieExeced = false;
 	m_attachMoviePostExeced = false;
 	m_isRoot = objId == lwf->data->header.rootMovieId;
+	m_requestedCalculateBounds = false;
+	m_calculateBoundsCallback = 0;
 
 	m_displayList.resize(data->depths);
 
@@ -376,11 +390,9 @@ void Movie::PostExec(bool progressing)
 			AttachedMovieList::iterator it(m_attachedMovieList.begin()),
 				itend(m_attachedMovieList.end());
 			for (; it != itend; ++it)
-				if (it->second)
-					it->second->Exec();
+				it->second->Exec();
 		}
 
-		m_attachMoviePostExeced = true;
 		instance = m_instanceHead;
 		while (instance) {
 			if (instance->IsMovie()) {
@@ -392,6 +404,7 @@ void Movie::PostExec(bool progressing)
 			instance = instance->linkInstance;
 		}
 
+		m_attachMoviePostExeced = true;
 		if (!m_attachedMovies.empty()) {
 			DetachDict::const_iterator
 				dit(m_detachedMovies.begin()), ditend(m_detachedMovies.end());
@@ -405,11 +418,9 @@ void Movie::PostExec(bool progressing)
 			AttachedMovieList::iterator it(m_attachedMovieList.begin()),
 				itend(m_attachedMovieList.end());
 			for (; it != itend; ++it) {
-				if (it->second) {
-					it->second->PostExec(progressing);
-					if (!hasButton && it->second->hasButton)
-						hasButton = true;
-				}
+				it->second->PostExec(progressing);
+				if (!hasButton && it->second->hasButton)
+					hasButton = true;
 			}
 		}
 
@@ -459,6 +470,48 @@ void Movie::PostExec(bool progressing)
 	m_postExecCount = lwf->execCount;
 }
 
+bool Movie::ExecAttachedLWF(float tick, float currentProgress)
+{
+	bool hasBtn = false;
+	for (IObject *instance = m_instanceHead; instance;
+			instance = instance->linkInstance) {
+		if (instance->IsMovie()) {
+			Movie *movie = (Movie *)instance;
+			hasBtn |= movie->ExecAttachedLWF(tick, currentProgress);
+		}
+	}
+
+	if (!m_attachedMovies.empty()) {
+		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
+			itend(m_attachedMovieList.end());
+		for (; it != itend; ++it)
+			hasBtn |= it->second->ExecAttachedLWF(tick, currentProgress);
+	}
+
+	if (!m_attachedLWFs.empty()) {
+		DetachDict::const_iterator
+			dit(m_detachedLWFs.begin()), ditend(m_detachedLWFs.end());
+		for (; dit != ditend; ++dit) {
+			AttachedLWFs::iterator it = m_attachedLWFs.find(dit->first);
+			if (it != m_attachedLWFs.end())
+				DeleteAttachedLWF(this, it->second, true, false);
+		}
+		m_detachedLWFs.clear();
+
+		AttachedLWFList::iterator
+			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
+		for (; it != itend; ++it) {
+			shared_ptr<LWF> &child = it->second->child;
+			if (child->tick == lwf->tick)
+				child->SetProgress(currentProgress);
+			lwf->RenderObject(child->ExecInternal(tick));
+			hasBtn |= child->rootMovie->hasButton;
+		}
+	}
+
+	return hasBtn;
+}
+
 void Movie::UpdateObject(Object *obj, const Matrix *m, const ColorTransform *c,
 	bool matrixChanged, bool colorTransformChanged)
 {
@@ -499,9 +552,6 @@ void Movie::Update(const Matrix *m, const ColorTransform *c)
 		colorTransformChanged = colorTransform.SetWithComparing(c);
 	}
 
-	if (!m_handler.Empty())
-		m_handler.Call(METype::UPDATE, this);
-
 	if (m_property->hasMatrix) {
 		matrixChanged = true;
 		m = Utility::CalcMatrix(&m_matrix0, &matrix, &m_property->matrix);
@@ -517,39 +567,197 @@ void Movie::Update(const Matrix *m, const ColorTransform *c)
 		c = &colorTransform;
 	}
 
+	if (!m_attachedLWFs.empty()) {
+		m_needsUpdateAttachedLWFs = false;
+		m_needsUpdateAttachedLWFs |=
+			m_matrixForAttachedLWFs.SetWithComparing(m);
+		m_needsUpdateAttachedLWFs |=
+			m_colorTransformForAttachedLWFs.SetWithComparing(c);
+	}
+
 	for (int dlDepth = 0; dlDepth < data->depths; ++dlDepth) {
 		Object *obj = m_displayList[dlDepth].get();
 		if (obj)
 			UpdateObject(obj, m, c, matrixChanged, colorTransformChanged);
 	}
 
+	if (!m_bitmapClips.empty()) {
+		BitmapClips::iterator it(m_bitmapClips.begin()),
+			itend(m_bitmapClips.end());
+		for (; it != itend; ++it)
+			it->second->Update(m, c);
+	}
+
 	if (!m_attachedMovies.empty()) {
 		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
 			itend(m_attachedMovieList.end());
 		for (; it != itend; ++it)
-			if (it->second)
-				it->second->UpdateObject(it->second.get(),
-					m, c, matrixChanged, colorTransformChanged);
+			it->second->UpdateObject(it->second.get(),
+				m, c, matrixChanged, colorTransformChanged);
+	}
+}
+
+void Movie::PostUpdate()
+{
+	for (IObject *instance = m_instanceHead; instance;
+			instance = instance->linkInstance) {
+		if (instance->IsMovie())
+			((Movie *)instance)->PostUpdate();
+	}
+
+	if (!m_attachedMovies.empty()) {
+		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
+			itend(m_attachedMovieList.end());
+		for (; it != itend; ++it)
+			it->second->PostUpdate();
+	}
+
+	if (m_requestedCalculateBounds) {
+		m_currentBounds.xMin = FLT_MAX;
+		m_currentBounds.xMax = FLT_MIN;
+		m_currentBounds.yMin = FLT_MAX;
+		m_currentBounds.yMax = FLT_MIN;
+
+		Inspect(CalculateBoundsWrapper(this), 0, 0, 0);
+		if (lwf->property->hasMatrix) {
+			Matrix invert;
+			Utility::InvertMatrix(&invert, &lwf->property->matrix);
+			float px;
+			float py;
+			Utility::CalcMatrixToPoint(
+				px, py, m_currentBounds.xMin, m_currentBounds.yMin, &invert);
+			m_currentBounds.xMin = px;
+			m_currentBounds.yMin = py;
+			Utility::CalcMatrixToPoint(
+				px, py, m_currentBounds.xMax, m_currentBounds.yMax, &invert);
+			m_currentBounds.xMax = px;
+			m_currentBounds.yMax = py;
+			m_bounds = m_currentBounds;
+			m_requestedCalculateBounds = false;
+			if (m_calculateBoundsCallback) {
+				m_calculateBoundsCallback(this);
+				m_calculateBoundsCallback = 0;
+			}
+		}
+	}
+
+	if (!m_handler.Empty())
+		m_handler.Call(METype::UPDATE, this);
+}
+
+void Movie::UpdateAttachedLWF()
+{
+	for (IObject *instance = m_instanceHead; instance;
+			instance = instance->linkInstance) {
+		if (instance->IsMovie()) {
+			Movie *movie = (Movie *)instance;
+			movie->UpdateAttachedLWF();
+		}
+	}
+
+	if (!m_attachedMovies.empty()) {
+		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
+			itend(m_attachedMovieList.end());
+		for (; it != itend; ++it)
+			it->second->UpdateAttachedLWF();
 	}
 
 	if (!m_attachedLWFs.empty()) {
-		DetachDict::const_iterator
-			dit(m_detachedLWFs.begin()), ditend(m_detachedLWFs.end());
-		for (; dit != ditend; ++dit) {
-			AttachedLWFs::iterator it = m_attachedLWFs.find(dit->first);
-			if (it != m_attachedLWFs.end())
-				DeleteAttachedLWF(this, it->second, true, false);
-		}
-		m_detachedLWFs.clear();
-
 		AttachedLWFList::iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
-			if (it->second)
-				lwf->RenderObject(
-					it->second->child->Exec(lwf->thisTick, m, c));
+			shared_ptr<LWF> &child = it->second->child;
+			bool needsUpdateAttachedLWFs =
+				child->needsUpdate || m_needsUpdateAttachedLWFs;
+			if (needsUpdateAttachedLWFs)
+				child->Update(&m_matrixForAttachedLWFs,
+					&m_colorTransformForAttachedLWFs);
+			if (child->isLWFAttached)
+				child->rootMovie->UpdateAttachedLWF();
+			if (needsUpdateAttachedLWFs)
+				child->rootMovie->PostUpdate();
 		}
 	}
+}
+
+void Movie::CalculateBounds(Object *o)
+{
+	switch (o->type) {
+	case OType::GRAPHIC:
+		{
+			Graphic::DisplayList &d = ((Graphic *)o)->displayList;
+			Graphic::DisplayList::iterator it(d.begin()), itend(d.end());
+			for (; it != itend; ++it)
+				CalculateBounds(it->get());
+		}
+		break;
+
+	case OType::BITMAP:
+	case OType::BITMAPEX:
+		{
+			int tfId = -1;
+			if (o->type == OType::BITMAP) {
+				if (o->objectId < o->lwf->data->bitmaps.size())
+					tfId = o->lwf->data->bitmaps[o->objectId].textureFragmentId;
+			} else {
+				if (o->objectId < o->lwf->data->bitmapExs.size())
+					tfId = o->lwf->data->bitmapExs[
+						o->objectId].textureFragmentId;
+			}
+			if (tfId >= 0) {
+				const Format::TextureFragment &tf =
+					o->lwf->data->textureFragments[tfId];
+				UpdateBounds(&o->matrix, tf.x, tf.x + tf.w, tf.y, tf.y + tf.h);
+			}
+		}
+		break;
+
+	case OType::BUTTON:
+		{
+			Button *button = (Button *)o;
+			UpdateBounds(&o->matrix, 0, button->width, 0, button->height);
+		}
+		break;
+
+	case OType::TEXT:
+		{
+			const Format::Text &text = o->lwf->data->texts[o->objectId];
+			UpdateBounds(&o->matrix, 0, text.width, 0, text.height);
+		}
+		break;
+
+	case OType::PROGRAMOBJECT:
+		{
+			const Format::ProgramObject &pobj =
+				o->lwf->data->programObjects[o->objectId];
+			UpdateBounds(&o->matrix, 0, pobj.width, 0, pobj.height);
+		}
+		break;
+	}
+}
+
+void Movie::UpdateBounds(
+	const Matrix *m, float xmin, float xmax, float ymin, float ymax)
+{
+	UpdateBounds(m, xmin, ymin);
+	UpdateBounds(m, xmin, ymax);
+	UpdateBounds(m, xmax, ymin);
+	UpdateBounds(m, xmax, ymax);
+}
+
+void Movie::UpdateBounds(const Matrix *m, float sx, float sy)
+{
+	float px;
+	float py;
+	Utility::CalcMatrixToPoint(px, py, sx, sy, m);
+	if (px < m_currentBounds.xMin)
+		m_currentBounds.xMin = px;
+	else if (px > m_currentBounds.xMax)
+		m_currentBounds.xMax = px;
+	if (py < m_currentBounds.yMin)
+		m_currentBounds.yMin = py;
+	else if (py > m_currentBounds.yMax)
+		m_currentBounds.yMax = py;
 }
 
 void Movie::LinkButton()
@@ -573,17 +781,17 @@ void Movie::LinkButton()
 	if (!m_attachedMovies.empty()) {
 		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
 			itend(m_attachedMovieList.end());
-		for (; it != itend; ++it)
+		for (; it != itend; ++it) {
 			if (it->second && it->second->hasButton)
 				it->second->LinkButton();
+		}
 	}
 
 	if (!m_attachedLWFs.empty()) {
 		AttachedLWFList::iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it)
-			if (it->second)
-				it->second->LinkButton();
+			it->second->LinkButton();
 	}
 }
 
@@ -625,24 +833,30 @@ void Movie::Render(bool v, int rOffset)
 			obj->Render(v, rOffset);
 	}
 
+	if (!m_bitmapClips.empty()) {
+		BitmapClips::iterator it(m_bitmapClips.begin()),
+			itend(m_bitmapClips.end());
+		for (; it != itend; ++it) {
+			shared_ptr<BitmapClip> &bitmapClip = it->second;
+			bitmapClip->Render(v && bitmapClip->visible, rOffset);
+		}
+	}
+
 	if (!m_attachedMovies.empty()) {
 		AttachedMovieList::iterator it(m_attachedMovieList.begin()),
 			itend(m_attachedMovieList.end());
 		for (; it != itend; ++it)
-			if (it->second)
-				it->second->Render(v, rOffset);
+			it->second->Render(v, rOffset);
 	}
 
 	if (!m_attachedLWFs.empty()) {
 		AttachedLWFList::iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				LWF *child = it->second->child.get();
-				child->SetAttachVisible(v);
-				lwf->RenderObject(child->Render(lwf->renderingIndex,
-					lwf->renderingCount, rOffset));
-			}
+			LWF *child = it->second->child.get();
+			child->SetAttachVisible(v);
+			lwf->RenderObject(child->Render(lwf->renderingIndex,
+				lwf->renderingCount, rOffset));
 		}
 	}
 
@@ -673,22 +887,27 @@ void Movie::Inspect(
 			obj->Inspect(inspector, hierarchy, d, rOffset);
 	}
 
+	if (!m_bitmapClips.empty()) {
+		BitmapClips::iterator it(m_bitmapClips.begin()),
+			itend(m_bitmapClips.end());
+		for (; it != itend; ++it) {
+			it->second->Inspect(inspector, hierarchy, d++, rOffset);
+		}
+	}
+
 	if (!m_attachedMovies.empty()) {
 		AttachedMovieList::iterator
 			it(m_attachedMovieList.begin()), itend(m_attachedMovieList.end());
 		for (; it != itend; ++it)
-			if (it->second)
-				it->second->Inspect(inspector, hierarchy, d++, rOffset);
+			it->second->Inspect(inspector, hierarchy, d++, rOffset);
 	}
 
 	if (!m_attachedLWFs.empty()) {
 		AttachedLWFList::iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				lwf->RenderObject(it->second->child->Inspect(
-					inspector, hierarchy, d++, rOffset));
-			}
+			lwf->RenderObject(it->second->child->Inspect(
+				inspector, hierarchy, d++, rOffset));
 		}
 	}
 }
@@ -699,6 +918,15 @@ void Movie::Destroy()
 		Object *obj = m_displayList[dlDepth].get();
 		if (obj)
 			obj->Destroy();
+	}
+
+	if (!m_bitmapClips.empty()) {
+		BitmapClips::iterator it(m_bitmapClips.begin()),
+			itend(m_bitmapClips.end());
+		for (; it != itend; ++it) {
+			it->second->Destroy();
+		}
+		m_bitmapClips.clear();
 	}
 
 	if (!m_attachedMovies.empty()) {
@@ -799,15 +1027,13 @@ Movie *Movie::SearchMovieInstance(string instanceName, bool recursive) const
 		AttachedMovieList::const_iterator it(m_attachedMovieList.begin()),
 			itend(m_attachedMovieList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				if (it->second->attachName == instanceName) {
-					return it->second.get();
-				} else if (recursive) {
-					Movie *movie = it->second->SearchMovieInstance(
-						instanceName, recursive);
-					if (movie)
-						return movie;
-				}
+			if (it->second->attachName == instanceName) {
+				return it->second.get();
+			} else if (recursive) {
+				Movie *movie = it->second->SearchMovieInstance(
+					instanceName, recursive);
+				if (movie)
+					return movie;
 			}
 		}
 	}
@@ -816,16 +1042,14 @@ Movie *Movie::SearchMovieInstance(string instanceName, bool recursive) const
 		AttachedLWFList::const_iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				LWF *child = it->second->child.get();
-				if (child->attachName == instanceName) {
-					return child->rootMovie.get();
-				} else if (recursive) {
-					Movie *movie = child->rootMovie->SearchMovieInstance(
-						instanceName, recursive);
-					if (movie)
-						return movie;
-				}
+			LWF *child = it->second->child.get();
+			if (child->attachName == instanceName) {
+				return child->rootMovie.get();
+			} else if (recursive) {
+				Movie *movie = child->rootMovie->SearchMovieInstance(
+					instanceName, recursive);
+				if (movie)
+					return movie;
 			}
 		}
 	}
@@ -884,12 +1108,10 @@ Button *Movie::SearchButtonInstance(string instanceName, bool recursive) const
 		AttachedMovieList::const_iterator it(m_attachedMovieList.begin()),
 			itend(m_attachedMovieList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				Button *button =
-					it->second->SearchButtonInstance(instanceName, recursive);
-				if (button)
-					return button;
-			}
+			Button *button =
+				it->second->SearchButtonInstance(instanceName, recursive);
+			if (button)
+				return button;
 		}
 	}
 
@@ -897,13 +1119,11 @@ Button *Movie::SearchButtonInstance(string instanceName, bool recursive) const
 		AttachedLWFList::const_iterator
 			it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
 		for (; it != itend; ++it) {
-			if (it->second) {
-				LWF *child = it->second->child.get();
-				Button *button = child->rootMovie->SearchButtonInstance(
-					instanceName, recursive);
-				if (button)
-					return button;
-			}
+			LWF *child = it->second->child.get();
+			Button *button = child->rootMovie->SearchButtonInstance(
+				instanceName, recursive);
+			if (button)
+				return button;
 		}
 	}
 
@@ -1017,6 +1237,18 @@ void Movie::DispatchEvent(string eventName)
 	MovieEventHandlerList::iterator it(list->begin()), itend(list->end());
 	for (; it != itend; ++it)
 		it->second(this);
+}
+
+void Movie::RequestCalculateBounds(MovieEventHandler callback)
+{
+	m_requestedCalculateBounds = true;
+	m_calculateBoundsCallback = callback;
+	m_bounds.Clear();
+}
+
+Bounds Movie::GetBounds()
+{
+	return m_bounds;
 }
 
 }	// namespace LWF

@@ -35,7 +35,7 @@ Graphic::Graphic(LWF *l, Movie *p, int objId)
 {
 	const Format::Graphic &data = lwf->data->graphics[objId];
 	int n = data.graphicObjects;
-	m_displayList.resize(n);
+	displayList.resize(n);
 
 	const vector<Format::GraphicObject> &graphicObjects =
 		lwf->data->graphicObjects;
@@ -64,13 +64,13 @@ Graphic::Graphic(LWF *l, Movie *p, int objId)
 		}
 
 		obj->Exec();
-		m_displayList[i] = obj;
+		displayList[i] = obj;
 	}
 }
 
 void Graphic::Update(const Matrix *m, const ColorTransform *c)
 {
-	DisplayList::iterator it(m_displayList.begin()), itend(m_displayList.end());
+	DisplayList::iterator it(displayList.begin()), itend(displayList.end());
 	for (; it != itend; ++it)
 		(*it)->Update(m, c);
 }
@@ -79,17 +79,17 @@ void Graphic::Render(bool v, int rOffset)
 {
 	if (!v)
 		return;
-	DisplayList::iterator it(m_displayList.begin()), itend(m_displayList.end());
+	DisplayList::iterator it(displayList.begin()), itend(displayList.end());
 	for (; it != itend; ++it)
 		(*it)->Render(v, rOffset);
 }
 
 void Graphic::Destroy()
 {
-	DisplayList::iterator it(m_displayList.begin()), itend(m_displayList.end());
+	DisplayList::iterator it(displayList.begin()), itend(displayList.end());
 	for (; it != itend; ++it)
 		(*it)->Destroy();
-	m_displayList.clear();
+	displayList.clear();
 }
 
 }	// namespace LWF
