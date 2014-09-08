@@ -101,6 +101,10 @@ public partial class Factory : IRendererFactory
 	{
 	}
 
+	public virtual void UpdateLayer()
+	{
+	}
+
 	public virtual Renderer ConstructBitmap(LWF lwf,
 		int objectId, Bitmap bitmap)
 	{

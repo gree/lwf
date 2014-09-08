@@ -96,6 +96,7 @@ public class CombinedMeshComponent : MonoBehaviour
 		meshRenderer.castShadows = false;
 		meshRenderer.receiveShadows = false;
 		UpdateSortingLayerAndOrder(factory);
+		UpdateLayer(factory);
 
 		if (factory.useAdditionalColor) {
 			additionalColor = UnityEngine.Color.clear;
@@ -110,6 +111,11 @@ public class CombinedMeshComponent : MonoBehaviour
 	{
 		meshRenderer.sortingLayerName = factory.sortingLayerName;
 		meshRenderer.sortingOrder = factory.sortingOrder;
+	}
+
+	public void UpdateLayer(Factory factory)
+	{
+		gameObject.layer = factory.gameObject.layer;
 	}
 
 	public void AddRenderer(IMeshRenderer renderer, int rc, int uc)
@@ -315,6 +321,12 @@ public partial class Factory : UnityRenderer.Factory
 	{
 		foreach (CombinedMeshComponent meshComponent in meshComponents)
 			meshComponent.UpdateSortingLayerAndOrder(this);
+	}
+
+	public override void UpdateLayer()
+	{
+		foreach (CombinedMeshComponent meshComponent in meshComponents)
+			meshComponent.UpdateLayer(this);
 	}
 
 	public override Renderer ConstructBitmap(

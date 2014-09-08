@@ -86,6 +86,7 @@ public class LWFObject : MonoBehaviour
 	[HideInInspector] [SerializeField] private string mSortingLayerName;
 	[HideInInspector] [SerializeField] private int mSortingOrder;
 	private bool mDirty;
+	private int mLayer;
 
 	public LWFObject()
 	{
@@ -316,6 +317,12 @@ public class LWFObject : MonoBehaviour
 			factory.sortingOrder = mSortingOrder;
 			factory.UpdateSortingLayerAndOrder();
 			mDirty = false;
+		}
+
+		int layer = gameObject.layer;
+		if (mLayer != layer) {
+			factory.UpdateLayer();
+			mLayer = layer;
 		}
 
 		if (combinedMeshRendererfactory != null) {
