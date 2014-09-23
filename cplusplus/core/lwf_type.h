@@ -22,10 +22,11 @@
 #define LWF_TYPE_H
 
 #define _USE_MATH_DEFINES
-
-#include <algorithm>
 #include <cmath>
 #include <cfloat>
+
+#if !defined(LWF_PUBLISHER)
+#include <algorithm>
 #include <functional>
 #include <limits>
 #include <map>
@@ -40,9 +41,11 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #endif
+#endif // !LWF_PUBLISHER
 
 namespace LWF {
 
+#if !defined(LWF_PUBLISHER)
 using std::advance;
 using std::for_each;
 using std::make_pair;
@@ -74,6 +77,7 @@ typedef function<bool (LWF *)> DetachHandler;
 typedef function<void (Movie *, Button *)> EventHandler;
 typedef vector<pair<int, EventHandler> > EventHandlerList;
 typedef function<void ()> PreloadCallback;
+#endif // !LWF_PUBLISHER
 
 class Point
 {

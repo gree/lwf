@@ -19,6 +19,7 @@
  */
 
 #include "base/CCDirector.h"
+#include "base/CCEventDispatcher.h"
 #include "base/CCEventListenerTouch.h"
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"

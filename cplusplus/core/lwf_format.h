@@ -25,7 +25,9 @@
 
 namespace LWF {
 
+#if !defined(LWF_PUBLISHER)
 struct Data;
+#endif // LWF_PUBLISHER
 
 namespace Format {
 
@@ -78,6 +80,7 @@ struct TextureBase
 	float scale;
 };
 
+#if !defined(LWF_PUBLISHER)
 struct Texture : public TextureBase
 {
 	string filename;
@@ -113,6 +116,7 @@ struct TextureReplacement : public Texture
 		return filename;
 	}
 };
+#endif // LWF_PUBLISHER
 
 struct TextureFragmentBase
 {
@@ -127,6 +131,7 @@ struct TextureFragmentBase
 	int h;
 };
 
+#if !defined(LWF_PUBLISHER)
 struct TextureFragment : public TextureFragmentBase
 {
 	string filename;
@@ -171,6 +176,7 @@ struct TextureFragmentReplacement : public TextureFragment
 		return filename;
 	}
 };
+#endif // LWF_PUBLISHER
 
 struct Bitmap
 {

@@ -21,7 +21,7 @@
 #ifndef LWF_COCOS2DX_TEXTBMFONT_H
 #define LWF_COCOS2DX_TEXTBMFONT_H
 
-#include "base/CCPlatformMacros.h"
+#include "platform/CCPlatformMacros.h"
 #include "lwf_renderer.h"
 
 NS_CC_BEGIN

@@ -21,7 +21,7 @@
 #ifndef LWF_COCOS2DX_RESOURCECACHE_H
 #define LWF_COCOS2DX_RESOURCECACHE_H
 
-#include "base/CCPlatformMacros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/CCValue.h"
 #include "lwf_type.h"
 
