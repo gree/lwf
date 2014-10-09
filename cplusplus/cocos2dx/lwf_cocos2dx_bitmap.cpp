@@ -255,7 +255,7 @@ void LWFBitmapRenderer::Destruct()
 	if (!m_sprite)
 		return;
 
-	cocos2d::LWFNode::removeFromParent(m_sprite);
+	cocos2d::LWFNode::removeNodeFromParent(m_sprite);
 	m_sprite = 0;
 }
 

@@ -104,7 +104,7 @@ void LWFParticleRenderer::Destruct()
 	if (!m_particle)
 		return;
 
-	cocos2d::LWFNode::removeFromParent(m_particle);
+	cocos2d::LWFNode::removeNodeFromParent(m_particle);
 	cocos2d::LWFResourceCache::sharedLWFResourceCache(
 		)->unloadParticle(m_particle->path);
 	m_particle = 0;

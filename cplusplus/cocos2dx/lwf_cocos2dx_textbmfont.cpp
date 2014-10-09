@@ -205,7 +205,7 @@ void LWFTextBMFontRenderer::Destruct()
 	if (!m_label)
 		return;
 
-	cocos2d::LWFNode::removeFromParent(m_label);
+	cocos2d::LWFNode::removeNodeFromParent(m_label);
 	m_label = 0;
 }
 

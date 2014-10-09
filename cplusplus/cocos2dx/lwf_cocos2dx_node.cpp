@@ -136,8 +136,18 @@ shared_ptr<class LWF> LWFNode::attachLWF(
 
 void LWFNode::update(float dt)
 {
+	if (_removeFromParentRequested) {
+		removeFromParent();
+		return;
+	}
+
 	if (lwf) {
 		lwf->Exec(dt);
+		if (_removeFromParentRequested) {
+			removeFromParent();
+			return;
+		}
+
 		lwf->Render();
 	}
 }
@@ -191,7 +201,12 @@ bool LWFNode::handleTouch(Touch *touch, Event *event)
 	return button ? true : false;
 }
 
-void LWFNode::removeFromParent(Node *node)
+void LWFNode::requestRemoveFromParent()
+{
+	_removeFromParentRequested = true;
+}
+
+void LWFNode::removeNodeFromParent(Node *node)
 {
 	LWFNode *lwfNode = dynamic_cast<LWFNode *>(node->getParent());
 	if (lwfNode && lwfNode->isDestructed())

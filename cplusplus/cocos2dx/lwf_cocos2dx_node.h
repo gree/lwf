@@ -41,6 +41,7 @@ public:
 private:
 	EventListenerTouchOneByOne *_listener;
 	bool _destructed;
+	bool _removeFromParentRequested;
 
 public:
 	static LWFNode *create(const char *pszFileName, void *l = 0);
@@ -66,7 +67,9 @@ public:
 
 	virtual bool handleTouch(Touch *touch, Event *event);
 
-	static void removeFromParent(Node *node);
+	void requestRemoveFromParent();
+
+	static void removeNodeFromParent(Node *node);
 };
 
 NS_CC_END
