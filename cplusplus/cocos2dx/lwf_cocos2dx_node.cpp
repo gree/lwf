@@ -52,7 +52,7 @@ void LWFNode::dump()
 }
 
 LWFNode::LWFNode()
-	: _listener(0), _destructed(false)
+	: _listener(0), _destructed(false), _removeFromParentRequested(false)
 {
 }
 
