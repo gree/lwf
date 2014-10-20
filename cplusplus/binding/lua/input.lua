@@ -28,6 +28,8 @@ bindTarget={
 				{'rootMovie', 'getRootMovie'},
 				{'width', 'getWidth'},
 				{'height', 'getHeight'},
+				{'pointX', 'getPointX'},
+				{'pointY', 'getPointY'},
 			},
 			memberFunctions={[[
 void SetText(std::string textName, std::string text) @ setText
@@ -60,6 +62,8 @@ void ClearButtonEventHandler(std::string instanceName) @ clearButtonEventListene
 static std::string getName(LWF::LWF &o);
 static float getWidth(LWF::LWF &o);
 static float getHeight(LWF::LWF &o);
+static float getPointX(LWF::LWF &o);
+static float getPointY(LWF::LWF &o);
 			]]},
 			customFunctionsToRegister={
 				'addEventListener',
@@ -70,6 +74,8 @@ static float getHeight(LWF::LWF &o);
 static std::string getName(LWF::LWF &o){return o.name;}
 static float getWidth(LWF::LWF &o){return o.width;}
 static float getHeight(LWF::LWF &o){return o.height;}
+static float getPointX(LWF::LWF &o){return o.pointX;}
+static float getPointY(LWF::LWF &o){return o.pointY;}
 
 static int _bind_getRootMovie(lua_State *L)
 {

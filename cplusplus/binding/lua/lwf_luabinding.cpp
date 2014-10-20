@@ -236,9 +236,23 @@ public:                                                       // 1223
     if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck_getPointX(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck_getPointY(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
+    return true;
+  }                                                           // 554
 static std::string getName(LWF::LWF &o){return o.name;}
 static float getWidth(LWF::LWF &o){return o.width;}
 static float getHeight(LWF::LWF &o){return o.height;}
+static float getPointX(LWF::LWF &o){return o.pointX;}
+static float getPointY(LWF::LWF &o){return o.pointY;}
 
 static int _bind_getRootMovie(lua_State *L)
 {
@@ -617,6 +631,28 @@ static int addButtonEventListener(lua_State *L)
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
     return 1;                                                 // 303
   }                                                           // 333
+  static int _bind_getPointX(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_getPointX(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getPointX(LWF ::LWF & o,)"); }
+                                                              // 487
+    LWF ::LWF & o=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=getPointX( o);                                  // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
+  static int _bind_getPointY(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_getPointY(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getPointY(LWF ::LWF & o,)"); }
+                                                              // 487
+    LWF ::LWF & o=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=getPointY( o);                                  // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
   static int _bind_gotoAndStopMovie(lua_State *L)
   {                                                           // 195
     if (_lg_typecheck_gotoAndStopMovie_overload_1(L)) return _bind_gotoAndStopMovie_overload_1(L); // 198
@@ -639,6 +675,8 @@ static int addButtonEventListener(lua_State *L)
     LunaTraits<LWF ::LWF >::properties["rootMovie"]=&_bind_getRootMovie; // 1326
     LunaTraits<LWF ::LWF >::properties["width"]=&_bind_getWidth; // 1326
     LunaTraits<LWF ::LWF >::properties["height"]=&_bind_getHeight; // 1326
+    LunaTraits<LWF ::LWF >::properties["pointX"]=&_bind_getPointX; // 1326
+    LunaTraits<LWF ::LWF >::properties["pointY"]=&_bind_getPointY; // 1326
   }                                                           // 1328
   static void luna_init_write_hashmap()
   {                                                           // 1329
@@ -707,6 +745,8 @@ luna_RegType LunaTraits<LWF ::LWF >::methods[] = {            // 1487
     {"getName", &impl_LunaTraits<LWF ::LWF >::_bind_getName}, // 1492
     {"getWidth", &impl_LunaTraits<LWF ::LWF >::_bind_getWidth}, // 1492
     {"getHeight", &impl_LunaTraits<LWF ::LWF >::_bind_getHeight}, // 1492
+    {"getPointX", &impl_LunaTraits<LWF ::LWF >::_bind_getPointX}, // 1492
+    {"getPointY", &impl_LunaTraits<LWF ::LWF >::_bind_getPointY}, // 1492
     {"gotoAndStopMovie", &impl_LunaTraits<LWF ::LWF >::_bind_gotoAndStopMovie}, // 1492
     {"gotoAndPlayMovie", &impl_LunaTraits<LWF ::LWF >::_bind_gotoAndPlayMovie}, // 1492
     {"addEventListener", &impl_LunaTraits<LWF ::LWF >::addEventListener}, // 1492
