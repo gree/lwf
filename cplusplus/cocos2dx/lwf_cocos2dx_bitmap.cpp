@@ -197,6 +197,8 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	if (b.textureFragmentId == -1)
 		return;
 
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
+
 	Format::BitmapEx bx;
 	bx.matrixId = b.matrixId;
 	bx.textureFragmentId = b.textureFragmentId;
@@ -209,18 +211,18 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 		l->data->textureFragments[b.textureFragmentId];
 	const Format::Texture &t = l->data->textures[f.textureId];
 	string texturePath = t.GetFilename(l->data.get());
-	string filename = node->basePath + texturePath;
+	string basePath = m_factory->GetBasePath();
+	string filename = basePath + texturePath;
 
 	if (LWF::GetTextureLoadHandler())
 		filename = LWF::GetTextureLoadHandler()(
-			filename, node->basePath, texturePath);
+			filename, basePath, texturePath);
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)
 		return;
 
 	l->data->resourceCache[filename] = true;
-	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_sprite);
 }
 
@@ -232,21 +234,23 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	if (bx.textureFragmentId == -1)
 		return;
 
+	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
+
 	const Format::TextureFragment &f =
 		l->data->textureFragments[bx.textureFragmentId];
 	const Format::Texture &t = l->data->textures[f.textureId];
 	string texturePath = t.GetFilename(l->data.get());
-	string filename = node->basePath + texturePath;
+	string basePath = m_factory->GetBasePath();
+	string filename = basePath + texturePath;
 
 	if (LWF::GetTextureLoadHandler())
 		filename = LWF::GetTextureLoadHandler()(
-			filename, node->basePath, texturePath);
+			filename, basePath, texturePath);
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)
 		return;
 
-	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
 	node->addChild(m_sprite);
 }
 

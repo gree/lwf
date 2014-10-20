@@ -36,7 +36,6 @@ class LWFNode : public Sprite
 {
 public:
 	LWF::shared_ptr<LWF::LWF> lwf;
-	LWF::string basePath;
 
 private:
 	EventListenerTouchOneByOne *_listener;

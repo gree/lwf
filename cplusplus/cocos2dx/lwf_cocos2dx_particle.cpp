@@ -20,6 +20,7 @@
 
 #include "cocos2d.h"
 #include "lwf_cocos2dx_node.h"
+#include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_particle.h"
 #include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_core.h"
@@ -80,7 +81,9 @@ LWFParticleRenderer::LWFParticleRenderer(
 	const Format::ParticleData &d = l->data->particleDatas[p.particleDataId];
 	string filename = l->data->strings[d.stringId];
 	filename += ".plist";
-	string path = node->basePath + filename;
+	LWFRendererFactory *factory =
+		(LWFRendererFactory *)l->rendererFactory.get();
+	string path = factory->GetBasePath() + filename;
 
 	m_particle = LWFParticle::create(path.c_str());
 	if (!m_particle) {

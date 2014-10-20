@@ -37,6 +37,7 @@ protected:
 
 protected:
 	cocos2d::LWFNode *m_node;
+	string m_basePath;
 	Masks_t m_masks;
 	int m_blendMode;
 	int m_maskMode;
@@ -45,8 +46,9 @@ protected:
 	int m_renderingIndex;
 
 public:
-	LWFRendererFactory(cocos2d::LWFNode *node)
-		: m_node(node), m_blendMode(Format::BLEND_MODE_NORMAL),
+	LWFRendererFactory(cocos2d::LWFNode *node, string basePath)
+		: m_node(node), m_basePath(basePath),
+			m_blendMode(Format::BLEND_MODE_NORMAL),
 			m_maskMode(Format::BLEND_MODE_NORMAL),
 			m_lastMaskMode(Format::BLEND_MODE_NORMAL)
 	{
@@ -81,6 +83,7 @@ public:
 	bool Render(LWF *lwf, cocos2d::Node *node, int renderingIndex,
 		bool visible, cocos2d::BlendFunc *baseBlendFunc = 0);
 
+	const string &GetBasePath() const {return m_basePath;}
 	cocos2d::LWFNode *GetNode() {return m_node;}
 };
 
