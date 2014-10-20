@@ -66,7 +66,7 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	width = data->header.width;
 	pointX = FLT_MIN;
 	pointY = FLT_MIN;
-	interactive = !data->buttonConditions.empty();
+	interactive = !data->buttons.empty();
 	isExecDisabled = false;
 	pressing = false;
 	attachVisible = true;
