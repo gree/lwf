@@ -590,7 +590,7 @@ public partial class LWF
 		m_rendererFactory.BeginRender(this);
 		m_rootMovie.Render(m_attachVisible, rOffset);
 		m_rendererFactory.EndRender(this);
-		return m_renderingCount - rIndex;
+		return m_renderingIndex - rIndex;
 	}
 
 #if UNITY_EDITOR
