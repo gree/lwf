@@ -71,7 +71,7 @@ function main()
 	FLfile.remove(bitmapDir);
 	FLfile.createFolder(bitmapDir);
 
-	if (doc.setPlayerVersion("FlashPlayer11.8")) {
+	if (doc.setPlayerVersion("FlashPlayer11.7")) {
 		// Flash CC
 		doc.asVersion = 3;
 	} else {
