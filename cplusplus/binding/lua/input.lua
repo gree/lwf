@@ -262,7 +262,6 @@ void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
 void RemoveEventHandler(std::string eventName, int id) @ removeEventListener
 void ClearEventHandler(std::string eventName) @ clearEventListener
-void DispatchEvent(std::string eventName) @ dispatchEvent
 void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(std::string aName) @ detachMovie
 void DetachMovie(LWF::Movie *movie) @ detachMovie
@@ -335,6 +334,7 @@ if (lua_gettop(L) == 3 && Luna<void>::get_uniqueid(L, 1) ==
 				'attachLWF',
 				'attachBitmap',
 				'getAttachedBitmap',
+				'dispatchEvent',
 			},
 			wrapperCode=[[
 static std::string getName(LWF::Movie &o){return o.name;}
@@ -516,6 +516,29 @@ static int addEventListener(lua_State *L)
 
 	LWF::Movie &a = static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
 	return a.lwf->AddEventHandlerLua(&a);
+}
+
+static int dispatchEvent(lua_State *L)
+{
+	LWF::Movie *a;
+	LWF::string eventName;
+	int args = lua_gettop(L);
+	if (args < 2 || args > 3)
+		goto error;
+	if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
+		goto error;
+	if (!lua_isstring(L, 2))
+		goto error;
+
+	a = Luna<LWF::Movie>::check(L, 1);
+	eventName = lua_tostring(L, 2);
+	a->DispatchEvent(eventName);
+	return 0;
+
+error:
+	luna_printStack(L);
+	luaL_error(L, "luna typecheck failed: LWF.Movie.dispatchEvent");
+	return 1;
 }
 
 			]],

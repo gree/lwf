@@ -58,15 +58,26 @@ public:
 	}
 
 	void operator()(Movie *m) {
+		lua_State *l = (lua_State *)m->lwf->luaState;
+		int args = lua_gettop(l);
 		if (!m->lwf->PushHandlerLua(handlerId))
 			return;
 
 		/* -1: function */
-		lua_State *l = (lua_State *)m->lwf->luaState;
 		Luna<Movie>::push(l, m, false);
 		/* -2: function */
 		/* -1: Movie */
-		m->lwf->CallLua(1);
+		if (args == 3) {
+			/* with argument */
+			lua_pushvalue(l, 3);
+			/* -3: function */
+			/* -2: Movie */
+			/* -1: Argument */
+			m->lwf->CallLua(2);
+		} else {
+			/* without argument */
+			m->lwf->CallLua(1);
+		}
 		/* 0 */
 	}
 

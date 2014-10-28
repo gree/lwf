@@ -1162,13 +1162,6 @@ public:                                                       // 1223
     if( lua_isstring(L,2)==0) return false;                   // 541
     return true;
   }                                                           // 554
-  inline static bool _lg_typecheck_dispatchEvent(lua_State *L)
-  {                                                           // 1249
-    if( lua_gettop(L)!=2) return false;                       // 527
-    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
-    if( lua_isstring(L,2)==0) return false;                   // 541
-    return true;
-  }                                                           // 554
   inline static bool _lg_typecheck_swapAttachedMovieDepth(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=3) return false;                       // 527
@@ -1541,6 +1534,29 @@ static int addEventListener(lua_State *L)
     return a.lwf->AddEventHandlerLua(&a);
 }
 
+static int dispatchEvent(lua_State *L)
+{
+    LWF::Movie *a;
+    LWF::string eventName;
+    int args = lua_gettop(L);
+    if (args < 2 || args > 3)
+        goto error;
+    if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
+        goto error;
+    if (!lua_isstring(L, 2))
+        goto error;
+
+    a = Luna<LWF::Movie>::check(L, 1);
+    eventName = lua_tostring(L, 2);
+    a->DispatchEvent(eventName);
+    return 0;
+
+error:
+    luna_printStack(L);
+    luaL_error(L, "luna typecheck failed: LWF.Movie.dispatchEvent");
+    return 1;
+}
+
                                                               // 1275
   static int _bind_getFullName(lua_State *L)
   {                                                           // 1282
@@ -1754,17 +1770,6 @@ static int addEventListener(lua_State *L)
     std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
     try {                                                     // 254
     self.ClearEventHandler( eventName);                       // 255
-    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
-    return 0;                                                 // 257
-  }                                                           // 333
-  static int _bind_dispatchEvent(lua_State *L)
-  {                                                           // 1282
-    if (!_lg_typecheck_dispatchEvent(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:dispatchEvent(LWF ::Movie& self,std ::string eventName,)"); }
-                                                              // 487
-    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
-    std ::string eventName=(std ::string)lua_tostring(L,2);   // 507
-    try {                                                     // 254
-    self.DispatchEvent( eventName);                           // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -2234,7 +2239,6 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"scaleTo", &impl_LunaTraits<LWF ::Movie >::_bind_scaleTo}, // 1492
     {"removeEventListener", &impl_LunaTraits<LWF ::Movie >::_bind_removeEventListener}, // 1492
     {"clearEventListener", &impl_LunaTraits<LWF ::Movie >::_bind_clearEventListener}, // 1492
-    {"dispatchEvent", &impl_LunaTraits<LWF ::Movie >::_bind_dispatchEvent}, // 1492
     {"swapAttachedMovieDepth", &impl_LunaTraits<LWF ::Movie >::_bind_swapAttachedMovieDepth}, // 1492
     {"detachFromParent", &impl_LunaTraits<LWF ::Movie >::_bind_detachFromParent}, // 1492
     {"swapAttachedBitmapDepth", &impl_LunaTraits<LWF ::Movie >::_bind_swapAttachedBitmapDepth}, // 1492
@@ -2271,6 +2275,7 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"attachLWF", &impl_LunaTraits<LWF ::Movie >::attachLWF}, // 1492
     {"attachBitmap", &impl_LunaTraits<LWF ::Movie >::attachBitmap}, // 1492
     {"getAttachedBitmap", &impl_LunaTraits<LWF ::Movie >::getAttachedBitmap}, // 1492
+    {"dispatchEvent", &impl_LunaTraits<LWF ::Movie >::dispatchEvent}, // 1492
     {"__index", &impl_LunaTraits<LWF ::Movie >::__index},     // 1492
     {"__newindex", &impl_LunaTraits<LWF ::Movie >::__newindex}, // 1492
     {0,0}                                                     // 1495
