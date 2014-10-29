@@ -36,6 +36,9 @@ extern "C" {
 
 namespace LWF {
 
+typedef map<string, int> table_t;
+extern const table_t &GetMovieEventTable();
+
 class EventHandlerWrapper
 {
 public:
@@ -62,20 +65,57 @@ public:
 		int args = lua_gettop(l);
 		if (!m->lwf->PushHandlerLua(handlerId))
 			return;
-
 		/* -1: function */
-		Luna<Movie>::push(l, m, false);
-		/* -2: function */
-		/* -1: Movie */
-		if (args == 3) {
-			/* with argument */
-			lua_pushvalue(l, 3);
-			/* -3: function */
-			/* -2: Movie */
-			/* -1: Argument */
-			m->lwf->CallLua(2);
+
+		string eventName;
+		if (args == 2) {
+			/* from Lua dispatchEvent */
+			if (lua_isstring(l, 2)) {
+				eventName = lua_tostring(l, 2);
+			} else if (lua_istable(l, 2)) {
+				lua_getfield(l, 2, "type");
+				/* -2: function */
+				/* -1: string(type) */
+				if (lua_isstring(l, -1))
+					eventName = lua_tostring(l, -1);
+				lua_pop(l, 1);
+				/* -1: function */
+			}
+		}
+
+		const table_t &t = GetMovieEventTable();
+		if (eventName.empty() || t.find(eventName) != t.end()) {
+			/* Movie event */
+			Luna<Movie>::push(l, m, false);
+			/* -2: function */
+			/* -1: Movie */
+			m->lwf->CallLua(1);
 		} else {
-			/* without argument */
+			/* User defined event */
+			lua_createtable(l, 0, 2);
+			/* -2: function */
+			/* -1: table */
+			lua_pushstring(l, eventName.c_str());
+			/* -3: function */
+			/* -2: table */
+			/* -1: string(type) */
+			lua_setfield(l, -2, "type");
+			/* -2: function */
+			/* -1: table */
+			if (lua_istable(l, 2)) {
+				lua_getfield(l, 2, "param");
+				/* -3: function */
+				/* -2: table */
+				/* -1: param */
+			} else {
+				lua_pushnil(l);
+				/* -3: function */
+				/* -2: table */
+				/* -1: nil */
+			}
+			lua_setfield(l, -2, "param");
+			/* -2: function */
+			/* -1: table */
 			m->lwf->CallLua(1);
 		}
 		/* 0 */

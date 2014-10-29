@@ -262,6 +262,7 @@ void LWF::Init()
 		rootMovie->Destroy();
 	rootMovie = make_shared<Movie>(this, (Movie *)0,
 		data->header.rootMovieId, SearchInstanceId(m_rootMovieStringId));
+	_root = rootMovie;
 }
 
 const Matrix *LWF::CalcMatrix(const Matrix *matrix)
@@ -501,6 +502,8 @@ int LWF::Inspect(Inspector inspector,
 void LWF::Destroy()
 {
 	rootMovie->Destroy();
+	rootMovie = 0;
+	_root = 0;
 #if defined(LWF_USE_LUA)
 	DestroyLua();
 #endif

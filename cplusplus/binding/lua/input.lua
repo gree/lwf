@@ -26,6 +26,7 @@ bindTarget={
 			read_properties={
 				{'name', 'getName'},
 				{'rootMovie', 'getRootMovie'},
+				{'_root', 'get_root'},
 				{'width', 'getWidth'},
 				{'height', 'getHeight'},
 				{'pointX', 'getPointX'},
@@ -86,6 +87,18 @@ static int _bind_getRootMovie(lua_State *L)
 	}
 	LWF::LWF const &a = static_cast<LWF::LWF &>(*Luna<LWF::LWF>::check(L, 1));
 	Luna<LWF::Movie>::push(L, a.rootMovie.get(), false);
+	return 1;
+}
+
+static int _bind_get_root(lua_State *L)
+{
+	if (lua_gettop(L) != 1 ||
+			Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::LWF>::uniqueID) {
+		luna_printStack(L);
+		luaL_error(L, "luna typecheck failed: LWF.LWF._root");
+	}
+	LWF::LWF const &a = static_cast<LWF::LWF &>(*Luna<LWF::LWF>::check(L, 1));
+	Luna<LWF::Movie>::push(L, a._root.get(), false);
 	return 1;
 }
 
@@ -523,15 +536,23 @@ static int dispatchEvent(lua_State *L)
 	LWF::Movie *a;
 	LWF::string eventName;
 	int args = lua_gettop(L);
-	if (args < 2 || args > 3)
+	if (args != 2)
 		goto error;
 	if (Luna<void>::get_uniqueid(L, 1) != LunaTraits<LWF::Movie>::uniqueID)
 		goto error;
-	if (!lua_isstring(L, 2))
+	if (lua_isstring(L, 2)) {
+		eventName = lua_tostring(L, 2);
+	} else if (lua_istable(L, 2)) {
+		lua_getfield(L, 2, "type");
+		if (!lua_isstring(L, -1))
+			goto error;
+		eventName = lua_tostring(L, -1);
+		lua_pop(L, 1);
+	} else {
 		goto error;
+	}
 
 	a = Luna<LWF::Movie>::check(L, 1);
-	eventName = lua_tostring(L, 2);
 	a->DispatchEvent(eventName);
 	return 0;
 

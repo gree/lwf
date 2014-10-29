@@ -77,6 +77,7 @@ public:
 	shared_ptr<IRendererFactory> rendererFactory;
 	shared_ptr<Property> property;
 	shared_ptr<Movie> rootMovie;
+	shared_ptr<Movie> _root;
 	Button *focus;
 	bool focusOnLink;
 	Button *pressed;

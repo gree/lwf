@@ -28,6 +28,7 @@ namespace LWF {
 #define EType MovieEventHandlers
 typedef map<string, int> table_t;
 static table_t table;
+const table_t &GetMovieEventTable() {return table;}
 
 static void PrepareTable()
 {
