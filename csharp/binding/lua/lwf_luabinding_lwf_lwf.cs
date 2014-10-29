@@ -46,8 +46,11 @@ public class LunaTraits_LWF_LWF
         new RegType("clearButtonEventListener", impl_LunaTraits_LWF_LWF._bind_clearButtonEventListener),
         new RegType("getName", impl_LunaTraits_LWF_LWF._bind_getName),
         new RegType("getRootMovie", impl_LunaTraits_LWF_LWF._bind_getRootMovie),
+        new RegType("get_root", impl_LunaTraits_LWF_LWF._bind_get_root),
         new RegType("getWidth", impl_LunaTraits_LWF_LWF._bind_getWidth),
         new RegType("getHeight", impl_LunaTraits_LWF_LWF._bind_getHeight),
+        new RegType("getPointX", impl_LunaTraits_LWF_LWF._bind_getPointX),
+        new RegType("getPointY", impl_LunaTraits_LWF_LWF._bind_getPointY),
         new RegType("addEventListener", impl_LunaTraits_LWF_LWF.addEventListener),
         new RegType("addMovieEventListener", impl_LunaTraits_LWF_LWF.addMovieEventListener),
         new RegType("addButtonEventListener", impl_LunaTraits_LWF_LWF.addButtonEventListener),
@@ -76,6 +79,8 @@ public class impl_LunaTraits_LWF_LWF
 	public static string getName(LWF.LWF o){return o.name;}
 	public static float getWidth(LWF.LWF o){return o.width;}
 	public static float getHeight(LWF.LWF o){return o.height;}
+	public static float getPointX(LWF.LWF o){return o.pointX;}
+	public static float getPointY(LWF.LWF o){return o.pointY;}
 
 	public static int _bind_getRootMovie(Lua.lua_State L)
 	{
@@ -87,6 +92,19 @@ public class impl_LunaTraits_LWF_LWF
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
 		Luna_LWF_Movie.push(L, a.rootMovie, false);
+		return 1;
+	}
+
+	public static int _bind_get_root(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 1 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_LWF.uniqueID) {
+			Luna.printStack(L);
+			Lua.luaL_error(L, "luna typecheck failed: LWF.LWF._root");
+		}
+
+		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
+		Luna_LWF_Movie.push(L, a._root, false);
 		return 1;
 	}
 
@@ -113,7 +131,7 @@ public class impl_LunaTraits_LWF_LWF
 		}
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
-		return a.AddEventHandlerLua();
+		return a.AddMovieEventHandlerLua();
 	}
 
 	public static int addButtonEventListener(Lua.lua_State L)
@@ -126,7 +144,7 @@ public class impl_LunaTraits_LWF_LWF
 		}
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
-		return a.AddEventHandlerLua();
+		return a.AddButtonEventHandlerLua();
 	}
 
 
@@ -585,14 +603,39 @@ public class impl_LunaTraits_LWF_LWF
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 1;
   }
+  public static int _bind_getPointX(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=7105034 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:getPointX(LWF.LWF self ...)"); }
+		LWF.LWF o=Luna_LWF_LWF.check(L,1);
+	try {
+		float ret=getPointX(o);
+		Lua.lua_pushnumber(L, ret);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 1;
+  }
+  public static int _bind_getPointY(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=7105034 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:getPointY(LWF.LWF self ...)"); }
+		LWF.LWF o=Luna_LWF_LWF.check(L,1);
+	try {
+		float ret=getPointY(o);
+		Lua.lua_pushnumber(L, ret);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 1;
+  }
 
 
 	public static void luna_init_hashmap()
 	{
         LunaTraits_LWF_LWF.properties["name"]=_bind_getName;
         LunaTraits_LWF_LWF.properties["rootMovie"]=_bind_getRootMovie;
+        LunaTraits_LWF_LWF.properties["_root"]=_bind_get_root;
         LunaTraits_LWF_LWF.properties["width"]=_bind_getWidth;
         LunaTraits_LWF_LWF.properties["height"]=_bind_getHeight;
+        LunaTraits_LWF_LWF.properties["pointX"]=_bind_getPointX;
+        LunaTraits_LWF_LWF.properties["pointY"]=_bind_getPointY;
 
 	}
 

@@ -149,6 +149,11 @@ public partial class Movie : IObject
 
 		m_displayList = new Object[m_data.depths];
 
+		m_eventHandlers = new EventHandlers();
+		m_handler = new MovieEventHandlers();
+		m_handler.Add(lwf.GetMovieEventHandlers(this));
+		m_handler.Add(handler);
+
 #if LWF_USE_LUA
 		m_isRoot = objId == lwf.data.header.rootMovieId;
 		if (m_isRoot) {
@@ -166,12 +171,8 @@ public partial class Movie : IObject
 		if (m_loadFunc != String.Empty)
 			lwf.CallFunctionLua(m_loadFunc, this);
 #endif
-		PlayAnimation(ClipEvent.LOAD);
 
-		m_eventHandlers = new EventHandlers();
-		m_handler = new MovieEventHandlers();
-		m_handler.Add(lwf.GetMovieEventHandlers(this));
-		m_handler.Add(handler);
+		PlayAnimation(ClipEvent.LOAD);
 		if (!m_handler.Empty())
 			m_handler.Call(EventType.LOAD, this);
 

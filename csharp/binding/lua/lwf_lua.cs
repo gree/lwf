@@ -497,7 +497,16 @@ public partial class LWF
 		return true;
 	}
 
-	public int AddEventHandlerLua()
+	static Dictionary<string, bool> MovieEvents = new Dictionary<string, bool>{
+		{"load",true},
+		{"postLoad",true},
+		{"unload",true},
+		{"enterFrame",true},
+		{"update",true},
+		{"render",true}
+	};
+
+	public int AddEventHandlerLua(Movie movie = null, Button button = null)
 	{
 		if (luaState==null)
 			return 0;
@@ -559,21 +568,110 @@ public partial class LWF
 		Lua.lua_pop(l, 1);
 		/* 0 */
 
-		handlerId = AddEventHandler(ev, (Movie m, Button b) => {
-			if (!m.lwf.PushHandlerLua(luaHandlerId))
-				return;
+		if (movie != null) {
+			if (string.IsNullOrEmpty(ev) || MovieEvents.ContainsKey(ev)) {
+				/* Movie event */
+				handlerId = movie.AddEventHandler(ev, (Movie m) => {
+					Lua.lua_State _l = (Lua.lua_State)m.lwf.luaState;
+					int args = Lua.lua_gettop(_l);
+					if (!m.lwf.PushHandlerLua(luaHandlerId))
+						return;
+					/* -1: function */
 
-			/* -1: function */
-			Lua.lua_State _l = (Lua.lua_State)m.lwf.luaState;
-			Luna_LWF_Movie.push(_l, m, false);
-			Luna_LWF_Button.push(_l, b, false);
-			/* -3: function */
-			/* -2: Movie */
-			/* -1: Button */
-			if (Lua.lua_pcall(l, 2, 0, 0)!=0)
-				Lua.lua_pop(l, 1);
-			/* 0 */
-		});
+					Luna_LWF_Movie.push(_l, m, false);
+					/* -2: function */
+					/* -1: Movie */
+					if (Lua.lua_pcall(_l, 1, 0, 0)!=0)
+						Lua.lua_pop(_l, 1);
+				});
+			} else {
+				handlerId = movie.AddEventHandler(ev, () => {
+					Lua.lua_State _l = (Lua.lua_State)movie.lwf.luaState;
+					int args = Lua.lua_gettop(_l);
+					if (!movie.lwf.PushHandlerLua(luaHandlerId))
+						return;
+					/* -1: function */
+
+					/* User defined event */
+					Lua.lua_createtable(_l, 0, 2);
+					/* -2: function */
+					/* -1: table */
+					Lua.lua_pushstring(_l, ev);
+					/* -3: function */
+					/* -2: table */
+					/* -1: string(type) */
+					Lua.lua_setfield(_l, -2, "type");
+					/* -2: function */
+					/* -1: table */
+					if (Lua.lua_istable(_l, 2)) {
+						Lua.lua_getfield(_l, 2, "param");
+						/* -3: function */
+						/* -2: table */
+						/* -1: param */
+					} else {
+						Lua.lua_pushnil(_l);
+						/* -3: function */
+						/* -2: table */
+						/* -1: nil */
+					}
+					Lua.lua_setfield(_l, -2, "param");
+					/* -2: function */
+					/* -1: table */
+					if (Lua.lua_pcall(_l, 1, 0, 0)!=0)
+						Lua.lua_pop(_l, 1);
+					/* 0 */
+				});
+			}
+		} else if (button != null) {
+			if (string.Compare(ev, "keyPress") == 0) {
+				handlerId = button.AddEventHandler(ev, (Button b, int k) => {
+					if (!b.lwf.PushHandlerLua(luaHandlerId))
+						return;
+
+					/* -1: function */
+					Lua.lua_State _l = (Lua.lua_State)b.lwf.luaState;
+					Luna_LWF_Button.push(_l, b, false);
+					Lua.lua_pushnumber(_l, k);
+					/* -3: function */
+					/* -2: Button */
+					/* -1: int */
+					if (Lua.lua_pcall(l, 2, 0, 0)!=0)
+						Lua.lua_pop(l, 1);
+					/* 0 */
+				});
+			} else {
+				handlerId = button.AddEventHandler(ev, (Button b) => {
+					if (!b.lwf.PushHandlerLua(luaHandlerId))
+						return;
+
+					/* -1: function */
+					Lua.lua_State _l = (Lua.lua_State)b.lwf.luaState;
+					Luna_LWF_Button.push(_l, b, false);
+					/* -2: function */
+					/* -1: Button */
+					if (Lua.lua_pcall(l, 1, 0, 0)!=0)
+						Lua.lua_pop(l, 1);
+					/* 0 */
+				});
+			}
+		} else {
+			handlerId = AddEventHandler(ev, (Movie m, Button b) => {
+				if (!m.lwf.PushHandlerLua(luaHandlerId))
+					return;
+
+				/* -1: function */
+				Lua.lua_State _l = (Lua.lua_State)m.lwf.luaState;
+				Luna_LWF_Movie.push(_l, m, false);
+				Luna_LWF_Button.push(_l, b, false);
+				/* -3: function */
+				/* -2: Movie */
+				/* -1: Button */
+				if (Lua.lua_pcall(l, 2, 0, 0)!=0)
+					Lua.lua_pop(l, 1);
+				/* 0 */
+			});
+		}
+
 		Lua.lua_pushnumber(l, handlerId);
 		/* -1: handlerId */
 		return 1;
@@ -696,7 +794,7 @@ public partial class LWF
 		return 1;
 	}
 
-	int AddButtonEventHandlerLua()
+	public int AddButtonEventHandlerLua()
 	{
 		if (luaState == null)
 			return 0;

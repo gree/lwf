@@ -344,6 +344,7 @@ public partial class Movie : IObject
 		if (child.interactive == true)
 			m_lwf.SetInteractive();
 		child.parent = this;
+		child.SetRoot(m_lwf._root);
 		child.detachHandler = detachHandler;
 		child.attachName = attachName;
 		if (attachDepth >= 0) {

@@ -25,8 +25,11 @@
 			:readProperties=>[
 				['name', 'getName'],
 				['rootMovie', 'getRootMovie'],
+				['_root', 'get_root'],
 				['width', 'getWidth'],
 				['height', 'getHeight'],
+				['pointX', 'getPointX'],
+				['pointY', 'getPointY'],
 			],
 			:memberFunctions=><<-EOS,
 void SetText(string textName, string text) @ setText
@@ -61,6 +64,8 @@ void ClearButtonEventHandler(string instanceName) @ clearButtonEventListener
 static string getName(LWF.LWF o);
 static float getWidth(LWF.LWF o);
 static float getHeight(LWF.LWF o);
+static float getPointX(LWF.LWF o);
+static float getPointY(LWF.LWF o);
 			EOS
 
 			:customFunctionsToRegister=>[
@@ -73,6 +78,8 @@ static float getHeight(LWF.LWF o);
 	public static string getName(LWF.LWF o){return o.name;}
 	public static float getWidth(LWF.LWF o){return o.width;}
 	public static float getHeight(LWF.LWF o){return o.height;}
+	public static float getPointX(LWF.LWF o){return o.pointX;}
+	public static float getPointY(LWF.LWF o){return o.pointY;}
 
 	public static int _bind_getRootMovie(Lua.lua_State L)
 	{
@@ -84,6 +91,19 @@ static float getHeight(LWF.LWF o);
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
 		Luna_LWF_Movie.push(L, a.rootMovie, false);
+		return 1;
+	}
+
+	public static int _bind_get_root(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 1 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_LWF.uniqueID) {
+			Luna.printStack(L);
+			Lua.luaL_error(L, "luna typecheck failed: LWF.LWF._root");
+		}
+
+		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
+		Luna_LWF_Movie.push(L, a._root, false);
 		return 1;
 	}
 
@@ -110,7 +130,7 @@ static float getHeight(LWF.LWF o);
 		}
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
-		return a.AddEventHandlerLua();
+		return a.AddMovieEventHandlerLua();
 	}
 
 	public static int addButtonEventListener(Lua.lua_State L)
@@ -123,7 +143,7 @@ static float getHeight(LWF.LWF o);
 		}
 
 		LWF.LWF a = Luna_LWF_LWF.check(L, 1);
-		return a.AddEventHandlerLua();
+		return a.AddButtonEventHandlerLua();
 	}
 
 		EOS
@@ -151,6 +171,10 @@ static float getHitY(LWF.Button o);
 static float getWidth(LWF.Button o);
 static float getHeight(LWF.Button o);
 			EOS
+
+			:customFunctionsToRegister=>[
+				'addEventListener',
+      ],
 
 			:wrapperCode=><<-EOS,
 	public static string getName(LWF.Button o){return o.name;}
@@ -182,6 +206,19 @@ static float getHeight(LWF.Button o);
 		LWF.Button a = Luna_LWF_Button.check(L, 1);
 		Luna_LWF_Movie.push(L, a.parent, false);
 		return 1;
+	}
+
+	public static int addEventListener(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 3 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Button.uniqueID ||
+				Lua.lua_isstring(L, 2) == 0 || !Lua.lua_isfunction(L, 3)) {
+			Luna.printStack(L);
+      Lua.luaL_error(L, "luna typecheck failed: LWF.Button.addEventListener");
+		}
+
+		LWF.Button a = Luna_LWF_Button.check(L, 1);
+    return a.lwf.AddEventHandlerLua(null, a);
 	}
 
 			EOS
@@ -238,7 +275,6 @@ void Scale(float vx, float vy) @ scale
 void ScaleTo(float vx, float vy) @ scaleTo
 void RemoveEventHandler(string eventName, int id) @ removeEventListener
 void ClearEventHandler(string eventName) @ clearEventListener
-void DispatchEvent(string eventName) @ dispatchEvent
 void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(string aName) @ detachMovie
 void DetachMovie(LWF.Movie movie) @ detachMovie
@@ -313,9 +349,11 @@ static void setBlue(LWF.Movie o, float v);
 			EOS
 
 			:customFunctionsToRegister=>[
+				'addEventListener',
 				'attachMovie',
 				'attachEmptyMovie',
 				'attachLWF',
+        'dispatchEvent',
 			],
 
 			:wrapperCode=><<-EOS,
@@ -446,6 +484,49 @@ static void setBlue(LWF.Movie o, float v);
 		Luna.printStack(L);
 		Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.attachLWF");
 		return 1;
+	}
+
+	public static int addEventListener(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 3 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID ||
+				Lua.lua_isstring(L, 2) == 0 || !Lua.lua_isfunction(L, 3)) {
+			Luna.printStack(L);
+      Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.addEventListener");
+		}
+
+		LWF.Movie a = Luna_LWF_Movie.check(L, 1);
+    return a.lwf.AddEventHandlerLua(a);
+	}
+
+	public static int dispatchEvent(Lua.lua_State L)
+	{
+    LWF.Movie a;
+    string eventName;
+		if (Lua.lua_gettop(L) != 2)
+      goto error;
+		if (Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID)
+      goto error;
+    if (Lua.lua_isstring(L, 2)!=0) {
+      eventName = Lua.lua_tostring(L, 2).ToString();
+    } else if (Lua.lua_istable(L, 2)) {
+      Lua.lua_getfield(L, 2, "type");
+      if (Lua.lua_isstring(L, -1)==0)
+        goto error;
+      eventName = Lua.lua_tostring(L, -1).ToString();
+      Lua.lua_pop(L, 1);
+    } else {
+      goto error;
+    }
+
+		a = Luna_LWF_Movie.check(L, 1);
+		a.DispatchEvent(eventName);
+    return 0;
+
+	error:
+		Luna.printStack(L);
+    Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.dispatchEvent");
+    return 1;
 	}
 
 			EOS

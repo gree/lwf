@@ -31,6 +31,7 @@ public class LunaTraits_LWF_Button
         new RegType("getHitY", impl_LunaTraits_LWF_Button._bind_getHitY),
         new RegType("getWidth", impl_LunaTraits_LWF_Button._bind_getWidth),
         new RegType("getHeight", impl_LunaTraits_LWF_Button._bind_getHeight),
+        new RegType("addEventListener", impl_LunaTraits_LWF_Button.addEventListener),
 
 		new RegType("__index", impl_LunaTraits_LWF_Button.__index),
 		new RegType("__newindex", impl_LunaTraits_LWF_Button.__newindex),
@@ -82,6 +83,19 @@ public class impl_LunaTraits_LWF_Button
 		LWF.Button a = Luna_LWF_Button.check(L, 1);
 		Luna_LWF_Movie.push(L, a.parent, false);
 		return 1;
+	}
+
+	public static int addEventListener(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 3 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Button.uniqueID ||
+				Lua.lua_isstring(L, 2) == 0 || !Lua.lua_isfunction(L, 3)) {
+			Luna.printStack(L);
+      Lua.luaL_error(L, "luna typecheck failed: LWF.Button.addEventListener");
+		}
+
+		LWF.Button a = Luna_LWF_Button.check(L, 1);
+    return a.lwf.AddEventHandlerLua(null, a);
 	}
 
 

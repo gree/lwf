@@ -39,7 +39,6 @@ public class LunaTraits_LWF_Movie
         new RegType("scaleTo", impl_LunaTraits_LWF_Movie._bind_scaleTo),
         new RegType("removeEventListener", impl_LunaTraits_LWF_Movie._bind_removeEventListener),
         new RegType("clearEventListener", impl_LunaTraits_LWF_Movie._bind_clearEventListener),
-        new RegType("dispatchEvent", impl_LunaTraits_LWF_Movie._bind_dispatchEvent),
         new RegType("swapAttachedMovieDepth", impl_LunaTraits_LWF_Movie._bind_swapAttachedMovieDepth),
         new RegType("detachMovie", impl_LunaTraits_LWF_Movie._bind_detachMovie),
         new RegType("detachFromParent", impl_LunaTraits_LWF_Movie._bind_detachFromParent),
@@ -72,9 +71,11 @@ public class LunaTraits_LWF_Movie
         new RegType("setRed", impl_LunaTraits_LWF_Movie._bind_setRed),
         new RegType("setGreen", impl_LunaTraits_LWF_Movie._bind_setGreen),
         new RegType("setBlue", impl_LunaTraits_LWF_Movie._bind_setBlue),
+        new RegType("addEventListener", impl_LunaTraits_LWF_Movie.addEventListener),
         new RegType("attachMovie", impl_LunaTraits_LWF_Movie.attachMovie),
         new RegType("attachEmptyMovie", impl_LunaTraits_LWF_Movie.attachEmptyMovie),
         new RegType("attachLWF", impl_LunaTraits_LWF_Movie.attachLWF),
+        new RegType("dispatchEvent", impl_LunaTraits_LWF_Movie.dispatchEvent),
 
 		new RegType("__index", impl_LunaTraits_LWF_Movie.__index),
 		new RegType("__newindex", impl_LunaTraits_LWF_Movie.__newindex),
@@ -224,6 +225,49 @@ public class impl_LunaTraits_LWF_Movie
 		Luna.printStack(L);
 		Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.attachLWF");
 		return 1;
+	}
+
+	public static int addEventListener(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 3 ||
+				Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID ||
+				Lua.lua_isstring(L, 2) == 0 || !Lua.lua_isfunction(L, 3)) {
+			Luna.printStack(L);
+      Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.addEventListener");
+		}
+
+		LWF.Movie a = Luna_LWF_Movie.check(L, 1);
+    return a.lwf.AddEventHandlerLua(a);
+	}
+
+	public static int dispatchEvent(Lua.lua_State L)
+	{
+    LWF.Movie a;
+    string eventName;
+		if (Lua.lua_gettop(L) != 2)
+      goto error;
+		if (Luna.get_uniqueid(L, 1) != LunaTraits_LWF_Movie.uniqueID)
+      goto error;
+    if (Lua.lua_isstring(L, 2)!=0) {
+      eventName = Lua.lua_tostring(L, 2).ToString();
+    } else if (Lua.lua_istable(L, 2)) {
+      Lua.lua_getfield(L, 2, "type");
+      if (Lua.lua_isstring(L, -1)==0)
+        goto error;
+      eventName = Lua.lua_tostring(L, -1).ToString();
+      Lua.lua_pop(L, 1);
+    } else {
+      goto error;
+    }
+
+		a = Luna_LWF_Movie.check(L, 1);
+		a.DispatchEvent(eventName);
+    return 0;
+
+	error:
+		Luna.printStack(L);
+    Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.dispatchEvent");
+    return 1;
 	}
 
 
@@ -476,19 +520,6 @@ public class impl_LunaTraits_LWF_Movie
 		string eventName=Lua.lua_tostring(L,2).ToString();
 	try {
 		self.ClearEventHandler(eventName);
-	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
-	return 0;
-  }
-  public static int _bind_dispatchEvent(Lua.lua_State L)
-  {
-	if (Lua.lua_gettop(L)!=2
-            || Luna.get_uniqueid(L,1)!=29625181 
-            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:dispatchEvent(LWF.Movie self)"); }
-
-	LWF.Movie self=Luna_LWF_Movie.check(L,1);
-		string eventName=Lua.lua_tostring(L,2).ToString();
-	try {
-		self.DispatchEvent(eventName);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }

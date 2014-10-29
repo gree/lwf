@@ -73,6 +73,7 @@ public partial class LWF
 	private int m_rootMovieStringId;
 	private Property m_property;
 	private Movie m_rootMovie;
+	private Movie m__root;
 	private IObject[] m_instances;
 	private Button m_focus;
 	private Button m_pressed;
@@ -143,6 +144,7 @@ public partial class LWF
 		{get {return m_rendererFactory;}}
 	public Property property {get {return m_property;}}
 	public Movie rootMovie {get {return m_rootMovie;}}
+	public Movie _root {get {return m__root;}}
 	public Button focus {get {return m_focus;}}
 	public Button pressed {get {return m_pressed;}}
 	public Button buttonHead {
@@ -381,6 +383,12 @@ public partial class LWF
 			m_rootMovie.Destroy();
 		m_rootMovie = new Movie(this, null,
 			m_data.header.rootMovieId, SearchInstanceId(m_rootMovieStringId));
+		m__root = m_rootMovie;
+	}
+
+	public void SetRoot(Movie root)
+	{
+		m__root = root;
 	}
 
 	private Matrix CalcMatrix(Matrix matrix)
