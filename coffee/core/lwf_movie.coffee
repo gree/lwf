@@ -508,6 +508,8 @@ class Movie extends IObject
               obj.blendMode = "multiply"
             when Format.Constant.BLEND_MODE_SCREEN
               obj.blendMode = "screen"
+            when Format.Constant.BLEND_MODE_SUBTRACT
+              obj.blendMode = "subtract"
         when Type.BITMAP
           obj = new Bitmap(@lwf, @, dataObjectId)
         when Type.BITMAPEX
@@ -920,7 +922,7 @@ class Movie extends IObject
     useMaskMode = false
     if @blendMode isnt "normal"
       switch @blendMode
-        when "add"
+        when "add", "multiply", "screen", "subtract"
           @lwf.beginBlendMode(@blendMode)
           useBlendMode = true
         when "erase", "layer", "mask", "alpha"

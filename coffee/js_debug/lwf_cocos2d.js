@@ -566,6 +566,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.BLEND_MODE_SCREEN = 6;
 
+      Constant.BLEND_MODE_SUBTRACT = 7;
+
       return Constant;
 
     })();
@@ -4141,6 +4143,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 break;
               case Format.Constant.BLEND_MODE_SCREEN:
                 obj.blendMode = "screen";
+                break;
+              case Format.Constant.BLEND_MODE_SUBTRACT:
+                obj.blendMode = "subtract";
             }
             break;
           case Type.BITMAP:
@@ -4696,6 +4701,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.blendMode !== "normal") {
         switch (this.blendMode) {
           case "add":
+          case "multiply":
+          case "screen":
+          case "subtract":
             this.lwf.beginBlendMode(this.blendMode);
             useBlendMode = true;
             break;

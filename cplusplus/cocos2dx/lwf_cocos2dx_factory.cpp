@@ -107,20 +107,33 @@ static void PlaceNode(Node *newParent, Node *node)
 	}
 }
 
-static GLenum GetBlendDstFactor(int blendMode)
+static void GetBlendFunc(BlendFunc &blendFunc, int blendMode)
 {
 	switch (blendMode) {
 	case Format::BLEND_MODE_ADD:
-		return GL_ONE;
+		// keep blendFunc.src
+		blendFunc.dst = GL_ONE;
+		break;
 
 	case Format::BLEND_MODE_MULTIPLY:
-		return GL_DST_COLOR;
+		blendFunc.src = GL_DST_COLOR;
+		blendFunc.dst = GL_ONE_MINUS_SRC_ALPHA;
+		break;
 
 	case Format::BLEND_MODE_SCREEN:
-		return GL_ONE;
+		blendFunc.src = GL_ONE_MINUS_DST_COLOR;
+		blendFunc.dst = GL_ONE;
+		break;
+
+	case Format::BLEND_MODE_SUBTRACT:
+		blendFunc.src = GL_SRC_ALPHA;
+		blendFunc.dst = GL_ONE;
+		break;
 
 	default:
-		return GL_ONE_MINUS_SRC_ALPHA;
+		// keep blendFunc.src
+		blendFunc.dst = GL_ONE_MINUS_SRC_ALPHA;
+		break;
 	}
 }
 
@@ -278,8 +291,9 @@ bool LWFRendererFactory::Render(class LWF *lwf,
 								{GL_DST_ALPHA, GL_ZERO});
 							break;
 						}
-						mask->setBlendFunc(
-							{GL_ONE, GetBlendDstFactor(m_blendMode)});
+						BlendFunc blendFunc = {GL_ONE, GL_ZERO};
+						GetBlendFunc(blendFunc, m_blendMode);
+						mask->setBlendFunc(blendFunc);
 						break;
 					}
 				}
@@ -309,7 +323,7 @@ bool LWFRendererFactory::Render(class LWF *lwf,
 		return true;
 
 	BlendFunc blendFunc = baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
-	blendFunc.dst = GetBlendDstFactor(m_blendMode);
+	GetBlendFunc(blendFunc, m_blendMode);
 	p->setBlendFunc(blendFunc);
 
 	return true;

@@ -563,6 +563,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
       Constant.BLEND_MODE_SCREEN = 6;
 
+      Constant.BLEND_MODE_SUBTRACT = 7;
+
       return Constant;
 
     })();
@@ -4138,6 +4140,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 break;
               case Format.Constant.BLEND_MODE_SCREEN:
                 obj.blendMode = "screen";
+                break;
+              case Format.Constant.BLEND_MODE_SUBTRACT:
+                obj.blendMode = "subtract";
             }
             break;
           case Type.BITMAP:
@@ -4693,6 +4698,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.blendMode !== "normal") {
         switch (this.blendMode) {
           case "add":
+          case "multiply":
+          case "screen":
+          case "subtract":
             this.lwf.beginBlendMode(this.blendMode);
             useBlendMode = true;
             break;
@@ -10853,8 +10861,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
             break;
           case "screen":
-            this.blendSrcFactor = gl.ONE;
-            this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+            this.blendSrcFactor = gl.ONE_MINUS_DST_COLOR;
+            this.blendDstFactor = gl.ONE;
+            break;
+          case "subtract":
+            this.blendSrcFactor = gl.SRC_ALPHA;
+            this.blendDstFactor = gl.ONE;
             break;
           default:
             this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;

@@ -64,6 +64,7 @@ enum Constant
 	BLEND_MODE_MASK = 4,
 	BLEND_MODE_MULTIPLY = 5,
 	BLEND_MODE_SCREEN = 6,
+	BLEND_MODE_SUBTRACT = 7,
 };
 
 struct StringBase

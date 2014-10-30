@@ -554,8 +554,11 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
           @blendSrcFactor = gl.DST_COLOR
           @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
         when "screen"
-          @blendSrcFactor = gl.ONE
-          @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
+          @blendSrcFactor = gl.ONE_MINUS_DST_COLOR
+          @blendDstFactor = gl.ONE
+        when "subtract"
+          @blendSrcFactor = gl.SRC_ALPHA
+          @blendDstFactor = gl.ONE
         else
           @blendSrcFactor =
             if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA

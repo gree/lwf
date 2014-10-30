@@ -101,6 +101,7 @@ BLEND_ERASE = 3
 BLEND_MASK = 4
 BLEND_MULTIPLY = 5
 BLEND_SCREEN = 6
+BLEND_SUBTRACT = 7
 
 BLEND_MODE = {
    0 => {:type => "normal",     :supported => true, :value => BLEND_NORMAL},
@@ -112,7 +113,7 @@ BLEND_MODE = {
    6 => {:type => "darken",     :supported => false},
    7 => {:type => "difference", :supported => false},
    8 => {:type => "add",        :supported => true, :value => BLEND_ADD},
-   9 => {:type => "subtract",   :supported => false},
+   9 => {:type => "subtract",   :supported => true, :value => BLEND_SUBTRACT},
   10 => {:type => "invert",     :supported => false},
   11 => {:type => "alpha",      :supported => true, :value => BLEND_MASK},
   12 => {:type => "erase",      :supported => true, :value => BLEND_ERASE},
