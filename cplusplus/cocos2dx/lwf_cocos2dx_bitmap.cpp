@@ -29,7 +29,7 @@
 
 namespace LWF {
 
-class LWFBitmap : public cocos2d::Sprite
+class LWFBitmap : public cocos2d::Sprite, public BlendEquationProtocol
 {
 protected:
 	Matrix m_matrix;
@@ -187,6 +187,20 @@ public:
 	{
 		return m_baseBlendFunc;
 	}
+
+	virtual void draw(cocos2d::Renderer *renderer,
+		const cocos2d::Mat4 &transform, uint32_t flags) override
+	{
+		if (m_blendEquation)
+			BlendEquationProtocol::addBeginCommand(
+				renderer, transform, flags, _globalZOrder);
+
+		cocos2d::Sprite::draw(renderer, transform, flags);
+
+		if (m_blendEquation)
+			BlendEquationProtocol::addEndCommand(
+				renderer, transform, flags, _globalZOrder);
+	}
 };
 
 LWFBitmapRenderer::LWFBitmapRenderer(
@@ -277,7 +291,7 @@ void LWFBitmapRenderer::Render(
 
     cocos2d::BlendFunc baseBlendFunc = m_sprite->getBaseBlendFunc();
 	if (!m_factory->Render(
-			lwf, m_sprite, renderingIndex, visible, &baseBlendFunc))
+			lwf, m_sprite, m_sprite, renderingIndex, visible, &baseBlendFunc))
 		return;
 
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);

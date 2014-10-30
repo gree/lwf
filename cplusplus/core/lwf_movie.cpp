@@ -805,6 +805,9 @@ void Movie::Render(bool v, int rOffset)
 	if (blendMode != Format::BLEND_MODE_NORMAL) {
 		switch (blendMode) {
 		case Format::BLEND_MODE_ADD:
+		case Format::BLEND_MODE_MULTIPLY:
+		case Format::BLEND_MODE_SCREEN:
+		case Format::BLEND_MODE_SUBTRACT:
 			lwf->BeginBlendMode(blendMode);
 			useBlendMode = true;
 			break;

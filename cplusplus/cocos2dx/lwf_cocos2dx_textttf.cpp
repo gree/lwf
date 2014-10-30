@@ -28,7 +28,7 @@
 
 namespace LWF {
 
-class LWFTextTTF : public cocos2d::Label
+class LWFTextTTF : public cocos2d::Label, public BlendEquationProtocol
 {
 protected:
 	cocos2d::Mat4 m_nodeToParentTransform;
@@ -125,6 +125,20 @@ public:
 			(GLubyte)(c.blue * m_blue * dc.b)});
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
+
+	virtual void draw(cocos2d::Renderer *renderer,
+		const cocos2d::Mat4 &transform, uint32_t flags) override
+	{
+		if (m_blendEquation)
+			BlendEquationProtocol::addBeginCommand(
+				renderer, transform, flags, _globalZOrder);
+
+		cocos2d::Label::draw(renderer, transform, flags);
+
+		if (m_blendEquation)
+			BlendEquationProtocol::addEndCommand(
+				renderer, transform, flags, _globalZOrder);
+	}
 };
 
 LWFTextTTFRenderer::LWFTextTTFRenderer(LWF *l, Text *text, bool useTTF,
@@ -200,7 +214,7 @@ void LWFTextTTFRenderer::Render(
 	if (!m_label)
 		return;
 
-	if (!m_factory->Render(lwf, m_label, renderingIndex, visible))
+	if (!m_factory->Render(lwf, m_label, m_label, renderingIndex, visible))
 		return;
 
 	m_label->setMatrixAndColorTransform(

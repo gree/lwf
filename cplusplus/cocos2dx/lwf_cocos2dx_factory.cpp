@@ -126,7 +126,7 @@ static void GetBlendFunc(BlendFunc &blendFunc, int blendMode)
 		break;
 
 	case Format::BLEND_MODE_SUBTRACT:
-		blendFunc.src = GL_SRC_ALPHA;
+		// keep blendFunc.src
 		blendFunc.dst = GL_ONE;
 		break;
 
@@ -240,8 +240,9 @@ void LWFRendererFactory::ScaleForWidth(class LWF *lwf, float w, float h)
 	lwf->property->Scale(scale, scale);
 }
 
-bool LWFRendererFactory::Render(class LWF *lwf,
-	Node *node, int renderingIndex, bool visible, BlendFunc *baseBlendFunc)
+bool LWFRendererFactory::Render(class LWF *lwf, Node *node,
+	BlendEquationProtocol *be, int renderingIndex, bool visible,
+	BlendFunc *baseBlendFunc)
 {
 	m_renderingIndex = renderingIndex;
 
@@ -319,14 +320,69 @@ bool LWFRendererFactory::Render(class LWF *lwf,
 	node->setLocalZOrder(renderingIndex);
 
 	BlendProtocol *p = dynamic_cast<BlendProtocol *>(node);
-	if (!p)
-		return true;
+	if (p) {
+		BlendFunc blendFunc =
+			baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
+		GetBlendFunc(blendFunc, m_blendMode);
+		p->setBlendFunc(blendFunc);
+	}
 
-	BlendFunc blendFunc = baseBlendFunc ? *baseBlendFunc : p->getBlendFunc();
-	GetBlendFunc(blendFunc, m_blendMode);
-	p->setBlendFunc(blendFunc);
+	switch (m_blendMode) {
+	case Format::BLEND_MODE_SUBTRACT:
+		BlendEquationProtocol *ep = dynamic_cast<BlendEquationProtocol *>(node);
+		if (ep)
+			ep->setBlendEquation(m_blendMode);
+		break;
+	}
 
 	return true;
+}
+
+BlendEquationProtocol::BlendEquationProtocol()
+	: m_blendEquation(0)
+{
+}
+
+void BlendEquationProtocol::setBlendEquation(int blendMode)
+{
+	switch (blendMode) {
+	case Format::BLEND_MODE_SUBTRACT:
+		m_blendEquation = GL_FUNC_REVERSE_SUBTRACT;
+		break;
+	default:
+		m_blendEquation = 0;
+		break;
+	}
+}
+
+void BlendEquationProtocol::addBeginCommand(cocos2d::Renderer *renderer,
+	const cocos2d::Mat4 &transform, uint32_t flags, float globalZOrder)
+{
+	m_beginCommand.init(globalZOrder);
+	m_beginCommand.func = CC_CALLBACK_0(
+		BlendEquationProtocol::onBlendEquationBegin, this, transform, flags);
+	renderer->addCommand(&m_beginCommand);
+}
+
+void BlendEquationProtocol::addEndCommand(cocos2d::Renderer *renderer,
+	const cocos2d::Mat4 &transform, uint32_t flags, float globalZOrder)
+{
+	m_endCommand.init(globalZOrder);
+	m_endCommand.func = CC_CALLBACK_0(
+		BlendEquationProtocol::onBlendEquationEnd, this, transform, flags);
+	renderer->addCommand(&m_endCommand);
+}
+
+void BlendEquationProtocol::onBlendEquationBegin(
+	const cocos2d::Mat4 &transform, uint32_t flags)
+{
+	glBlendEquation(m_blendEquation);
+}
+
+void BlendEquationProtocol::onBlendEquationEnd(
+	const cocos2d::Mat4 &transform, uint32_t flags)
+{
+	glBlendEquation(GL_FUNC_ADD);
 }
 
 }	// namespace LWF
