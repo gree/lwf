@@ -10683,11 +10683,15 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    WebGLRendererFactory.prototype.blendFunc = function(gl, blendSrcFactor, blendDstFactor) {
+    WebGLRendererFactory.prototype.blendFunc = function(gl, blendSrcFactor, blendDstFactor, blendEquation) {
       if (this.setSrcFactor !== blendSrcFactor || this.setDstFactor !== blendDstFactor) {
         this.setSrcFactor = blendSrcFactor;
         this.setDstFactor = blendDstFactor;
         gl.blendFunc(blendSrcFactor, blendDstFactor);
+      }
+      if (this.setEquation !== blendEquation) {
+        this.setEquation = blendEquation;
+        gl.blendEquation(blendEquation);
       }
     };
 
@@ -10729,6 +10733,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.bindedTexture = null;
       this.setSrcFactor = null;
       this.setDstFactor = null;
+      this.setEquation = null;
       this.bindedVertexBuffer = null;
       this.bindedIndexBuffer = null;
       this.currentBlendMode = "normal";
@@ -10855,22 +10860,27 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           case "add":
             this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
             this.blendDstFactor = gl.ONE;
+            this.blendEquation = gl.FUNC_ADD;
             break;
           case "multiply":
             this.blendSrcFactor = gl.DST_COLOR;
             this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+            this.blendEquation = gl.FUNC_ADD;
             break;
           case "screen":
             this.blendSrcFactor = gl.ONE_MINUS_DST_COLOR;
             this.blendDstFactor = gl.ONE;
+            this.blendEquation = gl.FUNC_ADD;
             break;
           case "subtract":
-            this.blendSrcFactor = gl.SRC_ALPHA;
+            this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
             this.blendDstFactor = gl.ONE;
+            this.blendEquation = gl.FUNC_REVERSE_SUBTRACT;
             break;
           default:
             this.blendSrcFactor = context.preMultipliedAlpha ? gl.ONE : gl.SRC_ALPHA;
             this.blendDstFactor = gl.ONE_MINUS_SRC_ALPHA;
+            this.blendEquation = gl.FUNC_ADD;
         }
         if (shader !== this.currentShader) {
           if (this.currentShader != null) {
@@ -10987,7 +10997,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         return;
       }
       this.bindTexture(gl, this.currentTexture);
-      this.blendFunc(gl, this.blendSrcFactor, this.blendDstFactor);
+      this.blendFunc(gl, this.blendSrcFactor, this.blendDstFactor, this.blendEquation);
       if (this.bindedVertexBuffer === this.vertexBuffer) {
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertexData);
       } else {
@@ -11075,12 +11085,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.maskFrameBuffer);
       this.bindTexture(gl, this.layerTexture);
-      this.blendFunc(gl, this.maskSrcFactor, gl.ZERO);
+      this.blendFunc(gl, this.maskSrcFactor, gl.ZERO, gl.FUNC_ADD);
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
       ++this.drawCalls;
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       this.bindTexture(gl, this.maskTexture);
-      this.blendFunc(gl, gl.ONE, this.blendDstFactor);
+      this.blendFunc(gl, gl.ONE, this.blendDstFactor, gl.FUNC_ADD);
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
       ++this.drawCalls;
     };

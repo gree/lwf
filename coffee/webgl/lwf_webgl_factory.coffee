@@ -398,11 +398,14 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @bindedTexture = texture
     return
 
-  blendFunc:(gl, blendSrcFactor, blendDstFactor) ->
+  blendFunc:(gl, blendSrcFactor, blendDstFactor, blendEquation) ->
     if @setSrcFactor isnt blendSrcFactor or @setDstFactor isnt blendDstFactor
       @setSrcFactor = blendSrcFactor
       @setDstFactor = blendDstFactor
       gl.blendFunc(blendSrcFactor, blendDstFactor)
+    if @setEquation isnt blendEquation
+      @setEquation = blendEquation
+      gl.blendEquation(blendEquation)
     return
 
   bindVertexBuffer:(gl, buffer) ->
@@ -437,6 +440,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     @bindedTexture = null
     @setSrcFactor = null
     @setDstFactor = null
+    @setEquation = null
     @bindedVertexBuffer = null
     @bindedIndexBuffer = null
     @currentBlendMode = "normal"
@@ -550,19 +554,25 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
           @blendSrcFactor =
             if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
           @blendDstFactor = gl.ONE
+          @blendEquation = gl.FUNC_ADD
         when "multiply"
           @blendSrcFactor = gl.DST_COLOR
           @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
+          @blendEquation = gl.FUNC_ADD
         when "screen"
           @blendSrcFactor = gl.ONE_MINUS_DST_COLOR
           @blendDstFactor = gl.ONE
+          @blendEquation = gl.FUNC_ADD
         when "subtract"
-          @blendSrcFactor = gl.SRC_ALPHA
+          @blendSrcFactor =
+            if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
           @blendDstFactor = gl.ONE
+          @blendEquation = gl.FUNC_REVERSE_SUBTRACT
         else
           @blendSrcFactor =
             if context.preMultipliedAlpha then gl.ONE else gl.SRC_ALPHA
           @blendDstFactor = gl.ONE_MINUS_SRC_ALPHA
+          @blendEquation = gl.FUNC_ADD
       if shader isnt @currentShader
         @currentShader.disable(gl) if @currentShader?
         @currentShader = shader.use(gl, @pMatrix)
@@ -668,7 +678,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     return if @currentTexture is null or @currentShader is null or @faces is 0
 
     @bindTexture(gl, @currentTexture)
-    @blendFunc(gl, @blendSrcFactor, @blendDstFactor)
+    @blendFunc(gl, @blendSrcFactor, @blendDstFactor, @blendEquation)
 
     if @bindedVertexBuffer is @vertexBuffer
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, @vertexData)
@@ -765,13 +775,13 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, @maskFrameBuffer)
     @bindTexture(gl, @layerTexture)
-    @blendFunc(gl, @maskSrcFactor, gl.ZERO)
+    @blendFunc(gl, @maskSrcFactor, gl.ZERO, gl.FUNC_ADD)
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
   
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     @bindTexture(gl, @maskTexture)
-    @blendFunc(gl, gl.ONE, @blendDstFactor)
+    @blendFunc(gl, gl.ONE, @blendDstFactor, gl.FUNC_ADD)
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
     ++@drawCalls
     return
