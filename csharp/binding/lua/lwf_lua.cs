@@ -573,7 +573,6 @@ public partial class LWF
 				/* Movie event */
 				handlerId = movie.AddEventHandler(ev, (Movie m) => {
 					Lua.lua_State _l = (Lua.lua_State)m.lwf.luaState;
-					int args = Lua.lua_gettop(_l);
 					if (!m.lwf.PushHandlerLua(luaHandlerId))
 						return;
 					/* -1: function */
@@ -587,7 +586,6 @@ public partial class LWF
 			} else {
 				handlerId = movie.AddEventHandler(ev, () => {
 					Lua.lua_State _l = (Lua.lua_State)movie.lwf.luaState;
-					int args = Lua.lua_gettop(_l);
 					if (!movie.lwf.PushHandlerLua(luaHandlerId))
 						return;
 					/* -1: function */

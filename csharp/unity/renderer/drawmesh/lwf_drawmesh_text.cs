@@ -113,8 +113,8 @@ public class TextMeshRenderer : UnityTextRenderer
 		if (!m_visible || m_empty)
 			return;
 
-		Graphics.DrawMesh(m_mesh,
-			m_renderMatrix, m_context.settings.font.material, 0);
+		m_context.settings.font.material.SetPass(0);
+		Graphics.DrawMeshNow(m_mesh, m_renderMatrix);
 	}
 #endif
 }

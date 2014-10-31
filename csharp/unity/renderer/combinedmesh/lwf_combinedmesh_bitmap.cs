@@ -76,7 +76,6 @@ public class BitmapContext
 {
 	private Factory m_factory;
 	private Material m_material;
-	private Material m_additiveMaterial;
 	private Data m_data;
 	private float m_height;
 	private int m_objectId;
@@ -89,7 +88,6 @@ public class BitmapContext
 
 	public Factory factory {get {return m_factory;}}
 	public Material material {get {return m_material;}}
-	public Material additiveMaterial {get {return m_additiveMaterial;}}
 	public Data data {get {return m_data;}}
 	public string textureName {get {return m_textureName;}}
 	public float height {get {return m_height;}}
@@ -190,12 +188,6 @@ public class BitmapContext
 		}
 	}
 
-	public void GetAdditiveMaterial()
-	{
-		m_additiveMaterial = ResourceCache.SharedInstance().GetAdditiveMaterial(
-			m_data.name, m_textureName);
-	}
-
 	public void Destruct()
 	{
 		ResourceCache.SharedInstance().UnloadTexture(
@@ -206,10 +198,12 @@ public class BitmapContext
 public class BitmapRenderer : Renderer, IMeshRenderer
 {
 	BitmapContext m_context;
+	Material m_material;
 	Matrix m_matrix;
 	Matrix4x4 m_matrixForRender;
 	UnityEngine.Color m_colorMult;
 	UnityEngine.Color m_colorAdd;
+	int m_blendMode;
 	int m_z;
 	bool m_updated;
 
@@ -220,8 +214,17 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 		m_matrixForRender = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
 		m_colorAdd = new UnityEngine.Color();
+		m_blendMode = (int)Format.Constant.BLEND_MODE_NORMAL;
 		m_z = -1;
 		m_updated = false;
+	}
+
+	public override void Destruct()
+	{
+		if (m_material != null) {
+			Material.Destroy(m_material);
+			m_material = null;
+		}
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
@@ -256,14 +259,19 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 			m_updated = false;
 		}
 
-		Material material = null;
-		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
-			if (m_context.additiveMaterial == null)
-				m_context.GetAdditiveMaterial();
-			material = m_context.additiveMaterial;
-		} else {
-			material = m_context.material;
+		if (m_blendMode != factory.blendMode) {
+			m_blendMode = factory.blendMode;
+			if (m_material != null) {
+				Material.Destroy(m_material);
+				m_material = null;
+			}
+
+			m_material = ResourceCache.CreateBlendMaterial(
+				m_context.material, m_context.premultipliedAlpha, m_blendMode);
 		}
+
+		Material material =
+			m_material == null ? m_context.material : m_material;
 
 		factory.Render(this, 1, material, m_colorAdd);
 	}

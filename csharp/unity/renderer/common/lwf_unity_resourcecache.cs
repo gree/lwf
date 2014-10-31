@@ -23,6 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
+using BlendMode = UnityEngine.Rendering.BlendMode;
+using BlendOp = UnityEngine.Rendering.BlendOp;
+
 using LWFDataLoader = System.Func<string, byte[]>;
 using TextureLoader = System.Func<string, UnityEngine.Texture2D>;
 using TextureUnloader = System.Action<UnityEngine.Texture2D>;
@@ -50,7 +53,6 @@ namespace UnityRenderer {
 public class TextureContext
 {
 	public UnityEngine.Material material;
-	public UnityEngine.Material additiveMaterial;
 	public TextureUnloader unloader;
 
 	public TextureContext(UnityEngine.Material m, TextureUnloader u)
@@ -197,24 +199,29 @@ public class ResourceCache
 		TextureItem item;
 		string cacheName = lwfName + "/" + filename;
 		if (!m_textureCache.TryGetValue(cacheName, out item)) {
-			string shaderName = null;
+			Shader shader = GetShader("LWF");
+			Material material = new Material(shader);
+			if (useAdditionalColor)
+				material.EnableKeyword("ENABLE_ADD_COLOR");
+			material.SetInt("BlendEquation", (int)BlendOp.Add);
+
+			int blendModeSrc;
 			switch ((Format.Constant)format) {
 			default:
 			case Format.Constant.TEXTUREFORMAT_NORMAL:
-				shaderName = "LWF/Normal";
+				blendModeSrc = (int)BlendMode.SrcAlpha;
 				break;
+
 			case Format.Constant.TEXTUREFORMAT_PREMULTIPLIEDALPHA:
-				shaderName = "LWF/PreMultipliedAlpha";
+				blendModeSrc = (int)BlendMode.One;
 				break;
 			}
-			if (useAdditionalColor)
-				shaderName += "Additional";
-			Shader shader = GetShader(shaderName);
+			material.SetInt("BlendModeSrc", blendModeSrc);
+			material.SetInt("BlendModeDst", (int)BlendMode.OneMinusSrcAlpha);
 
 			if (textureLoader == null)
 				textureLoader = m_textureLoader;
 
-			Material material = new Material(shader);
 			material.mainTexture = textureLoader(filename);
 			if (material.mainTexture != null) {
 				material.mainTexture.name =
@@ -232,35 +239,48 @@ public class ResourceCache
 		return item.Entity().material;
 	}
 
-	private Shader GetAdditiveShader(Shader shader)
+	public static Material CreateBlendMaterial(
+		Material baseMaterial, bool premultipliedAlpha, int blendMode)
 	{
-		string shaderName = shader.name;
-		Regex r = new Regex("Additive");
-		if (r.IsMatch(shaderName))
-			return shader;
+		switch (blendMode) {
+		case (int)Format.Constant.BLEND_MODE_ADD:
+		case (int)Format.Constant.BLEND_MODE_MULTIPLY:
+		case (int)Format.Constant.BLEND_MODE_SCREEN:
+		case (int)Format.Constant.BLEND_MODE_SUBTRACT:
+			Material material = new Material(baseMaterial);
+			int blendModeSrc = 0;
+			int blendModeDst = 0;
+			switch (blendMode) {
+			case (int)Format.Constant.BLEND_MODE_ADD:
+				blendModeSrc = premultipliedAlpha ?
+					(int)BlendMode.One : (int)BlendMode.SrcAlpha;
+				blendModeDst = (int)BlendMode.One;
+				break;
 
-		r = new Regex("(Normal|PreMultipliedAlpha)");
-		shaderName = r.Replace(shaderName, (match) => {
-			string s = match.ToString();
-			return s + "Additive";
-		});
-		return GetShader(shaderName);
-	}
+			case (int)Format.Constant.BLEND_MODE_MULTIPLY:
+				blendModeSrc = (int)BlendMode.DstColor;
+				blendModeDst = (int)BlendMode.OneMinusSrcAlpha;
+				break;
 
-	public Material GetAdditiveMaterial(string lwfName, string filename)
-	{
-		TextureItem item;
-		string cacheName = lwfName + "/" + filename;
-		if (m_textureCache.TryGetValue(cacheName, out item)) {
-			TextureContext context = item.Entity();
-			if (context.additiveMaterial == null) {
-				context.additiveMaterial = new Material(context.material);
-				context.additiveMaterial.shader =
-					GetAdditiveShader(context.material.shader);
+			case (int)Format.Constant.BLEND_MODE_SCREEN:
+				blendModeSrc = (int)BlendMode.OneMinusDstColor;
+				blendModeDst = (int)BlendMode.One;
+				break;
+
+			case (int)Format.Constant.BLEND_MODE_SUBTRACT:
+				blendModeSrc = premultipliedAlpha ?
+					(int)BlendMode.One : (int)BlendMode.SrcAlpha;
+				blendModeDst = (int)BlendMode.One;
+				material.SetInt("BlendEquation", (int)BlendOp.ReverseSubtract);
+				break;
 			}
-			return context.additiveMaterial;
+			material.SetInt("BlendModeSrc", blendModeSrc);
+			material.SetInt("BlendModeDst", blendModeDst);
+			return material;
+
+		default:
+			return null;
 		}
-		return null;
 	}
 
 	public void UnloadTexture(string lwfName, string filename)
@@ -270,8 +290,6 @@ public class ResourceCache
 		if (m_textureCache.TryGetValue(cacheName, out item)) {
 			if (item.Unref() <= 0) {
 				TextureContext context = item.Entity();
-				if (context.additiveMaterial != null)
-					Material.Destroy(context.additiveMaterial);
 				if (context.material.mainTexture != null)
 					context.unloader((Texture2D)context.material.mainTexture);
 				if (!Application.isEditor)

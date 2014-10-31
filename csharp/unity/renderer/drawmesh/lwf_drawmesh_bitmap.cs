@@ -137,11 +137,12 @@ public class BitmapRenderer : Renderer
 {
 	BitmapContext m_context;
 	MaterialPropertyBlock m_property;
-	Material m_additiveMaterial;
+	Material m_material;
 	Matrix4x4 m_matrix;
 	Matrix4x4 m_renderMatrix;
 	UnityEngine.Color m_colorMult;
 	UnityEngine.Color m_colorAdd;
+	int m_blendMode;
 	int m_colorId;
 	int m_additionalColorId;
 #if UNITY_EDITOR
@@ -156,8 +157,17 @@ public class BitmapRenderer : Renderer
 		m_renderMatrix = new Matrix4x4();
 		m_colorMult = new UnityEngine.Color();
 		m_colorAdd = new UnityEngine.Color();
+		m_blendMode = (int)Format.Constant.BLEND_MODE_NORMAL;
 		m_colorId = Shader.PropertyToID("_Color");
 		m_additionalColorId = Shader.PropertyToID("_AdditionalColor");
+	}
+
+	public override void Destruct()
+	{
+		if (m_material != null) {
+			Material.Destroy(m_material);
+			m_material = null;
+		}
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
@@ -191,20 +201,21 @@ public class BitmapRenderer : Renderer
 		if (factory.useAdditionalColor)
 			m_property.AddColor(m_additionalColorId, m_colorAdd);
 
-		if (factory.blendMode == (int)Format.Constant.BLEND_MODE_ADD) {
-			if (m_additiveMaterial == null) {
-				m_additiveMaterial =
-					ResourceCache.SharedInstance().GetAdditiveMaterial(
-						m_context.data.name, m_context.textureName);
+		if (m_blendMode != factory.blendMode) {
+			m_blendMode = factory.blendMode;
+			if (m_material != null) {
+				Material.Destroy(m_material);
+				m_material = null;
 			}
-			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
-				m_additiveMaterial, factory.gameObject.layer,
-				factory.renderCamera, 0, m_property);
-		} else {
-			Graphics.DrawMesh(m_context.mesh, m_renderMatrix,
-				m_context.material, factory.gameObject.layer,
-				factory.renderCamera, 0, m_property);
+
+			m_material = ResourceCache.CreateBlendMaterial(
+				m_context.material, m_context.premultipliedAlpha, m_blendMode);
 		}
+
+		Material material =
+			m_material == null ? m_context.material : m_material;
+		Graphics.DrawMesh(m_context.mesh, m_renderMatrix, material,
+			factory.gameObject.layer, factory.renderCamera, 0, m_property);
 	}
 
 #if UNITY_EDITOR
@@ -213,7 +224,8 @@ public class BitmapRenderer : Renderer
 		if (m_context == null || !m_visible)
 			return;
 
-		Material material = new Material(m_context.material);
+		Material material =
+			new Material(m_material == null ? m_context.material : m_material);
 		material.color = m_colorMult;
 		if (m_context.factory.useAdditionalColor)
 			material.SetColor("_AdditionalColor", m_colorAdd);

@@ -861,6 +861,9 @@ public partial class Movie : IObject
 		if (m_blendMode != (int)Constant.BLEND_MODE_NORMAL) {
 			switch (m_blendMode) {
 			case (int)Constant.BLEND_MODE_ADD:
+			case (int)Constant.BLEND_MODE_MULTIPLY:
+			case (int)Constant.BLEND_MODE_SCREEN:
+			case (int)Constant.BLEND_MODE_SUBTRACT:
 				m_lwf.BeginBlendMode(m_blendMode);
 				useBlendMode = true;
 				break;

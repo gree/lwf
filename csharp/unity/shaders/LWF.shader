@@ -18,11 +18,14 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-Shader "LWF/NormalAdditional" {
+Shader "LWF" {
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1)
 		_AdditionalColor ("AdditionalColor", Color) = (0, 0, 0, 0)
 		_MainTex ("Texture", 2D) = "white" {}
+		BlendModeSrc ("BlendModeSrc", Float) = 0
+		BlendModeDst ("BlendModeDst", Float) = 0
+		BlendEquation ("BlendEquation", Float) = 0
 	}
 
 	SubShader {
@@ -32,16 +35,20 @@ Shader "LWF/NormalAdditional" {
 		}
 		Cull Off
 		ZWrite Off
-		Blend SrcAlpha OneMinusSrcAlpha
+		Blend [BlendModeSrc] [BlendModeDst]
+		BlendOp [BlendEquation]
 		Pass {
 			CGPROGRAM
+			#pragma multi_compile DISABLE_ADD_COLOR ENABLE_ADD_COLOR
 			#pragma vertex vert
 			#pragma fragment frag
 			#include "UnityCG.cginc"
 			sampler2D _MainTex;
 			half4 _MainTex_ST;
 			fixed4 _Color;
+			#ifdef ENABLE_ADD_COLOR
 			fixed4 _AdditionalColor;
+			#endif
 			struct appdata {
 				float4 vertex: POSITION;
 				float2 texcoord: TEXCOORD0;
@@ -50,8 +57,12 @@ Shader "LWF/NormalAdditional" {
 			struct v2f {
 				float4 pos: SV_POSITION;
 				float2 uv: TEXCOORD0;
+			#ifdef ENABLE_ADD_COLOR
 				fixed4 color: COLOR0;
 				fixed4 additionalColor: COLOR1;
+			#else
+				fixed4 color: COLOR;
+			#endif
 			};
 			v2f vert(appdata v)
 			{
@@ -59,12 +70,18 @@ Shader "LWF/NormalAdditional" {
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.uv.xy = TRANSFORM_TEX(v.texcoord, _MainTex);
 				o.color = v.color * _Color;
+			#ifdef ENABLE_ADD_COLOR
 				o.additionalColor = _AdditionalColor;
+			#endif
 				return o;
 			}
 			fixed4 frag(v2f i): COLOR
 			{
-				return tex2D(_MainTex, i.uv.xy) * i.color + i.additionalColor;
+				fixed4 o = tex2D(_MainTex, i.uv.xy) * i.color;
+			#ifdef ENABLE_ADD_COLOR
+				o += i.additionalColor;
+			#endif
+				return o;
 			}
 			ENDCG
 		}
