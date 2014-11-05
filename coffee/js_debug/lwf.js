@@ -10504,7 +10504,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.stage.height = this.data.header.height;
       }
       params = {
-        alpha: false,
+        alpha: true,
         antialias: false,
         depth: false,
         premultipliedAlpha: true,
@@ -10687,11 +10687,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.setSrcFactor !== blendSrcFactor || this.setDstFactor !== blendDstFactor) {
         this.setSrcFactor = blendSrcFactor;
         this.setDstFactor = blendDstFactor;
-        gl.blendFunc(blendSrcFactor, blendDstFactor);
+        gl.blendFuncSeparate(blendSrcFactor, blendDstFactor, gl.ONE, gl.ONE);
       }
       if (this.setEquation !== blendEquation) {
         this.setEquation = blendEquation;
-        gl.blendEquation(blendEquation);
+        gl.blendEquationSeparate(blendEquation, gl.FUNC_ADD);
       }
     };
 

@@ -35,8 +35,8 @@ Shader "LWF" {
 		}
 		Cull Off
 		ZWrite Off
-		Blend [BlendModeSrc] [BlendModeDst]
-		BlendOp [BlendEquation]
+		Blend [BlendModeSrc] [BlendModeDst], One One
+		BlendOp [BlendEquation], Add
 		Pass {
 			CGPROGRAM
 			#pragma multi_compile DISABLE_ADD_COLOR ENABLE_ADD_COLOR

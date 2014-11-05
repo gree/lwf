@@ -376,13 +376,13 @@ void BlendEquationProtocol::addEndCommand(cocos2d::Renderer *renderer,
 void BlendEquationProtocol::onBlendEquationBegin(
 	const cocos2d::Mat4 &transform, uint32_t flags)
 {
-	glBlendEquation(m_blendEquation);
+	glBlendEquationSeparate(m_blendEquation, GL_FUNC_ADD);
 }
 
 void BlendEquationProtocol::onBlendEquationEnd(
 	const cocos2d::Mat4 &transform, uint32_t flags)
 {
-	glBlendEquation(GL_FUNC_ADD);
+	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 }
 
 }	// namespace LWF
