@@ -1212,8 +1212,10 @@ void Movie::RemoveEventHandler(string eventName, int id)
 {
 	MovieEventHandlerListDictionary::iterator it =
 		m_eventHandlers.find(eventName);
-	if (it == m_eventHandlers.end())
+	if (it == m_eventHandlers.end()) {
+		m_handler.Remove(id);
 		return;
+	}
 
 	MovieEventHandlerList& list = it->second;
 	list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
@@ -1222,6 +1224,7 @@ void Movie::RemoveEventHandler(string eventName, int id)
 void Movie::ClearEventHandler(string eventName)
 {
 	m_eventHandlers.erase(eventName);
+	m_handler.Clear(eventName);
 }
 
 int Movie::SetEventHandler(string eventName, MovieEventHandler eventHandler)
