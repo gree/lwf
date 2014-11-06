@@ -306,8 +306,11 @@ public class LWFObject : MonoBehaviour
 		if (lwf == null)
 			return;
 
-		if (resumeCount > 0)
+		if (resumeCount > 0) {
+			if (tick == 0)
+				tick = -1;
 			lwf.Exec(tick);
+		}
 
 		if (lwf == null)
 			return;
