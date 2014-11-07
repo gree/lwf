@@ -34,10 +34,11 @@ NS_CC_BEGIN;
 
 using namespace LWF;
 
-LWFNode *LWFNode::create(const char *pszFileName, void *l)
+LWFNode *LWFNode::create(
+	const char *pszFileName, void *l, TextureLoadHandler textureLoadHandler)
 {
 	LWFNode *node = new LWFNode();
-	if (node && node->initWithLWFFile(pszFileName, l)) {
+	if (node && node->initWithLWFFile(pszFileName, l, textureLoadHandler)) {
 		node->autorelease();
 		return node;
 	}
@@ -97,7 +98,8 @@ public:
 	}
 };
 
-bool LWFNode::initWithLWFFile(const string &path, void *l)
+bool LWFNode::initWithLWFFile(
+	const string &path, void *l, TextureLoadHandler textureLoadHandler)
 {
 	shared_ptr<LWFData> data =
 		LWFResourceCache::sharedLWFResourceCache()->loadLWFData(path);

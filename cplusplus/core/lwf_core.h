@@ -53,7 +53,6 @@ typedef vector<pair<int, ExecHandler> > ExecHandlerList;
 typedef map<string, pair<string, TextRenderer *> > TextDictionary;
 typedef map<int, bool> EventFunctions;
 typedef vector<int> RenderingModes;
-typedef function<string (string, string, string)> TextureLoadHandler;
 typedef function<shared_ptr<LWF> (string)> LWFLoader;
 typedef function<void ()> LWFUnloader;
 

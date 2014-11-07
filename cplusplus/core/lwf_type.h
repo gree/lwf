@@ -77,6 +77,7 @@ typedef function<bool (LWF *)> DetachHandler;
 typedef function<void (Movie *, Button *)> EventHandler;
 typedef vector<pair<int, EventHandler> > EventHandlerList;
 typedef function<void ()> PreloadCallback;
+typedef function<string (string, string, string)> TextureLoadHandler;
 #endif // !LWF_PUBLISHER
 
 class Point

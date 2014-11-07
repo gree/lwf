@@ -228,9 +228,13 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	string basePath = m_factory->GetBasePath();
 	string filename = basePath + texturePath;
 
-	if (LWF::GetTextureLoadHandler())
+	if (node->getTextureLoadHandler()) {
+		filename = node->getTextureLoadHandler()(
+			filename, basePath, texturePath);
+	} else if (LWF::GetTextureLoadHandler()) {
 		filename = LWF::GetTextureLoadHandler()(
 			filename, basePath, texturePath);
+	}
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)
