@@ -29,6 +29,14 @@ LWFContainer::LWFContainer(Movie *p, shared_ptr<LWF> c)
 	lwf = p->lwf;
 	parent = p;
 	child = c;
+
+	alive = true;
+	instanceId = -1;
+	iObjectId = lwf->GetIObjectOffset();
+
+	prevInstance = 0;
+	nextInstance = 0;
+	linkInstance = 0;
 }
 
 bool LWFContainer::CheckHit(float px, float py)

@@ -333,6 +333,15 @@ void Movie::DetachAllLWFs()
 		m_detachedLWFs[it->second->child->attachName] = true;
 }
 
+void Movie::RemoveMovieClip()
+{
+	if (type == OType::ATTACHEDMOVIE) {
+		DetachFromParent();
+	} else if (!lwf->attachName.empty() && lwf->parent) {
+		lwf->parent->DetachLWF(lwf->attachName);
+	}
+}
+
 shared_ptr<BitmapClip> Movie::AttachBitmap(string linkageName, int aDepth)
 {
 	map<string, int>::iterator it = lwf->data->bitmapMap.find(linkageName);

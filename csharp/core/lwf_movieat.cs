@@ -452,6 +452,15 @@ public partial class Movie : IObject
 				m_detachedLWFs[lwfContainer.child.attachName] = true;
 	}
 
+	public void RemoveMovieClip()
+	{
+		if (m_type == Type.ATTACHEDMOVIE) {
+			DetachFromParent();
+		} else if (m_lwf.attachName != null && m_lwf.parent != null) {
+			m_lwf.parent.DetachLWF(m_lwf.attachName);
+		}
+	}
+
 	public BitmapClip AttachBitmap(string linkageName, int depth)
 	{
 		int bitmapId;

@@ -279,6 +279,9 @@ void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(string aName) @ detachMovie
 void DetachMovie(LWF.Movie movie) @ detachMovie
 void DetachFromParent() @ detachFromParent
+void DetachLWF(string aName) @ detachLWF
+void DetachAllLWFs() @ detachAllLWFs
+void RemoveMovieClip() @ removeMovieClip
 LWF.BitmapClip AttachBitmap(string linkageName, int depth) @ attachBitmap
 LWF.BitmapClip GetAttachedBitmap(int depth) @ getAttachedBitmap
 void SwapAttachedBitmapDepth(int depth0, int depth1) @ swapAttachedBitmapDepth

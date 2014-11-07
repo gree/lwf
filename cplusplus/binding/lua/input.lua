@@ -279,6 +279,9 @@ void SwapAttachedMovieDepth(int depth0, int depth1) @ swapAttachedMovieDepth
 void DetachMovie(std::string aName) @ detachMovie
 void DetachMovie(LWF::Movie *movie) @ detachMovie
 void DetachFromParent() @ detachFromParent
+void DetachLWF(std::string aName) @ detachLWF
+void DetachAllLWFs() @ detachAllLWFs
+void RemoveMovieClip() @ removeMovieClip
 void SwapAttachedBitmapDepth(int depth0, int depth1) @ swapAttachedBitmapDepth
 void DetachBitmap(int depth) @ detachBitmap
 			]]},

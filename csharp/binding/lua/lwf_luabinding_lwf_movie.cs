@@ -42,6 +42,9 @@ public class LunaTraits_LWF_Movie
         new RegType("swapAttachedMovieDepth", impl_LunaTraits_LWF_Movie._bind_swapAttachedMovieDepth),
         new RegType("detachMovie", impl_LunaTraits_LWF_Movie._bind_detachMovie),
         new RegType("detachFromParent", impl_LunaTraits_LWF_Movie._bind_detachFromParent),
+        new RegType("detachLWF", impl_LunaTraits_LWF_Movie._bind_detachLWF),
+        new RegType("detachAllLWFs", impl_LunaTraits_LWF_Movie._bind_detachAllLWFs),
+        new RegType("removeMovieClip", impl_LunaTraits_LWF_Movie._bind_removeMovieClip),
         new RegType("attachBitmap", impl_LunaTraits_LWF_Movie._bind_attachBitmap),
         new RegType("getAttachedBitmap", impl_LunaTraits_LWF_Movie._bind_getAttachedBitmap),
         new RegType("swapAttachedBitmapDepth", impl_LunaTraits_LWF_Movie._bind_swapAttachedBitmapDepth),
@@ -566,6 +569,41 @@ public class impl_LunaTraits_LWF_Movie
 	LWF.Movie self=Luna_LWF_Movie.check(L,1);
 	try {
 		self.DetachFromParent();
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_detachLWF(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:detachLWF(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+		string aName=Lua.lua_tostring(L,2).ToString();
+	try {
+		self.DetachLWF(aName);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_detachAllLWFs(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=29625181 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:detachAllLWFs(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+	try {
+		self.DetachAllLWFs();
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
+  public static int _bind_removeMovieClip(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=29625181 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:removeMovieClip(LWF.Movie self)"); }
+
+	LWF.Movie self=Luna_LWF_Movie.check(L,1);
+	try {
+		self.RemoveMovieClip();
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }

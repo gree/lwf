@@ -233,6 +233,7 @@ public:
 	void DetachLWF(int aDepth);
 	void DetachLWF(shared_ptr<LWF> detachLWF);
 	void DetachAllLWFs();
+	void RemoveMovieClip();
 
 	shared_ptr<BitmapClip> AttachBitmap(string linkageName, int depth);
 	BitmapClips GetAttachedBitmaps();
