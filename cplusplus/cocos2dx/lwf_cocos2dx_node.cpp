@@ -132,6 +132,8 @@ bool LWFNode::initWithLWFFile(
 	lwf = make_shared<class LWF>(data, factory, l);
 	lwf->lwfLoader = LWFLoader(this, l);
 
+	_textureLoadHandler = textureLoadHandler;
+
 	scheduleUpdate();
 
 	return true;
