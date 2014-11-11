@@ -58,6 +58,7 @@ public:
 		} else {
 			ret->setSystemFontName(fontName);
 			ret->setSystemFontSize(fontSize);
+			ret->setBlendFunc(cocos2d::BlendFunc::ALPHA_NON_PREMULTIPLIED);
 		}
 
 		ret->setDimensions(dimensions.width, dimensions.height);
