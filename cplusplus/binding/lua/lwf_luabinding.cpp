@@ -75,7 +75,7 @@ public:                                                       // 1223
     if( lua_gettop(L)!=3) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
     if( lua_isstring(L,2)==0) return false;                   // 541
-    if( lua_isstring(L,3)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndStopMovie_overload_2(lua_State *L)
@@ -83,7 +83,7 @@ public:                                                       // 1223
     if( lua_gettop(L)!=3) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
     if( lua_isstring(L,2)==0) return false;                   // 541
-    if( lua_isnumber(L,3)==0) return false;                   // 536
+    if( lua_isstring(L,3)==0) return false;                   // 541
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndPlayMovie_overload_1(lua_State *L)
@@ -91,7 +91,7 @@ public:                                                       // 1223
     if( lua_gettop(L)!=3) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
     if( lua_isstring(L,2)==0) return false;                   // 541
-    if( lua_isstring(L,3)==0) return false;                   // 541
+    if( lua_isnumber(L,3)==0) return false;                   // 536
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndPlayMovie_overload_2(lua_State *L)
@@ -99,7 +99,7 @@ public:                                                       // 1223
     if( lua_gettop(L)!=3) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=8564116) return false; // LWF ::LWF // 534
     if( lua_isstring(L,2)==0) return false;                   // 541
-    if( lua_isnumber(L,3)==0) return false;                   // 536
+    if( lua_isstring(L,3)==0) return false;                   // 541
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_moveMovie(lua_State *L)
@@ -402,9 +402,9 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 1282
     LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
     std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
-    std ::string label=(std ::string)lua_tostring(L,3);       // 507
+    int frameNo=(int)lua_tonumber(L,3);                       // 512
     try {                                                     // 254
-    self.GotoAndStopMovie( instanceName, label);              // 255
+    self.GotoAndStopMovie( instanceName, frameNo);            // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -412,9 +412,9 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 1282
     LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
     std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
-    int frameNo=(int)lua_tonumber(L,3);                       // 512
+    std ::string label=(std ::string)lua_tostring(L,3);       // 507
     try {                                                     // 254
-    self.GotoAndStopMovie( instanceName, frameNo);            // 255
+    self.GotoAndStopMovie( instanceName, label);              // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -422,9 +422,9 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 1282
     LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
     std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
-    std ::string label=(std ::string)lua_tostring(L,3);       // 507
+    int frameNo=(int)lua_tonumber(L,3);                       // 512
     try {                                                     // 254
-    self.GotoAndPlayMovie( instanceName, label);              // 255
+    self.GotoAndPlayMovie( instanceName, frameNo);            // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -432,9 +432,9 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 1282
     LWF ::LWF& self=static_cast<LWF ::LWF &>(*Luna<LWF ::LWF >::check(L,1)); // 504
     std ::string instanceName=(std ::string)lua_tostring(L,2); // 507
-    int frameNo=(int)lua_tonumber(L,3);                       // 512
+    std ::string label=(std ::string)lua_tostring(L,3);       // 507
     try {                                                     // 254
-    self.GotoAndPlayMovie( instanceName, frameNo);            // 255
+    self.GotoAndPlayMovie( instanceName, label);              // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -669,7 +669,7 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 195
     if (_lg_typecheck_gotoAndStopMovie_overload_1(L)) return _bind_gotoAndStopMovie_overload_1(L); // 198
     if (_lg_typecheck_gotoAndStopMovie_overload_2(L)) return _bind_gotoAndStopMovie_overload_2(L); // 198
-    luaL_error(L, "gotoAndStopMovie ( cannot find overloads:)\n(std ::string instanceName,std ::string label,)\n(std ::string instanceName,int frameNo,)\n");
+    luaL_error(L, "gotoAndStopMovie ( cannot find overloads:)\n(std ::string instanceName,int frameNo,)\n(std ::string instanceName,std ::string label,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207
@@ -677,7 +677,7 @@ static int addButtonEventListener(lua_State *L)
   {                                                           // 195
     if (_lg_typecheck_gotoAndPlayMovie_overload_1(L)) return _bind_gotoAndPlayMovie_overload_1(L); // 198
     if (_lg_typecheck_gotoAndPlayMovie_overload_2(L)) return _bind_gotoAndPlayMovie_overload_2(L); // 198
-    luaL_error(L, "gotoAndPlayMovie ( cannot find overloads:)\n(std ::string instanceName,std ::string label,)\n(std ::string instanceName,int frameNo,)\n");
+    luaL_error(L, "gotoAndPlayMovie ( cannot find overloads:)\n(std ::string instanceName,int frameNo,)\n(std ::string instanceName,std ::string label,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207
@@ -1090,28 +1090,28 @@ public:                                                       // 1223
   {                                                           // 1249
     if( lua_gettop(L)!=2) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
-    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,2)==0) return false;                   // 536
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndStop_overload_2(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=2) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
-    if( lua_isnumber(L,2)==0) return false;                   // 536
+    if( lua_isstring(L,2)==0) return false;                   // 541
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndPlay_overload_1(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=2) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
-    if( lua_isstring(L,2)==0) return false;                   // 541
+    if( lua_isnumber(L,2)==0) return false;                   // 536
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_gotoAndPlay_overload_2(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=2) return false;                       // 527
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
-    if( lua_isnumber(L,2)==0) return false;                   // 536
+    if( lua_isstring(L,2)==0) return false;                   // 541
     return true;
   }                                                           // 554
   inline static bool _lg_typecheck_move(lua_State *L)
@@ -1687,36 +1687,36 @@ error:
   static int _bind_gotoAndStop_overload_1(lua_State *L)
   {                                                           // 1282
     LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
-    std ::string label=(std ::string)lua_tostring(L,2);       // 507
-    try {                                                     // 254
-    self.GotoAndStop( label);                                 // 255
-    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
-    return 0;                                                 // 257
-  }                                                           // 333
-  static int _bind_gotoAndStop_overload_2(lua_State *L)
-  {                                                           // 1282
-    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
     int frameNo=(int)lua_tonumber(L,2);                       // 512
     try {                                                     // 254
     self.GotoAndStop( frameNo);                               // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
-  static int _bind_gotoAndPlay_overload_1(lua_State *L)
+  static int _bind_gotoAndStop_overload_2(lua_State *L)
   {                                                           // 1282
     LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
     std ::string label=(std ::string)lua_tostring(L,2);       // 507
     try {                                                     // 254
-    self.GotoAndPlay( label);                                 // 255
+    self.GotoAndStop( label);                                 // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind_gotoAndPlay_overload_1(lua_State *L)
+  {                                                           // 1282
+    LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    int frameNo=(int)lua_tonumber(L,2);                       // 512
+    try {                                                     // 254
+    self.GotoAndPlay( frameNo);                               // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
   static int _bind_gotoAndPlay_overload_2(lua_State *L)
   {                                                           // 1282
     LWF ::Movie& self=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
-    int frameNo=(int)lua_tonumber(L,2);                       // 512
+    std ::string label=(std ::string)lua_tostring(L,2);       // 507
     try {                                                     // 254
-    self.GotoAndPlay( frameNo);                               // 255
+    self.GotoAndPlay( label);                                 // 255
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
@@ -2172,7 +2172,7 @@ error:
   {                                                           // 195
     if (_lg_typecheck_gotoAndStop_overload_1(L)) return _bind_gotoAndStop_overload_1(L); // 198
     if (_lg_typecheck_gotoAndStop_overload_2(L)) return _bind_gotoAndStop_overload_2(L); // 198
-    luaL_error(L, "gotoAndStop ( cannot find overloads:)\n(std ::string label,)\n(int frameNo,)\n");
+    luaL_error(L, "gotoAndStop ( cannot find overloads:)\n(int frameNo,)\n(std ::string label,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207
@@ -2180,7 +2180,7 @@ error:
   {                                                           // 195
     if (_lg_typecheck_gotoAndPlay_overload_1(L)) return _bind_gotoAndPlay_overload_1(L); // 198
     if (_lg_typecheck_gotoAndPlay_overload_2(L)) return _bind_gotoAndPlay_overload_2(L); // 198
-    luaL_error(L, "gotoAndPlay ( cannot find overloads:)\n(std ::string label,)\n(int frameNo,)\n");
+    luaL_error(L, "gotoAndPlay ( cannot find overloads:)\n(int frameNo,)\n(std ::string label,)\n");
                                                               // 205
     return 0;                                                 // 206
   }                                                           // 207

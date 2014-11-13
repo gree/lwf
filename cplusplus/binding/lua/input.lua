@@ -40,10 +40,10 @@ void StopMovie(std::string instanceName) @ stopMovie
 void NextFrameMovie(std::string instanceName) @ nextFrameMovie
 void PrevFrameMovie(std::string instanceName) @ prevFrameMovie
 void SetVisibleMovie(std::string instanceName, bool visible) @ setVisibleMovie
-void GotoAndStopMovie(std::string instanceName, std::string label) @ gotoAndStopMovie
 void GotoAndStopMovie(std::string instanceName, int frameNo) @ gotoAndStopMovie
-void GotoAndPlayMovie(std::string instanceName, std::string label) @ gotoAndPlayMovie
+void GotoAndStopMovie(std::string instanceName, std::string label) @ gotoAndStopMovie
 void GotoAndPlayMovie(std::string instanceName, int frameNo) @ gotoAndPlayMovie
+void GotoAndPlayMovie(std::string instanceName, std::string label) @ gotoAndPlayMovie
 void MoveMovie(std::string instanceName, float vx, float vy) @ moveMovie
 void MoveToMovie(std::string instanceName, float vx, float vy) @ moveToMovie
 void RotateMovie(std::string instanceName, float degree) @ rotateMovie
@@ -263,10 +263,10 @@ void Stop() @ stop
 void NextFrame() @ nextFrame
 void PrevFrame() @ prevFrame
 void GotoFrame(int frameNo) @ gotoFrame
-void GotoAndStop(std::string label) @ gotoAndStop
 void GotoAndStop(int frameNo) @ gotoAndStop
-void GotoAndPlay(std::string label) @ gotoAndPlay
+void GotoAndStop(std::string label) @ gotoAndStop
 void GotoAndPlay(int frameNo) @ gotoAndPlay
+void GotoAndPlay(std::string label) @ gotoAndPlay
 void Move(float vx, float vy) @ move
 void MoveTo(float vx, float vy) @ moveTo
 void Rotate(float degree) @ rotate

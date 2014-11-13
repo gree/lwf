@@ -376,9 +376,9 @@ public class impl_LunaTraits_LWF_Movie
   {
 
 	LWF.Movie self=Luna_LWF_Movie.check(L,1);
-		string label=Lua.lua_tostring(L,2).ToString();
+		int frameNo=(int)Lua.lua_tonumber(L,2);
 	try {
-		self.GotoAndStop(label);
+		self.GotoAndStop(frameNo);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
@@ -386,9 +386,9 @@ public class impl_LunaTraits_LWF_Movie
   {
 
 	LWF.Movie self=Luna_LWF_Movie.check(L,1);
-		int frameNo=(int)Lua.lua_tonumber(L,2);
+		string label=Lua.lua_tostring(L,2).ToString();
 	try {
-		self.GotoAndStop(frameNo);
+		self.GotoAndStop(label);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
@@ -396,9 +396,9 @@ public class impl_LunaTraits_LWF_Movie
   {
 
 	LWF.Movie self=Luna_LWF_Movie.check(L,1);
-		string label=Lua.lua_tostring(L,2).ToString();
+		int frameNo=(int)Lua.lua_tonumber(L,2);
 	try {
-		self.GotoAndPlay(label);
+		self.GotoAndPlay(frameNo);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
@@ -406,9 +406,9 @@ public class impl_LunaTraits_LWF_Movie
   {
 
 	LWF.Movie self=Luna_LWF_Movie.check(L,1);
-		int frameNo=(int)Lua.lua_tonumber(L,2);
+		string label=Lua.lua_tostring(L,2).ToString();
 	try {
-		self.GotoAndPlay(frameNo);
+		self.GotoAndPlay(label);
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
@@ -669,10 +669,10 @@ public class impl_LunaTraits_LWF_Movie
   {
 	if (Lua.lua_gettop(L)==2
             || Luna.get_uniqueid(L,1)==29625181 
-            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndStop_overload_1(L);
+            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndStop_overload_1(L);
 	if (Lua.lua_gettop(L)==2
             || Luna.get_uniqueid(L,1)==29625181 
-            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndStop_overload_2(L);
+            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndStop_overload_2(L);
 	Lua.luaL_error(L, "gotoAndStop cannot find overloads.");
 
 	return 0;
@@ -681,10 +681,10 @@ public class impl_LunaTraits_LWF_Movie
   {
 	if (Lua.lua_gettop(L)==2
             || Luna.get_uniqueid(L,1)==29625181 
-            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndPlay_overload_1(L);
+            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndPlay_overload_1(L);
 	if (Lua.lua_gettop(L)==2
             || Luna.get_uniqueid(L,1)==29625181 
-            || Lua.lua_isnumber(L, 2)==1) return _bind_gotoAndPlay_overload_2(L);
+            || Lua.lua_isstring(L,2)==1) return _bind_gotoAndPlay_overload_2(L);
 	Lua.luaL_error(L, "gotoAndPlay cannot find overloads.");
 
 	return 0;

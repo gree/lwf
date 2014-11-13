@@ -39,10 +39,10 @@ void StopMovie(string instanceName) @ stopMovie
 void NextFrameMovie(string instanceName) @ nextFrameMovie
 void PrevFrameMovie(string instanceName) @ prevFrameMovie
 void SetVisibleMovie(string instanceName, bool visible) @ setVisibleMovie
-void GotoAndStopMovie(string instanceName, string label) @ gotoAndStopMovie
 void GotoAndStopMovie(string instanceName, int frameNo) @ gotoAndStopMovie
-void GotoAndPlayMovie(string instanceName, string label) @ gotoAndPlayMovie
+void GotoAndStopMovie(string instanceName, string label) @ gotoAndStopMovie
 void GotoAndPlayMovie(string instanceName, int frameNo) @ gotoAndPlayMovie
+void GotoAndPlayMovie(string instanceName, string label) @ gotoAndPlayMovie
 void MoveMovie(string instanceName, float vx, float vy) @ moveMovie
 void MoveToMovie(string instanceName, float vx, float vy) @ moveToMovie
 void RotateMovie(string instanceName, float degree) @ rotateMovie
@@ -263,10 +263,10 @@ void Stop() @ stop
 void NextFrame() @ nextFrame
 void PrevFrame() @ prevFrame
 void GotoFrame(int frameNo) @ gotoFrame
-void GotoAndStop(string label) @ gotoAndStop
 void GotoAndStop(int frameNo) @ gotoAndStop
-void GotoAndPlay(string label) @ gotoAndPlay
+void GotoAndStop(string label) @ gotoAndStop
 void GotoAndPlay(int frameNo) @ gotoAndPlay
+void GotoAndPlay(string label) @ gotoAndPlay
 void Move(float vx, float vy) @ move
 void MoveTo(float vx, float vy) @ moveTo
 void Rotate(float degree) @ rotate
