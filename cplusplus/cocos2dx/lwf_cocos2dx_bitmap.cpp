@@ -27,6 +27,46 @@
 #include "lwf_core.h"
 #include "lwf_data.h"
 
+#define STRINGIFY(A)  #A
+
+static const char *additiveColor_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision lowp float;
+\n#endif\n
+
+uniform vec3 additiveColor;
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main()
+{
+	gl_FragColor = v_fragmentColor * texture2D(CC_Texture0, v_texCoord) +
+		vec4(additiveColor, 0);
+}
+);
+
+static const char *additiveColorWithPremultipliedAlpha_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision lowp float;
+\n#endif\n
+
+uniform vec3 additiveColor;
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main()
+{
+	vec4 color = v_fragmentColor * texture2D(CC_Texture0, v_texCoord);
+	gl_FragColor = color + vec4(
+		additiveColor.x * color.w,
+		additiveColor.y * color.w,
+		additiveColor.z * color.w,
+		0);
+}
+);
+
 namespace LWF {
 
 class LWFBitmap : public cocos2d::Sprite, public BlendEquationProtocol
@@ -35,6 +75,12 @@ protected:
 	Matrix m_matrix;
 	cocos2d::V3F_C4B_T2F_Quad m_quad;
 	cocos2d::BlendFunc m_baseBlendFunc;
+	cocos2d::GLProgramState *m_glProgramState;
+	cocos2d::GLProgramState *m_additiveGlProgramState;
+	const char *m_frag;
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+	EventListenerCustom *m_listener;
+#endif
 
 public:
 	static LWFBitmap *create(const char *filename,
@@ -51,6 +97,27 @@ public:
 		return NULL;
 	}
 
+	LWFBitmap()
+		: cocos2d::Sprite(), BlendEquationProtocol(),
+			m_glProgramState(0), m_additiveGlProgramState(0), m_frag(0)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+			, m_listener(0)
+#endif
+	{
+	}
+
+	virtual ~LWFBitmap()
+	{
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+		if (m_listener) {
+			Director::getInstance()->getEventDispatcher()->removeEventListener(
+				m_listener);
+		}
+#endif
+		CC_SAFE_RELEASE_NULL(m_glProgramState);
+		CC_SAFE_RELEASE_NULL(m_additiveGlProgramState);
+	}
+
 	bool initWithFileEx(const char *filename,
 		const Format::Texture &t,
 		const Format::TextureFragment &f,
@@ -59,10 +126,35 @@ public:
 		if (!cocos2d::Sprite::initWithFile(filename))
 			return false;
 
+		m_glProgramState = getGLProgramState();
+		m_glProgramState->retain();
+
 		bool hasPremultipliedAlpha = getTexture()->hasPremultipliedAlpha() ||
 			t.format == Format::TEXTUREFORMAT_PREMULTIPLIEDALPHA;
 		m_baseBlendFunc = {(GLenum)(hasPremultipliedAlpha ?
 			GL_ONE : GL_SRC_ALPHA), GL_ONE_MINUS_SRC_ALPHA};
+		m_frag = hasPremultipliedAlpha ?
+			additiveColorWithPremultipliedAlpha_frag : additiveColor_frag;
+
+		auto glProgram = cocos2d::GLProgram::createWithByteArrays(
+			cocos2d::ccPositionTextureColor_noMVP_vert, m_frag);
+		m_additiveGlProgramState =
+			cocos2d::GLProgramState::getOrCreateWithGLProgram(glProgram);
+		m_additiveGlProgramState->retain();
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+		m_listener = EventListenerCustom::create(EVENT_RENDERER_RECREATED,
+				[this](EventCustom*) {
+			auto glProgram = m_additiveGlProgramState->getGLProgram();
+			glProgram->reset();
+			glProgram->initWithByteArrays(
+				ccPositionTextureColor_noMVP_vert, m_frag);
+			glProgram->link();
+			glProgram->updateUniforms();
+		});
+		Director::getInstance()->getEventDispatcher(
+			)->addEventListenerWithFixedPriority(m_listener, -1);
+#endif
 
 		float tw = (float)t.width;
 		float th = (float)t.height;
@@ -150,12 +242,24 @@ public:
 
 		cocos2d::Node *node = getParent();
 		const Color &c = cx->multi;
+		const Color &a = cx->add;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor((cocos2d::Color3B){
 			(GLubyte)(c.red * dc.r),
 			(GLubyte)(c.green * dc.g),
 			(GLubyte)(c.blue * dc.b)});
-		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
+		setOpacity(
+			(GLubyte)((c.alpha + a.alpha) * node->getDisplayedOpacity()));
+
+		if (a.red == 0 && a.green == 0 && a.blue == 0) {
+			if (getGLProgramState() != m_glProgramState)
+				setGLProgramState(m_glProgramState);
+		} else {
+			m_additiveGlProgramState->setUniformVec3(
+				"additiveColor", cocos2d::Vec3(a.red, a.green, a.blue));
+			if (getGLProgramState() != m_additiveGlProgramState)
+				setGLProgramState(m_additiveGlProgramState);
+		}
 	}
 
 	virtual void setBatchNode(
