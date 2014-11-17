@@ -2425,6 +2425,10 @@ def parse_place_object2
   get_byte if has_visible
   get_rgba if has_visible
 
+  if has_obj_id && !@objects[obj_id]
+    return
+  end
+
   if has_obj_id
     place = Place.new
 
