@@ -224,9 +224,9 @@ class LosslessData
         (@width * @height).times do |i|
           data_index = i * 4
           pixels.push ChunkyPNG::Color.rgba(
-            data[data_index + 1].ord,
-            data[data_index + 2].ord,
-            data[data_index + 3].ord,
+            [255, data[data_index + 1].ord * 255 / [1, data[data_index + 0].ord].max].min,
+            [255, data[data_index + 2].ord * 255 / [1, data[data_index + 0].ord].max].min,
+            [255, data[data_index + 3].ord * 255 / [1, data[data_index + 0].ord].max].min,
             data[data_index + 0].ord)
         end
       end
@@ -253,8 +253,16 @@ class LosslessData
         fmt = Img::RGBA5551
         bytes = data
       when 5
-        fmt = Img::ARGB8888
-        bytes = data
+        fmt = Img::RGBA8888
+        bytes = []
+        (@width * @height).times do |i|
+          data_index = i * 4
+          bytes.push([255, data[data_index + 1].ord * 255 / [1, data[data_index + 0].ord].max].min)
+          bytes.push([255, data[data_index + 2].ord * 255 / [1, data[data_index + 0].ord].max].min)
+          bytes.push([255, data[data_index + 3].ord * 255 / [1, data[data_index + 0].ord].max].min)
+          bytes.push(data[data_index + 0].ord)
+        end
+        bytes = bytes.pack('C*')
       end
       img = Img::save(filename, @width, @height, fmt, bytes)
     end
