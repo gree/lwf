@@ -30,6 +30,11 @@
 #include <regex>
 #include <cstdlib>
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+# include "base/CCEventDispatcher.h"
+# include "base/CCEventType.h"
+#endif
+
 #define STRINGIFY(A)  #A
 
 static const char *s_additiveColor_frag = STRINGIFY(

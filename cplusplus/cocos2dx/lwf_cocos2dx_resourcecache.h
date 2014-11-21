@@ -25,6 +25,10 @@
 #include "base/CCValue.h"
 #include "lwf_type.h"
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+# include "base/CCEventListenerCustom.h"
+#endif
+
 
 namespace LWF {
 class Data;
