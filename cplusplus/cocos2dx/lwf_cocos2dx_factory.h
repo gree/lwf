@@ -23,6 +23,7 @@
 
 #include "lwf_renderer.h"
 #include "renderer/CCCustomCommand.h"
+#include "renderer/CCRenderer.h"
 
 namespace cocos2d {
 class LWFNode;

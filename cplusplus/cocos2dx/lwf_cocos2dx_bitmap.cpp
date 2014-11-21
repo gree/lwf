@@ -24,48 +24,9 @@
 #include "lwf_cocos2dx_bitmap.h"
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
+#include "lwf_cocos2dx_resourcecache.h"
 #include "lwf_core.h"
 #include "lwf_data.h"
-
-#define STRINGIFY(A)  #A
-
-static const char *additiveColor_frag = STRINGIFY(
-\n#ifdef GL_ES\n
-precision lowp float;
-\n#endif\n
-
-uniform vec3 additiveColor;
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-void main()
-{
-	gl_FragColor = v_fragmentColor * texture2D(CC_Texture0, v_texCoord) +
-		vec4(additiveColor, 0);
-}
-);
-
-static const char *additiveColorWithPremultipliedAlpha_frag = STRINGIFY(
-\n#ifdef GL_ES\n
-precision lowp float;
-\n#endif\n
-
-uniform vec3 additiveColor;
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-void main()
-{
-	vec4 color = v_fragmentColor * texture2D(CC_Texture0, v_texCoord);
-	gl_FragColor = color + vec4(
-		additiveColor.x * color.w,
-		additiveColor.y * color.w,
-		additiveColor.z * color.w,
-		0);
-}
-);
 
 namespace LWF {
 
@@ -75,12 +36,9 @@ protected:
 	Matrix m_matrix;
 	cocos2d::V3F_C4B_T2F_Quad m_quad;
 	cocos2d::BlendFunc m_baseBlendFunc;
+	bool m_hasPremultipliedAlpha;
 	cocos2d::GLProgramState *m_glProgramState;
 	cocos2d::GLProgramState *m_additiveGlProgramState;
-	const char *m_frag;
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-	EventListenerCustom *m_listener;
-#endif
 
 public:
 	static LWFBitmap *create(const char *filename,
@@ -99,21 +57,12 @@ public:
 
 	LWFBitmap()
 		: cocos2d::Sprite(), BlendEquationProtocol(),
-			m_glProgramState(0), m_additiveGlProgramState(0), m_frag(0)
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-			, m_listener(0)
-#endif
+			m_glProgramState(0), m_additiveGlProgramState(0)
 	{
 	}
 
 	virtual ~LWFBitmap()
 	{
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-		if (m_listener) {
-			Director::getInstance()->getEventDispatcher()->removeEventListener(
-				m_listener);
-		}
-#endif
 		CC_SAFE_RELEASE_NULL(m_glProgramState);
 		CC_SAFE_RELEASE_NULL(m_additiveGlProgramState);
 	}
@@ -123,38 +72,16 @@ public:
 		const Format::TextureFragment &f,
 		const Format::BitmapEx &bx)
 	{
-		if (!cocos2d::Sprite::initWithFile(filename))
+		cocos2d::LWFResourceCache *cache =
+			cocos2d::LWFResourceCache::sharedLWFResourceCache();
+		cocos2d::Texture2D *texture = cache->addImage(filename);
+		if (!cocos2d::Sprite::initWithTexture(texture))
 			return false;
 
-		m_glProgramState = getGLProgramState();
-		m_glProgramState->retain();
-
-		bool hasPremultipliedAlpha = getTexture()->hasPremultipliedAlpha() ||
+		m_hasPremultipliedAlpha = getTexture()->hasPremultipliedAlpha() ||
 			t.format == Format::TEXTUREFORMAT_PREMULTIPLIEDALPHA;
-		m_baseBlendFunc = {(GLenum)(hasPremultipliedAlpha ?
+		m_baseBlendFunc = {(GLenum)(m_hasPremultipliedAlpha ?
 			GL_ONE : GL_SRC_ALPHA), GL_ONE_MINUS_SRC_ALPHA};
-		m_frag = hasPremultipliedAlpha ?
-			additiveColorWithPremultipliedAlpha_frag : additiveColor_frag;
-
-		auto glProgram = cocos2d::GLProgram::createWithByteArrays(
-			cocos2d::ccPositionTextureColor_noMVP_vert, m_frag);
-		m_additiveGlProgramState =
-			cocos2d::GLProgramState::getOrCreateWithGLProgram(glProgram);
-		m_additiveGlProgramState->retain();
-
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-		m_listener = EventListenerCustom::create(EVENT_RENDERER_RECREATED,
-				[this](EventCustom*) {
-			auto glProgram = m_additiveGlProgramState->getGLProgram();
-			glProgram->reset();
-			glProgram->initWithByteArrays(
-				ccPositionTextureColor_noMVP_vert, m_frag);
-			glProgram->link();
-			glProgram->updateUniforms();
-		});
-		Director::getInstance()->getEventDispatcher(
-			)->addEventListenerWithFixedPriority(m_listener, -1);
-#endif
 
 		float tw = (float)t.width;
 		float th = (float)t.height;
@@ -252,9 +179,23 @@ public:
 			(GLubyte)((c.alpha + a.alpha) * node->getDisplayedOpacity()));
 
 		if (a.red == 0 && a.green == 0 && a.blue == 0) {
-			if (getGLProgramState() != m_glProgramState)
+			if (m_glProgramState != 0 &&
+					getGLProgramState() != m_glProgramState) {
 				setGLProgramState(m_glProgramState);
+			}
 		} else {
+			if (m_glProgramState == 0) {
+				m_glProgramState = getGLProgramState();
+				m_glProgramState->retain();
+
+				cocos2d::LWFResourceCache *cache =
+					cocos2d::LWFResourceCache::sharedLWFResourceCache();
+				m_additiveGlProgramState = cocos2d::GLProgramState::create(
+					m_hasPremultipliedAlpha ? cache->getAddColorPAGLProgram() :
+						cache->getAddColorGLProgram());
+				m_additiveGlProgramState->retain();
+			}
+
 			m_additiveGlProgramState->setUniformVec3(
 				"additiveColor", cocos2d::Vec3(a.red, a.green, a.blue));
 			if (getGLProgramState() != m_additiveGlProgramState)
@@ -365,14 +306,19 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 	string basePath = m_factory->GetBasePath();
 	string filename = basePath + texturePath;
 
-	if (LWF::GetTextureLoadHandler())
+	if (node->getTextureLoadHandler()) {
+		filename = node->getTextureLoadHandler()(
+			filename, basePath, texturePath);
+	} else if (LWF::GetTextureLoadHandler()) {
 		filename = LWF::GetTextureLoadHandler()(
 			filename, basePath, texturePath);
+	}
 
 	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
 	if (!m_sprite)
 		return;
 
+	l->data->resourceCache[filename] = true;
 	node->addChild(m_sprite);
 }
 

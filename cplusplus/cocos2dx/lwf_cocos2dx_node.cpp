@@ -18,7 +18,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "base/CCDirector.h"
 #include "base/CCEventDispatcher.h"
 #include "base/CCEventListenerTouch.h"
 #include "lwf_cocos2dx_factory.h"
@@ -59,14 +58,13 @@ LWFNode::LWFNode()
 
 LWFNode::~LWFNode()
 {
-	_destructed = true;
 	if (lwf) {
 		shared_ptr<LWFData> data = lwf->data;
 		lwf->Destroy();
-		CC_SAFE_RELEASE(_texture);
-		_texture = 0;
+		CC_SAFE_RELEASE_NULL(_texture);
 		LWFResourceCache::sharedLWFResourceCache()->unloadLWFData(data);
 	}
+	_destructed = true;
 }
 
 class LWFLoader
@@ -116,8 +114,16 @@ bool LWFNode::initWithLWFFile(
 		result = Sprite::init();
 	} else {
 		const Format::Texture &t = data->textures[0];
-		string filename = basePath + t.GetFilename(data.get());
+		string texturePath = t.GetFilename(data.get());
+		string filename = basePath + texturePath;
+		if (textureLoadHandler) {
+			filename = textureLoadHandler(filename, basePath, texturePath);
+		} else if (::LWF::LWF::GetTextureLoadHandler()) {
+			filename = ::LWF::LWF::GetTextureLoadHandler()(
+				filename, basePath, texturePath);
+		}
 		result = Sprite::initWithFile(filename.c_str());
+		data->resourceCache[filename] = true;
 	}
 	if (!result) {
 		LWFResourceCache::sharedLWFResourceCache()->unloadLWFData(data);

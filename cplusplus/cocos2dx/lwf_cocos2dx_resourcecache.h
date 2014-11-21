@@ -70,6 +70,11 @@ private:
 	TextRendererCache_t m_textRendererCache;
 	LWF::string m_fontPathPrefix;
 	LWF::string m_particlePathPrefix;
+	cocos2d::GLProgram *m_addColorGLProgram;
+	cocos2d::GLProgram *m_addColorPAGLProgram;
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+	cocos2d::EventListenerCustom *m_listener;
+#endif
 
 public:
 	static LWFResourceCache *sharedLWFResourceCache();
@@ -84,8 +89,13 @@ public:
 	ValueMap loadParticle(const LWF::string &path, bool retain = true);
 	void unloadParticle(const LWF::string &path);
 
+	cocos2d::Texture2D *addImage(const char *file);
+
 	void unloadAll();
 	void dump();
+
+	cocos2d::GLProgram *getAddColorGLProgram();
+	cocos2d::GLProgram *getAddColorPAGLProgram();
 
 	const LWF::string &getFontPathPrefix() {return m_fontPathPrefix;}
 	void setFontPathPrefix(const LWF::string path) {m_fontPathPrefix = path;}
@@ -97,6 +107,8 @@ public:
 		{m_particlePathPrefix = path;}
 
 private:
+	void initAddColorGLProgram();
+
 	void unloadLWFDataInternal(const LWF::shared_ptr<LWF::Data> &data);
 	LWF::shared_ptr<LWF::Data> loadLWFDataInternal(const LWF::string &path);
 };
