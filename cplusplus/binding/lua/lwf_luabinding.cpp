@@ -1249,6 +1249,12 @@ public:                                                       // 1223
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck_getCurrentLabel(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    return true;
+  }                                                           // 554
   inline static bool _lg_typecheck_getTotalFrames(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=1) return false;                       // 527
@@ -1387,6 +1393,7 @@ public:                                                       // 1223
   }                                                           // 554
 static std::string getName(LWF::Movie &o){return o.name;}
 static int getCurrentFrame(LWF::Movie &o){return o.currentFrame;}
+static std::string getCurrentLabel(LWF::Movie &o){return o.GetCurrentLabel();}
 static int getTotalFrames(LWF::Movie &o){return o.totalFrames;}
 static bool getVisible(LWF::Movie &o){return o.visible;}
 static float getX(LWF::Movie &o){return o.GetX();}
@@ -1436,6 +1443,53 @@ static int _bind_getParent(lua_State *L)
         Luna<LWF::Movie>::push(L, a.parent, false);
     else
         lua_pushnil(L);
+    return 1;
+}
+
+static int _bind_getCurrentLabels(lua_State *L)
+{
+    if (lua_gettop(L) != 1 || Luna<void>::get_uniqueid(L, 1) !=
+            LunaTraits<LWF::Movie>::uniqueID) {
+        luna_printStack(L);
+        luaL_error(L, "luna typecheck failed: LWF.Movie.currentLabels");
+    }
+    LWF::Movie &a = static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
+    const LWF::CurrentLabels currentLabels = a.GetCurrentLabels();
+
+    lua_createtable(L, (int)currentLabels.size(), 0);
+    /* -1: table */
+    LWF::CurrentLabels::const_iterator
+        it(currentLabels.begin()), itend(currentLabels.end());
+    for (int i = 1; it != itend; ++it, ++i) {
+        lua_pushnumber(L, i);
+        /* -2: table */
+        /* -1: index */
+        lua_createtable(L, 0, 2);
+        /* -3: table */
+        /* -2: index */
+        /* -1: table */
+        lua_pushnumber(L, it->frame);
+        /* -4: table */
+        /* -3: index */
+        /* -2: table */
+        /* -1: frame */
+        lua_setfield(L, -2, "frame");
+        /* -3: table */
+        /* -2: index */
+        /* -1: table */
+        lua_pushstring(L, it->name.c_str());
+        /* -4: table */
+        /* -3: index */
+        /* -2: table */
+        /* -1: name */
+        lua_setfield(L, -2, "name");
+        /* -3: table */
+        /* -2: index */
+        /* -1: table */
+        lua_settable(L, -3);
+        /* -1: table */
+    }
+    /* -1: table */
     return 1;
 }
 
@@ -1929,6 +1983,17 @@ error:
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
     return 1;                                                 // 303
   }                                                           // 333
+  static int _bind_getCurrentLabel(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_getCurrentLabel(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getCurrentLabel(LWF ::Movie & o,)"); }
+                                                              // 487
+    LWF ::Movie & o=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    try {                                                     // 305
+    std ::string ret=getCurrentLabel( o);                     // 306
+    lua_pushstring(L, ret.c_str());                           // 309
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 313
+    return 1;                                                 // 314
+  }                                                           // 333
   static int _bind_getTotalFrames(lua_State *L)
   {                                                           // 1282
     if (!_lg_typecheck_getTotalFrames(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getTotalFrames(LWF ::Movie & o,)"); }
@@ -2189,6 +2254,8 @@ error:
     LunaTraits<LWF ::Movie >::properties["name"]=&_bind_getName; // 1326
     LunaTraits<LWF ::Movie >::properties["parent"]=&_bind_getParent; // 1326
     LunaTraits<LWF ::Movie >::properties["currentFrame"]=&_bind_getCurrentFrame; // 1326
+    LunaTraits<LWF ::Movie >::properties["currentLabel"]=&_bind_getCurrentLabel; // 1326
+    LunaTraits<LWF ::Movie >::properties["currentLabels"]=&_bind_getCurrentLabels; // 1326
     LunaTraits<LWF ::Movie >::properties["totalFrames"]=&_bind_getTotalFrames; // 1326
     LunaTraits<LWF ::Movie >::properties["visible"]=&_bind_getVisible; // 1326
     LunaTraits<LWF ::Movie >::properties["x"]=&_bind_getX;    // 1326
@@ -2319,6 +2386,7 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"detachBitmap", &impl_LunaTraits<LWF ::Movie >::_bind_detachBitmap}, // 1492
     {"getName", &impl_LunaTraits<LWF ::Movie >::_bind_getName}, // 1492
     {"getCurrentFrame", &impl_LunaTraits<LWF ::Movie >::_bind_getCurrentFrame}, // 1492
+    {"getCurrentLabel", &impl_LunaTraits<LWF ::Movie >::_bind_getCurrentLabel}, // 1492
     {"getTotalFrames", &impl_LunaTraits<LWF ::Movie >::_bind_getTotalFrames}, // 1492
     {"getVisible", &impl_LunaTraits<LWF ::Movie >::_bind_getVisible}, // 1492
     {"getX", &impl_LunaTraits<LWF ::Movie >::_bind_getX},     // 1492

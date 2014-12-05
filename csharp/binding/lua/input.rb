@@ -228,6 +228,8 @@ static float getHeight(LWF.Button o);
 				['name', 'getName'],
 				['parent', 'getParent'],
 				['currentFrame', 'getCurrentFrame'],
+				['currentLabel', 'getCurrentLabel'],
+				['currentLabels', 'getCurrentLabels'],
 				['totalFrames', 'getTotalFrames'],
 				['visible', 'getVisible'],
 				['x', 'getX'],
@@ -291,6 +293,7 @@ void DetachBitmap(int depth) @ detachBitmap
 			:staticMemberFunctions=><<-EOS,
 static string getName(LWF.Movie o);
 static int getCurrentFrame(LWF.Movie o);
+static string getCurrentLabel(LWF.Movie o);
 static int getTotalFrames(LWF.Movie o);
 static bool getVisible(LWF.Movie o);
 static float getX(LWF.Movie o);
@@ -362,6 +365,7 @@ static void setBlue(LWF.Movie o, float v);
 			:wrapperCode=><<-EOS,
 	static string getName(LWF.Movie o){return o.name;}
 	static int getCurrentFrame(LWF.Movie o){return o.currentFrame;}
+	static string getCurrentLabel(LWF.Movie o){return o.GetCurrentLabel();}
 	static int getTotalFrames(LWF.Movie o){return o.totalFrames;}
 	static bool getVisible(LWF.Movie o){return o.visible;}
 	static float getX(LWF.Movie o){return o.x;}
@@ -408,6 +412,54 @@ static void setBlue(LWF.Movie o, float v);
 		LWF.Movie a =
 			Luna_LWF_Movie.check(L, 1);
 		Luna_LWF_Movie.push(L, a.parent, false);
+		return 1;
+	}
+
+	public static int _bind_getCurrentLabels(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L) != 1 || Luna.get_uniqueid(L, 1) !=
+				LunaTraits_LWF_Movie.uniqueID) {
+			Luna.printStack(L);
+			Lua.luaL_error(L, "luna typecheck failed: LWF.Movie.currentLabels");
+		}
+		LWF.Movie a =
+			Luna_LWF_Movie.check(L, 1);
+    List<LWF.LabelData> currentLabels = a.GetCurrentLabels();
+	
+		Lua.lua_createtable(L, currentLabels.Count, 0);
+		/* -1: table */
+		int i = 1;
+		foreach(LWF.LabelData labelData in currentLabels) {
+			Lua.lua_pushnumber(L, i);
+			/* -2: table */
+			/* -1: index */
+			Lua.lua_createtable(L, 0, 2);
+			/* -3: table */
+			/* -2: index */
+			/* -1: table */
+			Lua.lua_pushnumber(L, labelData.frame);
+			/* -4: table */
+			/* -3: index */
+			/* -2: table */
+			/* -1: frame */
+			Lua.lua_setfield(L, -2, "frame");
+			/* -3: table */
+			/* -2: index */
+			/* -1: table */
+			Lua.lua_pushstring(L, labelData.name);
+			/* -4: table */
+			/* -3: index */
+			/* -2: table */
+			/* -1: name */
+			Lua.lua_setfield(L, -2, "name");
+			/* -3: table */
+			/* -2: index */
+			/* -1: table */
+			Lua.lua_settable(L, -3);
+			/* -1: table */
+			++i;
+		}
+		/* -1: table */
 		return 1;
 	}
 

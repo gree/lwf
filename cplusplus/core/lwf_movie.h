@@ -30,6 +30,7 @@ namespace LWF {
 class Button;
 class Property;
 class LWFContainer;
+struct LabelData;
 
 typedef map<string, shared_ptr<Movie> > AttachedMovies;
 typedef map<int, shared_ptr<Movie> > AttachedMovieList;
@@ -39,6 +40,13 @@ typedef map<string, bool> DetachDict;
 typedef map<string, bool> Texts;
 typedef map<int, shared_ptr<BitmapClip> > BitmapClips;
 typedef map<string, MovieEventHandlerList> MovieEventHandlerListDictionary;
+typedef vector<LabelData> CurrentLabels;
+typedef map<int, string> CurrentLabelCache;
+
+struct LabelData {
+	int frame;
+	string name;
+};
 
 class Movie : public IObject
 {
@@ -100,6 +108,9 @@ private:
 	ColorTransform m_colorTransformForAttachedLWFs;
 	Bounds m_bounds;
 	Bounds m_currentBounds;
+	CurrentLabels m_currentLabelsCache;
+	CurrentLabelCache m_currentLabelCache;
+	bool m_currentLabelsCached;
 #if defined(LWF_USE_LUA)
 	string m_rootLoadFunc;
 	string m_rootPostLoadFunc;
@@ -244,6 +255,9 @@ public:
 	void RequestCalculateBounds(MovieEventHandler callback = 0);
 	Bounds GetBounds();
 
+	string GetCurrentLabel();
+	const CurrentLabels GetCurrentLabels();
+
 private:
 	void ExecObject(int dlDepth, int objId,
 		int matrixId, int colorTransformId, int instId, int dlBlendMode);
@@ -261,6 +275,7 @@ private:
 	void UpdateBounds(
 		const Matrix *m, float xmin, float xmax, float ymin, float ymax);
 	void UpdateBounds(const Matrix *m, float sx, float sy);
+	void CacheCurrentLabels();
 };
 
 }	// namespace LWF

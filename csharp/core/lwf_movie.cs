@@ -41,6 +41,14 @@ using DetachDict = Dictionary<string, bool>;
 using Inspector = System.Action<Object, int, int, int>;
 using Texts = Dictionary<string, bool>;
 using BitmapClips = SortedDictionary<int, BitmapClip>;
+using CurrentLabels = List<LabelData>;
+using CurrentLabelCache = Dictionary<int, string>;
+
+public class LabelData
+{
+	public int frame;
+	public string name;
+}
 
 public partial class Movie : IObject
 {
@@ -98,6 +106,8 @@ public partial class Movie : IObject
 	private ColorTransform m_colorTransform0;
 	private ColorTransform m_colorTransform1;
 	private ColorTransform m_colorTransformForAttachedLWFs;
+	private CurrentLabels m_currentLabelsCache;
+	private CurrentLabelCache m_currentLabelCache;
 
 	private Property m_property;
 
@@ -1371,6 +1381,94 @@ public partial class Movie : IObject
 	public Bounds GetBounds()
 	{
 		return m_bounds;
+	}
+
+	private void CacheCurrentLabels()
+	{
+		if (m_currentLabelsCache != null)
+			return;
+
+		m_currentLabelsCache = new CurrentLabels();
+		Dictionary<int, int> labels = m_lwf.GetMovieLabels(this);
+		if (labels == null)
+			return;
+
+		foreach (KeyValuePair<int, int> kvp in labels) {
+			LabelData labelData = new LabelData{
+				frame = kvp.Value + 1,
+				name = m_lwf.data.strings[kvp.Key],
+			};
+			m_currentLabelsCache.Add(labelData);
+		}
+		m_currentLabelsCache.Sort((a, b) => {
+			return a.frame - b.frame;
+		});
+	}
+
+	public string GetCurrentLabel()
+	{
+		CacheCurrentLabels();
+
+		if (m_currentLabelsCache.Count == 0)
+			return null;
+
+		int currentFrameTmp = currentFrame;
+		if (currentFrameTmp < 1)
+			currentFrameTmp = 1;
+
+		if (m_currentLabelCache == null)
+			m_currentLabelCache = new CurrentLabelCache();
+
+		string labelName = null;
+		if (!m_currentLabelCache.TryGetValue(currentFrameTmp, out labelName)) {
+			LabelData firstLabel = m_currentLabelsCache[0];
+			LabelData lastLabel =
+				m_currentLabelsCache[m_currentLabelsCache.Count - 1];
+			if (currentFrameTmp < firstLabel.frame) {
+				labelName = "";
+			} else if (currentFrameTmp == firstLabel.frame) {
+				labelName = firstLabel.name;
+			} else if (currentFrameTmp >= lastLabel.frame) {
+				labelName = lastLabel.name;
+			} else {
+				int l = 0;
+				int ln = m_currentLabelsCache[l].frame;
+				int r = m_currentLabelsCache.Count - 1;
+				int rn = m_currentLabelsCache[r].frame;
+				for (;;) {
+					if ((l == r) || (r - l == 1)) {
+						if (currentFrameTmp < ln)
+							labelName = "";
+						else if (currentFrameTmp == rn)
+							labelName = m_currentLabelsCache[r].name;
+						else
+							labelName = m_currentLabelsCache[l].name;
+						break;
+					}
+					int n = (int)Math.Floor((r - l) / 2.0) + l;
+					int nn = m_currentLabelsCache[n].frame;
+					if (currentFrameTmp < nn) {
+						r = n;
+						rn = nn;
+					} else if (currentFrameTmp > nn) {
+						l = n;
+						ln = nn;
+					} else {
+						labelName = m_currentLabelsCache[n].name;
+						break;
+					}
+				}
+			}
+			m_currentLabelCache[currentFrameTmp] = labelName;
+		}
+
+		return String.IsNullOrEmpty(labelName) ? null : labelName;
+	}
+
+	public CurrentLabels GetCurrentLabels()
+	{
+		CacheCurrentLabels();
+		return m_currentLabelsCache;
 	}
 }
 

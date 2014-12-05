@@ -76,6 +76,7 @@ void main()
 );
 
 using namespace LWF;
+using namespace std;
 using LWFData = ::LWF::Data;
 
 NS_CC_BEGIN
@@ -142,6 +143,323 @@ shared_ptr<LWFData> LWFResourceCache::loadLWFData(const string &path)
 	return data;
 }
 
+static void checkImagePath(const char *file, string &imagePath,
+	bool &toRGB, bool &toRGBA, bool &toADD, unsigned char &red,
+	unsigned char &green, unsigned char &blue, unsigned char &alpha)
+{
+	static regex eRGB(
+		"(.*)_rgb_([0-9a-f]{6})(.*)$", regex_constants::icase);
+	static regex eRGB10(
+		"(.*)_rgb_([0-9*),([0-9]*),([0-9]*)(.*)$",
+		regex_constants::icase);
+	static regex eRGBA(
+		"(.*)_rgba_([0-9a-f]{8})(.*)$", regex_constants::icase);
+	static regex eRGBA10(
+		"(.*)_rgba_([0-9]*),([0-9]*),([0-9]*),([0-9]*)(.*)$",
+		regex_constants::icase);
+	static regex eADD(
+		"(.*)_add_([0-9a-f]{6})(.*)$", regex_constants::icase);
+	static regex eADD10(
+		"(.*)_add_([0-9]*),([0-9]*),([0-9]*)(.*)$",
+		regex_constants::icase);
+
+	imagePath = file;
+	toRGB = false;
+	toRGBA = false;
+	toADD = false;
+	red = 0;
+	green = 0;
+	blue = 0;
+	alpha = 0;
+	smatch match;
+	if (strcasestr(file, "_rgb_") != 0) {
+		if (regex_match(imagePath, match, eRGB)) {
+			imagePath = match[1].str() + match[3].str();
+			toRGB = true;
+			string rgbHex = match[2].str();
+			red = strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
+			green = strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
+			blue = strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
+		} else if (regex_match(imagePath, match, eRGB10)) {
+			imagePath = match[1].str() + match[5].str();
+			toRGB = true;
+			red = strtoul(match[2].str().c_str(), 0, 10);
+			green = strtoul(match[3].str().c_str(), 0, 10);
+			blue = strtoul(match[4].str().c_str(), 0, 10);
+		}
+	} else if (strcasestr(file, "_rgba_") != 0) {
+		if (regex_match(imagePath, match, eRGBA)) {
+			imagePath = match[1].str() + match[3].str();
+			toRGBA = true;
+			string rgbaHex = match[2].str();
+			red = strtoul(rgbaHex.substr(0, 2).c_str(), 0, 16);
+			green = strtoul(rgbaHex.substr(2, 2).c_str(), 0, 16);
+			blue = strtoul(rgbaHex.substr(4, 2).c_str(), 0, 16);
+			alpha = strtoul(rgbaHex.substr(6, 2).c_str(), 0, 16);
+		} else if (regex_match(imagePath, match, eRGBA10)) {
+			imagePath = match[1].str() + match[6].str();
+			toRGBA = true;
+			red = strtoul(match[2].str().c_str(), 0, 10);
+			green = strtoul(match[3].str().c_str(), 0, 10);
+			blue = strtoul(match[4].str().c_str(), 0, 10);
+			alpha = strtoul(match[5].str().c_str(), 0, 10);
+		}
+	} else if (strcasestr(file, "_add_") != 0) {
+		if (regex_match(imagePath, match, eADD)) {
+			imagePath = match[1].str() + match[3].str();
+			toADD = true;
+			string rgbHex = match[2].str();
+			red = strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
+			green = strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
+			blue = strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
+		} else if (regex_match(imagePath, match, eADD10)) {
+			imagePath = match[1].str() + match[5].str();
+			toADD = true;
+			red = strtoul(match[2].str().c_str(), 0, 10);
+			green = strtoul(match[3].str().c_str(), 0, 10);
+			blue = strtoul(match[4].str().c_str(), 0, 10);
+		}
+	}
+}
+
+static bool checkAtlas(string &imagePath,
+	int &rotated, int &u, int &v, int &w, int &h, int &sw, int &sh)
+{
+	static regex eATLAS("(.*\\.[^_]+)_atlas_(.*\\.*)_info_"
+		"([0-9])_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)",
+		regex_constants::icase);
+	static regex ePATH("(.*/)[^\\/]+", regex_constants::icase);
+
+	smatch match;
+	if (regex_match(imagePath, match, eATLAS)) {
+		string dir = match[1].str();
+		string atlasFile = match[2].str();
+		rotated = (int)strtoul(match[3].str().c_str(), 0, 10);
+		u = (int)strtoul(match[4].str().c_str(), 0, 10);
+		v = (int)strtoul(match[5].str().c_str(), 0, 10);
+		w = (int)strtoul(match[6].str().c_str(), 0, 10);
+		h = (int)strtoul(match[7].str().c_str(), 0, 10);
+		sw = rotated ? h : w;
+		sh = rotated ? w : h;
+
+		if (regex_match(dir, match, ePATH))
+			dir = match[1].str();
+
+		imagePath = dir + atlasFile;
+
+		return true;
+	}
+
+	return false;
+}
+
+static Image *generateImage(string imagePath, Image *baseImage,
+	int rotated, int u, int v, int w, int h, int sw, int sh)
+{
+	unsigned char *srcData = baseImage->getData();
+	int ow = baseImage->getWidth();
+
+	int dataLen = w * h * 4;
+	unsigned char *dstData = (unsigned char *)calloc(1, dataLen);
+
+	switch (baseImage->getRenderFormat()) {
+	case Texture2D::PixelFormat::RGBA8888:
+		{
+			if (rotated) {
+				for (int sy = v, dx = 0; sy < v + sh; ++sy, ++dx) {
+					for (int sx = u, dy = h - 1;
+							sx < u + sw; ++sx, --dy) {
+						unsigned char *sp =
+							&srcData[sy * ow * 4 + sx * 4];
+						unsigned char *dp =
+							&dstData[dy * w * 4 + dx * 4];
+						memcpy(dp, sp, 4);
+					}
+				}
+			} else {
+				for (int sy = v, dy = 0; sy < v + h; ++sy, ++dy) {
+					unsigned char *sp =
+						&srcData[sy * ow * 4 + u * 4];
+					unsigned char *dp = &dstData[dy * w * 4];
+					memcpy(dp, sp, w * 4);
+				}
+			}
+		}
+		break;
+
+	case Texture2D::PixelFormat::RGB888:
+		{
+			if (rotated) {
+				for (int sy = v, dx = 0; sy < v + sh; ++sy, ++dx) {
+					for (int sx = u, dy = h - 1;
+							sx < u + sw; ++sx, --dy) {
+						unsigned char *sp =
+							&srcData[sy * ow * 3 + sx * 3];
+						unsigned char *dp =
+							&dstData[dy * w * 4 + dx * 4];
+						memcpy(dp, sp, 3);
+						*(dp + 3) = 0xff;
+					}
+				}
+			} else {
+				for (int sy = v, dy = 0; sy < v + h; ++sy, ++dy) {
+					for (int sx = u, dx = 0;
+							sx < u + w; ++sx, ++dx) {
+						unsigned char *sp =
+							&srcData[sy * ow * 3 + sx * 3];
+						unsigned char *dp =
+							&dstData[dy * w * 4 + dx * 4];
+						memcpy(dp, sp, 3);
+						*(dp + 3) = 0xff;
+					}
+				}
+			}
+		}
+		break;
+
+	default:
+		log("cocos2d: WARNING: %s: Image pixel format is not "
+			"supported for converting color", imagePath.c_str());
+		break;
+	}
+
+	Image *image = new Image();
+	image->initWithRawData(dstData, dataLen, w, h, 8);
+	free(dstData);
+
+	return image;
+}
+
+static void colorImage(string imagePath, Image *image, bool toRGB,
+	bool toRGBA, bool toADD, unsigned char red, unsigned char green,
+	unsigned char blue, unsigned char alpha)
+{
+	switch (image->getRenderFormat()) {
+	case Texture2D::PixelFormat::RGBA8888:
+		{
+			unsigned char *p = image->getData();
+			int height = image->getHeight();
+			int width = image->getWidth();
+
+			for (int i = 0; i < height * width * 4; i += 4) {
+				unsigned char *pr = &p[i + 0];
+				unsigned char *pg = &p[i + 1];
+				unsigned char *pb = &p[i + 2];
+				unsigned char *pa = &p[i + 3];
+
+				if (toRGB) {
+					*pr = red;
+					*pg = green;
+					*pb = blue;
+				} else if (toRGBA) {
+					*pr = red;
+					*pg = green;
+					*pb = blue;
+					*pa = alpha;
+				} else if (toADD) {
+					*pr = max(min(*pr + red, 255), 0);
+					*pg = max(min(*pg + green, 255), 0);
+					*pb = max(min(*pb + blue, 255), 0);
+				}
+				if (image->hasPremultipliedAlpha()) {
+					if (*pa == 0) {
+						*pr = 0;
+						*pg = 0;
+						*pb = 0;
+					} else {
+						*pr = *pr * 255 / *pa;
+						*pg = *pg * 255 / *pa;
+						*pb = *pb * 255 / *pa;
+					}
+				}
+			}
+		}
+		break;
+
+	case Texture2D::PixelFormat::RGB888:
+		{
+			unsigned char *p = image->getData();
+			int height = image->getHeight();
+			int width = image->getWidth();
+
+			for (int i = 0; i < height * width * 3; i += 3) {
+				unsigned char *pr = &p[i + 0];
+				unsigned char *pg = &p[i + 1];
+				unsigned char *pb = &p[i + 2];
+
+				if (toRGB || toRGBA) {
+					*pr = red;
+					*pg = green;
+					*pb = blue;
+				} else if (toADD) {
+					*pr = max(min(*pr + red, 255), 0);
+					*pg = max(min(*pg + green, 255), 0);
+					*pb = max(min(*pb + blue, 255), 0);
+				}
+			}
+		}
+		break;
+
+	default:
+		log("cocos2d: WARNING: %s: Image pixel format is not support "
+			"for converting color", imagePath.c_str());
+		break;
+	}
+}
+
+Texture2D *LWFResourceCache::addImage(const char *file)
+{
+	string imagePath;
+	bool toRGB;
+	bool toRGBA;
+	bool toADD;
+	unsigned char red;
+	unsigned char green;
+	unsigned char blue;
+	unsigned char alpha;
+
+	checkImagePath(file,
+		imagePath, toRGB, toRGBA, toADD, red, green, blue, alpha);
+
+	TextureCache *cache = Director::getInstance()->getTextureCache();
+	Texture2D *texture = 0;
+
+	if (toRGB || toRGBA || toADD) {
+		texture = cache->getTextureForKey(file);
+		if (!texture) {
+			Image *image = new Image();
+
+			int rotated;
+			int u;
+			int v;
+			int w;
+			int h;
+			int sw;
+			int sh;
+
+			if (checkAtlas(imagePath, rotated, u, v, w, h, sw, sh)) {
+				image->initWithImageFile(imagePath);
+				Image *fragmentImage = generateImage(
+					imagePath, image, rotated, u, v, w, h , sw, sh);
+				image->release();
+				image = fragmentImage;
+			} else {
+				image->initWithImageFile(imagePath);
+			}
+
+			colorImage(imagePath,
+				image, toRGB, toRGBA, toADD, red, green, blue, alpha);
+
+			texture = cache->addImage(image, file);
+			image->release();
+		}
+	} else {
+		texture = cache->addImage(imagePath);
+	}
+
+	return texture;
+}
+
 
 void LWFResourceCache::initAddColorGLProgram()
 {
@@ -191,265 +509,6 @@ GLProgram *LWFResourceCache::getAddColorPAGLProgram()
 	return m_addColorPAGLProgram;
 }
 
-Texture2D *LWFResourceCache::addImage(const char *file)
-{
-	static std::regex eRGB(
-		"(.*)_rgb_([0-9a-f]{6})(.*)$", std::regex_constants::icase);
-	static std::regex eRGB10(
-		"(.*)_rgb_([0-9*),([0-9]*),([0-9]*)(.*)$",
-		std::regex_constants::icase);
-	static std::regex eRGBA(
-		"(.*)_rgba_([0-9a-f]{8})(.*)$", std::regex_constants::icase);
-	static std::regex eRGBA10(
-		"(.*)_rgba_([0-9]*),([0-9]*),([0-9]*),([0-9]*)(.*)$",
-		std::regex_constants::icase);
-	static std::regex eADD(
-		"(.*)_add_([0-9a-f]{6})(.*)$", std::regex_constants::icase);
-	static std::regex eADD10(
-		"(.*)_add_([0-9]*),([0-9]*),([0-9]*)(.*)$",
-		std::regex_constants::icase);
-	static std::regex eATLAS("(.*\\.[^_]+)_atlas_(.*\\.*)_info_"
-		"([0-9])_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)",
-		std::regex_constants::icase);
-	static std::regex ePATH("(.*/)[^\\/]+", std::regex_constants::icase);
-
-	std::string texPath = file;
-	std::smatch match;
-	bool toRGB = false;
-	bool toRGBA = false;
-	bool toADD = false;
-	unsigned char red = 0;
-	unsigned char green = 0;
-	unsigned char blue = 0;
-	unsigned char alpha = 0;
-	if (strcasestr(file, "_rgb_") != 0) {
-		if (std::regex_match(texPath, match, eRGB)) {
-			texPath = match[1].str() + match[3].str();
-			toRGB = true;
-			std::string rgbHex = match[2].str();
-			red = std::strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
-			green = std::strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
-			blue = std::strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
-		} else if (std::regex_match(texPath, match, eRGB10)) {
-			texPath = match[1].str() + match[5].str();
-			toRGB = true;
-			red = std::strtoul(match[2].str().c_str(), 0, 10);
-			green = std::strtoul(match[3].str().c_str(), 0, 10);
-			blue = std::strtoul(match[4].str().c_str(), 0, 10);
-		}
-	} else if (strcasestr(file, "_rgba_") != 0) {
-		if (std::regex_match(texPath, match, eRGBA)) {
-			texPath = match[1].str() + match[3].str();
-			toRGBA = true;
-			std::string rgbaHex = match[2].str();
-			red = std::strtoul(rgbaHex.substr(0, 2).c_str(), 0, 16);
-			green = std::strtoul(rgbaHex.substr(2, 2).c_str(), 0, 16);
-			blue = std::strtoul(rgbaHex.substr(4, 2).c_str(), 0, 16);
-			alpha = std::strtoul(rgbaHex.substr(6, 2).c_str(), 0, 16);
-		} else if (std::regex_match(texPath, match, eRGBA10)) {
-			texPath = match[1].str() + match[6].str();
-			toRGBA = true;
-			red = std::strtoul(match[2].str().c_str(), 0, 10);
-			green = std::strtoul(match[3].str().c_str(), 0, 10);
-			blue = std::strtoul(match[4].str().c_str(), 0, 10);
-			alpha = std::strtoul(match[5].str().c_str(), 0, 10);
-		}
-	} else if (strcasestr(file, "_add_") != 0) {
-		if (std::regex_match(texPath, match, eADD)) {
-			texPath = match[1].str() + match[3].str();
-			toADD = true;
-			std::string rgbHex = match[2].str();
-			red = std::strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
-			green = std::strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
-			blue = std::strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
-		} else if (std::regex_match(texPath, match, eADD10)) {
-			texPath = match[1].str() + match[5].str();
-			toADD = true;
-			red = std::strtoul(match[2].str().c_str(), 0, 10);
-			green = std::strtoul(match[3].str().c_str(), 0, 10);
-			blue = std::strtoul(match[4].str().c_str(), 0, 10);
-		}
-	}
-
-	TextureCache *cache = Director::getInstance()->getTextureCache();
-	Texture2D *texture = 0;
-
-	if (toRGB || toRGBA || toADD) {
-		texture = cache->getTextureForKey(file);
-		if (!texture) {
-			Image *image = new Image();
-
-			if (std::regex_match(texPath, match, eATLAS)) {
-				std::string dir = match[1].str();
-				std::string atlasFile = match[2].str();
-				int rotated = (int)std::strtoul(match[3].str().c_str(), 0, 10);
-				int u = (int)std::strtoul(match[4].str().c_str(), 0, 10);
-				int v = (int)std::strtoul(match[5].str().c_str(), 0, 10);
-				int w = (int)std::strtoul(match[6].str().c_str(), 0, 10);
-				int h = (int)std::strtoul(match[7].str().c_str(), 0, 10);
-				int sw = rotated ? h : w;
-				int sh = rotated ? w : h;
-
-				if (std::regex_match(dir, match, ePATH))
-					dir = match[1].str();
-				image->initWithImageFile(dir + atlasFile);
-				unsigned char *srcData = image->getData();
-				int ow = image->getWidth();
-
-				int dataLen = w * h * 4;
-				unsigned char *dstData = (unsigned char *)calloc(1, dataLen);
-
-				switch (image->getRenderFormat()) {
-				case Texture2D::PixelFormat::RGBA8888:
-					{
-						if (rotated) {
-							for (int sy = v, dx = 0; sy < v + sh; ++sy, ++dx) {
-								for (int sx = u, dy = h - 1;
-										sx < u + sw; ++sx, --dy) {
-									unsigned char *sp =
-										&srcData[sy * ow * 4 + sx * 4];
-									unsigned char *dp =
-										&dstData[dy * w * 4 + dx * 4];
-									memcpy(dp, sp, 4);
-								}
-							}
-						} else {
-							for (int sy = v, dy = 0; sy < v + h; ++sy, ++dy) {
-								unsigned char *sp =
-									&srcData[sy * ow * 4 + u * 4];
-								unsigned char *dp = &dstData[dy * w * 4];
-								memcpy(dp, sp, w * 4);
-							}
-						}
-					}
-					break;
-
-				case Texture2D::PixelFormat::RGB888:
-					{
-						if (rotated) {
-							for (int sy = v, dx = 0; sy < v + sh; ++sy, ++dx) {
-								for (int sx = u, dy = h - 1;
-										sx < u + sw; ++sx, --dy) {
-									unsigned char *sp =
-										&srcData[sy * ow * 3 + sx * 3];
-									unsigned char *dp =
-										&dstData[dy * w * 4 + dx * 4];
-									memcpy(dp, sp, 3);
-									*(dp + 3) = 0xff;
-								}
-							}
-						} else {
-							for (int sy = v, dy = 0; sy < v + h; ++sy, ++dy) {
-								for (int sx = u, dx = 0;
-										sx < u + w; ++sx, ++dx) {
-									unsigned char *sp =
-										&srcData[sy * ow * 3 + sx * 3];
-									unsigned char *dp =
-										&dstData[dy * w * 4 + dx * 4];
-									memcpy(dp, sp, 3);
-									*(dp + 3) = 0xff;
-								}
-							}
-						}
-					}
-					break;
-
-				default:
-					log("cocos2d: WARNING: %s: Image pixel format is not "
-						"support for converting color", file);
-					break;
-				}
-
-				image->release();
-				image = new Image();
-				image->initWithRawData(dstData, dataLen, w, h, 8);
-				free(dstData);
-			} else {
-				image->initWithImageFile(texPath);
-			}
-
-			switch (image->getRenderFormat()) {
-			case Texture2D::PixelFormat::RGBA8888:
-				{
-					unsigned char *p = image->getData();
-					int height = image->getHeight();
-					int width = image->getWidth();
-
-					for (int i = 0; i < height * width * 4; i += 4) {
-						unsigned char *pr = &p[i + 0];
-						unsigned char *pg = &p[i + 1];
-						unsigned char *pb = &p[i + 2];
-						unsigned char *pa = &p[i + 3];
-
-						if (toRGB) {
-							*pr = red;
-							*pg = green;
-							*pb = blue;
-						} else if (toRGBA) {
-							*pr = red;
-							*pg = green;
-							*pb = blue;
-							*pa = alpha;
-						} else if (toADD) {
-							*pr = std::max(std::min(*pr + red, 255), 0);
-							*pg = std::max(std::min(*pg + green, 255), 0);
-							*pb = std::max(std::min(*pb + blue, 255), 0);
-						}
-						if (image->hasPremultipliedAlpha()) {
-							if (*pa == 0) {
-								*pr = 0;
-								*pg = 0;
-								*pb = 0;
-							} else {
-								*pr = *pr * 255 / *pa;
-								*pg = *pg * 255 / *pa;
-								*pb = *pb * 255 / *pa;
-							}
-						}
-					}
-				}
-				break;
-
-			case Texture2D::PixelFormat::RGB888:
-				{
-					unsigned char *p = image->getData();
-					int height = image->getHeight();
-					int width = image->getWidth();
-
-					for (int i = 0; i < height * width * 3; i += 3) {
-						unsigned char *pr = &p[i + 0];
-						unsigned char *pg = &p[i + 1];
-						unsigned char *pb = &p[i + 2];
-
-						if (toRGB || toRGBA) {
-							*pr = red;
-							*pg = green;
-							*pb = blue;
-						} else if (toADD) {
-							*pr = std::max(std::min(*pr + red, 255), 0);
-							*pg = std::max(std::min(*pg + green, 255), 0);
-							*pb = std::max(std::min(*pb + blue, 255), 0);
-						}
-					}
-				}
-				break;
-
-			default:
-				log("cocos2d: WARNING: %s: Image pixel format is not support "
-					"for converting color", file);
-				break;
-			}
-
-			texture = cache->addImage(image, file);
-			image->release();
-		}
-	} else {
-		texture = cache->addImage(texPath);
-	}
-
-	return texture;
-}
-
 void LWFResourceCache::unloadLWFDataInternal(const shared_ptr<LWFData> &data)
 {
 	map<string, bool>::iterator
@@ -485,7 +544,7 @@ ValueMap LWFResourceCache::loadParticle(const string &path, bool retain)
 	}
 
 	string fullPath =
-		FileUtils::getInstance()->fullPathForFilename(path.c_str());
+		FileUtils::getInstance()->fullPathForFilename(path);
 	ValueMap dict =
 		FileUtils::getInstance()->getValueMapFromFile(fullPath.c_str());
 
@@ -517,15 +576,15 @@ LWFTextRendererContext LWFResourceCache::getTextRendererContext(
 	FileUtils *fileUtils = FileUtils::getInstance();
 	string fontPath = getFontPathPrefix() + font;
 
-	static std::regex eFnt(".*\\.fnt$", std::regex_constants::icase);
-	if (std::regex_match(font, eFnt)) {
+	static regex eFnt(".*\\.fnt$", regex_constants::icase);
+	if (regex_match(font, eFnt)) {
 		LWFTextRendererContext c(LWFTextRendererContext::BMFONT, fontPath);
 		m_textRendererCache[font] = c;
 		return c;
 	}
 
-	static std::regex eTtf(".*\\.ttf$", std::regex_constants::icase);
-	if (std::regex_match(font, eTtf)) {
+	static regex eTtf(".*\\.ttf$", regex_constants::icase);
+	if (regex_match(font, eTtf)) {
 		LWFTextRendererContext c(LWFTextRendererContext::TTF, fontPath);
 		m_textRendererCache[font] = c;
 		return c;

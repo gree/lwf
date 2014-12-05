@@ -521,13 +521,13 @@ public class impl_LunaTraits_LWF_LWF
   public static int _bind_gotoAndStopMovie(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)==3
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndStopMovie_overload_1(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndStopMovie_overload_1(L);
 	if (Lua.lua_gettop(L)==3
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isstring(L,3)==1) return _bind_gotoAndStopMovie_overload_2(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isstring(L,3)==1) return _bind_gotoAndStopMovie_overload_2(L);
 	Lua.luaL_error(L, "gotoAndStopMovie cannot find overloads.");
 
 	return 0;
@@ -535,13 +535,13 @@ public class impl_LunaTraits_LWF_LWF
   public static int _bind_gotoAndPlayMovie(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)==3
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndPlayMovie_overload_1(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isnumber(L, 3)==1) return _bind_gotoAndPlayMovie_overload_1(L);
 	if (Lua.lua_gettop(L)==3
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isstring(L,3)==1) return _bind_gotoAndPlayMovie_overload_2(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isstring(L,3)==1) return _bind_gotoAndPlayMovie_overload_2(L);
 	Lua.luaL_error(L, "gotoAndPlayMovie cannot find overloads.");
 
 	return 0;
@@ -549,23 +549,23 @@ public class impl_LunaTraits_LWF_LWF
   public static int _bind_setColorTransformMovie(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)==6
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isnumber(L, 3)==1
-            || Lua.lua_isnumber(L, 4)==1
-            || Lua.lua_isnumber(L, 5)==1
-            || Lua.lua_isnumber(L, 6)==1) return _bind_setColorTransformMovie_overload_1(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isnumber(L, 3)==1
+            && Lua.lua_isnumber(L, 4)==1
+            && Lua.lua_isnumber(L, 5)==1
+            && Lua.lua_isnumber(L, 6)==1) return _bind_setColorTransformMovie_overload_1(L);
 	if (Lua.lua_gettop(L)==10
-            || Luna.get_uniqueid(L,1)==7105034 
-            || Lua.lua_isstring(L,2)==1
-            || Lua.lua_isnumber(L, 3)==1
-            || Lua.lua_isnumber(L, 4)==1
-            || Lua.lua_isnumber(L, 5)==1
-            || Lua.lua_isnumber(L, 6)==1
-            || Lua.lua_isnumber(L, 7)==1
-            || Lua.lua_isnumber(L, 8)==1
-            || Lua.lua_isnumber(L, 9)==1
-            || Lua.lua_isnumber(L, 10)==1) return _bind_setColorTransformMovie_overload_2(L);
+            && Luna.get_uniqueid(L,1)==7105034 
+            && Lua.lua_isstring(L,2)==1
+            && Lua.lua_isnumber(L, 3)==1
+            && Lua.lua_isnumber(L, 4)==1
+            && Lua.lua_isnumber(L, 5)==1
+            && Lua.lua_isnumber(L, 6)==1
+            && Lua.lua_isnumber(L, 7)==1
+            && Lua.lua_isnumber(L, 8)==1
+            && Lua.lua_isnumber(L, 9)==1
+            && Lua.lua_isnumber(L, 10)==1) return _bind_setColorTransformMovie_overload_2(L);
 	Lua.luaL_error(L, "setColorTransformMovie cannot find overloads.");
 
 	return 0;

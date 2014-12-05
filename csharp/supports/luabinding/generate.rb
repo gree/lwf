@@ -95,9 +95,9 @@ end
 
 def typecheck_condition_for_member_function(params)
 	s = "Lua.lua_gettop(L)==#{params.length+1}" +
-	"\n" + " "*4*3 + "|| Luna.get_uniqueid(L,1)==__UNIQUE_ID__ "
+	"\n" + " "*4*3 + "&& Luna.get_uniqueid(L,1)==__UNIQUE_ID__ "
 	params.each_with_index do | p, i |
-		s += "\n" + " "*4*3 + "|| " + check_right_statement(p[0], i+2)
+		s += "\n" + " "*4*3 + "&& " + check_right_statement(p[0], i+2)
 	end
 	s
 end

@@ -144,10 +144,11 @@ public class ResourceCache
 
 		if (m_textureLoader == null) {
 			m_textureLoader = (filename) => {
-				Texture2D texture = (Texture2D)Resources.Load(filename);
+				Texture2D texture = (Texture2D)Resources.Load(filename, typeof(Texture2D));
 				if (texture == null)
 					Debug.LogError(string.Format(
 						"Resources.Load can't load [{0}]", filename));
+				texture.wrapMode = TextureWrapMode.Clamp;
 				return texture;
 			};
 		}

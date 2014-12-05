@@ -229,6 +229,8 @@ static int addEventListener(lua_State *L)
 				{'name', 'getName'},
 				{'parent', 'getParent'},
 				{'currentFrame', 'getCurrentFrame'},
+				{'currentLabel', 'getCurrentLabel'},
+				{'currentLabels', 'getCurrentLabels'},
 				{'totalFrames', 'getTotalFrames'},
 				{'visible', 'getVisible'},
 				{'x', 'getX'},
@@ -288,6 +290,7 @@ void DetachBitmap(int depth) @ detachBitmap
 			staticMemberFunctions={[[
 static std::string getName(LWF::Movie &o);
 static int getCurrentFrame(LWF::Movie &o);
+static std::string getCurrentLabel(LWF::Movie &o);
 static int getTotalFrames(LWF::Movie &o);
 static bool getVisible(LWF::Movie &o);
 static float getX(LWF::Movie &o);
@@ -355,6 +358,7 @@ if (lua_gettop(L) == 3 && Luna<void>::get_uniqueid(L, 1) ==
 			wrapperCode=[[
 static std::string getName(LWF::Movie &o){return o.name;}
 static int getCurrentFrame(LWF::Movie &o){return o.currentFrame;}
+static std::string getCurrentLabel(LWF::Movie &o){return o.GetCurrentLabel();}
 static int getTotalFrames(LWF::Movie &o){return o.totalFrames;}
 static bool getVisible(LWF::Movie &o){return o.visible;}
 static float getX(LWF::Movie &o){return o.GetX();}
@@ -404,6 +408,53 @@ static int _bind_getParent(lua_State *L)
 		Luna<LWF::Movie>::push(L, a.parent, false);
 	else
 		lua_pushnil(L);
+	return 1;
+}
+
+static int _bind_getCurrentLabels(lua_State *L)
+{
+	if (lua_gettop(L) != 1 || Luna<void>::get_uniqueid(L, 1) !=
+			LunaTraits<LWF::Movie>::uniqueID) {
+		luna_printStack(L);
+		luaL_error(L, "luna typecheck failed: LWF.Movie.currentLabels");
+	}
+	LWF::Movie &a = static_cast<LWF::Movie &>(*Luna<LWF::Movie>::check(L, 1));
+	const LWF::CurrentLabels currentLabels = a.GetCurrentLabels();
+
+	lua_createtable(L, (int)currentLabels.size(), 0);
+	/* -1: table */
+	LWF::CurrentLabels::const_iterator
+		it(currentLabels.begin()), itend(currentLabels.end());
+	for (int i = 1; it != itend; ++it, ++i) {
+		lua_pushnumber(L, i);
+		/* -2: table */
+		/* -1: index */
+		lua_createtable(L, 0, 2);
+		/* -3: table */
+		/* -2: index */
+		/* -1: table */
+		lua_pushnumber(L, it->frame);
+		/* -4: table */
+		/* -3: index */
+		/* -2: table */
+		/* -1: frame */
+		lua_setfield(L, -2, "frame");
+		/* -3: table */
+		/* -2: index */
+		/* -1: table */
+		lua_pushstring(L, it->name.c_str());
+		/* -4: table */
+		/* -3: index */
+		/* -2: table */
+		/* -1: name */
+		lua_setfield(L, -2, "name");
+		/* -3: table */
+		/* -2: index */
+		/* -1: table */
+		lua_settable(L, -3);
+		/* -1: table */
+	}
+	/* -1: table */
 	return 1;
 }
 
