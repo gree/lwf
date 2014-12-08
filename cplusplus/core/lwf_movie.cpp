@@ -1260,7 +1260,7 @@ Bounds Movie::GetBounds()
 
 static struct {
 	bool operator()(const LabelData &a, const LabelData &b) {   
-		return a.frame - b.frame;
+		return a.frame < b.frame;
 	}
 } LabelDataComparator;
 
