@@ -600,6 +600,10 @@ static void setBlue(LWF.Movie o, float v);
 				'float scaleY',
 				'float rotation',
 				'float alpha',
+				'float offsetX',
+				'float offsetY',
+				'float originalWidth',
+				'float originalHeight',
 			],
 			:readProperties=>[
 				['name', 'getName'],

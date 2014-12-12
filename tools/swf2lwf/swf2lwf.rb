@@ -58,20 +58,21 @@ rescue LoadError
   exit
 end
 
-LWF_HEADER_SIZE = 324
-
-# TODO the next version should have original width and height in tex fragment
-LWF_FORMAT_VERSION_0 = 0x13
+LWF_HEADER_SIZE = 332
+LWF_FORMAT_VERSION_0 = 0x14
 LWF_FORMAT_VERSION_1 = 0x12
 LWF_FORMAT_VERSION_2 = 0x11
 LWF_FORMAT_VERSION = (LWF_FORMAT_VERSION_0 << 16) +
   (LWF_FORMAT_VERSION_1 << 8) + LWF_FORMAT_VERSION_2
+LWF_FORMAT_VERSION_141211 = LWF_FORMAT_VERSION
 
-LWF_FORMAT_VERSION_COMPAT_0 = 0x12
-LWF_FORMAT_VERSION_COMPAT_1 = 0x10
-LWF_FORMAT_VERSION_COMPAT_2 = 0x10
+LWF_HEADER_SIZE_COMPAT = 324
+LWF_FORMAT_VERSION_COMPAT_0 = 0x13
+LWF_FORMAT_VERSION_COMPAT_1 = 0x12
+LWF_FORMAT_VERSION_COMPAT_2 = 0x11
 LWF_FORMAT_VERSION_COMPAT = (LWF_FORMAT_VERSION_COMPAT_0 << 16) +
   (LWF_FORMAT_VERSION_COMPAT_1 << 8) + LWF_FORMAT_VERSION_COMPAT_2
+LWF_FORMAT_VERSION_131211 = LWF_FORMAT_VERSION_COMPAT
 
 MATRIX_FLAG = (1 << 31)
 COLORTRANSFORM_FLAG = (1 << 31)
@@ -555,12 +556,13 @@ end
 class LWFTextureFragment
   attr_reader :texture,
     :stringId, :textureId, :x, :y, :u, :v, :w, :h, :ow, :oh, :textureAtlas
-  def initialize(texture)
+  def initialize(texture, withOriginalWH)
     @texture = texture
+    @withOriginalWH = withOriginalWH
   end
 
   def set(stringId,
-      textureId, rotated, x, y, u, v, w, h, textureAtlas = nil)
+      textureId, rotated, x, y, u, v, w, h, ow, oh, textureAtlas = nil)
     @stringId = stringId
     @textureId = textureId
     @rotated = rotated ? 1 : 0
@@ -570,30 +572,33 @@ class LWFTextureFragment
     @v = v
     @w = w
     @h = h
-    # TODO the next version should have original width and height
-    # @ow = ow
-    # @oh = oh
+    @ow = ow
+    @oh = oh
     @textureAtlas = textureAtlas
   end
 
   def to_bytes
-    to_u32(@stringId) +
-    to_u32(@textureId) +
-    to_u32(@rotated) +
-    to_u32(@x) +
-    to_u32(@y) +
-    to_u32(@u) +
-    to_u32(@v) +
-    to_u32(@w) +
-    to_u32(@h)
-    # TODO the next version should have original width and height
-    # to_u32(@ow) +
-    # to_u32(@oh)
+    bytes =
+      to_u32(@stringId) +
+      to_u32(@textureId) +
+      to_u32(@rotated) +
+      to_u32(@x) +
+      to_u32(@y) +
+      to_u32(@u) +
+      to_u32(@v) +
+      to_u32(@w) +
+      to_u32(@h)
+    if @withOriginalWH
+      bytes +=
+        to_u32(@ow) +
+        to_u32(@oh)
+    end
+    bytes
   end
 
   def dump
     "#{textureAtlas.nil? ? "--------" : textureAtlas.name} #{texture.name} " +
-      "(x:#{x},y:#{y}) (u:#{u},v:#{v}) (w:#{w},h:#{h})"
+      "(x:#{x},y:#{y}) (u:#{u},v:#{v}) (w:#{w},h:#{h}) (ow:#{ow},oh:#{oh})"
   end
 end
 
@@ -783,6 +788,7 @@ LWF_CONTROL_MOVEM = 1
 LWF_CONTROL_MOVEC = 2
 LWF_CONTROL_MOVEMC = 3
 LWF_CONTROL_ACTION = 4
+LWF_CONTROL_MOVEMCB = 5 # should be here for LWF_FORMAT_VERSION_131211
 
 class LWFControlPLACE < LWFData
   def initialize(depth, objectId, instanceId, matrixId, blend_mode)
@@ -835,6 +841,21 @@ class LWFControlMOVEMC < LWFData
     to_u32(@placeId) +
     to_u32(@matrixId) +
     to_u32(@colorTransformId)
+  end
+end
+
+class LWFControlMOVEMCB < LWFData
+  def initialize(placeId, matrixId, colorTransformId, blendMode)
+    @placeId = placeId
+    @matrixId = matrixId
+    @colorTransformId = colorTransformId
+    @blendMode = blendMode
+  end
+  def to_bytes
+    to_u32(@placeId) +
+    to_u32(@matrixId) +
+    to_u32(@colorTransformId) +
+    to_u32(@blendMode)
   end
 end
 
@@ -1220,11 +1241,12 @@ class Place
 end
 
 class ControlMOVE
-  attr_reader :place, :matrix, :color_transform
-  def initialize(place, matrix, color_transform)
+  attr_reader :place, :matrix, :color_transform, :blend_mode
+  def initialize(place, matrix, color_transform, blend_mode)
     @place = place
     @matrix = matrix
     @color_transform = color_transform
+    @blend_mode = blend_mode
   end
   def get_matrix
     @matrix || @place.matrix
@@ -2403,20 +2425,10 @@ def parse_place_object2
   if has_blend_mode
     blend_mode = get_byte
     blend_mode = 0 if blend_mode == 1
-    if blend_mode != 0
-      if @format_version == LWF_FORMAT_VERSION
-        if BLEND_MODE[blend_mode][:supported]
-          @blend_mode_used = true
-        else
-          warn "blend mode \"#{BLEND_MODE[blend_mode][:type]}\" " +
-            "is not supported"
-          blend_mode = 0
-        end
-      else
-        warn "blend mode is not normal with format:" +
-          "#{sprintf("0x%06x", @format_version)}"
-        blend_mode = 0
-      end
+    if blend_mode != 0 and !BLEND_MODE[blend_mode][:supported]
+      warn "blend mode \"#{BLEND_MODE[blend_mode][:type]}\" " +
+        "is not supported"
+      blend_mode = 0
     end
   else
     blend_mode = 0
@@ -2496,11 +2508,14 @@ def parse_place_object2
       @objects[obj_id], name, matrix, BLEND_MODE[blend_mode][:value])
     info "  PLACE depth:#{depth} obj:#{obj_id} name:[#{name}] " +
       "blend_mode:#{BLEND_MODE[blend_mode][:type]}"
-    control = ControlMOVE.new(place, matrix, color_transform)
+    control = ControlMOVE.new(
+      place, matrix, color_transform, BLEND_MODE[blend_mode][:value])
     @instance_name_map[name] = true unless name.nil?
   else
-    info "  MOVE depth:#{depth}"
-    control = ControlMOVE.new(prev_control.place, matrix, color_transform)
+    info "  MOVE depth:#{depth} " +
+      "blend_mode:#{BLEND_MODE[blend_mode][:type]}"
+    control = ControlMOVE.new(prev_control.place,
+      matrix, color_transform, BLEND_MODE[blend_mode][:value])
   end
   info "    matrix:" + matrix.dump unless matrix.nil?
   info "    color:" + color_transform.dump unless color_transform.nil?
@@ -2912,42 +2927,81 @@ def add_object(obj, objectType, objectId)
   lwfObjectId
 end
 
-LWFObjects = [
-  :translate,
-  :matrix,
-  :color,
-  :alphaTransform,
-  :colorTransform,
-  :object,
-  :texture,
-  :textureFragment,
-  :bitmap,
-  :bitmapEx,
-  :font,
-  :textProperty,
-  :text,
-  :particleData,
-  :particle,
-  :programObject,
-  :graphicObject,
-  :graphic,
-  :action,
-  :buttonCondition,
-  :button,
-  :label,
-  :instanceName,
-  :event,
-  :place,
-  :controlMoveM,
-  :controlMoveC,
-  :controlMoveMC,
-  :control,
-  :frame,
-  :movieClipEvent,
-  :movie,
-  :movieLinkage,
-  :string,
-]
+LWFObjects = {
+  LWF_FORMAT_VERSION_141211 => [
+    :translate,
+    :matrix,
+    :color,
+    :alphaTransform,
+    :colorTransform,
+    :object,
+    :texture,
+    :textureFragment,
+    :bitmap,
+    :bitmapEx,
+    :font,
+    :textProperty,
+    :text,
+    :particleData,
+    :particle,
+    :programObject,
+    :graphicObject,
+    :graphic,
+    :action,
+    :buttonCondition,
+    :button,
+    :label,
+    :instanceName,
+    :event,
+    :place,
+    :controlMoveM,
+    :controlMoveC,
+    :controlMoveMC,
+    :controlMoveMCB,
+    :control,
+    :frame,
+    :movieClipEvent,
+    :movie,
+    :movieLinkage,
+    :string,
+  ],
+  LWF_FORMAT_VERSION_131211 => [
+    :translate,
+    :matrix,
+    :color,
+    :alphaTransform,
+    :colorTransform,
+    :object,
+    :texture,
+    :textureFragment,
+    :bitmap,
+    :bitmapEx,
+    :font,
+    :textProperty,
+    :text,
+    :particleData,
+    :particle,
+    :programObject,
+    :graphicObject,
+    :graphic,
+    :action,
+    :buttonCondition,
+    :button,
+    :label,
+    :instanceName,
+    :event,
+    :place,
+    :controlMoveM,
+    :controlMoveC,
+    :controlMoveMC,
+    :control,
+    :frame,
+    :movieClipEvent,
+    :movie,
+    :movieLinkage,
+    :string,
+  ],
+}
 
 def create_instance_name(x, y)
   "x" + x.to_s.sub(/\.0$/, '').sub(/\./, "_").gsub(/-/, "_") +
@@ -3414,7 +3468,8 @@ def add_lwfbutton(button)
   add_object(button, LWF_OBJECT_BUTTON, lwfButtonId)
 end
 
-def add_bitmap(texture, matrixId, u = nil, v = nil, width = nil, height = nil)
+def add_bitmap(texture,
+    matrixId, withOriginalWH, u = nil, v = nil, width = nil, height = nil)
   unless texture.nil?
     if u.nil?
       u = 0
@@ -3427,7 +3482,7 @@ def add_bitmap(texture, matrixId, u = nil, v = nil, width = nil, height = nil)
     if textureFragmentId.nil?
       textureFragmentId = @data_textureFragment.size
       @map_textureFragment[texture] = textureFragmentId
-      @data_textureFragment.push LWFTextureFragment.new(texture)
+      @data_textureFragment.push LWFTextureFragment.new(texture, withOriginalWH)
     end
   end
   textureFragmentId = -1 if textureFragmentId.nil?
@@ -3533,7 +3588,9 @@ def swf2lwf(*args)
   parse_fla(lwfbasedir) unless @fla.nil?
   parse_swf()
 
-  LWFObjects.each do |s|
+  lwfObjects = LWFObjects[@format_version]
+  error "format version error. it never happens." if lwfObjects.nil?
+  lwfObjects.each do |s|
     eval <<-EOF
       @data_#{s.to_s} = Array.new
       @map_#{s.to_s} = Hash.new
@@ -3745,8 +3802,9 @@ def swf2lwf(*args)
         case gobj
         when Bitmap
           texture = gobj.texture
-          type, gobjId = add_bitmap(
-            texture, matrixId, gobj.u, gobj.v, gobj.width, gobj.height)
+          type, gobjId = add_bitmap(texture, matrixId,
+            @format_version >= LWF_FORMAT_VERSION_141211,
+            gobj.u, gobj.v, gobj.width, gobj.height)
 
         when Text
           if gobj.stroke_color.nil?
@@ -3855,7 +3913,8 @@ def swf2lwf(*args)
             if lwfObjectId.nil?
               if place.object.class == Texture
                 type, gobjId =
-                  add_bitmap(place.object, add_matrix(Matrix.new))
+                  add_bitmap(place.object, add_matrix(Matrix.new),
+                    @format_version >= LWF_FORMAT_VERSION_141211)
                 lwfObjectId = add_object(
                   place.object, GRAPHICOBJECT_CONVTABLE[type], gobjId)
               else
@@ -3875,7 +3934,24 @@ def swf2lwf(*args)
               @map_place[lwfPlace.to_a] = lwfPlaceId
             end
 
-            if control.matrix == place.matrix
+            if @format_version >= LWF_FORMAT_VERSION_141211 and
+                control.blend_mode != place.blend_mode
+              lwfControlMoveMCB = LWFControlMOVEMCB.new(
+                lwfPlaceId, add_matrix(control.matrix),
+                add_colorTransform(
+                  control.color_transform || ColorTransform.new),
+                control.blend_mode)
+              lwfControlMoveMCBId = @map_controlMoveMCB[lwfControlMoveMCB.to_a]
+              if lwfControlMoveMCBId.nil?
+                lwfControlMoveMCBId = @data_controlMoveMCB.size
+                @data_controlMoveMCB.push lwfControlMoveMCB
+                @map_controlMoveMCB[
+                  lwfControlMoveMCB.to_a] = lwfControlMoveMCBId
+              end
+              lwfControlSrcs.push control
+              lwfControls.push LWFControl.new(
+                LWF_CONTROL_MOVEMCB, lwfControlMoveMCBId)
+            elsif control.matrix == place.matrix
               if control.color_transform.nil?
                 lwfControlSrcs.push control
                 lwfControls.push LWFControl.new(
@@ -4066,8 +4142,10 @@ def swf2lwf(*args)
         h = tinfo["frame"]["h"].to_i
         x = tinfo["spriteSourceSize"]["x"].to_i
         y = tinfo["spriteSourceSize"]["y"].to_i
-        lwfTextureFragment.set(@strings[texture.name],
-          textureatlasId, tinfo["rotated"], x, y, u, v, w, h, textureatlas)
+        ow = tinfo["spriteSourceSize"]["w"].to_i
+        oh = tinfo["spriteSourceSize"]["h"].to_i
+        lwfTextureFragment.set(@strings[texture.name], textureatlasId,
+          tinfo["rotated"], x, y, u, v, w, h, ow, oh, textureatlas)
         @option |= OPTION_USE_TEXTUREATLAS
         break
       end
@@ -4096,7 +4174,7 @@ def swf2lwf(*args)
         texture.format, w, h, texture.scale)
     end
     lwfTextureFragment.set(@strings[texture.name],
-      textureId, false, x, y, 0, 0, w, h)
+      textureId, false, x, y, 0, 0, w, h, w, h)
   end
 
   unless @using_script_funcname_map.empty?
@@ -4118,7 +4196,16 @@ def swf2lwf(*args)
     warn("script not used [#{key}]")
   end
 
-  @offset = LWF_HEADER_SIZE
+  case @format_version
+  when LWF_FORMAT_VERSION
+    lwfHeaderSize = LWF_HEADER_SIZE
+  when LWF_FORMAT_VERSION_COMPAT
+    lwfHeaderSize = LWF_HEADER_SIZE_COMPAT
+  else
+    lwfHeaderSize = 0
+    error "format version error. it never happens."
+  end
+  @offset = lwfHeaderSize
 
   @stringBytesOffset = @offset
   @stringBytes = ""
@@ -4139,12 +4226,15 @@ def swf2lwf(*args)
 
   @header = to_u8('L'[0].ord) + to_u8('W'[0].ord) + to_u8('F'[0].ord) +
     to_u8(lwf_format_type)
-  if @blend_mode_used
+  case @format_version
+  when LWF_FORMAT_VERSION
     @header += to_u8(LWF_FORMAT_VERSION_0) +
       to_u8(LWF_FORMAT_VERSION_1) + to_u8(LWF_FORMAT_VERSION_2)
-  else
+  when LWF_FORMAT_VERSION_COMPAT
     @header += to_u8(LWF_FORMAT_VERSION_COMPAT_0) +
       to_u8(LWF_FORMAT_VERSION_COMPAT_1) + to_u8(LWF_FORMAT_VERSION_COMPAT_2)
+  else
+    error "format version error. it never happens."
   end
   @header += to_u8(@option)
 
@@ -4170,7 +4260,7 @@ def swf2lwf(*args)
   @stats += sprintf("root: %d\n", @root_movie_id)
 
   @data = @stringBytes + @actionBytes
-  LWFObjects.each do |s|
+  lwfObjects.each do |s|
     eval <<-EOF
       @header += to_u32(@offset) + to_u32(@data_#{s}.size)
       arr = Array.new
@@ -4182,11 +4272,11 @@ def swf2lwf(*args)
   EOF
   end
 
-  error "LWF_HEADER_SIZE ERROR" if @header.size + 4 != LWF_HEADER_SIZE
+  error "LWF_HEADER_SIZE ERROR" if @header.size + 4 != lwfHeaderSize
 
   f = File.open(@lwfpath + ".lwf", "wb")
   f.write @header
-  f.write to_u32(LWF_HEADER_SIZE + @data.size)
+  f.write to_u32(lwfHeaderSize + @data.size)
   f.write @data
   f.close
 
@@ -4433,7 +4523,6 @@ def swf2lwf_optparse(args)
 
   @font_table = Hash.new
   @format_version = LWF_FORMAT_VERSION
-  @blend_mode_used = false
   begin
     config = YAML::load(File.read(conf_path))
     @font_table = config['font']

@@ -24,8 +24,9 @@ class Data
       @bitmapExs, @fonts, @textProperties, @texts, @particleDatas, @particles, \
       @programObjects, @graphicObjects, @graphics, @animations, \
       @buttonConditions, @buttons, @labels, @instanceNames, @events, @places, \
-      @controlMoveMs, @controlMoveCs, @controlMoveMCs, @controls, @frames, \
-      @movieClipEvents, @movies, @movieLinkages, @strings) ->
+      @controlMoveMs, @controlMoveCs, @controlMoveMCs, @controlMoveMCBs, \
+      @controls, @frames, @movieClipEvents, @movies, @movieLinkages, \
+      @strings) ->
 
     if @header.header?
 
@@ -62,6 +63,7 @@ class Data
       @controlMoveMs = d.controlMoveMs
       @controlMoveCs = d.controlMoveCs
       @controlMoveMCs = d.controlMoveMCs
+      @controlMoveMCBs = d.controlMoveMCBs
       @controls = d.controls
       @frames = d.frames
       @movieClipEvents = d.movieClipEvents
@@ -111,9 +113,13 @@ class Data
           v1 is Format.Constant.FORMAT_VERSION_1 and
           v2 is Format.Constant.FORMAT_VERSION_2) or
         (
-          v0 is Format.Constant.FORMAT_VERSION_COMPAT_0 and
-          v1 is Format.Constant.FORMAT_VERSION_COMPAT_1 and
-          v2 is Format.Constant.FORMAT_VERSION_COMPAT_2))
+          v0 is Format.Constant.FORMAT_VERSION_COMPAT0_0 and
+          v1 is Format.Constant.FORMAT_VERSION_COMPAT0_1 and
+          v2 is Format.Constant.FORMAT_VERSION_COMPAT0_2) or
+        (
+          v0 is Format.Constant.FORMAT_VERSION_COMPAT1_0 and
+          v1 is Format.Constant.FORMAT_VERSION_COMPAT1_1 and
+          v2 is Format.Constant.FORMAT_VERSION_COMPAT1_2))
       return true
     else
       return false

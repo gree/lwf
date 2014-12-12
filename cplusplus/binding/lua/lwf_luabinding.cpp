@@ -2589,6 +2589,58 @@ public:                                                       // 1223
     if( lua_isnumber(L,2)==0) return false;                   // 536
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck__property_get_offsetX(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_set_offsetX(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    if( lua_isnumber(L,2)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_get_offsetY(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_set_offsetY(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    if( lua_isnumber(L,2)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_get_originalWidth(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_set_originalWidth(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    if( lua_isnumber(L,2)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_get_originalHeight(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    return true;
+  }                                                           // 554
+  inline static bool _lg_typecheck__property_set_originalHeight(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=22208526) return false; // LWF ::BitmapClip // 534
+    if( lua_isnumber(L,2)==0) return false;                   // 536
+    return true;
+  }                                                           // 554
 static std::string getName(LWF::BitmapClip &o){return o.name;}
 
 static int _bind_getLWF(lua_State *L)
@@ -2631,6 +2683,10 @@ inline static float _property_get_scaleX(LWF ::BitmapClip const& a) { return a.s
 inline static float _property_get_scaleY(LWF ::BitmapClip const& a) { return a.scaleY; }inline static void _property_set_scaleY(LWF ::BitmapClip & a, float b){ a.scaleY=b;}
 inline static float _property_get_rotation(LWF ::BitmapClip const& a) { return a.rotation; }inline static void _property_set_rotation(LWF ::BitmapClip & a, float b){ a.rotation=b;}
 inline static float _property_get_alpha(LWF ::BitmapClip const& a) { return a.alpha; }inline static void _property_set_alpha(LWF ::BitmapClip & a, float b){ a.alpha=b;}
+inline static float _property_get_offsetX(LWF ::BitmapClip const& a) { return a.offsetX; }inline static void _property_set_offsetX(LWF ::BitmapClip & a, float b){ a.offsetX=b;}
+inline static float _property_get_offsetY(LWF ::BitmapClip const& a) { return a.offsetY; }inline static void _property_set_offsetY(LWF ::BitmapClip & a, float b){ a.offsetY=b;}
+inline static float _property_get_originalWidth(LWF ::BitmapClip const& a) { return a.originalWidth; }inline static void _property_set_originalWidth(LWF ::BitmapClip & a, float b){ a.originalWidth=b;}
+inline static float _property_get_originalHeight(LWF ::BitmapClip const& a) { return a.originalHeight; }inline static void _property_set_originalHeight(LWF ::BitmapClip & a, float b){ a.originalHeight=b;}
                                                               // 1275
   static int _bind_getName(lua_State *L)
   {                                                           // 1282
@@ -2907,6 +2963,94 @@ inline static float _property_get_alpha(LWF ::BitmapClip const& a) { return a.al
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
+  static int _bind__property_get_offsetX(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_get_offsetX(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_get_offsetX(LWF ::BitmapClip const & a,)"); }
+                                                              // 487
+    LWF ::BitmapClip const & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=_property_get_offsetX( a);                      // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
+  static int _bind__property_set_offsetX(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_set_offsetX(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_set_offsetX(LWF ::BitmapClip & a,float b,)"); }
+                                                              // 487
+    LWF ::BitmapClip & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    float b=(float)lua_tonumber(L,2);                         // 512
+    try {                                                     // 254
+    _property_set_offsetX( a, b);                             // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind__property_get_offsetY(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_get_offsetY(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_get_offsetY(LWF ::BitmapClip const & a,)"); }
+                                                              // 487
+    LWF ::BitmapClip const & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=_property_get_offsetY( a);                      // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
+  static int _bind__property_set_offsetY(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_set_offsetY(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_set_offsetY(LWF ::BitmapClip & a,float b,)"); }
+                                                              // 487
+    LWF ::BitmapClip & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    float b=(float)lua_tonumber(L,2);                         // 512
+    try {                                                     // 254
+    _property_set_offsetY( a, b);                             // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind__property_get_originalWidth(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_get_originalWidth(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_get_originalWidth(LWF ::BitmapClip const & a,)"); }
+                                                              // 487
+    LWF ::BitmapClip const & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=_property_get_originalWidth( a);                // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
+  static int _bind__property_set_originalWidth(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_set_originalWidth(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_set_originalWidth(LWF ::BitmapClip & a,float b,)"); }
+                                                              // 487
+    LWF ::BitmapClip & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    float b=(float)lua_tonumber(L,2);                         // 512
+    try {                                                     // 254
+    _property_set_originalWidth( a, b);                       // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
+  static int _bind__property_get_originalHeight(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_get_originalHeight(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_get_originalHeight(LWF ::BitmapClip const & a,)"); }
+                                                              // 487
+    LWF ::BitmapClip const & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    try {                                                     // 299
+    float ret=_property_get_originalHeight( a);               // 300
+    lua_pushnumber(L, ret);                                   // 301
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
+    return 1;                                                 // 303
+  }                                                           // 333
+  static int _bind__property_set_originalHeight(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck__property_set_originalHeight(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:_property_set_originalHeight(LWF ::BitmapClip & a,float b,)"); }
+                                                              // 487
+    LWF ::BitmapClip & a=static_cast<LWF ::BitmapClip &>(*Luna<LWF ::BitmapClip >::check(L,1)); // 504
+    float b=(float)lua_tonumber(L,2);                         // 512
+    try {                                                     // 254
+    _property_set_originalHeight( a, b);                      // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
   static void luna_init_hashmap()
   {                                                           // 1324
     LunaTraits<LWF ::BitmapClip >::properties["name"]=&_bind_getName; // 1326
@@ -2924,6 +3068,10 @@ inline static float _property_get_alpha(LWF ::BitmapClip const& a) { return a.al
     LunaTraits<LWF ::BitmapClip >::properties["scaleY"]=&_bind__property_get_scaleY; // 1326
     LunaTraits<LWF ::BitmapClip >::properties["rotation"]=&_bind__property_get_rotation; // 1326
     LunaTraits<LWF ::BitmapClip >::properties["alpha"]=&_bind__property_get_alpha; // 1326
+    LunaTraits<LWF ::BitmapClip >::properties["offsetX"]=&_bind__property_get_offsetX; // 1326
+    LunaTraits<LWF ::BitmapClip >::properties["offsetY"]=&_bind__property_get_offsetY; // 1326
+    LunaTraits<LWF ::BitmapClip >::properties["originalWidth"]=&_bind__property_get_originalWidth; // 1326
+    LunaTraits<LWF ::BitmapClip >::properties["originalHeight"]=&_bind__property_get_originalHeight; // 1326
   }                                                           // 1328
   static void luna_init_write_hashmap()
   {                                                           // 1329
@@ -2939,6 +3087,10 @@ inline static float _property_get_alpha(LWF ::BitmapClip const& a) { return a.al
     LunaTraits<LWF ::BitmapClip >::write_properties["scaleY"]=&_bind__property_set_scaleY; // 1332
     LunaTraits<LWF ::BitmapClip >::write_properties["rotation"]=&_bind__property_set_rotation; // 1332
     LunaTraits<LWF ::BitmapClip >::write_properties["alpha"]=&_bind__property_set_alpha; // 1332
+    LunaTraits<LWF ::BitmapClip >::write_properties["offsetX"]=&_bind__property_set_offsetX; // 1332
+    LunaTraits<LWF ::BitmapClip >::write_properties["offsetY"]=&_bind__property_set_offsetY; // 1332
+    LunaTraits<LWF ::BitmapClip >::write_properties["originalWidth"]=&_bind__property_set_originalWidth; // 1332
+    LunaTraits<LWF ::BitmapClip >::write_properties["originalHeight"]=&_bind__property_set_originalHeight; // 1332
   }                                                           // 1335
             static int __index(lua_State* L)
             {                                                 // 1339
@@ -3014,6 +3166,14 @@ luna_RegType LunaTraits<LWF ::BitmapClip >::methods[] = {     // 1487
     {"_property_set_rotation", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_rotation}, // 1492
     {"_property_get_alpha", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_get_alpha}, // 1492
     {"_property_set_alpha", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_alpha}, // 1492
+    {"_property_get_offsetX", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_get_offsetX}, // 1492
+    {"_property_set_offsetX", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_offsetX}, // 1492
+    {"_property_get_offsetY", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_get_offsetY}, // 1492
+    {"_property_set_offsetY", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_offsetY}, // 1492
+    {"_property_get_originalWidth", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_get_originalWidth}, // 1492
+    {"_property_set_originalWidth", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_originalWidth}, // 1492
+    {"_property_get_originalHeight", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_get_originalHeight}, // 1492
+    {"_property_set_originalHeight", &impl_LunaTraits<LWF ::BitmapClip >::_bind__property_set_originalHeight}, // 1492
     {"__index", &impl_LunaTraits<LWF ::BitmapClip >::__index}, // 1492
     {"__newindex", &impl_LunaTraits<LWF ::BitmapClip >::__newindex}, // 1492
     {0,0}                                                     // 1495

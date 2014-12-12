@@ -33,15 +33,21 @@ namespace Format {
 
 enum Constant
 {
-	HEADER_SIZE = 324,
-
-	FORMAT_VERSION_0 = 0x13,
+	HEADER_SIZE = 332,
+	FORMAT_VERSION_0 = 0x14,
 	FORMAT_VERSION_1 = 0x12,
 	FORMAT_VERSION_2 = 0x11,
+	FORMAT_VERSION_141211 = 0x141211,
 
-	FORMAT_VERSION_COMPAT_0 = 0x12,
-	FORMAT_VERSION_COMPAT_1 = 0x10,
-	FORMAT_VERSION_COMPAT_2 = 0x10,
+	HEADER_SIZE_COMPAT0 = 324,
+	FORMAT_VERSION_COMPAT0_0 = 0x13,
+	FORMAT_VERSION_COMPAT0_1 = 0x12,
+	FORMAT_VERSION_COMPAT0_2 = 0x11,
+
+	HEADER_SIZE_COMPAT1 = 324,
+	FORMAT_VERSION_COMPAT1_0 = 0x12,
+	FORMAT_VERSION_COMPAT1_1 = 0x10,
+	FORMAT_VERSION_COMPAT1_2 = 0x10,
 
 	FORMAT_TYPE = 0,
 
@@ -130,6 +136,39 @@ struct TextureFragmentBase
 	int v;
 	int w;
 	int h;
+	int ow;
+	int oh;
+};
+
+struct TextureFragmentCompat
+{
+	int stringId;
+	int textureId;
+	int rotated;
+	int x;
+	int y;
+	int u;
+	int v;
+	int w;
+	int h;
+
+#if !defined(LWF_PUBLISHER)
+	TextureFragmentBase Convert() {
+		TextureFragmentBase f;
+		f.stringId = stringId;
+		f.textureId = textureId;
+		f.rotated = rotated;
+		f.x = x;
+		f.y = y;
+		f.u = u;
+		f.v = v;
+		f.w = w;
+		f.h = h;
+		f.ow = w;
+		f.oh = h;
+		return f;
+	}
+#endif
 };
 
 #if !defined(LWF_PUBLISHER)
@@ -149,6 +188,8 @@ struct TextureFragment : public TextureFragmentBase
 		v = base.v;
 		w = base.w;
 		h = base.h;
+		ow = base.ow;
+		oh = base.oh;
 	}
     virtual ~TextureFragment() {}
 
@@ -159,7 +200,7 @@ struct TextureFragment : public TextureFragmentBase
 struct TextureFragmentReplacement : public TextureFragment
 {
 	TextureFragmentReplacement(string fname, int texId, int rot,
-		int tx, int ty, int tu, int tv, int tw, int th)
+		int tx, int ty, int tu, int tv, int tw, int th, int tow, int toh)
 	{
 		filename = fname;
 		textureId = texId;
@@ -170,6 +211,8 @@ struct TextureFragmentReplacement : public TextureFragment
 		v = tv;
 		w = tw;
 		h = th;
+		ow = tow;
+		oh = toh;
 	}
 
 	const string &GetFilename(const Data *data) const
@@ -401,6 +444,14 @@ struct ControlMoveMC
 	int colorTransformId;
 };
 
+struct ControlMoveMCB
+{
+	int placeId;
+	int matrixId;
+	int colorTransformId;
+	int blendMode;
+};
+
 struct Control
 {
 	enum Type
@@ -410,6 +461,7 @@ struct Control
 		MOVEC,
 		MOVEMC,
 		ANIMATION,
+		MOVEMCB,
 		CONTROL_MAX
 	};
 
@@ -459,6 +511,62 @@ struct ItemArray
 };
 
 struct Header
+{
+	unsigned char id0;
+	unsigned char id1;
+	unsigned char id2;
+	unsigned char id3;
+	unsigned char formatVersion0;
+	unsigned char formatVersion1;
+	unsigned char formatVersion2;
+	unsigned char option;
+	int width;
+	int height;
+	int frameRate;
+	int rootMovieId;
+	int nameStringId;
+	int backgroundColor;
+	ItemArray stringBytes;
+	ItemArray animationBytes;
+	ItemArray translate;
+	ItemArray matrix;
+	ItemArray color;
+	ItemArray alphaTransform;
+	ItemArray colorTransform;
+	ItemArray objectData;
+	ItemArray texture;
+	ItemArray textureFragment;
+	ItemArray bitmap;
+	ItemArray bitmapEx;
+	ItemArray font;
+	ItemArray textProperty;
+	ItemArray text;
+	ItemArray particleData;
+	ItemArray particle;
+	ItemArray programObject;
+	ItemArray graphicObject;
+	ItemArray graphic;
+	ItemArray animation;
+	ItemArray buttonCondition;
+	ItemArray button;
+	ItemArray label;
+	ItemArray instanceName;
+	ItemArray eventData;
+	ItemArray place;
+	ItemArray controlMoveM;
+	ItemArray controlMoveC;
+	ItemArray controlMoveMC;
+	ItemArray controlMoveMCB;
+	ItemArray control;
+	ItemArray frame;
+	ItemArray movieClipEvent;
+	ItemArray movie;
+	ItemArray movieLinkage;
+	ItemArray stringData;
+	int lwfLength;
+};
+
+struct HeaderCompat
 {
 	unsigned char id0;
 	unsigned char id1;

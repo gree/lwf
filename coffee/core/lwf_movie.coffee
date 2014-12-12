@@ -495,21 +495,6 @@ class Movie extends IObject
         when Type.MOVIE
           obj = new Movie(@lwf,
             @, dataObjectId, instId, matrixId, colorTransformId)
-          switch blendMode
-            when Format.Constant.BLEND_MODE_ADD
-              obj.blendMode = "add"
-            when Format.Constant.BLEND_MODE_ERASE
-              obj.blendMode = "erase"
-            when Format.Constant.BLEND_MODE_LAYER
-              obj.blendMode = "layer"
-            when Format.Constant.BLEND_MODE_MASK
-              obj.blendMode = "mask"
-            when Format.Constant.BLEND_MODE_MULTIPLY
-              obj.blendMode = "multiply"
-            when Format.Constant.BLEND_MODE_SCREEN
-              obj.blendMode = "screen"
-            when Format.Constant.BLEND_MODE_SUBTRACT
-              obj.blendMode = "subtract"
         when Type.BITMAP
           obj = new Bitmap(@lwf, @, dataObjectId)
         when Type.BITMAPEX
@@ -520,6 +505,25 @@ class Movie extends IObject
           obj = new Particle(@lwf, @, dataObjectId)
         when Type.PROGRAMOBJECT
           obj = new ProgramObject(@lwf, @, dataObjectId)
+
+    if obj.isMovie
+      switch blendMode
+        when Format.Constant.BLEND_MODE_NORMAL
+          obj.blendMode = "normal"
+        when Format.Constant.BLEND_MODE_ADD
+          obj.blendMode = "add"
+        when Format.Constant.BLEND_MODE_ERASE
+          obj.blendMode = "erase"
+        when Format.Constant.BLEND_MODE_LAYER
+          obj.blendMode = "layer"
+        when Format.Constant.BLEND_MODE_MASK
+          obj.blendMode = "mask"
+        when Format.Constant.BLEND_MODE_MULTIPLY
+          obj.blendMode = "multiply"
+        when Format.Constant.BLEND_MODE_SCREEN
+          obj.blendMode = "screen"
+        when Format.Constant.BLEND_MODE_SUBTRACT
+          obj.blendMode = "subtract"
 
     if obj.isMovie or obj.isButton
       obj.linkInstance = null
@@ -631,6 +635,12 @@ class Movie extends IObject
               p = data.places[ctrl.placeId]
               @execObject(p.depth, p.objectId,
                 ctrl.matrixId, ctrl.colorTransformId, p.instanceId, p.blendMode)
+
+            when ControlType.MOVEMCB
+              ctrl = data.controlMoveMCBs[control.controlId]
+              p = data.places[ctrl.placeId]
+              @execObject(p.depth, p.objectId, ctrl.matrixId,
+                ctrl.colorTransformId, p.instanceId, ctrl.blendMode)
   
             when ControlType.ANIMATION
               controlAnimationOffset = i if controlAnimationOffset is -1

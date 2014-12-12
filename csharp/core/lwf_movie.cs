@@ -280,7 +280,6 @@ public partial class Movie : IObject
 			case Type.MOVIE:
 				obj = new Movie(m_lwf, this,
 					dataObjectId, instId, matrixId, colorTransformId);
-				((Movie)obj).blendMode = dlBlendMode;
 				break;
 
 			case Type.BITMAP:
@@ -304,6 +303,9 @@ public partial class Movie : IObject
 				break;
 			}
 		}
+
+		if (obj.IsMovie())
+			((Movie)obj).blendMode = dlBlendMode;
 
 		if (obj.IsMovie() || obj.IsButton()) {
 			IObject instance = (IObject)obj;
@@ -453,6 +455,17 @@ public partial class Movie : IObject
 							ExecObject(p.depth, p.objectId, ctrl.matrixId,
 								ctrl.colorTransformId, p.instanceId,
 								p.blendMode);
+						}
+						break;
+
+					case Format.Control.Type.MOVEMCB:
+						{
+							Format.ControlMoveMCB ctrl =
+								data.controlMoveMCBs[control.controlId];
+							Format.Place p = data.places[ctrl.placeId];
+							ExecObject(p.depth, p.objectId, ctrl.matrixId,
+								ctrl.colorTransformId, p.instanceId,
+								ctrl.blendMode);
 						}
 						break;
 

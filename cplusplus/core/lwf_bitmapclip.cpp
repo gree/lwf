@@ -34,6 +34,10 @@ BitmapClip::BitmapClip(LWF *lwf, Movie *p, int objId)
 	const Format::Texture &texdata = lwf->data->textures[fragment.textureId];
 	width = fragment.w / texdata.scale;
 	height = fragment.h / texdata.scale;
+	offsetX = fragment.x;
+	offsetY = fragment.y;
+	originalWidth = fragment.ow;
+	originalHeight = fragment.oh;
 
 	depth = -1;
 	visible = true;

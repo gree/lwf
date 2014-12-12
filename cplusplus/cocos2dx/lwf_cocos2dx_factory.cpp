@@ -327,13 +327,9 @@ bool LWFRendererFactory::Render(class LWF *lwf, Node *node,
 		p->setBlendFunc(blendFunc);
 	}
 
-	switch (m_blendMode) {
-	case Format::BLEND_MODE_SUBTRACT:
-		BlendEquationProtocol *ep = dynamic_cast<BlendEquationProtocol *>(node);
-		if (ep)
-			ep->setBlendEquation(m_blendMode);
-		break;
-	}
+	BlendEquationProtocol *ep = dynamic_cast<BlendEquationProtocol *>(node);
+	if (ep)
+		ep->setBlendEquation(m_blendMode);
 
 	return true;
 }

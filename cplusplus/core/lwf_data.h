@@ -55,6 +55,7 @@ struct Data {
 	vector<Format::ControlMoveM> controlMoveMs;
 	vector<Format::ControlMoveC> controlMoveCs;
 	vector<Format::ControlMoveMC> controlMoveMCs;
+	vector<Format::ControlMoveMCB> controlMoveMCBs;
 	vector<Format::Control> controls;
 	vector<Format::Frame> frames;
 	vector<Format::MovieClipEvent> movieClipEvents;

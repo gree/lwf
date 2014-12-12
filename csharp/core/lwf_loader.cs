@@ -99,7 +99,7 @@ public partial class Texture
 public partial class TextureFragment
 {
 	public TextureFragment() {}
-	public TextureFragment(BinaryReader br)
+	public TextureFragment(BinaryReader br, bool withOriginalWH)
 	{
 		stringId = br.ReadInt32();
 		textureId = br.ReadInt32();
@@ -110,6 +110,13 @@ public partial class TextureFragment
 		v = br.ReadInt32();
 		w = br.ReadInt32();
 		h = br.ReadInt32();
+		if (withOriginalWH) {
+			ow = br.ReadInt32();
+			oh = br.ReadInt32();
+		} else {
+			ow = w;
+			oh = h;
+		}
 	}
 
 	public void SetFilename(Data data)
@@ -372,6 +379,18 @@ public partial class ControlMoveMC
 	}
 }
 
+public partial class ControlMoveMCB
+{
+	public ControlMoveMCB() {}
+	public ControlMoveMCB(BinaryReader br)
+	{
+		placeId = br.ReadInt32();
+		matrixId = br.ReadInt32();
+		colorTransformId = br.ReadInt32();
+		blendMode = br.ReadInt32();
+	}
+}
+
 public partial class Control
 {
 	public Control() {}
@@ -449,6 +468,8 @@ public partial class Header
 		formatVersion0 = br.ReadByte();
 		formatVersion1 = br.ReadByte();
 		formatVersion2 = br.ReadByte();
+		formatVersion =
+			(formatVersion0 << 16) | (formatVersion1 << 8) | formatVersion2;
 		option = br.ReadByte();
 		width = br.ReadInt32();
 		height = br.ReadInt32();
@@ -486,6 +507,10 @@ public partial class Header
 		controlMoveM = new ItemArray(br);
 		controlMoveC = new ItemArray(br);
 		controlMoveMC = new ItemArray(br);
+		if (formatVersion >= (int)Format.Constant.FORMAT_VERSION_141211)
+			controlMoveMCB = new ItemArray(br);
+		else
+			controlMoveMCB = new ItemArray();
 		control = new ItemArray(br);
 		frame = new ItemArray(br);
 		movieClipEvent = new ItemArray(br);
@@ -502,7 +527,7 @@ public partial class Data
 {
 	public Data(byte[] bytes)
 	{
-		if (bytes.Length < (int)Format.Constant.HEADER_SIZE)
+		if (bytes.Length < (int)Format.Constant.HEADER_SIZE_COMPAT0)
 			return;
 
 		Stream s = new MemoryStream(bytes);
@@ -540,7 +565,9 @@ public partial class Data
 		textureFragments =
 			new Format.TextureFragment[header.textureFragment.length];
 		for (int i = 0; i < textureFragments.Length; ++i)
-			textureFragments[i] = new Format.TextureFragment(br);
+			textureFragments[i] = new Format.TextureFragment(br,
+				header.formatVersion >=
+					(int)Format.Constant.FORMAT_VERSION_141211);
 		bitmaps = new Format.Bitmap[header.bitmap.length];
 		for (int i = 0; i < bitmaps.Length; ++i)
 			bitmaps[i] = new Format.Bitmap(br);
@@ -606,6 +633,10 @@ public partial class Data
 			new Format.ControlMoveMC[header.controlMoveMC.length];
 		for (int i = 0; i < controlMoveMCs.Length; ++i)
 			controlMoveMCs[i] = new Format.ControlMoveMC(br);
+		controlMoveMCBs =
+			new Format.ControlMoveMCB[header.controlMoveMCB.length];
+		for (int i = 0; i < controlMoveMCBs.Length; ++i)
+			controlMoveMCBs[i] = new Format.ControlMoveMCB(br);
 		controls = new Format.Control[header.control.length];
 		for (int i = 0; i < controls.Length; ++i)
 			controls[i] = new Format.Control(br);

@@ -45,6 +45,10 @@ public:
 	float scaleY;
 	float rotation;
 	float alpha;
+	float offsetX;
+	float offsetY;
+	float originalWidth;
+	float originalHeight;
 
 private:
 	float _scaleX;

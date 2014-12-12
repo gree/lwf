@@ -518,19 +518,31 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     Format.Constant = (function() {
       function Constant() {}
 
-      Constant.HEADER_SIZE = 324;
+      Constant.HEADER_SIZE = 332;
 
-      Constant.FORMAT_VERSION_0 = 0x13;
+      Constant.FORMAT_VERSION_0 = 0x14;
 
       Constant.FORMAT_VERSION_1 = 0x12;
 
       Constant.FORMAT_VERSION_2 = 0x11;
 
-      Constant.FORMAT_VERSION_COMPAT_0 = 0x12;
+      Constant.FORMAT_VERSION_141211 = 0x141211;
 
-      Constant.FORMAT_VERSION_COMPAT_1 = 0x10;
+      Constant.HEADER_SIZE_COMPAT0 = 324;
 
-      Constant.FORMAT_VERSION_COMPAT_2 = 0x10;
+      Constant.FORMAT_VERSION_COMPAT0_0 = 0x13;
+
+      Constant.FORMAT_VERSION_COMPAT0_1 = 0x12;
+
+      Constant.FORMAT_VERSION_COMPAT0_2 = 0x11;
+
+      Constant.HEADER_SIZE_COMPAT1 = 324;
+
+      Constant.FORMAT_VERSION_COMPAT1_0 = 0x12;
+
+      Constant.FORMAT_VERSION_COMPAT1_1 = 0x10;
+
+      Constant.FORMAT_VERSION_COMPAT1_2 = 0x10;
 
       Constant.FORMAT_TYPE = 0;
 
@@ -612,7 +624,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     })();
 
     Format.TextureFragment = (function() {
-      function TextureFragment(stringId, textureId, rotated, x, y, u, v, w, h) {
+      function TextureFragment(stringId, textureId, rotated, x, y, u, v, w, h, ow, oh) {
         this.stringId = stringId;
         this.textureId = textureId;
         this.rotated = rotated;
@@ -622,6 +634,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.v = v;
         this.w = w;
         this.h = h;
+        this.ow = ow;
+        this.oh = oh;
       }
 
       TextureFragment.prototype.setFilename = function(data) {
@@ -633,7 +647,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     })();
 
     Format.TextureFragmentReplacement = (function() {
-      function TextureFragmentReplacement(filename, textureId, rotated, x, y, u, v, w, h) {
+      function TextureFragmentReplacement(filename, textureId, rotated, x, y, u, v, w, h, ow, oh) {
         this.filename = filename;
         this.textureId = textureId;
         this.rotated = rotated;
@@ -643,6 +657,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.v = v;
         this.w = w;
         this.h = h;
+        this.ow = ow;
+        this.oh = oh;
       }
 
       return TextureFragmentReplacement;
@@ -1006,6 +1022,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
     })();
 
+    Format.ControlMoveMCB = (function() {
+      function ControlMoveMCB(placeId, matrixId, colorTransformId, blendMode) {
+        this.placeId = placeId;
+        this.matrixId = matrixId;
+        this.colorTransformId = colorTransformId;
+        this.blendMode = blendMode;
+      }
+
+      return ControlMoveMCB;
+
+    })();
+
     Format.Control = (function() {
       Control.Type = (function() {
         function Type() {}
@@ -1020,7 +1048,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
 
         Type.ANIMATION = 4;
 
-        Type.CONTROL_MAX = 5;
+        Type.MOVEMCB = 5;
+
+        Type.CONTROL_MAX = 6;
 
         return Type;
 
@@ -1106,7 +1136,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     })();
 
     Format.Header = (function() {
-      function Header(id0, id1, id2, id3, formatVersion0, formatVersion1, formatVersion2, option, width, height, frameRate, rootMovieId, nameStringId, backgroundColor, stringBytes, animationBytes, translate, matrix, color, alphaTransform, colorTransform, objectData, texture, textureFragment, bitmap, bitmapEx, font, textProperty, text, particleData, particle, programObject, graphicObject, graphic, animation, buttonCondition, button, label, instanceName, eventData, place, controlMoveM, controlMoveC, controlMoveMC, control, frame, movieClipEvent, movie, movieLinkage, stringData, lwfLength) {
+      function Header(id0, id1, id2, id3, formatVersion0, formatVersion1, formatVersion2, formatVersion, option, width, height, frameRate, rootMovieId, nameStringId, backgroundColor, stringBytes, animationBytes, translate, matrix, color, alphaTransform, colorTransform, objectData, texture, textureFragment, bitmap, bitmapEx, font, textProperty, text, particleData, particle, programObject, graphicObject, graphic, animation, buttonCondition, button, label, instanceName, eventData, place, controlMoveM, controlMoveC, controlMoveMC, controlMoveMCB, control, frame, movieClipEvent, movie, movieLinkage, stringData, lwfLength) {
         this.id0 = id0;
         this.id1 = id1;
         this.id2 = id2;
@@ -1114,6 +1144,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.formatVersion0 = formatVersion0;
         this.formatVersion1 = formatVersion1;
         this.formatVersion2 = formatVersion2;
+        this.formatVersion = formatVersion;
         this.option = option;
         this.width = width;
         this.height = height;
@@ -1151,6 +1182,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.controlMoveM = controlMoveM;
         this.controlMoveC = controlMoveC;
         this.controlMoveMC = controlMoveMC;
+        this.controlMoveMCB = controlMoveMCB;
         this.control = control;
         this.frame = frame;
         this.movieClipEvent = movieClipEvent;
@@ -1214,7 +1246,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
   })();
 
   Data = (function() {
-    function Data(header, translates, matrices, colors, alphaTransforms, colorTransforms, objects, textures, textureFragments, bitmaps, bitmapExs, fonts, textProperties, texts, particleDatas, particles, programObjects, graphicObjects, graphics, animations, buttonConditions, buttons, labels, instanceNames, events, places, controlMoveMs, controlMoveCs, controlMoveMCs, controls, frames, movieClipEvents, movies, movieLinkages, strings) {
+    function Data(header, translates, matrices, colors, alphaTransforms, colorTransforms, objects, textures, textureFragments, bitmaps, bitmapExs, fonts, textProperties, texts, particleDatas, particles, programObjects, graphicObjects, graphics, animations, buttonConditions, buttons, labels, instanceNames, events, places, controlMoveMs, controlMoveCs, controlMoveMCs, controlMoveMCBs, controls, frames, movieClipEvents, movies, movieLinkages, strings) {
       var a, c, d, m, t;
       this.header = header;
       this.translates = translates;
@@ -1245,6 +1277,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.controlMoveMs = controlMoveMs;
       this.controlMoveCs = controlMoveCs;
       this.controlMoveMCs = controlMoveMCs;
+      this.controlMoveMCBs = controlMoveMCBs;
       this.controls = controls;
       this.frames = frames;
       this.movieClipEvents = movieClipEvents;
@@ -1327,6 +1360,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.controlMoveMs = d.controlMoveMs;
         this.controlMoveCs = d.controlMoveCs;
         this.controlMoveMCs = d.controlMoveMCs;
+        this.controlMoveMCBs = d.controlMoveMCBs;
         this.controls = d.controls;
         this.frames = d.frames;
         this.movieClipEvents = d.movieClipEvents;
@@ -1367,7 +1401,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       v0 = this.header.formatVersion0;
       v1 = this.header.formatVersion1;
       v2 = this.header.formatVersion2;
-      if ((this.header != null) && this.header.id0 === 'L' && this.header.id1 === 'W' && this.header.id2 === 'F' && ((v0 === Format.Constant.FORMAT_VERSION_0 && v1 === Format.Constant.FORMAT_VERSION_1 && v2 === Format.Constant.FORMAT_VERSION_2) || (v0 === Format.Constant.FORMAT_VERSION_COMPAT_0 && v1 === Format.Constant.FORMAT_VERSION_COMPAT_1 && v2 === Format.Constant.FORMAT_VERSION_COMPAT_2))) {
+      if ((this.header != null) && this.header.id0 === 'L' && this.header.id1 === 'W' && this.header.id2 === 'F' && ((v0 === Format.Constant.FORMAT_VERSION_0 && v1 === Format.Constant.FORMAT_VERSION_1 && v2 === Format.Constant.FORMAT_VERSION_2) || (v0 === Format.Constant.FORMAT_VERSION_COMPAT0_0 && v1 === Format.Constant.FORMAT_VERSION_COMPAT0_1 && v2 === Format.Constant.FORMAT_VERSION_COMPAT0_2) || (v0 === Format.Constant.FORMAT_VERSION_COMPAT1_0 && v1 === Format.Constant.FORMAT_VERSION_COMPAT1_1 && v2 === Format.Constant.FORMAT_VERSION_COMPAT1_2))) {
         return true;
       } else {
         return false;
@@ -1463,7 +1497,23 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWFLoader.prototype.loadTextureFragment = function() {
-      return new Format.TextureFragment(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
+      return new Format.TextureFragment(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
+    };
+
+    LWFLoader.prototype.loadTextureFragmentCompat = function() {
+      var h, oh, ow, rotated, stringId, textureId, u, v, w, x, y;
+      stringId = this.readInt32();
+      textureId = this.readInt32();
+      rotated = this.readInt32();
+      x = this.readInt32();
+      y = this.readInt32();
+      u = this.readInt32();
+      v = this.readInt32();
+      w = this.readInt32();
+      h = this.readInt32();
+      ow = w;
+      oh = h;
+      return new Format.TextureFragment(stringId, textureId, rotated, x, y, u, v, w, h, ow, oh);
     };
 
     LWFLoader.prototype.loadBitmap = function() {
@@ -1559,6 +1609,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       return new Format.ControlMoveMC(this.readInt32(), this.readInt32(), this.readInt32());
     };
 
+    LWFLoader.prototype.loadControlMoveMCB = function() {
+      return new Format.ControlMoveMCB(this.readInt32(), this.readInt32(), this.readInt32(), this.readInt32());
+    };
+
     LWFLoader.prototype.loadControl = function() {
       return new Format.Control(this.readInt32(), this.readInt32());
     };
@@ -1584,7 +1638,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWFLoader.prototype.loadHeader = function() {
-      var alphaTransform, animation, animationBytes, backgroundColor, bitmap, bitmapEx, button, buttonCondition, color, colorTransform, control, controlMoveC, controlMoveM, controlMoveMC, eventData, font, formatVersion0, formatVersion1, formatVersion2, frame, frameRate, graphic, graphicObject, height, id0, id1, id2, id3, instanceName, label, lwfLength, matrix, movie, movieClipEvent, movieLinkage, nameStringId, objectData, option, particle, particleData, place, programObject, rootMovieId, stringBytes, stringData, text, textProperty, texture, textureFragment, translate, width;
+      var alphaTransform, animation, animationBytes, backgroundColor, bitmap, bitmapEx, button, buttonCondition, color, colorTransform, control, controlMoveC, controlMoveM, controlMoveMC, controlMoveMCB, eventData, font, formatVersion, formatVersion0, formatVersion1, formatVersion2, frame, frameRate, graphic, graphicObject, height, id0, id1, id2, id3, instanceName, label, lwfLength, matrix, movie, movieClipEvent, movieLinkage, nameStringId, objectData, option, particle, particleData, place, programObject, rootMovieId, stringBytes, stringData, text, textProperty, texture, textureFragment, translate, width;
       id0 = this.readChar();
       id1 = this.readChar();
       id2 = this.readChar();
@@ -1592,6 +1646,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       formatVersion0 = this.readByte();
       formatVersion1 = this.readByte();
       formatVersion2 = this.readByte();
+      formatVersion = (formatVersion0 << 16) | (formatVersion1 << 8) | formatVersion2;
       option = this.readByte();
       width = this.readInt32();
       height = this.readInt32();
@@ -1629,6 +1684,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       controlMoveM = this.loadItemArray();
       controlMoveC = this.loadItemArray();
       controlMoveMC = this.loadItemArray();
+      controlMoveMCB = null;
+      if (formatVersion >= Format.Constant.FORMAT_VERSION_141211) {
+        controlMoveMCB = this.loadItemArray();
+      } else {
+        controlMoveMCB = new Format.ItemArray(0, 0);
+      }
       control = this.loadItemArray();
       frame = this.loadItemArray();
       movieClipEvent = this.loadItemArray();
@@ -1636,7 +1697,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       movieLinkage = this.loadItemArray();
       stringData = this.loadItemArray();
       lwfLength = this.readInt32();
-      return new Format.Header(id0, id1, id2, id3, formatVersion0, formatVersion1, formatVersion2, option, width, height, frameRate, rootMovieId, nameStringId, backgroundColor, stringBytes, animationBytes, translate, matrix, color, alphaTransform, colorTransform, objectData, texture, textureFragment, bitmap, bitmapEx, font, textProperty, text, particleData, particle, programObject, graphicObject, graphic, animation, buttonCondition, button, label, instanceName, eventData, place, controlMoveM, controlMoveC, controlMoveMC, control, frame, movieClipEvent, movie, movieLinkage, stringData, lwfLength);
+      return new Format.Header(id0, id1, id2, id3, formatVersion0, formatVersion1, formatVersion2, formatVersion, option, width, height, frameRate, rootMovieId, nameStringId, backgroundColor, stringBytes, animationBytes, translate, matrix, color, alphaTransform, colorTransform, objectData, texture, textureFragment, bitmap, bitmapEx, font, textProperty, text, particleData, particle, programObject, graphicObject, graphic, animation, buttonCondition, button, label, instanceName, eventData, place, controlMoveM, controlMoveC, controlMoveMC, controlMoveMCB, control, frame, movieClipEvent, movie, movieLinkage, stringData, lwfLength);
     };
 
     LWFLoader.prototype.load = function(d) {
@@ -1706,14 +1767,25 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
         return _results;
       }).call(this);
-      data.textureFragments = (function() {
-        var _i, _ref, _results;
-        _results = [];
-        for (i = _i = 0, _ref = header.textureFragment.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-          _results.push(this.loadTextureFragment());
-        }
-        return _results;
-      }).call(this);
+      if (header.formatVersion >= Format.Constant.FORMAT_VERSION_141211) {
+        data.textureFragments = (function() {
+          var _i, _ref, _results;
+          _results = [];
+          for (i = _i = 0, _ref = header.textureFragment.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+            _results.push(this.loadTextureFragment());
+          }
+          return _results;
+        }).call(this);
+      } else {
+        data.textureFragments = (function() {
+          var _i, _ref, _results;
+          _results = [];
+          for (i = _i = 0, _ref = header.textureFragment.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+            _results.push(this.loadTextureFragmentCompat());
+          }
+          return _results;
+        }).call(this);
+      }
       data.bitmaps = (function() {
         var _i, _ref, _results;
         _results = [];
@@ -1871,6 +1943,14 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         _results = [];
         for (i = _i = 0, _ref = header.controlMoveMC.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
           _results.push(this.loadControlMoveMC());
+        }
+        return _results;
+      }).call(this);
+      data.controlMoveMCBs = (function() {
+        var _i, _ref, _results;
+        _results = [];
+        for (i = _i = 0, _ref = header.controlMoveMCB.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          _results.push(this.loadControlMoveMCB());
         }
         return _results;
       }).call(this);
@@ -3350,6 +3430,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       texdata = lwf.data.textures[fragment.textureId];
       this.width = fragment.w / texdata.scale;
       this.height = fragment.h / texdata.scale;
+      this.offsetX = fragment.x;
+      this.offsetY = fragment.y;
+      this.originalWidth = fragment.ow;
+      this.originalHeight = fragment.oh;
       this.dataMatrixId = data.matrixId;
       this.renderer = lwf.rendererFactory.constructBitmap(lwf, objId, this);
       this.depth = -1;
@@ -4125,28 +4209,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Type.MOVIE:
             obj = new Movie(this.lwf, this, dataObjectId, instId, matrixId, colorTransformId);
-            switch (blendMode) {
-              case Format.Constant.BLEND_MODE_ADD:
-                obj.blendMode = "add";
-                break;
-              case Format.Constant.BLEND_MODE_ERASE:
-                obj.blendMode = "erase";
-                break;
-              case Format.Constant.BLEND_MODE_LAYER:
-                obj.blendMode = "layer";
-                break;
-              case Format.Constant.BLEND_MODE_MASK:
-                obj.blendMode = "mask";
-                break;
-              case Format.Constant.BLEND_MODE_MULTIPLY:
-                obj.blendMode = "multiply";
-                break;
-              case Format.Constant.BLEND_MODE_SCREEN:
-                obj.blendMode = "screen";
-                break;
-              case Format.Constant.BLEND_MODE_SUBTRACT:
-                obj.blendMode = "subtract";
-            }
             break;
           case Type.BITMAP:
             obj = new Bitmap(this.lwf, this, dataObjectId);
@@ -4162,6 +4224,33 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Type.PROGRAMOBJECT:
             obj = new ProgramObject(this.lwf, this, dataObjectId);
+        }
+      }
+      if (obj.isMovie) {
+        switch (blendMode) {
+          case Format.Constant.BLEND_MODE_NORMAL:
+            obj.blendMode = "normal";
+            break;
+          case Format.Constant.BLEND_MODE_ADD:
+            obj.blendMode = "add";
+            break;
+          case Format.Constant.BLEND_MODE_ERASE:
+            obj.blendMode = "erase";
+            break;
+          case Format.Constant.BLEND_MODE_LAYER:
+            obj.blendMode = "layer";
+            break;
+          case Format.Constant.BLEND_MODE_MASK:
+            obj.blendMode = "mask";
+            break;
+          case Format.Constant.BLEND_MODE_MULTIPLY:
+            obj.blendMode = "multiply";
+            break;
+          case Format.Constant.BLEND_MODE_SCREEN:
+            obj.blendMode = "screen";
+            break;
+          case Format.Constant.BLEND_MODE_SUBTRACT:
+            obj.blendMode = "subtract";
         }
       }
       if (obj.isMovie || obj.isButton) {
@@ -4284,6 +4373,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
                 ctrl = data.controlMoveMCs[control.controlId];
                 p = data.places[ctrl.placeId];
                 this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId, p.blendMode);
+                break;
+              case ControlType.MOVEMCB:
+                ctrl = data.controlMoveMCBs[control.controlId];
+                p = data.places[ctrl.placeId];
+                this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId, ctrl.blendMode);
                 break;
               case ControlType.ANIMATION:
                 if (controlAnimationOffset === -1) {

@@ -181,7 +181,7 @@ static bool Decompress(
 
 void Data::Load(const void *bytes, size_t length)
 {
-	if (length < Format::HEADER_SIZE)
+	if (length < Format::HEADER_SIZE_COMPAT0)
 		return;
 
 	const char *p = (const char *)bytes;
@@ -201,22 +201,94 @@ void Data::Load(const void *bytes, size_t length)
 				v1 == Format::FORMAT_VERSION_1 &&
 				v2 == Format::FORMAT_VERSION_2
 			) || (
-				v0 == Format::FORMAT_VERSION_COMPAT_0 &&
-				v1 == Format::FORMAT_VERSION_COMPAT_1 &&
-				v2 == Format::FORMAT_VERSION_COMPAT_2
+				v0 == Format::FORMAT_VERSION_COMPAT0_0 &&
+				v1 == Format::FORMAT_VERSION_COMPAT0_1 &&
+				v2 == Format::FORMAT_VERSION_COMPAT0_2
+			) || (
+				v0 == Format::FORMAT_VERSION_COMPAT1_0 &&
+				v1 == Format::FORMAT_VERSION_COMPAT1_1 &&
+				v2 == Format::FORMAT_VERSION_COMPAT1_2
 			)))
 		return;
+
+	int formatVersion = (v0 << 16) | (v1 << 8) | v2;
+	int headerSize;
+	if (formatVersion >= Format::FORMAT_VERSION_141211) {
+		headerSize = Format::HEADER_SIZE;
+	} else {
+		headerSize = Format::HEADER_SIZE_COMPAT0;
+		p = (const char *)bytes;
+		Format::HeaderCompat c =
+			*(const Format::HeaderCompat *)P(sizeof(Format::HeaderCompat));
+
+		Format::ItemArray controlMoveMCB;
+		controlMoveMCB.offset = 0;
+		controlMoveMCB.length = 0;
+
+		header.id0 = c.id0;
+		header.id1 = c.id1;
+		header.id2 = c.id2;
+		header.id3 = c.id3;
+		header.formatVersion0 = c.formatVersion0;
+		header.formatVersion1 = c.formatVersion1;
+		header.formatVersion2 = c.formatVersion2;
+		header.option = c.option;
+		header.width = c.width;
+		header.height = c.height;
+		header.frameRate = c.frameRate;
+		header.rootMovieId = c.rootMovieId;
+		header.nameStringId = c.nameStringId;
+		header.backgroundColor = c.backgroundColor;
+		header.stringBytes = c.stringBytes;
+		header.animationBytes = c.animationBytes;
+		header.translate = c.translate;
+		header.matrix = c.matrix;
+		header.color = c.color;
+		header.alphaTransform = c.alphaTransform;
+		header.colorTransform = c.colorTransform;
+		header.objectData = c.objectData;
+		header.texture = c.texture;
+		header.textureFragment = c.textureFragment;
+		header.bitmap = c.bitmap;
+		header.bitmapEx = c.bitmapEx;
+		header.font = c.font;
+		header.textProperty = c.textProperty;
+		header.text = c.text;
+		header.particleData = c.particleData;
+		header.particle = c.particle;
+		header.programObject = c.programObject;
+		header.graphicObject = c.graphicObject;
+		header.graphic = c.graphic;
+		header.animation = c.animation;
+		header.buttonCondition = c.buttonCondition;
+		header.button = c.button;
+		header.label = c.label;
+		header.instanceName = c.instanceName;
+		header.eventData = c.eventData;
+		header.place = c.place;
+		header.controlMoveM = c.controlMoveM;
+		header.controlMoveC = c.controlMoveC;
+		header.controlMoveMC = c.controlMoveMC;
+		header.controlMoveMCB = controlMoveMCB;
+		header.control = c.control;
+		header.frame = c.frame;
+		header.movieClipEvent = c.movieClipEvent;
+		header.movie = c.movie;
+		header.movieLinkage = c.movieLinkage;
+		header.stringData = c.stringData;
+		header.lwfLength = c.lwfLength;
+	}
 
 #if LWF_USE_LZMA
 	vector<char> decompressed;
 #endif
 
 	if ((header.option & Format::OPTION_COMPRESSED) != 0) {
-		if (header.lwfLength <= Format::HEADER_SIZE)
+		if (header.lwfLength <= headerSize)
 			return;
 #if LWF_USE_LZMA
-		decompressed.resize(header.lwfLength - Format::HEADER_SIZE);
-		if (Decompress(p, length - Format::HEADER_SIZE, decompressed)) {
+		decompressed.resize(header.lwfLength - headerSize);
+		if (Decompress(p, length - headerSize, decompressed)) {
 			p = &decompressed[0];
 			end = p + decompressed.size();
 		} else {
@@ -242,7 +314,16 @@ void Data::Load(const void *bytes, size_t length)
 	READ(colorTransforms, colorTransform, ColorTransform);
 	READ(objects, objectData, Format::Object);
 	READ(textures, texture, Format::TextureBase);
-	READ(textureFragments, textureFragment, Format::TextureFragmentBase);
+	if (formatVersion >= Format::FORMAT_VERSION_141211) {
+		READ(textureFragments, textureFragment, Format::TextureFragmentBase);
+	} else {
+		vector<Format::TextureFragmentCompat> textureFragmentCompats;
+		READ(textureFragmentCompats,
+			textureFragment, Format::TextureFragmentCompat);
+		textureFragments.reserve(header.textureFragment.length);
+		for (int i = 0; i < header.textureFragment.length; ++i)
+			textureFragments.push_back(textureFragmentCompats[i].Convert());
+	}
 	READ(bitmaps, bitmap, Format::Bitmap);
 	READ(bitmapExs, bitmapEx, Format::BitmapEx);
 	READ(fonts, font, Format::Font);
@@ -264,6 +345,8 @@ void Data::Load(const void *bytes, size_t length)
 	READ(controlMoveMs, controlMoveM, Format::ControlMoveM);
 	READ(controlMoveCs, controlMoveC, Format::ControlMoveC);
 	READ(controlMoveMCs, controlMoveMC, Format::ControlMoveMC);
+	if (formatVersion >= Format::FORMAT_VERSION_141211)
+		READ(controlMoveMCBs, controlMoveMCB, Format::ControlMoveMCB);
 	READ(controls, control, Format::Control);
 	READ(frames, frame, Format::Frame);
 	READ(movieClipEvents, movieClipEvent, Format::MovieClipEvent);

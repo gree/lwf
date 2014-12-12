@@ -634,6 +634,10 @@ error:
 				'float scaleY',
 				'float rotation',
 				'float alpha',
+				'float offsetX',
+				'float offsetY',
+				'float originalWidth',
+				'float originalHeight',
 			},
 			read_properties={
 				{'name', 'getName'},

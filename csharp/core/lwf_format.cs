@@ -23,15 +23,21 @@ namespace Format {
 
 public enum Constant
 {
-	HEADER_SIZE = 324,
-
-	FORMAT_VERSION_0 = 0x13,
+	HEADER_SIZE = 332,
+	FORMAT_VERSION_0 = 0x14,
 	FORMAT_VERSION_1 = 0x12,
 	FORMAT_VERSION_2 = 0x11,
+	FORMAT_VERSION_141211 = 0x141211,
 
-	FORMAT_VERSION_COMPAT_0 = 0x12,
-	FORMAT_VERSION_COMPAT_1 = 0x10,
-	FORMAT_VERSION_COMPAT_2 = 0x10,
+	HEADER_SIZE_COMPAT0 = 324,
+	FORMAT_VERSION_COMPAT0_0 = 0x12,
+	FORMAT_VERSION_COMPAT0_1 = 0x10,
+	FORMAT_VERSION_COMPAT0_2 = 0x10,
+
+	HEADER_SIZE_COMPAT1 = 324,
+	FORMAT_VERSION_COMPAT1_0 = 0x13,
+	FORMAT_VERSION_COMPAT1_1 = 0x12,
+	FORMAT_VERSION_COMPAT1_2 = 0x11,
 
 	FORMAT_TYPE = 0,
 
@@ -95,13 +101,15 @@ public partial class TextureFragment
 	public int v;
 	public int w;
 	public int h;
+	public int ow;
+	public int oh;
 	public string filename;
 }
 
 public class TextureFragmentReplacement : TextureFragment
 {
 	TextureFragmentReplacement(string fname, int texId, int rot,
-		int tx, int ty, int tu, int tv, int tw, int th)
+		int tx, int ty, int tu, int tv, int tw, int th, int tow, int toh)
 	{
 		filename = fname;
 		textureId = texId;
@@ -112,6 +120,8 @@ public class TextureFragmentReplacement : TextureFragment
 		v = tv;
 		w = tw;
 		h = th;
+		ow = tow;
+		oh = toh;
 	}
 }
 
@@ -326,6 +336,14 @@ public partial class ControlMoveMC
 	public int colorTransformId;
 }
 
+public partial class ControlMoveMCB
+{
+	public int placeId;
+	public int matrixId;
+	public int colorTransformId;
+	public int blendMode;
+}
+
 public partial class Control
 {
 	public enum Type
@@ -335,6 +353,7 @@ public partial class Control
 		MOVEC,
 		MOVEMC,
 		ANIMATION,
+		MOVEMCB,
 		CONTROL_MAX
 	}
 
@@ -392,6 +411,7 @@ public partial class Header
 	public byte formatVersion0;
 	public byte formatVersion1;
 	public byte formatVersion2;
+	public int formatVersion;
 	public byte option;
 	public int width;
 	public int height;
@@ -429,6 +449,7 @@ public partial class Header
 	public ItemArray controlMoveM;
 	public ItemArray controlMoveC;
 	public ItemArray controlMoveMC;
+	public ItemArray controlMoveMCB;
 	public ItemArray control;
 	public ItemArray frame;
 	public ItemArray movieClipEvent;

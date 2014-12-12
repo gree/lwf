@@ -35,6 +35,10 @@ public class BitmapClip : Bitmap
 	public float scaleY;
 	public float rotation;
 	public float alpha;
+	public float offsetX;
+	public float offsetY;
+	public float originalWidth;
+	public float originalHeight;
 
 	private float _scaleX;
 	private float _scaleY;
@@ -51,6 +55,10 @@ public class BitmapClip : Bitmap
 		var texdata = lwf.data.textures[fragment.textureId];
 		width = fragment.w / texdata.scale;
 		height = fragment.h / texdata.scale;
+		offsetX = fragment.x;
+		offsetY = fragment.y;
+		originalWidth = fragment.ow;
+		originalHeight = fragment.oh;
 
 		depth = -1;
 		visible = true;

@@ -55,6 +55,7 @@ public partial class Data
 	public Format.ControlMoveM[] controlMoveMs;
 	public Format.ControlMoveC[] controlMoveCs;
 	public Format.ControlMoveMC[] controlMoveMCs;
+	public Format.ControlMoveMCB[] controlMoveMCBs;
 	public Format.Control[] controls;
 	public Format.Frame[] frames;
 	public Format.MovieClipEvent[] movieClipEvents;
@@ -93,9 +94,13 @@ public partial class Data
 					v1 == (byte)Constant.FORMAT_VERSION_1 &&
 					v2 == (byte)Constant.FORMAT_VERSION_2
 				) || (
-					v0 == (byte)Constant.FORMAT_VERSION_COMPAT_0 &&
-					v1 == (byte)Constant.FORMAT_VERSION_COMPAT_1 &&
-					v2 == (byte)Constant.FORMAT_VERSION_COMPAT_2
+					v0 == (byte)Constant.FORMAT_VERSION_COMPAT0_0 &&
+					v1 == (byte)Constant.FORMAT_VERSION_COMPAT0_1 &&
+					v2 == (byte)Constant.FORMAT_VERSION_COMPAT0_2
+				) || (
+					v0 == (byte)Constant.FORMAT_VERSION_COMPAT1_0 &&
+					v1 == (byte)Constant.FORMAT_VERSION_COMPAT1_1 &&
+					v2 == (byte)Constant.FORMAT_VERSION_COMPAT1_2
 				)) &&
 				(header.option & (int)Format.Constant.OPTION_COMPRESSED) == 0) {
 			return true;

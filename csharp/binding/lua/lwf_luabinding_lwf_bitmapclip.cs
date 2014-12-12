@@ -34,6 +34,10 @@ public class LunaTraits_LWF_BitmapClip
         new RegType("_property_get_scaleY", impl_LunaTraits_LWF_BitmapClip._bind__property_get_scaleY),
         new RegType("_property_get_rotation", impl_LunaTraits_LWF_BitmapClip._bind__property_get_rotation),
         new RegType("_property_get_alpha", impl_LunaTraits_LWF_BitmapClip._bind__property_get_alpha),
+        new RegType("_property_get_offsetX", impl_LunaTraits_LWF_BitmapClip._bind__property_get_offsetX),
+        new RegType("_property_get_offsetY", impl_LunaTraits_LWF_BitmapClip._bind__property_get_offsetY),
+        new RegType("_property_get_originalWidth", impl_LunaTraits_LWF_BitmapClip._bind__property_get_originalWidth),
+        new RegType("_property_get_originalHeight", impl_LunaTraits_LWF_BitmapClip._bind__property_get_originalHeight),
         new RegType("getName", impl_LunaTraits_LWF_BitmapClip._bind_getName),
         new RegType("getParent", impl_LunaTraits_LWF_BitmapClip._bind_getParent),
         new RegType("getLWF", impl_LunaTraits_LWF_BitmapClip._bind_getLWF),
@@ -49,6 +53,10 @@ public class LunaTraits_LWF_BitmapClip
         new RegType("_property_set_scaleY", impl_LunaTraits_LWF_BitmapClip._bind__property_set_scaleY),
         new RegType("_property_set_rotation", impl_LunaTraits_LWF_BitmapClip._bind__property_set_rotation),
         new RegType("_property_set_alpha", impl_LunaTraits_LWF_BitmapClip._bind__property_set_alpha),
+        new RegType("_property_set_offsetX", impl_LunaTraits_LWF_BitmapClip._bind__property_set_offsetX),
+        new RegType("_property_set_offsetY", impl_LunaTraits_LWF_BitmapClip._bind__property_set_offsetY),
+        new RegType("_property_set_originalWidth", impl_LunaTraits_LWF_BitmapClip._bind__property_set_originalWidth),
+        new RegType("_property_set_originalHeight", impl_LunaTraits_LWF_BitmapClip._bind__property_set_originalHeight),
 
 		new RegType("__index", impl_LunaTraits_LWF_BitmapClip.__index),
 		new RegType("__newindex", impl_LunaTraits_LWF_BitmapClip.__newindex),
@@ -125,6 +133,14 @@ public class impl_LunaTraits_LWF_BitmapClip
 	public static void _property_set_rotation(LWF.BitmapClip a, float b) { a.rotation=b; }
 	public static float _property_get_alpha(LWF.BitmapClip a) { return a.alpha; }
 	public static void _property_set_alpha(LWF.BitmapClip a, float b) { a.alpha=b; }
+	public static float _property_get_offsetX(LWF.BitmapClip a) { return a.offsetX; }
+	public static void _property_set_offsetX(LWF.BitmapClip a, float b) { a.offsetX=b; }
+	public static float _property_get_offsetY(LWF.BitmapClip a) { return a.offsetY; }
+	public static void _property_set_offsetY(LWF.BitmapClip a, float b) { a.offsetY=b; }
+	public static float _property_get_originalWidth(LWF.BitmapClip a) { return a.originalWidth; }
+	public static void _property_set_originalWidth(LWF.BitmapClip a, float b) { a.originalWidth=b; }
+	public static float _property_get_originalHeight(LWF.BitmapClip a) { return a.originalHeight; }
+	public static void _property_set_originalHeight(LWF.BitmapClip a, float b) { a.originalHeight=b; }
 	public static int _bind__property_get_depth(Lua.lua_State L)
 	{
 		if (Lua.lua_gettop(L)!= 1
@@ -521,6 +537,138 @@ public class impl_LunaTraits_LWF_BitmapClip
 		return 0;
 	}
 
+	public static int _bind__property_get_offsetX(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 1
+            || Luna.get_uniqueid(L,1)!=55459900)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_get_offsetX(LWF.BitmapClip a)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		try {
+			float ret=_property_get_offsetX(a);
+			Lua.lua_pushnumber(L, ret);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 1;
+	}
+
+	public static int _bind__property_set_offsetX(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 2
+            || Luna.get_uniqueid(L,1)!=55459900 
+            || Lua.lua_isnumber(L, 2)==0)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_set_offsetX(LWF.BitmapClip a, float b)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		float b=(float)(float)Lua.lua_tonumber(L,2);
+		try {
+			_property_set_offsetX(a, b);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 0;
+	}
+
+	public static int _bind__property_get_offsetY(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 1
+            || Luna.get_uniqueid(L,1)!=55459900)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_get_offsetY(LWF.BitmapClip a)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		try {
+			float ret=_property_get_offsetY(a);
+			Lua.lua_pushnumber(L, ret);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 1;
+	}
+
+	public static int _bind__property_set_offsetY(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 2
+            || Luna.get_uniqueid(L,1)!=55459900 
+            || Lua.lua_isnumber(L, 2)==0)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_set_offsetY(LWF.BitmapClip a, float b)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		float b=(float)(float)Lua.lua_tonumber(L,2);
+		try {
+			_property_set_offsetY(a, b);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 0;
+	}
+
+	public static int _bind__property_get_originalWidth(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 1
+            || Luna.get_uniqueid(L,1)!=55459900)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_get_originalWidth(LWF.BitmapClip a)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		try {
+			float ret=_property_get_originalWidth(a);
+			Lua.lua_pushnumber(L, ret);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 1;
+	}
+
+	public static int _bind__property_set_originalWidth(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 2
+            || Luna.get_uniqueid(L,1)!=55459900 
+            || Lua.lua_isnumber(L, 2)==0)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_set_originalWidth(LWF.BitmapClip a, float b)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		float b=(float)(float)Lua.lua_tonumber(L,2);
+		try {
+			_property_set_originalWidth(a, b);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 0;
+	}
+
+	public static int _bind__property_get_originalHeight(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 1
+            || Luna.get_uniqueid(L,1)!=55459900)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_get_originalHeight(LWF.BitmapClip a)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		try {
+			float ret=_property_get_originalHeight(a);
+			Lua.lua_pushnumber(L, ret);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 1;
+	}
+
+	public static int _bind__property_set_originalHeight(Lua.lua_State L)
+	{
+		if (Lua.lua_gettop(L)!= 2
+            || Luna.get_uniqueid(L,1)!=55459900 
+            || Lua.lua_isnumber(L, 2)==0)
+		{
+			Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:_property_set_originalHeight(LWF.BitmapClip a, float b)");
+		}
+
+		LWF.BitmapClip a=Luna_LWF_BitmapClip.check(L,1);
+		float b=(float)(float)Lua.lua_tonumber(L,2);
+		try {
+			_property_set_originalHeight(a, b);
+		} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+		return 0;
+	}
+
   public static int _bind_detachFromParent(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)!=1
@@ -559,6 +707,10 @@ public class impl_LunaTraits_LWF_BitmapClip
         LunaTraits_LWF_BitmapClip.properties["scaleY"]=_bind__property_get_scaleY;
         LunaTraits_LWF_BitmapClip.properties["rotation"]=_bind__property_get_rotation;
         LunaTraits_LWF_BitmapClip.properties["alpha"]=_bind__property_get_alpha;
+        LunaTraits_LWF_BitmapClip.properties["offsetX"]=_bind__property_get_offsetX;
+        LunaTraits_LWF_BitmapClip.properties["offsetY"]=_bind__property_get_offsetY;
+        LunaTraits_LWF_BitmapClip.properties["originalWidth"]=_bind__property_get_originalWidth;
+        LunaTraits_LWF_BitmapClip.properties["originalHeight"]=_bind__property_get_originalHeight;
         LunaTraits_LWF_BitmapClip.properties["name"]=_bind_getName;
         LunaTraits_LWF_BitmapClip.properties["parent"]=_bind_getParent;
         LunaTraits_LWF_BitmapClip.properties["lwf"]=_bind_getLWF;
@@ -579,6 +731,10 @@ public class impl_LunaTraits_LWF_BitmapClip
          LunaTraits_LWF_BitmapClip.write_properties["scaleY"]=_bind__property_set_scaleY;
          LunaTraits_LWF_BitmapClip.write_properties["rotation"]=_bind__property_set_rotation;
          LunaTraits_LWF_BitmapClip.write_properties["alpha"]=_bind__property_set_alpha;
+         LunaTraits_LWF_BitmapClip.write_properties["offsetX"]=_bind__property_set_offsetX;
+         LunaTraits_LWF_BitmapClip.write_properties["offsetY"]=_bind__property_set_offsetY;
+         LunaTraits_LWF_BitmapClip.write_properties["originalWidth"]=_bind__property_set_originalWidth;
+         LunaTraits_LWF_BitmapClip.write_properties["originalHeight"]=_bind__property_set_originalHeight;
 
 	}
 

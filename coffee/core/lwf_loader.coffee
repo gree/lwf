@@ -97,7 +97,34 @@ class LWFLoader
       @readInt32(),
       @readInt32(),
       @readInt32(),
+      @readInt32(),
+      @readInt32(),
       @readInt32())
+
+  loadTextureFragmentCompat: ->
+    stringId = @readInt32()
+    textureId = @readInt32()
+    rotated = @readInt32()
+    x = @readInt32()
+    y = @readInt32()
+    u = @readInt32()
+    v = @readInt32()
+    w = @readInt32()
+    h = @readInt32()
+    ow = w
+    oh = h
+    return new Format.TextureFragment(
+      stringId,
+      textureId,
+      rotated,
+      x,
+      y,
+      u,
+      v,
+      w,
+      h,
+      ow,
+      oh)
 
   loadBitmap: ->
     return new Format.Bitmap(
@@ -245,6 +272,13 @@ class LWFLoader
       @readInt32(),
       @readInt32())
 
+  loadControlMoveMCB: ->
+    return new Format.ControlMoveMCB(
+      @readInt32(),
+      @readInt32(),
+      @readInt32(),
+      @readInt32())
+
   loadControl: ->
     return new Format.Control(
       @readInt32(),
@@ -288,6 +322,8 @@ class LWFLoader
     formatVersion0 = @readByte()
     formatVersion1 = @readByte()
     formatVersion2 = @readByte()
+    formatVersion =
+      (formatVersion0 << 16) | (formatVersion1 << 8) | formatVersion2
     option = @readByte()
     width = @readInt32()
     height = @readInt32()
@@ -325,6 +361,11 @@ class LWFLoader
     controlMoveM = @loadItemArray()
     controlMoveC = @loadItemArray()
     controlMoveMC = @loadItemArray()
+    controlMoveMCB = null
+    if formatVersion >= Format.Constant.FORMAT_VERSION_141211
+      controlMoveMCB = @loadItemArray()
+    else
+      controlMoveMCB = new Format.ItemArray(0, 0)
     control = @loadItemArray()
     frame = @loadItemArray()
     movieClipEvent = @loadItemArray()
@@ -341,6 +382,7 @@ class LWFLoader
       formatVersion0,
       formatVersion1,
       formatVersion2,
+      formatVersion,
       option,
       width,
       height,
@@ -378,6 +420,7 @@ class LWFLoader
       controlMoveM,
       controlMoveC,
       controlMoveMC,
+      controlMoveMCB,
       control,
       frame,
       movieClipEvent,
@@ -405,8 +448,12 @@ class LWFLoader
       (@loadColorTransform() for i in [0...header.colorTransform.length])
     data.objects = (@loadObject() for i in [0...header.objectData.length])
     data.textures = (@loadTexture() for i in [0...header.texture.length])
-    data.textureFragments =
-      (@loadTextureFragment() for i in [0...header.textureFragment.length])
+    if header.formatVersion >= Format.Constant.FORMAT_VERSION_141211
+      data.textureFragments =
+        (@loadTextureFragment() for i in [0...header.textureFragment.length])
+    else
+      data.textureFragments = (@loadTextureFragmentCompat() \
+        for i in [0...header.textureFragment.length])
     data.bitmaps = (@loadBitmap() for i in [0...header.bitmap.length])
     data.bitmapExs = (@loadBitmapEx() for i in [0...header.bitmapEx.length])
     data.fonts = (@loadFont() for i in [0...header.font.length])
@@ -436,6 +483,8 @@ class LWFLoader
       (@loadControlMoveC() for i in [0...header.controlMoveC.length])
     data.controlMoveMCs =
       (@loadControlMoveMC() for i in [0...header.controlMoveMC.length])
+    data.controlMoveMCBs =
+      (@loadControlMoveMCB() for i in [0...header.controlMoveMCB.length])
     data.controls = (@loadControl() for i in [0...header.control.length])
     data.frames = (@loadFrame() for i in [0...header.frame.length])
     data.movieClipEvents =

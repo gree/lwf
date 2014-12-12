@@ -27,6 +27,10 @@ class BitmapClip extends LObject
     texdata = lwf.data.textures[fragment.textureId]
     @width = fragment.w / texdata.scale
     @height = fragment.h / texdata.scale
+    @offsetX = fragment.x
+    @offsetY = fragment.y
+    @originalWidth = fragment.ow
+    @originalHeight = fragment.oh
     @dataMatrixId = data.matrixId
     @renderer = lwf.rendererFactory.constructBitmap(lwf, objId, @)
 

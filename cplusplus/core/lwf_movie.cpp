@@ -184,7 +184,6 @@ void Movie::ExecObject(int dlDepth, int objId,
 		case OType::MOVIE:
 			obj = make_shared<Movie>(lwf, this,
 				dataObjectId, instId, matrixId, colorTransformId);
-			((Movie *)obj.get())->blendMode = dlBlendMode;
 			break;
 
 		case OType::BITMAP:
@@ -208,6 +207,9 @@ void Movie::ExecObject(int dlDepth, int objId,
 			break;
 		}
 	}
+
+	if (obj->IsMovie())
+		((Movie *)obj.get())->blendMode = dlBlendMode;
 
 	if (obj->IsMovie() || obj->IsButton()) {
 		IObject *instance = (IObject *)obj.get();
@@ -358,6 +360,17 @@ void Movie::PostExec(bool progressing)
 						const Format::Place &p = d->places[ctrl.placeId];
 						ExecObject(p.depth, p.objectId, ctrl.matrixId,
 							ctrl.colorTransformId, p.instanceId, p.blendMode);
+					}
+					break;
+
+				case Format::Control::MOVEMCB:
+					{
+						const Format::ControlMoveMCB &ctrl =
+							d->controlMoveMCBs[control.controlId];
+						const Format::Place &p = d->places[ctrl.placeId];
+						ExecObject(p.depth, p.objectId, ctrl.matrixId,
+							ctrl.colorTransformId, p.instanceId,
+							ctrl.blendMode);
 					}
 					break;
 
