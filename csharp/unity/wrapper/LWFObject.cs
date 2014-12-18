@@ -79,6 +79,7 @@ public class LWFObject : MonoBehaviour
 
 	protected bool callUpdate;
 	protected bool useCombinedMeshRenderer;
+	protected bool executed;
 	protected LWFCallbacks lwfLoadCallbacks;
 	protected LWFCallbacks lwfDestroyCallbacks;
 	protected int activateCount = 1;
@@ -306,10 +307,11 @@ public class LWFObject : MonoBehaviour
 		if (lwf == null)
 			return;
 
-		if (resumeCount > 0) {
+		if (!executed || resumeCount > 0) {
 			if (tick == 0)
 				tick = -1;
 			lwf.Exec(tick);
+			executed = true;
 		}
 
 		if (lwf == null)
