@@ -51,7 +51,8 @@ public:
 	}
 
 	LWFMask()
-		: m_renderTexture(0)
+		: m_renderTexture(0),
+			m_blendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA})
 	{
 	}
 
