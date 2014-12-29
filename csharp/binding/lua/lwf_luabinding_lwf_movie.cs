@@ -66,6 +66,7 @@ public class LunaTraits_LWF_Movie
         new RegType("getGreen", impl_LunaTraits_LWF_Movie._bind_getGreen),
         new RegType("getBlue", impl_LunaTraits_LWF_Movie._bind_getBlue),
         new RegType("getLWF", impl_LunaTraits_LWF_Movie._bind_getLWF),
+        new RegType("getBlendMode", impl_LunaTraits_LWF_Movie._bind_getBlendMode),
         new RegType("setVisible", impl_LunaTraits_LWF_Movie._bind_setVisible),
         new RegType("setX", impl_LunaTraits_LWF_Movie._bind_setX),
         new RegType("setY", impl_LunaTraits_LWF_Movie._bind_setY),
@@ -76,6 +77,7 @@ public class LunaTraits_LWF_Movie
         new RegType("setRed", impl_LunaTraits_LWF_Movie._bind_setRed),
         new RegType("setGreen", impl_LunaTraits_LWF_Movie._bind_setGreen),
         new RegType("setBlue", impl_LunaTraits_LWF_Movie._bind_setBlue),
+        new RegType("setBlendMode", impl_LunaTraits_LWF_Movie._bind_setBlendMode),
         new RegType("addEventListener", impl_LunaTraits_LWF_Movie.addEventListener),
         new RegType("attachMovie", impl_LunaTraits_LWF_Movie.attachMovie),
         new RegType("attachEmptyMovie", impl_LunaTraits_LWF_Movie.attachEmptyMovie),
@@ -129,6 +131,58 @@ public class impl_LunaTraits_LWF_Movie
 	static void setGreen(LWF.Movie o, float v){o.green=v;}
 	static void setBlue(LWF.Movie o, float v){o.blue=v;}
 
+	static string getBlendMode(LWF.Movie o)
+	{
+		switch (o.blendMode) {
+			default:
+				return "normal";
+			case (int)LWF.Format.Constant.BLEND_MODE_ADD:
+				return "add";
+			case (int)LWF.Format.Constant.BLEND_MODE_ERASE:
+				return "erase";
+			case (int)LWF.Format.Constant.BLEND_MODE_LAYER:
+				return "layer";
+			case (int)LWF.Format.Constant.BLEND_MODE_MASK:
+				return "mask";
+			case (int)LWF.Format.Constant.BLEND_MODE_MULTIPLY:
+				return "multiply";
+			case (int)LWF.Format.Constant.BLEND_MODE_SCREEN:
+				return "screen";
+			case (int)LWF.Format.Constant.BLEND_MODE_SUBTRACT:
+				return "subtract";
+		}
+	}
+
+	static void setBlendMode(LWF.Movie o, string v)
+	{
+		switch (v.ToLower()) {
+		default:
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_NORMAL;
+			break;
+		case "add":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_ADD;
+			break;
+		case "erase":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_ERASE;
+			break;
+		case "layer":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_LAYER;
+			break;
+		case "mask":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_MASK;
+			break;
+		case "multiply":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_MULTIPLY;
+			break;
+		case "screen":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_SCREEN;
+			break;
+		case "subtract":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_SUBTRACT;
+			break;
+		}
+	}
+
 	public static int _bind_getLWF(Lua.lua_State L)
 	{
 		if (Lua.lua_gettop(L) != 1 || Luna.get_uniqueid(L, 1) !=
@@ -164,7 +218,7 @@ public class impl_LunaTraits_LWF_Movie
 		}
 		LWF.Movie a =
 			Luna_LWF_Movie.check(L, 1);
-    List<LWF.LabelData> currentLabels = a.GetCurrentLabels();
+		List<LWF.LabelData> currentLabels = a.GetCurrentLabels();
 	
 		Lua.lua_createtable(L, currentLabels.Count, 0);
 		/* -1: table */
@@ -906,6 +960,17 @@ public class impl_LunaTraits_LWF_Movie
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 1;
   }
+  public static int _bind_getBlendMode(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=1
+            || Luna.get_uniqueid(L,1)!=29625181 ) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:getBlendMode(LWF.Movie self ...)"); }
+		LWF.Movie o=Luna_LWF_Movie.check(L,1);
+	try {
+		string ret=getBlendMode(o);
+		Lua.lua_pushstring(L, ret);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 1;
+  }
   public static int _bind_setVisible(Lua.lua_State L)
   {
 	if (Lua.lua_gettop(L)!=2
@@ -1026,6 +1091,18 @@ public class impl_LunaTraits_LWF_Movie
 	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
 	return 0;
   }
+  public static int _bind_setBlendMode(Lua.lua_State L)
+  {
+	if (Lua.lua_gettop(L)!=2
+            || Luna.get_uniqueid(L,1)!=29625181 
+            || Lua.lua_isstring(L,2)==0) { Luna.printStack(L); Lua.luaL_error(L, "luna typecheck failed:setBlendMode(LWF.Movie self ...)"); }
+		LWF.Movie o=Luna_LWF_Movie.check(L,1);
+		string v=Lua.lua_tostring(L,2).ToString();
+	try {
+		setBlendMode(o, v);
+	} catch(Exception e) { Lua.luaL_error( L,new Lua.CharPtr(e.ToString())); }
+	return 0;
+  }
 
 
 	public static void luna_init_hashmap()
@@ -1047,6 +1124,7 @@ public class impl_LunaTraits_LWF_Movie
         LunaTraits_LWF_Movie.properties["green"]=_bind_getGreen;
         LunaTraits_LWF_Movie.properties["blue"]=_bind_getBlue;
         LunaTraits_LWF_Movie.properties["lwf"]=_bind_getLWF;
+        LunaTraits_LWF_Movie.properties["blendMode"]=_bind_getBlendMode;
 
 	}
 
@@ -1062,6 +1140,7 @@ public class impl_LunaTraits_LWF_Movie
          LunaTraits_LWF_Movie.write_properties["red"]=_bind_setRed;
          LunaTraits_LWF_Movie.write_properties["green"]=_bind_setGreen;
          LunaTraits_LWF_Movie.write_properties["blue"]=_bind_setBlue;
+         LunaTraits_LWF_Movie.write_properties["blendMode"]=_bind_setBlendMode;
 
 	}
 

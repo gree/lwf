@@ -243,6 +243,7 @@ static int addEventListener(lua_State *L)
 				{'green', 'getGreen'},
 				{'blue', 'getBlue'},
 				{'lwf', 'getLWF'},
+				{'blendMode', 'getBlendMode'},
 			},
 			write_properties={
 				{'visible', 'setVisible'},
@@ -255,6 +256,7 @@ static int addEventListener(lua_State *L)
 				{'red', 'setRed'},
 				{'green', 'setGreen'},
 				{'blue', 'setBlue'},
+				{'blendMode', 'setBlendMode'},
 			},
 			memberFunctions={[[
 std::string GetFullName() const @ getFullName
@@ -302,6 +304,7 @@ static float getAlpha(LWF::Movie &o);
 static float getRed(LWF::Movie &o);
 static float getGreen(LWF::Movie &o);
 static float getBlue(LWF::Movie &o);
+static std::string getBlendMode(LWF::Movie &o);
 
 static void setVisible(LWF::Movie &o, bool v);
 static void setX(LWF::Movie &o, float v);
@@ -313,6 +316,7 @@ static void setAlpha(LWF::Movie &o, float v);
 static void setRed(LWF::Movie &o, float v);
 static void setGreen(LWF::Movie &o, float v);
 static void setBlue(LWF::Movie &o, float v);
+static void setBlendMode(LWF::Movie &o, std::string v);
 			]]},
 			customIndex=[[
 if (lua_gettop(L) == 2 && Luna<void>::get_uniqueid(L, 1) ==
@@ -381,6 +385,49 @@ static void setAlpha(LWF::Movie &o, float v){o.SetAlpha(v);}
 static void setRed(LWF::Movie &o, float v){o.SetRed(v);}
 static void setGreen(LWF::Movie &o, float v){o.SetGreen(v);}
 static void setBlue(LWF::Movie &o, float v){o.SetBlue(v);}
+
+static std::string getBlendMode(LWF::Movie &o)
+{
+	switch (o.blendMode) {
+	default:
+		return "normal";
+	case (int)LWF::Format::BLEND_MODE_ADD:
+		return "add";
+	case (int)LWF::Format::BLEND_MODE_ERASE:
+		return "erase";
+	case (int)LWF::Format::BLEND_MODE_LAYER:
+		return "layer";
+	case (int)LWF::Format::BLEND_MODE_MASK:
+		return "mask";
+	case (int)LWF::Format::BLEND_MODE_MULTIPLY:
+		return "multiply";
+	case (int)LWF::Format::BLEND_MODE_SCREEN:
+		return "screen";
+	case (int)LWF::Format::BLEND_MODE_SUBTRACT:
+		return "subtract";
+	}
+}
+
+static void setBlendMode(LWF::Movie &o, std::string v)
+{
+	static LWF::map<std::string, int> table;
+	if (table.empty()) {
+		table["normal"] = (int)LWF::Format::BLEND_MODE_NORMAL;
+		table["add"] = (int)LWF::Format::BLEND_MODE_ADD;
+		table["erase"] = (int)LWF::Format::BLEND_MODE_ERASE;
+		table["layer"] = (int)LWF::Format::BLEND_MODE_LAYER;
+		table["mask"] = (int)LWF::Format::BLEND_MODE_MASK;
+		table["multiply"] = (int)LWF::Format::BLEND_MODE_MULTIPLY;
+		table["screen"] = (int)LWF::Format::BLEND_MODE_SCREEN;
+		table["subtract"] = (int)LWF::Format::BLEND_MODE_SUBTRACT;
+	}
+
+	LWF::map<std::string, int>::iterator it = table.find(v);
+	if (it == table.end())
+		o.blendMode = (int)LWF::Format::BLEND_MODE_NORMAL;
+	else
+		o.blendMode = it->second;
+}
 
 static int _bind_getLWF(lua_State *L)
 {

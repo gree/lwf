@@ -1321,6 +1321,12 @@ public:                                                       // 1223
     if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck_getBlendMode(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=1) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    return true;
+  }                                                           // 554
   inline static bool _lg_typecheck_setVisible(lua_State *L)
   {                                                           // 1249
     if( lua_gettop(L)!=2) return false;                       // 527
@@ -1391,6 +1397,13 @@ public:                                                       // 1223
     if( lua_isnumber(L,2)==0) return false;                   // 536
     return true;
   }                                                           // 554
+  inline static bool _lg_typecheck_setBlendMode(lua_State *L)
+  {                                                           // 1249
+    if( lua_gettop(L)!=2) return false;                       // 527
+    if( Luna<void>::get_uniqueid(L,1)!=31780709) return false; // LWF ::Movie // 534
+    if( lua_isstring(L,2)==0) return false;                   // 541
+    return true;
+  }                                                           // 554
 static std::string getName(LWF::Movie &o){return o.name;}
 static int getCurrentFrame(LWF::Movie &o){return o.currentFrame;}
 static std::string getCurrentLabel(LWF::Movie &o){return o.GetCurrentLabel();}
@@ -1416,6 +1429,49 @@ static void setAlpha(LWF::Movie &o, float v){o.SetAlpha(v);}
 static void setRed(LWF::Movie &o, float v){o.SetRed(v);}
 static void setGreen(LWF::Movie &o, float v){o.SetGreen(v);}
 static void setBlue(LWF::Movie &o, float v){o.SetBlue(v);}
+
+static std::string getBlendMode(LWF::Movie &o)
+{
+    switch (o.blendMode) {
+    default:
+        return "normal";
+    case (int)LWF::Format::BLEND_MODE_ADD:
+        return "add";
+    case (int)LWF::Format::BLEND_MODE_ERASE:
+        return "erase";
+    case (int)LWF::Format::BLEND_MODE_LAYER:
+        return "layer";
+    case (int)LWF::Format::BLEND_MODE_MASK:
+        return "mask";
+    case (int)LWF::Format::BLEND_MODE_MULTIPLY:
+        return "multiply";
+    case (int)LWF::Format::BLEND_MODE_SCREEN:
+        return "screen";
+    case (int)LWF::Format::BLEND_MODE_SUBTRACT:
+        return "subtract";
+    }
+}
+
+static void setBlendMode(LWF::Movie &o, std::string v)
+{
+    static LWF::map<std::string, int> table;
+    if (table.empty()) {
+        table["normal"] = (int)LWF::Format::BLEND_MODE_NORMAL;
+        table["add"] = (int)LWF::Format::BLEND_MODE_ADD;
+        table["erase"] = (int)LWF::Format::BLEND_MODE_ERASE;
+        table["layer"] = (int)LWF::Format::BLEND_MODE_LAYER;
+        table["mask"] = (int)LWF::Format::BLEND_MODE_MASK;
+        table["multiply"] = (int)LWF::Format::BLEND_MODE_MULTIPLY;
+        table["screen"] = (int)LWF::Format::BLEND_MODE_SCREEN;
+        table["subtract"] = (int)LWF::Format::BLEND_MODE_SUBTRACT;
+    }
+
+    LWF::map<std::string, int>::iterator it = table.find(v);
+    if (it == table.end())
+        o.blendMode = (int)LWF::Format::BLEND_MODE_NORMAL;
+    else
+        o.blendMode = it->second;
+}
 
 static int _bind_getLWF(lua_State *L)
 {
@@ -2115,6 +2171,17 @@ error:
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 302
     return 1;                                                 // 303
   }                                                           // 333
+  static int _bind_getBlendMode(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_getBlendMode(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:getBlendMode(LWF ::Movie & o,)"); }
+                                                              // 487
+    LWF ::Movie & o=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    try {                                                     // 305
+    std ::string ret=getBlendMode( o);                        // 306
+    lua_pushstring(L, ret.c_str());                           // 309
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 313
+    return 1;                                                 // 314
+  }                                                           // 333
   static int _bind_setVisible(lua_State *L)
   {                                                           // 1282
     if (!_lg_typecheck_setVisible(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:setVisible(LWF ::Movie & o,bool v,)"); }
@@ -2225,6 +2292,17 @@ error:
     } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
     return 0;                                                 // 257
   }                                                           // 333
+  static int _bind_setBlendMode(lua_State *L)
+  {                                                           // 1282
+    if (!_lg_typecheck_setBlendMode(L)) { luna_printStack(L); luaL_error(L, "luna typecheck failed:setBlendMode(LWF ::Movie & o,std ::string v,)"); }
+                                                              // 487
+    LWF ::Movie & o=static_cast<LWF ::Movie &>(*Luna<LWF ::Movie >::check(L,1)); // 504
+    std ::string v=(std ::string)lua_tostring(L,2);           // 507
+    try {                                                     // 254
+    setBlendMode( o, v);                                      // 255
+    } catch(std::exception& e) { luaL_error( L,e.what()); }   // 256
+    return 0;                                                 // 257
+  }                                                           // 333
   static int _bind_detachMovie(lua_State *L)
   {                                                           // 195
     if (_lg_typecheck_detachMovie_overload_1(L)) return _bind_detachMovie_overload_1(L); // 198
@@ -2268,6 +2346,7 @@ error:
     LunaTraits<LWF ::Movie >::properties["green"]=&_bind_getGreen; // 1326
     LunaTraits<LWF ::Movie >::properties["blue"]=&_bind_getBlue; // 1326
     LunaTraits<LWF ::Movie >::properties["lwf"]=&_bind_getLWF; // 1326
+    LunaTraits<LWF ::Movie >::properties["blendMode"]=&_bind_getBlendMode; // 1326
   }                                                           // 1328
   static void luna_init_write_hashmap()
   {                                                           // 1329
@@ -2281,6 +2360,7 @@ error:
     LunaTraits<LWF ::Movie >::write_properties["red"]=&_bind_setRed; // 1332
     LunaTraits<LWF ::Movie >::write_properties["green"]=&_bind_setGreen; // 1332
     LunaTraits<LWF ::Movie >::write_properties["blue"]=&_bind_setBlue; // 1332
+    LunaTraits<LWF ::Movie >::write_properties["blendMode"]=&_bind_setBlendMode; // 1332
   }                                                           // 1335
             static int __index(lua_State* L)
             {                                                 // 1339
@@ -2398,6 +2478,7 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"getRed", &impl_LunaTraits<LWF ::Movie >::_bind_getRed}, // 1492
     {"getGreen", &impl_LunaTraits<LWF ::Movie >::_bind_getGreen}, // 1492
     {"getBlue", &impl_LunaTraits<LWF ::Movie >::_bind_getBlue}, // 1492
+    {"getBlendMode", &impl_LunaTraits<LWF ::Movie >::_bind_getBlendMode}, // 1492
     {"setVisible", &impl_LunaTraits<LWF ::Movie >::_bind_setVisible}, // 1492
     {"setX", &impl_LunaTraits<LWF ::Movie >::_bind_setX},     // 1492
     {"setY", &impl_LunaTraits<LWF ::Movie >::_bind_setY},     // 1492
@@ -2408,6 +2489,7 @@ luna_RegType LunaTraits<LWF ::Movie >::methods[] = {          // 1487
     {"setRed", &impl_LunaTraits<LWF ::Movie >::_bind_setRed}, // 1492
     {"setGreen", &impl_LunaTraits<LWF ::Movie >::_bind_setGreen}, // 1492
     {"setBlue", &impl_LunaTraits<LWF ::Movie >::_bind_setBlue}, // 1492
+    {"setBlendMode", &impl_LunaTraits<LWF ::Movie >::_bind_setBlendMode}, // 1492
     {"detachMovie", &impl_LunaTraits<LWF ::Movie >::_bind_detachMovie}, // 1492
     {"gotoAndStop", &impl_LunaTraits<LWF ::Movie >::_bind_gotoAndStop}, // 1492
     {"gotoAndPlay", &impl_LunaTraits<LWF ::Movie >::_bind_gotoAndPlay}, // 1492

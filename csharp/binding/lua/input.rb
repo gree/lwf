@@ -242,6 +242,7 @@ static float getHeight(LWF.Button o);
 				['green', 'getGreen'],
 				['blue', 'getBlue'],
 				['lwf', 'getLWF'],
+				['blendMode', 'getBlendMode'],
 			],
 			:writeProperties=>[
 				['visible', 'setVisible'],
@@ -254,6 +255,7 @@ static float getHeight(LWF.Button o);
 				['red', 'setRed'],
 				['green', 'setGreen'],
 				['blue', 'setBlue'],
+				['blendMode', 'setBlendMode'],
 			],
 
 			:memberFunctions=><<-EOS,
@@ -305,6 +307,7 @@ static float getAlpha(LWF.Movie o);
 static float getRed(LWF.Movie o);
 static float getGreen(LWF.Movie o);
 static float getBlue(LWF.Movie o);
+static string getBlendMode(LWF.Movie o);
 
 static void setVisible(LWF.Movie o, bool v);
 static void setX(LWF.Movie o, float v);
@@ -316,6 +319,7 @@ static void setAlpha(LWF.Movie o, float v);
 static void setRed(LWF.Movie o, float v);
 static void setGreen(LWF.Movie o, float v);
 static void setBlue(LWF.Movie o, float v);
+static void setBlendMode(LWF.Movie o, string v);
 			EOS
 
 			:customIndex=><<-EOS,
@@ -389,6 +393,58 @@ static void setBlue(LWF.Movie o, float v);
 	static void setGreen(LWF.Movie o, float v){o.green=v;}
 	static void setBlue(LWF.Movie o, float v){o.blue=v;}
 
+	static string getBlendMode(LWF.Movie o)
+	{
+		switch (o.blendMode) {
+			default:
+				return "normal";
+			case (int)LWF.Format.Constant.BLEND_MODE_ADD:
+				return "add";
+			case (int)LWF.Format.Constant.BLEND_MODE_ERASE:
+				return "erase";
+			case (int)LWF.Format.Constant.BLEND_MODE_LAYER:
+				return "layer";
+			case (int)LWF.Format.Constant.BLEND_MODE_MASK:
+				return "mask";
+			case (int)LWF.Format.Constant.BLEND_MODE_MULTIPLY:
+				return "multiply";
+			case (int)LWF.Format.Constant.BLEND_MODE_SCREEN:
+				return "screen";
+			case (int)LWF.Format.Constant.BLEND_MODE_SUBTRACT:
+				return "subtract";
+		}
+	}
+
+	static void setBlendMode(LWF.Movie o, string v)
+	{
+		switch (v.ToLower()) {
+		default:
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_NORMAL;
+			break;
+		case "add":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_ADD;
+			break;
+		case "erase":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_ERASE;
+			break;
+		case "layer":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_LAYER;
+			break;
+		case "mask":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_MASK;
+			break;
+		case "multiply":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_MULTIPLY;
+			break;
+		case "screen":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_SCREEN;
+			break;
+		case "subtract":
+			o.blendMode = (int)LWF.Format.Constant.BLEND_MODE_SUBTRACT;
+			break;
+		}
+	}
+
 	public static int _bind_getLWF(Lua.lua_State L)
 	{
 		if (Lua.lua_gettop(L) != 1 || Luna.get_uniqueid(L, 1) !=
@@ -424,7 +480,7 @@ static void setBlue(LWF.Movie o, float v);
 		}
 		LWF.Movie a =
 			Luna_LWF_Movie.check(L, 1);
-    List<LWF.LabelData> currentLabels = a.GetCurrentLabels();
+		List<LWF.LabelData> currentLabels = a.GetCurrentLabels();
 	
 		Lua.lua_createtable(L, currentLabels.Count, 0);
 		/* -1: table */
