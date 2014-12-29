@@ -247,7 +247,8 @@ public partial class Movie : IObject
 	}
 
 	private void ExecObject(int dlDepth, int objId,
-		int matrixId, int colorTransformId, int instId, int dlBlendMode)
+		int matrixId, int colorTransformId, int instId,
+		int dlBlendMode, bool updateBlendMode = false)
 	{
 		// Ignore error
 		if (objId == -1)
@@ -280,6 +281,7 @@ public partial class Movie : IObject
 			case Type.MOVIE:
 				obj = new Movie(m_lwf, this,
 					dataObjectId, instId, matrixId, colorTransformId);
+				((Movie)obj).blendMode = dlBlendMode;
 				break;
 
 			case Type.BITMAP:
@@ -304,7 +306,7 @@ public partial class Movie : IObject
 			}
 		}
 
-		if (obj.IsMovie())
+		if (obj.IsMovie() && updateBlendMode)
 			((Movie)obj).blendMode = dlBlendMode;
 
 		if (obj.IsMovie() || obj.IsButton()) {
@@ -465,7 +467,7 @@ public partial class Movie : IObject
 							Format.Place p = data.places[ctrl.placeId];
 							ExecObject(p.depth, p.objectId, ctrl.matrixId,
 								ctrl.colorTransformId, p.instanceId,
-								ctrl.blendMode);
+								ctrl.blendMode, true);
 						}
 						break;
 

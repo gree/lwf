@@ -4183,8 +4183,32 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       }
     };
 
-    Movie.prototype.execObject = function(depth, objId, matrixId, colorTransformId, instId, blendMode) {
+    Movie.prototype.setBlendMode = function(obj, blendMode) {
+      switch (blendMode) {
+        case Format.Constant.BLEND_MODE_NORMAL:
+          return obj.blendMode = "normal";
+        case Format.Constant.BLEND_MODE_ADD:
+          return obj.blendMode = "add";
+        case Format.Constant.BLEND_MODE_ERASE:
+          return obj.blendMode = "erase";
+        case Format.Constant.BLEND_MODE_LAYER:
+          return obj.blendMode = "layer";
+        case Format.Constant.BLEND_MODE_MASK:
+          return obj.blendMode = "mask";
+        case Format.Constant.BLEND_MODE_MULTIPLY:
+          return obj.blendMode = "multiply";
+        case Format.Constant.BLEND_MODE_SCREEN:
+          return obj.blendMode = "screen";
+        case Format.Constant.BLEND_MODE_SUBTRACT:
+          return obj.blendMode = "subtract";
+      }
+    };
+
+    Movie.prototype.execObject = function(depth, objId, matrixId, colorTransformId, instId, blendMode, updateBlendMode) {
       var data, dataObject, dataObjectId, obj;
+      if (updateBlendMode == null) {
+        updateBlendMode = false;
+      }
       if (objId === -1) {
         return;
       }
@@ -4206,6 +4230,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             break;
           case Type.MOVIE:
             obj = new Movie(this.lwf, this, dataObjectId, instId, matrixId, colorTransformId);
+            this.setBlendMode(obj, blendMode);
             break;
           case Type.BITMAP:
             obj = new Bitmap(this.lwf, this, dataObjectId);
@@ -4223,32 +4248,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             obj = new ProgramObject(this.lwf, this, dataObjectId);
         }
       }
-      if (obj.isMovie) {
-        switch (blendMode) {
-          case Format.Constant.BLEND_MODE_NORMAL:
-            obj.blendMode = "normal";
-            break;
-          case Format.Constant.BLEND_MODE_ADD:
-            obj.blendMode = "add";
-            break;
-          case Format.Constant.BLEND_MODE_ERASE:
-            obj.blendMode = "erase";
-            break;
-          case Format.Constant.BLEND_MODE_LAYER:
-            obj.blendMode = "layer";
-            break;
-          case Format.Constant.BLEND_MODE_MASK:
-            obj.blendMode = "mask";
-            break;
-          case Format.Constant.BLEND_MODE_MULTIPLY:
-            obj.blendMode = "multiply";
-            break;
-          case Format.Constant.BLEND_MODE_SCREEN:
-            obj.blendMode = "screen";
-            break;
-          case Format.Constant.BLEND_MODE_SUBTRACT:
-            obj.blendMode = "subtract";
-        }
+      if (obj.isMovie && updateBlendMode) {
+        this.setBlendMode(obj, blendMode);
       }
       if (obj.isMovie || obj.isButton) {
         obj.linkInstance = null;
@@ -4374,7 +4375,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
               case ControlType.MOVEMCB:
                 ctrl = data.controlMoveMCBs[control.controlId];
                 p = data.places[ctrl.placeId];
-                this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId, ctrl.blendMode);
+                this.execObject(p.depth, p.objectId, ctrl.matrixId, ctrl.colorTransformId, p.instanceId, ctrl.blendMode, true);
                 break;
               case ControlType.ANIMATION:
                 if (controlAnimationOffset === -1) {

@@ -259,8 +259,8 @@ public:
 	const CurrentLabels GetCurrentLabels();
 
 private:
-	void ExecObject(int dlDepth, int objId,
-		int matrixId, int colorTransformId, int instId, int dlBlendMode);
+	void ExecObject(int dlDepth, int objId, int matrixId, int colorTransformId,
+		int instId, int dlBlendMode, bool updateBlendMode = false);
 	void UpdateObject(Object *obj, const Matrix *m, const ColorTransform *c,
 		bool matrixChanged, bool colorTransformChanged);
 	void PlayAnimation(int clipEvent);

@@ -150,8 +150,8 @@ Point Movie::LocalToGlobal(const Point &point) const
 	return p;
 }
 
-void Movie::ExecObject(int dlDepth, int objId,
-	int matrixId, int colorTransformId, int instId, int dlBlendMode)
+void Movie::ExecObject(int dlDepth, int objId, int matrixId,
+	int colorTransformId, int instId, int dlBlendMode, bool updateBlendMode)
 {
 	// Ignore error
 	if (objId == -1)
@@ -184,6 +184,7 @@ void Movie::ExecObject(int dlDepth, int objId,
 		case OType::MOVIE:
 			obj = make_shared<Movie>(lwf, this,
 				dataObjectId, instId, matrixId, colorTransformId);
+			((Movie *)obj.get())->blendMode = dlBlendMode;
 			break;
 
 		case OType::BITMAP:
@@ -208,7 +209,7 @@ void Movie::ExecObject(int dlDepth, int objId,
 		}
 	}
 
-	if (obj->IsMovie())
+	if (obj->IsMovie() && updateBlendMode)
 		((Movie *)obj.get())->blendMode = dlBlendMode;
 
 	if (obj->IsMovie() || obj->IsButton()) {
