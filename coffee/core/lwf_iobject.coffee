@@ -46,7 +46,7 @@ class IObject extends LObject
       @nextInstance.prevInstance = @prevInstance if @nextInstance?
       @prevInstance.nextInstance = @nextInstance if @prevInstance?
 
-    delete parent[@name] if @name? and parent?
+    delete @parent[@name] if @name? and @parent?
 
     @prevInstance = null
     @nextInstance = null

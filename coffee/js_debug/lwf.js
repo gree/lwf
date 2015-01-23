@@ -2996,8 +2996,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
           this.prevInstance.nextInstance = this.nextInstance;
         }
       }
-      if ((this.name != null) && (typeof parent !== "undefined" && parent !== null)) {
-        delete parent[this.name];
+      if ((this.name != null) && (this.parent != null)) {
+        delete this.parent[this.name];
       }
       this.prevInstance = null;
       this.nextInstance = null;
