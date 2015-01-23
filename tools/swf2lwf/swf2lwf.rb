@@ -21,7 +21,7 @@
 #
 if RUBY_VERSION < "1.9.3"
   puts "ERROR: Requires Ruby 1.9.3 or later"
-  exit
+  exit 1
 end
 libdir = File.dirname(__FILE__) + '/lib'
 $:.unshift libdir
@@ -43,7 +43,7 @@ begin
   require 'actioncompiler'
 rescue LoadError
   puts "ERROR: Cannot load 'actioncompiler' extension. Please 'gem install gems/actioncompiler*.gem'."
-  exit
+  exit 1
 end
 begin
   require 'rubygems'
@@ -55,7 +55,7 @@ begin
   require 'rb-img'
 rescue LoadError
   puts "ERROR: Cannot load 'rb-img' extension. Please 'gem install gems/rb-img*.gem'."
-  exit
+  exit 1
 end
 
 LWF_HEADER_SIZE = 332
@@ -980,6 +980,7 @@ def warn(str)
 end
 
 def error(str)
+  @status = 1
   @logfile.puts "ERROR: #{str}" if @logfile
   puts "ERROR: #{str}"
 end
@@ -1710,6 +1711,14 @@ def parse_define_shape
             delta_y = 0.0
           end
         end
+      else
+        bits = get_bits(4) + 2
+        delta_x = get_sbits(bits) / 20.0;
+        delta_y = get_sbits(bits) / 20.0;
+        delta_x += get_sbits(bits) / 20.0;
+        delta_y += get_sbits(bits) / 20.0;
+      end
+      begin
         vertices.push Vertex.new(delta_x, delta_y)
         info "  LINE #{vertices.size - 1}: (#{delta_x}, #{delta_y})"
 
@@ -1800,12 +1809,6 @@ def parse_define_shape
 
           vertices = Array.new
         end
-      else
-        bits = get_bits(4) + 2
-        get_sbits(bits)
-        get_sbits(bits)
-        get_sbits(bits)
-        get_sbits(bits)
       end
     end
   end
@@ -3540,10 +3543,11 @@ def add_bitmap(texture,
 end
 
 def swf2lwf(*args)
+  @status = 0
   args.each do |arg|
     unless File.file?(arg)
       error "can't read #{arg}"
-      return
+      return @status
     end
   end
   swffile = args.shift
@@ -4492,6 +4496,7 @@ end
   @logfile = nil
   end  # @logfile
 
+  return @status
 end
 
 def swf2lwf_optparse(args)
@@ -4544,5 +4549,5 @@ end
 
 if $0 == __FILE__
   swf2lwf_optparse(ARGV)
-  swf2lwf(*ARGV)
+  exit swf2lwf(*ARGV)
 end
