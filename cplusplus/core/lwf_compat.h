@@ -16,7 +16,8 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
-
+ */
+/*
  * Changes by IG Dev:
  * 1. Added gettimeofday from sys/time.h which is missing in win32.
  * 2. Added win32 implementation for FreeBSD specific extension: strcasestr.
@@ -25,26 +26,24 @@
 #ifndef LWF_COMPAT_H
 #define LWF_COMPAT_H
 
-
 #if (__cplusplus > 199711L) || (_MSC_VER >= 1800)
 # define scoped_ptr unique_ptr
 #endif
 
-
 #if !defined(_MSC_VER)
 
 // for gettimeofday
-#include <sys/time.h>
+# include <sys/time.h>
 // for strcasestr
-#include <cstring>
+# include <cstring>
 
 #else
 
-#include <time.h>
-#include <winsock2.h>
+# include <time.h>
+# include <winsock2.h>
 
 // WIN32 implementation for missing stuff
-int gettimeofday(struct timeval * tp, struct timezone * tzp);
+int gettimeofday(struct timeval *tp, struct timezone *tzp);
 char *strcasestr(const char *strA, const char *strB);
 
 #endif // _MSC_VER

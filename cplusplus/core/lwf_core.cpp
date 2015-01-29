@@ -27,7 +27,7 @@
 #include "lwf_utility.h"
 #include <cstdio>
 #if !defined(LWF_DISABLE_FASTFORWARD)
-#include "lwf_compat.h"
+# include "lwf_compat.h"
 #endif
 #if defined(_MSC_VER)
 # define snprintf(a0,a1,...) _snprintf_s(a0,a1,a1,__VA_ARGS__)

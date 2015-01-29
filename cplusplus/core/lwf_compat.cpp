@@ -22,18 +22,19 @@
 
 #if defined(_MSC_VER)
 
-#include <cstdint>
-#include <cstring>
-#include <cctype>
+# include <cstdint>
+# include <cstring>
+# include <cctype>
 
-int gettimeofday(struct timeval * tp, struct timezone * tzp)
+int gettimeofday(struct timeval *tp, struct timezone *tzp)
 {
-	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+	// Note: some broken versions only have 8 trailing zero's,
+	//       the correct epoch has 9 trailing zero's
 	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 
-	SYSTEMTIME  system_time;
-	FILETIME    file_time;
-	uint64_t    time;
+	SYSTEMTIME system_time;
+	FILETIME file_time;
+	uint64_t time;
 
 	GetSystemTime(&system_time);
 	SystemTimeToFileTime(&system_time, &file_time);
@@ -52,10 +53,8 @@ char *strcasestr(const char *strA, const char *strB)
 
 	bool found = true;
 
-	for (int i = 0; i < lenA; i++)
-	{
-		for (int j = 0; j < lenB; j++)
-		{
+	for (int i = 0; i < lenA; i++) {
+		for (int j = 0; j < lenB; j++) {
 			unsigned char c1 = strA[i + j];
 			unsigned char c2 = strB[j];
 			if (toupper(c1) != toupper(c2))
@@ -69,5 +68,3 @@ char *strcasestr(const char *strA, const char *strB)
 }
 
 #endif // _MSC_VER
-
-
