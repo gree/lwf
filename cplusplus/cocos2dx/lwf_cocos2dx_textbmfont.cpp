@@ -124,10 +124,10 @@ public:
 
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
-		setColor((cocos2d::Color3B){
+		setColor({
 			(GLubyte)(c.red * m_red * dc.r),
-			(GLubyte)(c.green * m_green * dc.g),
-			(GLubyte)(c.blue * m_blue * dc.b)});
+				(GLubyte)(c.green * m_green * dc.g),
+				(GLubyte)(c.blue * m_blue * dc.b)});
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 

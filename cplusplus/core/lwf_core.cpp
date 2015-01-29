@@ -27,7 +27,7 @@
 #include "lwf_utility.h"
 #include <cstdio>
 #if !defined(LWF_DISABLE_FASTFORWARD)
-# include <sys/time.h>
+#include "lwf_compat.h"
 #endif
 #if defined(_MSC_VER)
 # define snprintf(a0,a1,...) _snprintf_s(a0,a1,a1,__VA_ARGS__)
@@ -37,7 +37,7 @@ namespace LWF {
 
 int LWF::m_instanceOffset = 0;
 int LWF::m_iObjectOffset = 0;
-TextureLoadHandler LWF::m_textureLoadHandler = 0;
+TextureLoadHandler LWF::m_textureLoadHandler = nullptr;
 float LWF::ROUND_OFF_TICK_RATE = 0.05f;
 
 LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
@@ -630,7 +630,7 @@ ProgramObjectConstructor LWF::GetProgramObjectConstructor(
 {
 	if (programObjectId < 0 ||
 			programObjectId >= (int)data->programObjects.size())
-		return 0;
+		return nullptr;
 	return m_programObjectConstructors[programObjectId];
 }
 

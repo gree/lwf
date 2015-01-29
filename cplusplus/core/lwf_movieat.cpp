@@ -206,7 +206,7 @@ void Movie::DeleteAttachedLWF(Movie *p, shared_ptr<LWFContainer> lwfContainer,
 		}
 		l->parent = 0;
 		l->_root = 0;
-		l->detachHandler = 0;
+		l->detachHandler = nullptr;
 		l->attachName.clear();
 		l->depth = -1;
 		lwfContainer->Destroy();

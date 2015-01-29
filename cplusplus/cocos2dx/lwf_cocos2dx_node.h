@@ -45,7 +45,7 @@ private:
 
 public:
 	static LWFNode *create(const char *pszFileName,
-		void *l = 0, LWF::TextureLoadHandler textureLoadHandler = 0);
+		void *l = 0, LWF::TextureLoadHandler textureLoadHandler = nullptr);
 	static void dump();
 
 public:
