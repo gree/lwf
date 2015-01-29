@@ -30,6 +30,8 @@
 #include <regex>
 #include <cstdlib>
 
+#include "lwf_compat.h"
+
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 # include "base/CCEventDispatcher.h"
 # include "base/CCEventType.h"
@@ -174,50 +176,50 @@ static void checkImagePath(const char *file, string &imagePath,
 	smatch match;
 	if (strcasestr(file, "_rgb_") != 0) {
 		if (regex_match(imagePath, match, eRGB)) {
-			imagePath = match[1].str() + match[3].str();
 			toRGB = true;
 			string rgbHex = match[2].str();
 			red = strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
 			green = strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
 			blue = strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
+			imagePath = match[1].str() + match[3].str();
 		} else if (regex_match(imagePath, match, eRGB10)) {
-			imagePath = match[1].str() + match[5].str();
 			toRGB = true;
 			red = strtoul(match[2].str().c_str(), 0, 10);
 			green = strtoul(match[3].str().c_str(), 0, 10);
 			blue = strtoul(match[4].str().c_str(), 0, 10);
+			imagePath = match[1].str() + match[5].str();
 		}
 	} else if (strcasestr(file, "_rgba_") != 0) {
 		if (regex_match(imagePath, match, eRGBA)) {
-			imagePath = match[1].str() + match[3].str();
 			toRGBA = true;
 			string rgbaHex = match[2].str();
 			red = strtoul(rgbaHex.substr(0, 2).c_str(), 0, 16);
 			green = strtoul(rgbaHex.substr(2, 2).c_str(), 0, 16);
 			blue = strtoul(rgbaHex.substr(4, 2).c_str(), 0, 16);
 			alpha = strtoul(rgbaHex.substr(6, 2).c_str(), 0, 16);
+			imagePath = match[1].str() + match[3].str();
 		} else if (regex_match(imagePath, match, eRGBA10)) {
-			imagePath = match[1].str() + match[6].str();
 			toRGBA = true;
 			red = strtoul(match[2].str().c_str(), 0, 10);
 			green = strtoul(match[3].str().c_str(), 0, 10);
 			blue = strtoul(match[4].str().c_str(), 0, 10);
 			alpha = strtoul(match[5].str().c_str(), 0, 10);
+			imagePath = match[1].str() + match[6].str();
 		}
 	} else if (strcasestr(file, "_add_") != 0) {
 		if (regex_match(imagePath, match, eADD)) {
-			imagePath = match[1].str() + match[3].str();
 			toADD = true;
 			string rgbHex = match[2].str();
 			red = strtoul(rgbHex.substr(0, 2).c_str(), 0, 16);
 			green = strtoul(rgbHex.substr(2, 2).c_str(), 0, 16);
 			blue = strtoul(rgbHex.substr(4, 2).c_str(), 0, 16);
+			imagePath = match[1].str() + match[3].str();
 		} else if (regex_match(imagePath, match, eADD10)) {
-			imagePath = match[1].str() + match[5].str();
 			toADD = true;
 			red = strtoul(match[2].str().c_str(), 0, 10);
 			green = strtoul(match[3].str().c_str(), 0, 10);
 			blue = strtoul(match[4].str().c_str(), 0, 10);
+			imagePath = match[1].str() + match[5].str();
 		}
 	}
 }

@@ -171,7 +171,7 @@ public:
 		const Color &c = cx->multi;
 		const Color &a = cx->add;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
-		setColor((cocos2d::Color3B){
+		setColor({
 			(GLubyte)(c.red * dc.r),
 			(GLubyte)(c.green * dc.g),
 			(GLubyte)(c.blue * dc.b)});

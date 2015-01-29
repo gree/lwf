@@ -31,7 +31,7 @@
 
 
 namespace LWF {
-class Data;
+struct Data;
 }
 
 NS_CC_BEGIN

@@ -95,7 +95,7 @@ Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 	m_attachMoviePostExeced = false;
 	m_isRoot = objId == lwf->data->header.rootMovieId;
 	m_requestedCalculateBounds = false;
-	m_calculateBoundsCallback = 0;
+	m_calculateBoundsCallback = nullptr;
 	m_currentLabelsCached = false;
 
 	m_displayList.resize(data->depths);
@@ -651,7 +651,7 @@ void Movie::PostUpdate()
 			m_requestedCalculateBounds = false;
 			if (m_calculateBoundsCallback) {
 				m_calculateBoundsCallback(this);
-				m_calculateBoundsCallback = 0;
+				m_calculateBoundsCallback = nullptr;
 			}
 		}
 	}

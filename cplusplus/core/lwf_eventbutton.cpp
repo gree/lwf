@@ -127,7 +127,7 @@ bool ButtonEventHandlers::Add(
 		return false;
 	ButtonEventHandlerDictionary handlers;
 	handlers[type] = h;
-	Add(it->second, handlers, 0);
+	Add(it->second, handlers, nullptr);
 	return true;
 }
 

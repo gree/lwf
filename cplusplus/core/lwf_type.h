@@ -35,7 +35,7 @@
 #include <utility>
 #include <vector>
 
-#if __cplusplus <= 199711L
+#if !((__cplusplus > 199711L) || (_MSC_VER >= 1800))
 #include <boost/function.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -55,7 +55,7 @@ using std::remove_if;
 using std::string;
 using std::vector;
 
-#if __cplusplus > 199711L
+#if (__cplusplus > 199711L) || (_MSC_VER >= 1800)
 using std::function;
 using std::make_shared;
 using std::shared_ptr;
