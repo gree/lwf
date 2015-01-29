@@ -173,8 +173,8 @@ public:
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor({
 			(GLubyte)(c.red * dc.r),
-				(GLubyte)(c.green * dc.g),
-				(GLubyte)(c.blue * dc.b)});
+			(GLubyte)(c.green * dc.g),
+			(GLubyte)(c.blue * dc.b)});
 		setOpacity(
 			(GLubyte)((c.alpha + a.alpha) * node->getDisplayedOpacity()));
 
