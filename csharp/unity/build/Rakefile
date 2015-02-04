@@ -24,7 +24,8 @@ UNITYAPP="/Applications/Unity/Unity.app/Contents"
 File.read("#{UNITYAPP}/Info.plist") =~ /Unity version (\d)\.(\d)/
 UNITYVERSION="UNITY_#{$1}_#{$2}"
 UNITYFRAMEWORKS="#{UNITYAPP}/Frameworks"
-LIBS="-d:#{UNITYVERSION} -r:#{UNITYFRAMEWORKS}/Managed/UnityEngine.dll"
+UNITYEXTENSIONS="#{UNITYAPP}/UnityExtensions"
+LIBS="-d:#{UNITYVERSION} -r:#{UNITYFRAMEWORKS}/Managed/UnityEngine.dll -r:#{UNITYEXTENSIONS}/Unity/GUISystem/UnityEngine.UI.dll"
 MONO_BIN="#{UNITYFRAMEWORKS}/Mono/bin"
 MONO_OPTS="-target:library -debug"
 EDITOR_LIBS="#{LIBS} -r:#{UNITYFRAMEWORKS}/Managed/UnityEditor.dll -r:lwf.dll"
@@ -73,6 +74,9 @@ SRCS= %W|
   #{RENDERER}/drawmesh/lwf_drawmesh_bitmap.cs
   #{RENDERER}/drawmesh/lwf_drawmesh_factory.cs
   #{RENDERER}/drawmesh/lwf_drawmesh_text.cs
+  #{RENDERER}/uivertex/lwf_uivertex_bitmap.cs
+  #{RENDERER}/uivertex/lwf_uivertex_factory.cs
+  #{RENDERER}/uivertex/lwf_uivertex_text.cs
   #{UNITY}/wrapper/LWFObject.cs
   #{UNITY}/wrapper/LWFPlayer.cs
   #{UNITY}/extension/tween.js/TweenLWF.cs
