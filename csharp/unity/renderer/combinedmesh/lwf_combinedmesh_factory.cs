@@ -93,7 +93,12 @@ public class CombinedMeshComponent : MonoBehaviour
 		meshFilter.sharedMesh = mesh;
 
 		meshRenderer = gameObject.AddComponent<UnityEngine.MeshRenderer>();
+#if UNITY_4_6
 		meshRenderer.castShadows = false;
+#else
+		meshRenderer.shadowCastingMode =
+			UnityEngine.Rendering.ShadowCastingMode.Off;
+#endif
 		meshRenderer.receiveShadows = false;
 		UpdateSortingLayerAndOrder(factory);
 		UpdateLayer(factory);
