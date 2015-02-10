@@ -31,10 +31,11 @@ class CanvasTextRenderer extends HTML5TextRenderer
 
     super(m, c, renderingIndex, renderingCount, visible)
 
+    f = @context.factory.lwf.getRendererFactory()
     cmd = @cmd
     cmd.alpha = c.multi.alpha
-    cmd.blendMode = @context.factory.blendMode
-    cmd.maskMode = @context.factory.maskMode
+    cmd.blendMode = f.blendMode
+    cmd.maskMode = f.maskMode
     cmd.matrix = @matrix
     cmd.image = @canvas
     cmd.pattern = null

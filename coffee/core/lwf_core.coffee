@@ -104,6 +104,14 @@ class LWF
     @rendererFactory.init(@)
     return
 
+  getRendererFactory: ->
+    if @parent?
+      parent = @parent
+      parent = parent.parent while parent.parent?
+      return parent.lwf.rendererFactory
+    else
+      return @rendererFactory
+
   setFrameRate:(frameRate) ->
     return if frameRate is 0
     @frameRate = frameRate
@@ -158,25 +166,37 @@ class LWF
     return @renderingIndex
 
   beginBlendMode:(blendMode) ->
-    @blendModes.unshift(blendMode)
-    @rendererFactory.setBlendMode(blendMode)
+    if @parent?
+      @parent.lwf.beginBlendMode(blendMode)
+    else
+      @blendModes.unshift(blendMode)
+      @rendererFactory.setBlendMode(blendMode)
     return
 
   endBlendMode: ->
-    @blendModes.shift()
-    @rendererFactory.setBlendMode(
-      if @blendModes.length > 0 then @blendModes[0] else "normal")
+    if @parent?
+      @parent.lwf.endBlendMode()
+    else
+      @blendModes.shift()
+      @rendererFactory.setBlendMode(
+        if @blendModes.length > 0 then @blendModes[0] else "normal")
     return
 
   beginMaskMode:(maskMode) ->
-    @maskModes.unshift(maskMode)
-    @rendererFactory.setMaskMode(maskMode)
+    if @parent?
+      @parent.lwf.beginMaskMode(maskMode)
+    else
+      @maskModes.unshift(maskMode)
+      @rendererFactory.setMaskMode(maskMode)
     return
 
   endMaskMode: ->
-    @maskModes.shift()
-    @rendererFactory.setMaskMode(
-      if @maskModes.length > 0 then @maskModes[0] else "normal")
+    if @parent?
+      @parent.lwf.endMaskMode()
+    else
+      @maskModes.shift()
+      @rendererFactory.setMaskMode(
+        if @maskModes.length > 0 then @maskModes[0] else "normal")
     return
 
   setAttachVisible:(visible) ->

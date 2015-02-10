@@ -256,7 +256,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       @stage.height = @data.header.height
 
     params =
-      alpha:true
+      alpha:false
       antialias:false
       depth:false
       premultipliedAlpha:true
@@ -402,7 +402,7 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     if @setSrcFactor isnt blendSrcFactor or @setDstFactor isnt blendDstFactor
       @setSrcFactor = blendSrcFactor
       @setDstFactor = blendDstFactor
-      gl.blendFuncSeparate(blendSrcFactor, blendDstFactor, gl.ONE, gl.ONE)
+      gl.blendFunc(blendSrcFactor, blendDstFactor)
     if @setEquation isnt blendEquation
       @setEquation = blendEquation
       gl.blendEquationSeparate(blendEquation, gl.FUNC_ADD)

@@ -85,12 +85,13 @@ class WebGLTextRenderer extends HTML5TextRenderer
 
     super(m, c, renderingIndex, renderingCount, visible)
 
+    f = @context.factory.lwf.getRendererFactory()
     factory = @context.factory
     cmd = @cmd
     cmd.texture = @texture
     cmd.colorTransform = c
-    cmd.blendMode = factory.blendMode
-    cmd.maskMode = factory.maskMode
+    cmd.blendMode = f.blendMode
+    cmd.maskMode = f.maskMode
     factory.addCommand(renderingIndex, cmd)
     return
 
