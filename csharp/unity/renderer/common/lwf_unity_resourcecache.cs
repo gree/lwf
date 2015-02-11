@@ -195,12 +195,12 @@ public class ResourceCache
 
 	public Material LoadTexture(string lwfName, string filename, int format,
 		bool useAdditionalColor, TextureLoader textureLoader = null,
-		TextureUnloader textureUnloader = null)
+		TextureUnloader textureUnloader = null, string shaderName = "LWF")
 	{
 		TextureItem item;
 		string cacheName = lwfName + "/" + filename;
 		if (!m_textureCache.TryGetValue(cacheName, out item)) {
-			Shader shader = GetShader("LWF");
+			Shader shader = GetShader(shaderName);
 			Material material = new Material(shader);
 			if (useAdditionalColor)
 				material.EnableKeyword("ENABLE_ADD_COLOR");
