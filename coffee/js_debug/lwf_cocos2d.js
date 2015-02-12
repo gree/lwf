@@ -5885,6 +5885,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.rendererFactory.init(this);
     };
 
+    LWF.prototype.getRendererFactory = function() {
+      var parent;
+      if (this.parent != null) {
+        parent = this.parent;
+        while (parent.parent != null) {
+          parent = parent.parent;
+        }
+        return parent.lwf.rendererFactory;
+      } else {
+        return this.rendererFactory;
+      }
+    };
+
     LWF.prototype.setFrameRate = function(frameRate) {
       if (frameRate === 0) {
         return;
@@ -5957,23 +5970,39 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.beginBlendMode = function(blendMode) {
-      this.blendModes.unshift(blendMode);
-      this.rendererFactory.setBlendMode(blendMode);
+      if (this.parent != null) {
+        this.parent.lwf.beginBlendMode(blendMode);
+      } else {
+        this.blendModes.unshift(blendMode);
+        this.rendererFactory.setBlendMode(blendMode);
+      }
     };
 
     LWF.prototype.endBlendMode = function() {
-      this.blendModes.shift();
-      this.rendererFactory.setBlendMode(this.blendModes.length > 0 ? this.blendModes[0] : "normal");
+      if (this.parent != null) {
+        this.parent.lwf.endBlendMode();
+      } else {
+        this.blendModes.shift();
+        this.rendererFactory.setBlendMode(this.blendModes.length > 0 ? this.blendModes[0] : "normal");
+      }
     };
 
     LWF.prototype.beginMaskMode = function(maskMode) {
-      this.maskModes.unshift(maskMode);
-      this.rendererFactory.setMaskMode(maskMode);
+      if (this.parent != null) {
+        this.parent.lwf.beginMaskMode(maskMode);
+      } else {
+        this.maskModes.unshift(maskMode);
+        this.rendererFactory.setMaskMode(maskMode);
+      }
     };
 
     LWF.prototype.endMaskMode = function() {
-      this.maskModes.shift();
-      this.rendererFactory.setMaskMode(this.maskModes.length > 0 ? this.maskModes[0] : "normal");
+      if (this.parent != null) {
+        this.parent.lwf.endMaskMode();
+      } else {
+        this.maskModes.shift();
+        this.rendererFactory.setMaskMode(this.maskModes.length > 0 ? this.maskModes[0] : "normal");
+      }
     };
 
     LWF.prototype.setAttachVisible = function(visible) {

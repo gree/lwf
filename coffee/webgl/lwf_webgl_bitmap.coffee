@@ -131,12 +131,13 @@ class WebGLBitmapRenderer
   render:(m, c, renderingIndex, renderingCount, visible) ->
     return if !visible or c.multi.alpha is 0
 
+    f = @context.factory.lwf.getRendererFactory()
     factory = @context.factory
     cmd = @cmd
     cmd.matrix = m
     cmd.colorTransform = c
-    cmd.blendMode = factory.blendMode
-    cmd.maskMode = factory.maskMode
+    cmd.blendMode = f.blendMode
+    cmd.maskMode = f.maskMode
     factory.addCommand(renderingIndex, cmd)
     return
 

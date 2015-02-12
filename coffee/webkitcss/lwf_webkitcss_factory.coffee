@@ -102,9 +102,7 @@ class WebkitCSSRendererFactory
     return
 
   addCommandToParent:(lwf) ->
-    parent = lwf.parent
-    parent = parent.parent while parent.parent?
-    f = parent.lwf.rendererFactory
+    f = lwf.getRendererFactory()
     renderCount = lwf.renderCount
     for rIndex in [0...@commands.length]
       cmd = @commands[rIndex]
@@ -160,11 +158,6 @@ class WebkitCSSRendererFactory
     return
 
   beginRender:(lwf) ->
-    if lwf.parent?
-      f = lwf.parent.lwf.rendererFactory
-      @blendMode = f.blendMode if f.blendMode?
-      @maskMode = f.maskMode
-
     @callRendererDestructor() if @destructedRenderers?
     return
 

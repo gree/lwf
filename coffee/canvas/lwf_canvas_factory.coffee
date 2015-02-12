@@ -150,7 +150,7 @@ class CanvasRendererFactory extends WebkitCSSRendererFactory
           ctx = @stageContext
           @resetGlobalCompositeOperation(ctx)
           if @renderMaskMode is "layer" and @renderMasked
-            @renderMask(cmd.blendMode)
+            @renderMask(@renderBlendMode)
       @renderMaskMode = cmd.maskMode
     @setGlobalCompositeOperation(ctx, cmd.blendMode)
     ctx.globalAlpha = cmd.alpha if cmd.alpha isnt 1

@@ -107,11 +107,12 @@ class CanvasBitmapRenderer
 
     @alpha = c.multi.alpha
 
+    f = @context.factory.lwf.getRendererFactory()
     fragment = @context.fragment
     cmd = @cmd
     cmd.alpha = @alpha
-    cmd.blendMode = @context.factory.blendMode
-    cmd.maskMode = @context.factory.maskMode
+    cmd.blendMode = f.blendMode
+    cmd.maskMode = f.maskMode
     cmd.matrix = m
     cmd.image = @context.image
     cmd.pattern = @context.pattern

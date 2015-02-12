@@ -5882,6 +5882,19 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.rendererFactory.init(this);
     };
 
+    LWF.prototype.getRendererFactory = function() {
+      var parent;
+      if (this.parent != null) {
+        parent = this.parent;
+        while (parent.parent != null) {
+          parent = parent.parent;
+        }
+        return parent.lwf.rendererFactory;
+      } else {
+        return this.rendererFactory;
+      }
+    };
+
     LWF.prototype.setFrameRate = function(frameRate) {
       if (frameRate === 0) {
         return;
@@ -5954,23 +5967,39 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     LWF.prototype.beginBlendMode = function(blendMode) {
-      this.blendModes.unshift(blendMode);
-      this.rendererFactory.setBlendMode(blendMode);
+      if (this.parent != null) {
+        this.parent.lwf.beginBlendMode(blendMode);
+      } else {
+        this.blendModes.unshift(blendMode);
+        this.rendererFactory.setBlendMode(blendMode);
+      }
     };
 
     LWF.prototype.endBlendMode = function() {
-      this.blendModes.shift();
-      this.rendererFactory.setBlendMode(this.blendModes.length > 0 ? this.blendModes[0] : "normal");
+      if (this.parent != null) {
+        this.parent.lwf.endBlendMode();
+      } else {
+        this.blendModes.shift();
+        this.rendererFactory.setBlendMode(this.blendModes.length > 0 ? this.blendModes[0] : "normal");
+      }
     };
 
     LWF.prototype.beginMaskMode = function(maskMode) {
-      this.maskModes.unshift(maskMode);
-      this.rendererFactory.setMaskMode(maskMode);
+      if (this.parent != null) {
+        this.parent.lwf.beginMaskMode(maskMode);
+      } else {
+        this.maskModes.unshift(maskMode);
+        this.rendererFactory.setMaskMode(maskMode);
+      }
     };
 
     LWF.prototype.endMaskMode = function() {
-      this.maskModes.shift();
-      this.rendererFactory.setMaskMode(this.maskModes.length > 0 ? this.maskModes[0] : "normal");
+      if (this.parent != null) {
+        this.parent.lwf.endMaskMode();
+      } else {
+        this.maskModes.shift();
+        this.rendererFactory.setMaskMode(this.maskModes.length > 0 ? this.maskModes[0] : "normal");
+      }
     };
 
     LWF.prototype.setAttachVisible = function(visible) {
@@ -7839,12 +7868,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSRendererFactory.prototype.addCommandToParent = function(lwf) {
-      var cmd, f, parent, rIndex, renderCount, scmd, srIndex, subCommands, _i, _j, _ref, _ref1;
-      parent = lwf.parent;
-      while (parent.parent != null) {
-        parent = parent.parent;
-      }
-      f = parent.lwf.rendererFactory;
+      var cmd, f, rIndex, renderCount, scmd, srIndex, subCommands, _i, _j, _ref, _ref1;
+      f = lwf.getRendererFactory();
       renderCount = lwf.renderCount;
       for (rIndex = _i = 0, _ref = this.commands.length; 0 <= _ref ? _i < _ref : _i > _ref; rIndex = 0 <= _ref ? ++_i : --_i) {
         cmd = this.commands[rIndex];
@@ -7944,14 +7969,6 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebkitCSSRendererFactory.prototype.beginRender = function(lwf) {
-      var f;
-      if (lwf.parent != null) {
-        f = lwf.parent.lwf.rendererFactory;
-        if (f.blendMode != null) {
-          this.blendMode = f.blendMode;
-        }
-        this.maskMode = f.maskMode;
-      }
       if (this.destructedRenderers != null) {
         this.callRendererDestructor();
       }
@@ -10059,7 +10076,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             ctx = this.stageContext;
             this.resetGlobalCompositeOperation(ctx);
             if (this.renderMaskMode === "layer" && this.renderMasked) {
-              this.renderMask(cmd.blendMode);
+              this.renderMask(this.renderBlendMode);
             }
         }
         this.renderMaskMode = cmd.maskMode;
@@ -10275,7 +10292,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     CanvasBitmapRenderer.prototype.destruct = function() {};
 
     CanvasBitmapRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var cmd, fragment, scale, x, y;
+      var cmd, f, fragment, scale, x, y;
       if (!visible || c.multi.alpha === 0) {
         return;
       }
@@ -10296,11 +10313,12 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         }
       }
       this.alpha = c.multi.alpha;
+      f = this.context.factory.lwf.getRendererFactory();
       fragment = this.context.fragment;
       cmd = this.cmd;
       cmd.alpha = this.alpha;
-      cmd.blendMode = this.context.factory.blendMode;
-      cmd.maskMode = this.context.factory.maskMode;
+      cmd.blendMode = f.blendMode;
+      cmd.maskMode = f.maskMode;
       cmd.matrix = m;
       cmd.image = this.context.image;
       cmd.pattern = this.context.pattern;
@@ -10335,15 +10353,16 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     }
 
     CanvasTextRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var cmd;
+      var cmd, f;
       if (!visible || c.multi.alpha === 0) {
         return;
       }
       CanvasTextRenderer.__super__.render.call(this, m, c, renderingIndex, renderingCount, visible);
+      f = this.context.factory.lwf.getRendererFactory();
       cmd = this.cmd;
       cmd.alpha = c.multi.alpha;
-      cmd.blendMode = this.context.factory.blendMode;
-      cmd.maskMode = this.context.factory.maskMode;
+      cmd.blendMode = f.blendMode;
+      cmd.maskMode = f.maskMode;
       cmd.matrix = this.matrix;
       cmd.image = this.canvas;
       cmd.pattern = null;
@@ -10599,7 +10618,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.stage.height = this.data.header.height;
       }
       params = {
-        alpha: true,
+        alpha: false,
         antialias: false,
         depth: false,
         premultipliedAlpha: true,
@@ -10782,7 +10801,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       if (this.setSrcFactor !== blendSrcFactor || this.setDstFactor !== blendDstFactor) {
         this.setSrcFactor = blendSrcFactor;
         this.setDstFactor = blendDstFactor;
-        gl.blendFuncSeparate(blendSrcFactor, blendDstFactor, gl.ONE, gl.ONE);
+        gl.blendFunc(blendSrcFactor, blendDstFactor);
       }
       if (this.setEquation !== blendEquation) {
         this.setEquation = blendEquation;
@@ -11372,16 +11391,17 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebGLBitmapRenderer.prototype.destruct = function() {};
 
     WebGLBitmapRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var cmd, factory;
+      var cmd, f, factory;
       if (!visible || c.multi.alpha === 0) {
         return;
       }
+      f = this.context.factory.lwf.getRendererFactory();
       factory = this.context.factory;
       cmd = this.cmd;
       cmd.matrix = m;
       cmd.colorTransform = c;
-      cmd.blendMode = factory.blendMode;
-      cmd.maskMode = factory.maskMode;
+      cmd.blendMode = f.blendMode;
+      cmd.maskMode = f.maskMode;
       factory.addCommand(renderingIndex, cmd);
     };
 
@@ -11497,17 +11517,18 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebGLTextRenderer.prototype.render = function(m, c, renderingIndex, renderingCount, visible) {
-      var cmd, factory;
+      var cmd, f, factory;
       if (!visible || c.multi.alpha === 0) {
         return;
       }
       WebGLTextRenderer.__super__.render.call(this, m, c, renderingIndex, renderingCount, visible);
+      f = this.context.factory.lwf.getRendererFactory();
       factory = this.context.factory;
       cmd = this.cmd;
       cmd.texture = this.texture;
       cmd.colorTransform = c;
-      cmd.blendMode = factory.blendMode;
-      cmd.maskMode = factory.maskMode;
+      cmd.blendMode = f.blendMode;
+      cmd.maskMode = f.maskMode;
       factory.addCommand(renderingIndex, cmd);
     };
 
