@@ -44,12 +44,13 @@ public partial class Factory : IRendererFactory
 	public bool useAdditionalColor;
 	public TextureLoader textureLoader;
 	public TextureUnloader textureUnloader;
+	public string shaderName;
 	private Matrix4x4 matrix;
 
 	protected Factory(Data d, GameObject gObj, float zOff, float zR, int rQOff,
 		string sLayerName, int sOrder, bool uAC, Camera renderCam,
 		Camera inputCam, string texturePrfx = "", string fontPrfx = "",
-		TextureLoader textureLdr = null, TextureUnloader textureUnldr = null)
+		TextureLoader textureLdr = null, TextureUnloader textureUnldr = null, string shrName = "LWF")
 	{
 		data = d;
 		gameObject = gObj;
@@ -65,6 +66,7 @@ public partial class Factory : IRendererFactory
 		fontPrefix = fontPrfx;
 		textureLoader = textureLdr;
 		textureUnloader = textureUnldr;
+		shaderName = shrName;
 		matrix = Matrix4x4.identity;
 		blendMode = (int)Format.Constant.BLEND_MODE_NORMAL;
 		maskMode = (int)Format.Constant.BLEND_MODE_NORMAL;

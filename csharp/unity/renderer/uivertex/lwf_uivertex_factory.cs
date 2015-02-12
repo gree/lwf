@@ -174,9 +174,10 @@ public partial class Factory : UnityRenderer.Factory
 			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null,
+      string shaderName = "LWF",
 			bool attaching = false)
 		: base(d, gObj, zOff, zR, rQOff, sLayerName, sOrder, uAC, renderCam,
-			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr)
+			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr, shaderName)
 	{
 		CreateBitmapContexts();
 		CreateTextContexts();
