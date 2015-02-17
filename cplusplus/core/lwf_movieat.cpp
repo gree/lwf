@@ -142,6 +142,47 @@ void Movie::SwapAttachedMovieDepth(int depth0, int depth1)
 	}
 }
 
+Movie *Movie::GetAttachedMovie(string aName)
+{
+    AttachedMovies::iterator it = m_attachedMovies.find(aName);
+    if (it == m_attachedMovies.end()) {
+        return nullptr;
+    }
+    shared_ptr<Movie> movie = it->second;
+    return movie.get();
+}
+
+Movie *Movie::GetAttachedMovie(int aDepth)
+{
+    AttachedMovieList::iterator it = m_attachedMovieList.find(aDepth);
+    if (it == m_attachedMovieList.end()) {
+        return nullptr;
+    }
+    shared_ptr<Movie> movie = it->second;
+    return movie.get();
+}
+
+Movie *Movie::SearchAttachedMovie(string aName, bool recursive)
+{
+    Movie *movie = GetAttachedMovie(aName);
+    if (movie)
+        return movie;
+    
+    if (!recursive)
+        return nullptr;
+    
+    for (IObject *instance = m_instanceHead; instance != nullptr;
+         instance = instance->linkInstance) {
+        if (instance->IsMovie()) {
+            Movie *i = ((Movie*)instance)->SearchAttachedMovie(
+                                                               aName, recursive);
+            if (i != nullptr)
+                return i;
+        }
+    }
+    return nullptr;
+}
+    
 void Movie::DetachMovie(string aName)
 {
 	m_detachedMovies[aName] = true;

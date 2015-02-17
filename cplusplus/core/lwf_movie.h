@@ -228,6 +228,9 @@ public:
 	Movie *AttachEmptyMovie(string attachName,
 		int attachDepth = -1, bool reorder = false);
 	void SwapAttachedMovieDepth(int depth0, int depth1);
+    Movie *GetAttachedMovie(string aName);
+    Movie *GetAttachedMovie(int aDepth);
+    Movie *SearchAttachedMovie(string aName, bool recursive = true);
 	void DetachMovie(string aName);
 	void DetachMovie(int aDepth);
 	void DetachMovie(Movie *movie);
