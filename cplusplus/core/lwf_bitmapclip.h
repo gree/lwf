@@ -66,7 +66,7 @@ public:
 
 	void DetachFromParent();
 
-	bool IsBitmapClip() {return true;}
+	bool IsBitmapClip() const {return true;}
 };
 
 }	// namespace LWF

@@ -62,13 +62,14 @@ public:
 		Inspector inspector, int hierarchy, int depth, int rOffset);
 	virtual void Destroy();
 
-	bool IsButton() {return type == OType::BUTTON ? true : false;}
-	bool IsMovie() {return (type == OType::MOVIE ||
+	bool IsButton() const {return type == OType::BUTTON ? true : false;}
+	bool IsMovie() const {return (type == OType::MOVIE ||
 		type == OType::ATTACHEDMOVIE) ? true : false;}
-	bool IsParticle() {return type == OType::PARTICLE ? true : false;}
-	bool IsProgramObject() {return type == OType::PROGRAMOBJECT ? true : false;}
-	bool IsText() {return type == OType::TEXT ? true : false;}
-	virtual bool IsBitmapClip() {return false;}
+	bool IsParticle() const {return type == OType::PARTICLE ? true : false;}
+	bool IsProgramObject() const {
+		return type == OType::PROGRAMOBJECT ? true : false;}
+	bool IsText() const {return type == OType::TEXT ? true : false;}
+	virtual bool IsBitmapClip() const {return false;}
 };
 
 }	// namespace LWF

@@ -142,47 +142,43 @@ void Movie::SwapAttachedMovieDepth(int depth0, int depth1)
 	}
 }
 
-Movie *Movie::GetAttachedMovie(string aName)
+Movie *Movie::GetAttachedMovie(string aName) const
 {
-    AttachedMovies::iterator it = m_attachedMovies.find(aName);
-    if (it == m_attachedMovies.end()) {
-        return nullptr;
-    }
-    shared_ptr<Movie> movie = it->second;
-    return movie.get();
+	AttachedMovies::const_iterator it = m_attachedMovies.find(aName);
+	if (it == m_attachedMovies.end())
+		return nullptr;
+	return it->second.get();
 }
 
-Movie *Movie::GetAttachedMovie(int aDepth)
+Movie *Movie::GetAttachedMovie(int aDepth) const
 {
-    AttachedMovieList::iterator it = m_attachedMovieList.find(aDepth);
-    if (it == m_attachedMovieList.end()) {
-        return nullptr;
-    }
-    shared_ptr<Movie> movie = it->second;
-    return movie.get();
+	AttachedMovieList::const_iterator it = m_attachedMovieList.find(aDepth);
+	if (it == m_attachedMovieList.end())
+		return nullptr;
+	return it->second.get();
 }
 
-Movie *Movie::SearchAttachedMovie(string aName, bool recursive)
+Movie *Movie::SearchAttachedMovie(string aName, bool recursive) const
 {
-    Movie *movie = GetAttachedMovie(aName);
-    if (movie)
-        return movie;
-    
-    if (!recursive)
-        return nullptr;
-    
-    for (IObject *instance = m_instanceHead; instance != nullptr;
-         instance = instance->linkInstance) {
-        if (instance->IsMovie()) {
-            Movie *i = ((Movie*)instance)->SearchAttachedMovie(
-                                                               aName, recursive);
-            if (i != nullptr)
-                return i;
-        }
-    }
-    return nullptr;
+	Movie *movie = GetAttachedMovie(aName);
+	if (movie)
+		return movie;
+
+	if (!recursive)
+		return nullptr;
+
+	for (const IObject *instance = m_instanceHead;
+			instance != nullptr; instance = instance->linkInstance) {
+		if (instance->IsMovie()) {
+			Movie *i =
+				((Movie *)instance)->SearchAttachedMovie(aName, recursive);
+			if (i)
+				return i;
+		}
+	}
+	return nullptr;
 }
-    
+	
 void Movie::DetachMovie(string aName)
 {
 	m_detachedMovies[aName] = true;
@@ -346,6 +342,43 @@ void Movie::SwapAttachedLWFDepth(int depth0, int depth1)
 	} else {
 		m_attachedLWFList.erase(depth0);
 	}
+}
+
+shared_ptr<LWF> Movie::GetAttachedLWF(string aName) const
+{
+	AttachedLWFs::const_iterator it = m_attachedLWFs.find(aName);
+	if (it == m_attachedLWFs.end())
+		return shared_ptr<LWF>();
+	return it->second->child;
+}
+
+shared_ptr<LWF> Movie::GetAttachedLWF(int aDepth) const
+{
+	AttachedLWFList::const_iterator it = m_attachedLWFList.find(aDepth);
+	if (it == m_attachedLWFList.end())
+		return shared_ptr<LWF>();
+	return it->second->child;
+}
+
+shared_ptr<LWF> Movie::SearchAttachedLWF(string aName, bool recursive) const
+{
+	shared_ptr<LWF> attachedLWF = GetAttachedLWF(aName);
+	if (attachedLWF)
+		return attachedLWF;
+
+	if (!recursive)
+		return shared_ptr<LWF>();
+
+	for (const IObject *instance = m_instanceHead;
+			instance != nullptr; instance = instance->linkInstance) {
+		if (instance->IsMovie()) {
+			attachedLWF =
+				((Movie *)instance)->SearchAttachedLWF(aName, recursive);
+			if (attachedLWF)
+				return attachedLWF;
+		}
+	}
+	return shared_ptr<LWF>();
 }
 
 void Movie::DetachLWF(string aName)
