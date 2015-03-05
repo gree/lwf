@@ -593,14 +593,14 @@ LWFTextRendererContext LWFResourceCache::getTextRendererContext(
 	}
 
 	fontPath = getFontPathPrefix() + font + ".fnt";
-	if (fileUtils->isFileExist(font)) {
+	if (fileUtils->isFileExist(fontPath)) {
 		LWFTextRendererContext c(LWFTextRendererContext::BMFONT, fontPath);
 		m_textRendererCache[font] = c;
 		return c;
 	}
 
 	fontPath = getFontPathPrefix() + font + ".ttf";
-	if (fileUtils->isFileExist(font)) {
+	if (fileUtils->isFileExist(fontPath)) {
 		LWFTextRendererContext c(LWFTextRendererContext::TTF, fontPath);
 		m_textRendererCache[font] = c;
 		return c;
