@@ -51,7 +51,10 @@ class TextRenderer : public Renderer
 {
 public:
 	TextRenderer(LWF *l) : Renderer(l) {}
-	virtual ~TextRenderer() {}
+	virtual ~TextRenderer() {
+		lwf->ClearTextRenderer(name);
+		Object::Destroy();
+	}
 
 	virtual void SetText(string text) = 0;
 };
