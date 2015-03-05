@@ -286,7 +286,8 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 		return;
 
 	l->data->resourceCache[filename] = true;
-	node->addChild(m_sprite);
+	int tag = bitmap->parent->instanceId;
+	node->addChild(m_sprite, 0, tag);
 }
 
 LWFBitmapRenderer::LWFBitmapRenderer(
@@ -319,7 +320,8 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 		return;
 
 	l->data->resourceCache[filename] = true;
-	node->addChild(m_sprite);
+    int tag = bitmap->parent->instanceId;
+    node->addChild(m_sprite, 0, tag);
 }
 
 void LWFBitmapRenderer::Destruct()
