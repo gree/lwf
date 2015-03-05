@@ -32,9 +32,12 @@ class Text : public Object
 {
 public:
 	string name;
+	bool setTextRenderer;
 
 public:
 	Text(LWF *lwf, Movie *p, int objId, int instId = -1);
+
+	virtual void Destroy();
 };
 
 }	// namespace LWF

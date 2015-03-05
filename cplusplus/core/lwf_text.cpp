@@ -27,7 +27,7 @@
 namespace LWF {
 
 Text::Text(LWF *lwf, Movie *p, int objId, int instId)
-	: Object(lwf, p, Format::Object::TEXT, objId)
+	: Object(lwf, p, Format::Object::TEXT, objId), setTextRenderer(false)
 {
 	const Format::Text &text = lwf->data->texts[objId];
 	dataMatrixId = text.matrixId;
@@ -59,10 +59,18 @@ Text::Text(LWF *lwf, Movie *p, int objId, int instId)
 				t = lt;
 #endif
 			lwf->SetTextRenderer(p->GetFullName(), name, t, textRenderer.get());
+			setTextRenderer = true;
 		}
 	}
 
 	renderer = textRenderer;
+}
+
+void Text::Destroy()
+{
+	if (setTextRenderer)
+		lwf->ClearTextRenderer(name);
+	Object::Destroy();
 }
 
 }	// namespace LWF
