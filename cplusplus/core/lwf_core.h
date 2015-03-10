@@ -232,8 +232,8 @@ public:
 	void ExecMovieCommand();
 	void SetMovieCommand(vector<string> instanceNames, MovieCommand cmd);
 
-	Movie *SearchAttachedMovie(string attachName) const;
-	shared_ptr<LWF> SearchAttachedLWF(string attachName) const;
+	Movie *SearchAttachedMovie(string aName) const;
+	shared_ptr<LWF> SearchAttachedLWF(string aName) const;
 
 	bool AddAllowButton(string buttonName);
 	bool RemoveAllowButton(string buttonName);

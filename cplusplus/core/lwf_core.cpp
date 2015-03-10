@@ -693,14 +693,14 @@ void LWF::SetMovieCommand(vector<string> instanceNames, MovieCommand cmd)
 	ExecMovieCommand();
 }
 
-Movie *LWF::SearchAttachedMovie(string attachName) const
+Movie *LWF::SearchAttachedMovie(string aName) const
 {
-	return rootMovie->SearchAttachedMovie(attachName);
+	return rootMovie->SearchAttachedMovie(aName);
 }
 
-shared_ptr<LWF> LWF::SearchAttachedLWF(string attachName) const
+shared_ptr<LWF> LWF::SearchAttachedLWF(string aName) const
 {
-	return rootMovie->SearchAttachedLWF(attachName);
+	return rootMovie->SearchAttachedLWF(aName);
 }
 
 bool LWF::AddAllowButton(string buttonName)
