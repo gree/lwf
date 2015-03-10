@@ -22,15 +22,17 @@
 #include "lwf_cocos2dx_factory.h"
 #include "lwf_cocos2dx_node.h"
 #include "lwf_cocos2dx_textbmfont.h"
+#include "lwf_cocos2dx_textttf.h"
 #include "lwf_core.h"
 #include "lwf_data.h"
 #include "lwf_text.h"
 
 namespace LWF {
 
-class LWFTextBMFont : public cocos2d::Label, public BlendEquationProtocol
+class LWFTextBMFontImpl : public cocos2d::LWFText, public BlendEquationProtocol
 {
 protected:
+	Text *m_text;
 	cocos2d::Mat4 m_nodeToParentTransform;
 	Matrix m_matrix;
 	float m_offsetY;
@@ -41,12 +43,13 @@ protected:
 	cocos2d::TextVAlignment m_vAlignment;
 
 public:
-	static LWFTextBMFont *create(const char *string,
+	static LWFTextBMFontImpl *create(Text *text, const char *string,
 		const char *fontPath, float fontHeight, float width, float height,
 		cocos2d::TextHAlignment hAlignment, cocos2d::TextVAlignment vAlignment,
 		float red, float green, float blue)
 	{
-		LWFTextBMFont *ret = new LWFTextBMFont(nullptr, hAlignment);
+		LWFTextBMFontImpl *ret =
+			new LWFTextBMFontImpl(text, nullptr, hAlignment);
 		if (!ret)
 			return nullptr;
 
@@ -63,14 +66,20 @@ public:
 		return ret;
 	}
 
-	LWFTextBMFont(cocos2d::FontAtlas *atlas, cocos2d::TextHAlignment hAlignment)
-		: Label(atlas, hAlignment)
+	LWFTextBMFontImpl(Text *text,
+			cocos2d::FontAtlas *atlas, cocos2d::TextHAlignment hAlignment)
+		: LWFText(atlas, hAlignment), BlendEquationProtocol(), m_text(text)
 	{
 		m_matrix.Invalidate();
 	}
 
-	virtual ~LWFTextBMFont()
+	virtual ~LWFTextBMFontImpl()
 	{
+	}
+
+	virtual Text *GetText()
+	{
+		return m_text;
 	}
 
 	void setParameter(float fontHeight, float width, float height,
@@ -199,14 +208,18 @@ LWFTextBMFontRenderer::LWFTextBMFontRenderer(
 		break;
 	}
 
-	m_label = LWFTextBMFont::create(l->data->strings[t.stringId].c_str(),
-		fontName, p.fontHeight, t.width, t.height,
-		hAlignment, vAlignment, c.red, c.green, c.blue);
-
+	m_label = LWFTextBMFontImpl::create(text,
+		l->data->strings[t.stringId].c_str(), fontName, p.fontHeight, t.width,
+		t.height, hAlignment, vAlignment, c.red, c.green, c.blue);
 	if (!m_label)
 		return;
 
 	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
+
+	const cocos2d::LWFNodeHandlers &h = node->getNodeHandlers();
+	if (h.onTextLoaded)
+		h.onTextLoaded(m_label);
+
 	node->addChild(m_label);
 }
 
@@ -248,6 +261,11 @@ void LWFTextBMFontRenderer::SetText(string text)
 		return;
 
 	m_label->setString(text.c_str());
+}
+
+cocos2d::LWFText *LWFTextBMFontRenderer::GetLabel()
+{
+	return dynamic_cast<cocos2d::LWFText *>(m_label);
 }
 
 }   // namespace LWF

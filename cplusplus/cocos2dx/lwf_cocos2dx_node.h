@@ -31,6 +31,16 @@ class LWF;
 NS_CC_BEGIN
 
 class EventListenerTouchOneByOne;
+class LWFBitmap;
+class LWFParticle;
+class LWFText;
+
+struct LWFNodeHandlers
+{
+	LWF::function<void (LWFBitmap *)> onBitmapLoaded;
+	LWF::function<void (LWFText *)> onTextLoaded;
+	LWF::function<void (LWFParticle *)> onParticleLoaded;
+};
 
 class LWFNode : public Sprite
 {
@@ -38,6 +48,7 @@ public:
 	LWF::shared_ptr<LWF::LWF> lwf;
 
 private:
+	LWFNodeHandlers _nodeHandlers;
 	LWF::TextureLoadHandler _textureLoadHandler;
 	EventListenerTouchOneByOne *_listener;
 	bool _destructed;
@@ -46,17 +57,21 @@ private:
 public:
 	static LWFNode *create(const char *pszFileName,
 		void *l = 0, LWF::TextureLoadHandler textureLoadHandler = nullptr);
+	static LWFNode *createWithHandlers(const char *pszFileName,
+		LWFNodeHandlers handlers, void *l = 0,
+		LWF::TextureLoadHandler textureLoadHandler = nullptr);
 	static void dump();
 
 public:
 	LWFNode();
 	virtual ~LWFNode();
 
+	const LWFNodeHandlers &getNodeHandlers() const {return _nodeHandlers;}
 	LWF::TextureLoadHandler getTextureLoadHandler() const
 		{return _textureLoadHandler;}
 	bool isDestructed() const {return _destructed;}
 
-    bool initWithLWFFile(const std::string &filename,
+    bool initWithLWFFile(const std::string &filename, LWFNodeHandlers h,
 		void *l = 0, LWF::TextureLoadHandler textureLoadHandler = 0);
 
 	virtual LWF::shared_ptr<LWF::LWF> attachLWF(

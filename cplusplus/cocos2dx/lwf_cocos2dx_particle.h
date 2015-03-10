@@ -22,19 +22,28 @@
 #define LWF_COCOS2DX_PARTICLE_H
 
 #include "lwf_renderer.h"
+#include "2d/CCParticleSystemQuad.h"
 
 NS_CC_BEGIN
 class CCLWFNode;
+
+class LWFParticle : public ParticleSystemQuad
+{
+public:
+	LWFParticle() : ParticleSystemQuad() {}
+	virtual ~LWFParticle() {}
+	virtual LWF::Particle *GetParticle() = 0;
+};
 NS_CC_END
 
 namespace LWF {
 
-class LWFParticle;
+class LWFParticleImpl;
 
 class LWFParticleRenderer : public Renderer
 {
 protected:
-	LWFParticle *m_particle;
+	LWFParticleImpl *m_particle;
 
 public:
 	LWFParticleRenderer(LWF *l, Particle *particle, cocos2d::LWFNode *node);
@@ -44,6 +53,8 @@ public:
 	void Update(const Matrix *matrix, const ColorTransform *colorTransform);
 	void Render(const Matrix *matrix, const ColorTransform *colorTransform,
 		int renderingIndex, int renderingCount, bool visible);
+
+	cocos2d::LWFParticle *GetParticle();
 };
 
 }   // namespace LWF

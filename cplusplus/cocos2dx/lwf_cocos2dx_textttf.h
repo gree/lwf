@@ -21,23 +21,36 @@
 #ifndef LWF_COCOS2DX_TEXTTTF_H
 #define LWF_COCOS2DX_TEXTTTF_H
 
-#include "platform/CCPlatformMacros.h"
 #include "lwf_renderer.h"
+#include "2d/CCLabel.h"
+#include "platform/CCPlatformMacros.h"
 
 NS_CC_BEGIN
 class LWFNode;
+
+class LWFText : public Label
+{
+public:
+	LWFText(FontAtlas *atlas, TextHAlignment hAlignment)
+		: Label(atlas, hAlignment) {}
+	LWFText(FontAtlas *atlas, TextHAlignment hAlignment,
+			TextVAlignment vAlignment)
+		: Label(atlas, hAlignment, vAlignment) {}
+	virtual ~LWFText() {}
+	virtual LWF::Text *GetText() = 0;
+};
 NS_CC_END
 
 namespace LWF {
 
+class LWFTextTTFImpl;
 class LWFRendererFactory;
-class LWFTextTTF;
 
 class LWFTextTTFRenderer : public TextRenderer
 {
 protected:
 	LWFRendererFactory *m_factory;
-	LWFTextTTF *m_label;
+	LWFTextTTFImpl *m_label;
 
 public:
 	LWFTextTTFRenderer(LWF *l,
@@ -51,7 +64,7 @@ public:
 
 	void SetText(string text);
 
-	cocos2d::Label *GetLabel() {return (cocos2d::Label *)m_label;}
+	cocos2d::LWFText *GetLabel();
 };
 
 }   // namespace LWF

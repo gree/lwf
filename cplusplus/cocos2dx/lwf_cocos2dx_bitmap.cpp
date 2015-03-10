@@ -30,7 +30,7 @@
 
 namespace LWF {
 
-class LWFBitmap : public cocos2d::Sprite, public BlendEquationProtocol
+class LWFBitmapImpl : public cocos2d::LWFBitmap, public BlendEquationProtocol
 {
 protected:
 	Matrix m_matrix;
@@ -39,38 +39,49 @@ protected:
 	bool m_hasPremultipliedAlpha;
 	cocos2d::GLProgramState *m_glProgramState;
 	cocos2d::GLProgramState *m_additiveGlProgramState;
+	Bitmap *m_bitmap;
+	BitmapEx *m_bitmapEx;
 
 public:
-	static LWFBitmap *create(const char *filename,
-			const Format::Texture &texture,
+	static LWFBitmapImpl *create(Bitmap *bitmap, BitmapEx *bitmapEx,
+			const char *filename, const Format::Texture &texture,
 			const Format::TextureFragment &fragment,
-			const Format::BitmapEx &bitmapEx) {
-		LWFBitmap *bitmap = new LWFBitmap();
-		if (bitmap && bitmap->initWithFileEx(
-				filename, texture, fragment, bitmapEx)) {
-			bitmap->autorelease();
-			return bitmap;
+			const Format::BitmapEx &bx) {
+		LWFBitmapImpl *ret = new LWFBitmapImpl();
+		if (ret && ret->initWithFileEx(
+				bitmap, bitmapEx, filename, texture, fragment, bx)) {
+			ret->autorelease();
+			return ret;
 		}
-		CC_SAFE_DELETE(bitmap);
+		CC_SAFE_DELETE(ret);
 		return NULL;
 	}
 
-	LWFBitmap()
-		: cocos2d::Sprite(), BlendEquationProtocol(),
-			m_glProgramState(0), m_additiveGlProgramState(0)
+	LWFBitmapImpl() : cocos2d::LWFBitmap(), BlendEquationProtocol(),
+		m_glProgramState(0), m_additiveGlProgramState(0),
+		m_bitmap(0), m_bitmapEx(0)
 	{
 	}
 
-	virtual ~LWFBitmap()
+	virtual ~LWFBitmapImpl()
 	{
 		CC_SAFE_RELEASE_NULL(m_glProgramState);
 		CC_SAFE_RELEASE_NULL(m_additiveGlProgramState);
 	}
 
-	bool initWithFileEx(const char *filename,
-		const Format::Texture &t,
-		const Format::TextureFragment &f,
-		const Format::BitmapEx &bx)
+	virtual Bitmap *GetBitmap()
+	{
+		return m_bitmap;
+	}
+
+	virtual BitmapEx *GetBitmapEx()
+	{
+		return m_bitmapEx;
+	}
+
+	bool initWithFileEx(Bitmap *bitmap, BitmapEx *bitmapEx,
+		const char *filename, const Format::Texture &t,
+		const Format::TextureFragment &f, const Format::BitmapEx &bx)
 	{
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
@@ -144,6 +155,9 @@ public:
 		}
 
 		_quad = m_quad;
+
+		m_bitmap = bitmap;
+		m_bitmapEx = bitmapEx;
 
 		return true;
 	}
@@ -281,11 +295,16 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			filename, basePath, texturePath);
 	}
 
-	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
+	m_sprite = LWFBitmapImpl::create(bitmap, 0, filename.c_str(), t, f, bx);
 	if (!m_sprite)
 		return;
 
 	l->data->resourceCache[filename] = true;
+
+	const cocos2d::LWFNodeHandlers &h = node->getNodeHandlers();
+	if (h.onBitmapLoaded)
+		h.onBitmapLoaded(m_sprite);
+
 	node->addChild(m_sprite);
 }
 
@@ -314,11 +333,16 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			filename, basePath, texturePath);
 	}
 
-	m_sprite = LWFBitmap::create(filename.c_str(), t, f, bx);
+	m_sprite = LWFBitmapImpl::create(0, bitmapEx, filename.c_str(), t, f, bx);
 	if (!m_sprite)
 		return;
 
 	l->data->resourceCache[filename] = true;
+
+	const cocos2d::LWFNodeHandlers &h = node->getNodeHandlers();
+	if (h.onBitmapLoaded)
+		h.onBitmapLoaded(m_sprite);
+
 	node->addChild(m_sprite);
 }
 
@@ -349,6 +373,11 @@ void LWFBitmapRenderer::Render(
 		return;
 
 	m_sprite->setMatrixAndColorTransform(matrix, colorTransform);
+}
+
+cocos2d::LWFBitmap *LWFBitmapRenderer::GetSprite()
+{
+	return dynamic_cast<cocos2d::LWFBitmap *>(m_sprite);
 }
 
 }   // namespace LWF

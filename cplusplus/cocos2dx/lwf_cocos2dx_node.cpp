@@ -36,8 +36,15 @@ using namespace LWF;
 LWFNode *LWFNode::create(
 	const char *pszFileName, void *l, TextureLoadHandler textureLoadHandler)
 {
+	LWFNodeHandlers h;
+	return createWithHandlers(pszFileName, h, l, textureLoadHandler);
+}
+
+LWFNode *LWFNode::createWithHandlers(const char *pszFileName,
+	LWFNodeHandlers h, void *l, TextureLoadHandler textureLoadHandler)
+{
 	LWFNode *node = new LWFNode();
-	if (node && node->initWithLWFFile(pszFileName, l, textureLoadHandler)) {
+	if (node && node->initWithLWFFile(pszFileName, h, l, textureLoadHandler)) {
 		node->autorelease();
 		return node;
 	}
@@ -96,8 +103,8 @@ public:
 	}
 };
 
-bool LWFNode::initWithLWFFile(
-	const string &path, void *l, TextureLoadHandler textureLoadHandler)
+bool LWFNode::initWithLWFFile(const string &path, LWFNodeHandlers h,
+	void *l, TextureLoadHandler textureLoadHandler)
 {
 	shared_ptr<LWFData> data =
 		LWFResourceCache::sharedLWFResourceCache()->loadLWFData(path);
@@ -138,6 +145,7 @@ bool LWFNode::initWithLWFFile(
 	lwf = make_shared<class LWF>(data, factory, l);
 	lwf->lwfLoader = LWFLoader(this, l);
 
+	_nodeHandlers = h;
 	_textureLoadHandler = textureLoadHandler;
 
 	scheduleUpdate();

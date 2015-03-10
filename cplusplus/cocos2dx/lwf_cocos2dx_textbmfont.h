@@ -21,23 +21,25 @@
 #ifndef LWF_COCOS2DX_TEXTBMFONT_H
 #define LWF_COCOS2DX_TEXTBMFONT_H
 
-#include "platform/CCPlatformMacros.h"
 #include "lwf_renderer.h"
+#include "2d/CCLabel.h"
+#include "platform/CCPlatformMacros.h"
 
 NS_CC_BEGIN
 class LWFNode;
+class LWFText;
 NS_CC_END
 
 namespace LWF {
 
+class LWFTextBMFontImpl;
 class LWFRendererFactory;
-class LWFTextBMFont;
 
 class LWFTextBMFontRenderer : public TextRenderer
 {
 protected:
 	LWFRendererFactory *m_factory;
-	LWFTextBMFont *m_label;
+	LWFTextBMFontImpl *m_label;
 
 public:
 	LWFTextBMFontRenderer(
@@ -51,7 +53,7 @@ public:
 
 	void SetText(string text);
 
-	cocos2d::Label *GetLabel() {return (cocos2d::Label *)m_label;}
+	cocos2d::LWFText *GetLabel();
 };
 
 }   // namespace LWF

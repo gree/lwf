@@ -21,7 +21,11 @@
 #ifndef LWF_COCOS2DX_H
 #define LWF_COCOS2DX_H
 
-#include "lwf_cocos2dx_node.h"
 #include "lwf.h"
+#include "lwf_cocos2dx_bitmap.h"
+#include "lwf_cocos2dx_node.h"
+#include "lwf_cocos2dx_particle.h"
+#include "lwf_cocos2dx_textbmfont.h"
+#include "lwf_cocos2dx_textttf.h"
 
 #endif

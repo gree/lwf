@@ -28,9 +28,10 @@
 
 namespace LWF {
 
-class LWFTextTTF : public cocos2d::Label, public BlendEquationProtocol
+class LWFTextTTFImpl : public cocos2d::LWFText, public BlendEquationProtocol
 {
 protected:
+	Text *m_text;
 	cocos2d::Mat4 m_nodeToParentTransform;
 	Matrix m_matrix;
 	float m_fontHeight;
@@ -39,12 +40,13 @@ protected:
 	float m_blue;
 
 public:
-	static LWFTextTTF *create(bool useTTF, const char *string,
+	static LWFTextTTFImpl *create(Text *text, bool useTTF, const char *string,
 		const char *fontName, float fontSize,
 		const cocos2d::Size& dimensions, cocos2d::TextHAlignment hAlignment, 
 		cocos2d::TextVAlignment vAlignment, float red, float green, float blue)
 	{
-		LWFTextTTF *ret = new LWFTextTTF(nullptr, hAlignment, vAlignment);
+		LWFTextTTFImpl *ret =
+			new LWFTextTTFImpl(text, nullptr, hAlignment, vAlignment);
 		if (!ret)
 			return nullptr;
 
@@ -69,15 +71,22 @@ public:
 		return ret;
 	}
 
-	LWFTextTTF(cocos2d::FontAtlas *atlas, cocos2d::TextHAlignment hAlignment,
+	LWFTextTTFImpl(Text *text, cocos2d::FontAtlas *atlas,
+			cocos2d::TextHAlignment hAlignment,
 			cocos2d::TextVAlignment vAlignment)
-		: Label(atlas, hAlignment, vAlignment)
+		: LWFText(atlas, hAlignment, vAlignment),
+			BlendEquationProtocol(), m_text(text)
 	{
 		m_matrix.Invalidate();
 	}
 
-	virtual ~LWFTextTTF()
+	virtual ~LWFTextTTFImpl()
 	{
+	}
+
+	virtual Text *GetText()
+	{
+		return m_text;
 	}
 
 	void setParameter(
@@ -179,14 +188,19 @@ LWFTextTTFRenderer::LWFTextTTFRenderer(LWF *l, Text *text, bool useTTF,
 
 	cocos2d::Size s = cocos2d::Size(t.width, t.height);
 
-	m_label = LWFTextTTF::create(useTTF, l->data->strings[t.stringId].c_str(),
-		fontName, p.fontHeight, s, hAlignment, vAlignment,
-		c.red, c.green, c.blue);
+	m_label = LWFTextTTFImpl::create(text, useTTF,
+		l->data->strings[t.stringId].c_str(), fontName, p.fontHeight, s,
+		hAlignment, vAlignment, c.red, c.green, c.blue);
 
 	if (!m_label)
 		return;
 
 	m_factory = (LWFRendererFactory *)l->rendererFactory.get();
+
+	const cocos2d::LWFNodeHandlers &h = node->getNodeHandlers();
+	if (h.onTextLoaded)
+		h.onTextLoaded(m_label);
+
 	node->addChild(m_label);
 }
 
@@ -228,6 +242,11 @@ void LWFTextTTFRenderer::SetText(string text)
 		return;
 
 	m_label->setString(text.c_str());
+}
+
+cocos2d::LWFText *LWFTextTTFRenderer::GetLabel()
+{
+	return dynamic_cast<cocos2d::LWFText *>(m_label);
 }
 
 }   // namespace LWF

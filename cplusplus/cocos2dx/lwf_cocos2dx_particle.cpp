@@ -30,26 +30,40 @@
 
 namespace LWF {
 
-class LWFParticle : public cocos2d::ParticleSystemQuad
+class LWFParticleImpl : public cocos2d::LWFParticle
 {
 public:
     string path;
 protected:
+	Particle *m_particle;
 	Matrix m_matrix;
 
 public:
-	static LWFParticle *create(const char *path)
+	static LWFParticleImpl *create(Particle *particle, const char *path)
 	{
-		LWFParticle *particle = new LWFParticle();
-		if (particle && particle->initWithFile(path)) {
-			particle->autorelease();
-			return particle;
+		LWFParticleImpl *ret = new LWFParticleImpl();
+		if (ret && ret->initWithFile(particle, path)) {
+			ret->autorelease();
+			return ret;
 		}
-		CC_SAFE_DELETE(particle);
+		CC_SAFE_DELETE(ret);
 		return NULL;
 	}
 
-	bool initWithFile(const char *filePath)
+	LWFParticleImpl() : LWFParticle(), m_particle(0)
+	{
+	}
+
+	virtual ~LWFParticleImpl()
+	{
+	}
+
+	virtual Particle *GetParticle()
+	{
+		return m_particle;
+	}
+
+	bool initWithFile(Particle *particle, const char *filePath)
 	{
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
@@ -61,6 +75,8 @@ public:
 			cache->unloadParticle(path);
 			return false;
 		}
+
+		m_particle = particle;
 
 		return true;
 	}
@@ -85,15 +101,19 @@ LWFParticleRenderer::LWFParticleRenderer(
 		(LWFRendererFactory *)l->rendererFactory.get();
 	string path = factory->GetBasePath() + filename;
 
-	m_particle = LWFParticle::create(path.c_str());
+	m_particle = LWFParticleImpl::create(particle, path.c_str());
 	if (!m_particle) {
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
 		path = cache->getDefaultParticlePathPrefix() + filename;
-		m_particle = LWFParticle::create(path.c_str());
+		m_particle = LWFParticleImpl::create(particle, path.c_str());
 		if (!m_particle)
 			return;
 	}
+
+	const cocos2d::LWFNodeHandlers &h = node->getNodeHandlers();
+	if (h.onParticleLoaded)
+		h.onParticleLoaded(m_particle);
 
 	node->addChild(m_particle);
 }
@@ -131,6 +151,11 @@ void LWFParticleRenderer::Render(
 
 	m_particle->setLocalZOrder(renderingIndex);
 	m_particle->setMatrixAndColorTransform(matrix, colorTransform);
+}
+
+cocos2d::LWFParticle *LWFParticleRenderer::GetParticle()
+{
+	return dynamic_cast<cocos2d::LWFParticle *>(m_particle);
 }
 
 }   // namespace LWF

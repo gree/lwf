@@ -22,21 +22,31 @@
 #define LWF_COCOS2DX_BITMAP_H
 
 #include "lwf_renderer.h"
+#include "2d/CCSprite.h"
 
 NS_CC_BEGIN
 class LWFNode;
+
+class LWFBitmap : public Sprite
+{
+public:
+	LWFBitmap() : Sprite() {}
+	virtual ~LWFBitmap() {}
+	virtual LWF::Bitmap *GetBitmap() = 0;
+	virtual LWF::BitmapEx *GetBitmapEx() = 0;
+};
 NS_CC_END
 
 namespace LWF {
 
-class LWFBitmap;
+class LWFBitmapImpl;
 class LWFRendererFactory;
 
 class LWFBitmapRenderer : public Renderer
 {
 protected:
 	LWFRendererFactory *m_factory;
-	LWFBitmap *m_sprite;
+	LWFBitmapImpl *m_sprite;
 
 public:
 	LWFBitmapRenderer(LWF *l, Bitmap *bitmap, cocos2d::LWFNode *node);
@@ -47,7 +57,7 @@ public:
 	void Render(const Matrix *matrix, const ColorTransform *colorTransform,
 		int renderingIndex, int renderingCount, bool visible);
 
-	cocos2d::Sprite *GetSprite() {return (cocos2d::Sprite *)m_sprite;}
+	cocos2d::LWFBitmap *GetSprite();
 };
 
 }   // namespace LWF
