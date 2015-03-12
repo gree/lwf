@@ -629,9 +629,9 @@ void Movie::PostUpdate()
 
 	if (m_requestedCalculateBounds) {
 		m_currentBounds.xMin = FLT_MAX;
-		m_currentBounds.xMax = FLT_MIN;
+		m_currentBounds.xMax = -FLT_MAX;
 		m_currentBounds.yMin = FLT_MAX;
-		m_currentBounds.yMax = FLT_MIN;
+		m_currentBounds.yMax = -FLT_MAX;
 
 		Inspect(CalculateBoundsWrapper(this), 0, 0, 0);
 		if (lwf->property->hasMatrix) {
@@ -647,12 +647,13 @@ void Movie::PostUpdate()
 				px, py, m_currentBounds.xMax, m_currentBounds.yMax, &invert);
 			m_currentBounds.xMax = px;
 			m_currentBounds.yMax = py;
-			m_bounds = m_currentBounds;
-			m_requestedCalculateBounds = false;
-			if (m_calculateBoundsCallback) {
-				m_calculateBoundsCallback(this);
-				m_calculateBoundsCallback = nullptr;
-			}
+		}
+
+		m_bounds = m_currentBounds;
+		m_requestedCalculateBounds = false;
+		if (m_calculateBoundsCallback) {
+			m_calculateBoundsCallback(this);
+			m_calculateBoundsCallback = nullptr;
 		}
 	}
 
