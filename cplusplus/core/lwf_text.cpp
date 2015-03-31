@@ -68,8 +68,12 @@ Text::Text(LWF *lwf, Movie *p, int objId, int instId)
 
 void Text::Destroy()
 {
-	if (setTextRenderer)
+	if (setTextRenderer) {
+		string fullName = parent->GetFullName();
+		if (!fullName.empty())
+			lwf->ClearTextRenderer(fullName + "." + name);
 		lwf->ClearTextRenderer(name);
+	}
 	Object::Destroy();
 }
 
