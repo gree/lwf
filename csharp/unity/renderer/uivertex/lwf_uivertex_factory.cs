@@ -32,7 +32,6 @@ namespace UIVertexRenderer {
 public class UIVertexBuffer
 {
 	public UIVertex[] vertices;
-	public int[] objects;
 	public int index;
 	public bool modified;
 	public bool initialized;
@@ -40,7 +39,6 @@ public class UIVertexBuffer
 	public void Alloc(int n)
 	{
 		vertices = new UIVertex[n * 4];
-		objects = new int[n];
 		index = 0;
 		modified = true;
 		initialized = true;
@@ -123,6 +121,7 @@ public class UIVertexComponent : MonoBehaviour
 		rendererCount = 0;
 		rectangleCount = 0;
 		canvasRenderer.SetMaterial(null, null);
+		canvasRenderer.Clear();
 		gameObject.SetActive(false);
 	}
 
@@ -130,7 +129,8 @@ public class UIVertexComponent : MonoBehaviour
 	{
 		gameObject.SetActive(true);
 
-		if (buffer.objects == null || buffer.objects.Length != rectangleCount) {
+		if (buffer.vertices == null ||
+				buffer.vertices.Length / 4 != rectangleCount) {
 			buffer.Alloc(rectangleCount);
 		} else {
 			buffer.index = 0;
@@ -139,10 +139,11 @@ public class UIVertexComponent : MonoBehaviour
 		for (int i = 0; i < rendererCount; ++i)
 			renderers[i].UpdateMesh(buffer);
 
-		canvasRenderer.SetVertices(buffer.vertices, rectangleCount * 4);
+		buffer.initialized = false;
 
 		if (buffer.modified) {
 			buffer.modified = false;
+			canvasRenderer.SetVertices(buffer.vertices, rectangleCount * 4);
 		}
 
 		if (property != null) {
@@ -174,7 +175,7 @@ public partial class Factory : UnityRenderer.Factory
 			string texturePrfx = "", string fontPrfx = "",
 			TextureLoader textureLdr = null,
 			TextureUnloader textureUnldr = null,
-      string shaderName = "LWF",
+			string shaderName = "LWF",
 			bool attaching = false)
 		: base(d, gObj, zOff, zR, rQOff, sLayerName, sOrder, uAC, renderCam,
 			inputCam, texturePrfx, fontPrfx, textureLdr, textureUnldr, shaderName)

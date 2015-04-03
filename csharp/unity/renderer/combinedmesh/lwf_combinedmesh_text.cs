@@ -26,12 +26,15 @@ namespace CombinedMeshRenderer {
 
 public class TextMeshRenderer : UnityRenderer.UnityTextRenderer, IMeshRenderer
 {
-	private Matrix m_matrix;
-	private Matrix4x4 m_matrixForRender;
-	private UnityEngine.Color m_colorMult;
-	private UnityEngine.Color m_colorAdd;
-	private Color32 m_color;
-	private int m_z;
+	Matrix m_matrix;
+	Matrix4x4 m_matrixForRender;
+	UnityEngine.Color m_colorMult;
+	UnityEngine.Color m_colorAdd;
+	Color32 m_color;
+	int m_z;
+	int m_bufferIndex;
+	bool m_updated;
+	CombinedMeshBuffer m_buffer;
 
 	public TextMeshRenderer(LWF lwf, UnityRenderer.TextContext context)
 		: base(lwf, context)
@@ -42,6 +45,9 @@ public class TextMeshRenderer : UnityRenderer.UnityTextRenderer, IMeshRenderer
 		m_colorAdd = new UnityEngine.Color();
 		m_color = new Color32();
 		m_z = -1;
+		m_updated = false;
+		m_buffer = null;
+		m_bufferIndex = -1;
 	}
 
 	public override void Render(Matrix matrix, ColorTransform colorTransform,
@@ -58,9 +64,15 @@ public class TextMeshRenderer : UnityRenderer.UnityTextRenderer, IMeshRenderer
 
 		m_color = m_colors32[0] * m_colorMult + m_colorAdd;
 
+		m_updated = m_matrix.SetWithComparing(matrix);
+
 		int z = renderingCount - renderingIndex;
-		if (m_z != z || m_matrix.SetWithComparing(matrix)) {
+		if (m_z != z) {
+			m_updated = true;
 			m_z = z;
+		}
+
+		if (m_updated) {
 			factory.ConvertMatrix(
 				ref m_matrixForRender, matrix, 1, z, m_context.height);
 		}
@@ -76,28 +88,30 @@ public class TextMeshRenderer : UnityRenderer.UnityTextRenderer, IMeshRenderer
 		buffer.index += vertexCount / 4;
 
 		for (int i = bufferIndex; i < buffer.index; ++i) {
-			buffer.objects[i] = -1;
-
 			int cIndex = i * 4;
 			var bc = buffer.colors32[cIndex];
 			if (bc.r != m_color.r ||
 					bc.g != m_color.g ||
 					bc.b != m_color.b ||
 					bc.a != m_color.a) {
+				buffer.modified = true;
 				for (int j = 0; j < 4; ++j)
 					buffer.colors32[cIndex + j] = m_color;
 			}
 		}
 
-		int index = bufferIndex * 4;
-		for (int i = 0; i < vertexCount; ++i) {
-			buffer.uv[index + i] = m_uv[i];
-			buffer.vertices[index + i] =
-				m_matrixForRender.MultiplyPoint3x4(m_vertices[i]);
+		if (m_updated || m_buffer != buffer ||
+				m_bufferIndex != bufferIndex || buffer.initialized) {
+			m_buffer = buffer;
+			m_bufferIndex = bufferIndex;
+			buffer.modified = true;
+			int index = bufferIndex * 4;
+			for (int i = 0; i < vertexCount; ++i) {
+				buffer.uv[index + i] = m_uv[i];
+				buffer.vertices[index + i] =
+					m_matrixForRender.MultiplyPoint3x4(m_vertices[i]);
+			}
 		}
-
-		buffer.modified = true;
-		buffer.initialized = false;
 	}
 }
 

@@ -35,7 +35,6 @@ public class CombinedMeshBuffer
 	public Vector2[] uv;
 	public int[] triangles;
 	public Color32[] colors32;
-	public int[] objects;
 	public int index;
 	public bool modified;
 	public bool initialized;
@@ -46,7 +45,6 @@ public class CombinedMeshBuffer
 		uv = new Vector2[n * 4];
 		triangles = new int[n * 6];
 		colors32 = new Color32[n * 4];
-		objects = new int[n];
 		index = 0;
 		modified = true;
 		initialized = true;
@@ -162,7 +160,8 @@ public class CombinedMeshComponent : MonoBehaviour
 	{
 		gameObject.SetActive(true);
 
-		if (buffer.objects == null || buffer.objects.Length != rectangleCount) {
+		if (buffer.vertices == null ||
+				buffer.vertices.Length / 4 != rectangleCount) {
 			buffer.Alloc(rectangleCount);
 		} else {
 			buffer.index = 0;
@@ -170,6 +169,8 @@ public class CombinedMeshComponent : MonoBehaviour
 
 		for (int i = 0; i < rendererCount; ++i)
 			renderers[i].UpdateMesh(buffer);
+
+		buffer.initialized = false;
 
 		if (buffer.modified) {
 			buffer.modified = false;

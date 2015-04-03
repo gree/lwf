@@ -78,7 +78,6 @@ public class BitmapContext
 	private Material m_material;
 	private Data m_data;
 	private float m_height;
-	private int m_objectId;
 	private Vector3[] m_vertices;
 	private Vector2[] m_uv;
 	private Format.Constant m_format;
@@ -91,7 +90,6 @@ public class BitmapContext
 	public Data data {get {return m_data;}}
 	public string textureName {get {return m_textureName;}}
 	public float height {get {return m_height;}}
-	public int objectId {get {return m_objectId;}}
 	public Vector3[] vertices {get {return m_vertices;}}
 	public Vector2[] uv {get {return m_uv;}}
 	public Format.Constant format {get {return m_format;}}
@@ -103,7 +101,6 @@ public class BitmapContext
 	{
 		m_factory = f;
 		m_data = d;
-		m_objectId = objId;
 		m_bitmapExId = bId;
 
 		Format.TextureFragment fragment =
@@ -205,7 +202,9 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 	UnityEngine.Color m_colorAdd;
 	int m_blendMode;
 	int m_z;
+	int m_bufferIndex;
 	bool m_updated;
+	CombinedMeshBuffer m_buffer;
 
 	public BitmapRenderer(LWF lwf, BitmapContext context) : base(lwf)
 	{
@@ -217,6 +216,8 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 		m_blendMode = (int)Format.Constant.BLEND_MODE_NORMAL;
 		m_z = -1;
 		m_updated = false;
+		m_buffer = null;
+		m_bufferIndex = -1;
 	}
 
 	public override void Destruct()
@@ -249,14 +250,17 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 			m_colorMult.b *= m_colorMult.a;
 		}
 
+		m_updated = m_matrix.SetWithComparing(matrix);
+
 		int z = renderingCount - renderingIndex;
-		if (m_z != z || m_matrix.SetWithComparing(matrix)) {
+		if (m_z != z) {
 			m_updated = true;
 			m_z = z;
+		}
+
+		if (m_updated) {
 			factory.ConvertMatrix(
 				ref m_matrixForRender, matrix, 1, z, m_context.height);
-		} else {
-			m_updated = false;
 		}
 
 		if (m_blendMode != factory.blendMode) {
@@ -294,25 +298,17 @@ public class BitmapRenderer : Renderer, IMeshRenderer
 				buffer.colors32[index + i] = color32;
 		}
 
-		bool needsUpdate = m_updated;
-		int objId = m_context.objectId + 1;
-		if (buffer.initialized || buffer.objects[bufferIndex] != objId) {
-			buffer.modified = true;
-			buffer.objects[bufferIndex] = objId;
-			for (int i = 0; i < 4; ++i)
-				buffer.uv[index + i] = m_context.uv[i];
-			needsUpdate = true;
-		}
-
-		if (needsUpdate) {
+		if (m_updated || m_buffer != buffer ||
+				m_bufferIndex != bufferIndex || buffer.initialized) {
+			m_buffer = buffer;
+			m_bufferIndex = bufferIndex;
 			buffer.modified = true;
 			for (int i = 0; i < 4; ++i) {
+				buffer.uv[index + i] = m_context.uv[i];
 				buffer.vertices[index + i] =
 					m_matrixForRender.MultiplyPoint3x4(m_context.vertices[i]);
 			}
 		}
-
-		buffer.initialized = false;
 	}
 }
 
