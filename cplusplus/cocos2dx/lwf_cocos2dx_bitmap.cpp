@@ -86,7 +86,7 @@ public:
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
 		cocos2d::Texture2D *texture = cache->addImage(filename);
-		if (!cocos2d::Sprite::initWithTexture(texture))
+		if (texture == 0 || !cocos2d::Sprite::initWithTexture(texture))
 			return false;
 
 		m_hasPremultipliedAlpha = getTexture()->hasPremultipliedAlpha() ||
