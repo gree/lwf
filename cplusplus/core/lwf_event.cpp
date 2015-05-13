@@ -240,6 +240,10 @@ void LWF::RemoveMovieEventHandler(int instId, int id)
 		return;
 
 	m_movieEventHandlers[instId].Remove(id);
+
+	Movie *m = SearchMovieInstanceByInstanceId(instId);
+	if (m)
+		m->RemoveEventHandler("", id);
 }
 
 void LWF::ClearMovieEventHandler(string instanceName)
