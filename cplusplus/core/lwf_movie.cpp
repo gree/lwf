@@ -1237,10 +1237,26 @@ void Movie::RemoveEventHandler(string eventName, int id)
 	list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
 }
 
+void Movie::RemoveMovieEventHandler(int id)
+{
+	m_handler.Remove(id);
+}
+
 void Movie::ClearEventHandler(string eventName)
 {
 	m_eventHandlers.erase(eventName);
 	m_handler.Clear(eventName);
+}
+
+void Movie::ClearMovieEventHandler()
+{
+	m_handler.Clear();
+}
+
+void Movie::ClearAllEventHandler()
+{
+	m_eventHandlers.clear();
+	m_handler.Clear();
 }
 
 int Movie::SetEventHandler(string eventName, MovieEventHandler eventHandler)

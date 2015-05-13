@@ -170,7 +170,10 @@ public:
 
 	int AddEventHandler(string eventName, MovieEventHandler eventHandler);
 	void RemoveEventHandler(string eventName, int id);
+	void RemoveMovieEventHandler(int id);
 	void ClearEventHandler(string eventName);
+	void ClearMovieEventHandler();
+	virtual void ClearAllEventHandler();
 	int SetEventHandler(string eventName, MovieEventHandler eventHandler);
 	void DispatchEvent(string eventName);
 

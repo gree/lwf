@@ -62,7 +62,10 @@ public:
 
 	int AddEventHandler(string eventName, ButtonEventHandler eventHandler);
 	void RemoveEventHandler(string eventName, int id);
+	void RemoveButtonEventHandler(int id);
 	void ClearEventHandler(string eventName);
+	void ClearButtonEventHandler();
+	virtual void ClearAllEventHandler();
 	int SetEventHandler(string eventName, ButtonEventHandler eventHandler);
 
 	int AddKeyPressHandler(int key, ButtonKeyPressHandler eventHandler);

@@ -61,6 +61,7 @@ public:
 	virtual void Inspect(
 		Inspector inspector, int hierarchy, int depth, int rOffset);
 	virtual void Destroy();
+	virtual void ClearAllEventHandler() {}
 
 	bool IsButton() const {return type == OType::BUTTON ? true : false;}
 	bool IsMovie() const {return (type == OType::MOVIE ||

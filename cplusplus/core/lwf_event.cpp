@@ -232,6 +232,10 @@ void LWF::RemoveMovieEventHandler(string instanceName, int id)
 		return;
 
 	it->second.Remove(id);
+
+	Movie *m = SearchMovieInstance(instanceName);
+	if (m)
+		m->RemoveMovieEventHandler(id);
 }
 
 void LWF::RemoveMovieEventHandler(int instId, int id)
@@ -240,6 +244,10 @@ void LWF::RemoveMovieEventHandler(int instId, int id)
 		return;
 
 	m_movieEventHandlers[instId].Remove(id);
+
+	Movie *m = SearchMovieInstanceByInstanceId(instId);
+	if (m)
+		m->RemoveMovieEventHandler(id);
 }
 
 void LWF::ClearMovieEventHandler(string instanceName)
@@ -259,6 +267,10 @@ void LWF::ClearMovieEventHandler(string instanceName)
 		return;
 
 	it->second.Clear();
+
+	Movie *m = SearchMovieInstance(instanceName);
+	if (m)
+		m->ClearMovieEventHandler();
 }
 
 void LWF::ClearMovieEventHandler(int instId)
@@ -267,6 +279,10 @@ void LWF::ClearMovieEventHandler(int instId)
 		return;
 
 	m_movieEventHandlers[instId].Clear();
+
+	Movie *m = SearchMovieInstanceByInstanceId(instId);
+	if (m)
+		m->ClearMovieEventHandler();
 }
 
 void LWF::ClearMovieEventHandler(string instanceName, string type)
@@ -286,6 +302,10 @@ void LWF::ClearMovieEventHandler(string instanceName, string type)
 		return;
 
 	it->second.Clear(type);
+
+	Movie *m = SearchMovieInstance(instanceName);
+	if (m)
+		m->ClearEventHandler(type);
 }
 
 void LWF::ClearMovieEventHandler(int instId, string type)
@@ -294,6 +314,10 @@ void LWF::ClearMovieEventHandler(int instId, string type)
 		return;
 
 	m_movieEventHandlers[instId].Clear(type);
+
+	Movie *m = SearchMovieInstanceByInstanceId(instId);
+	if (m)
+		m->ClearEventHandler(type);
 }
 
 void LWF::SetMovieEventHandler(
@@ -349,7 +373,7 @@ int LWF::AddButtonEventHandler(string instanceName,
 	int id = GetEventOffset();
 	it->second.Add(id, h, kh);
 
-	Button *b = SearchButtonInstance(instId);
+	Button *b = SearchButtonInstance(instanceName);
 	if (b)
 		b->AddHandlers(&it->second);
 
@@ -389,6 +413,10 @@ void LWF::RemoveButtonEventHandler(string instanceName, int id)
 		return;
 
 	it->second.Remove(id);
+
+	Button *b = SearchButtonInstance(instanceName);
+	if (b)
+		b->RemoveButtonEventHandler(id);
 }
 
 void LWF::RemoveButtonEventHandler(int instId, int id)
@@ -397,6 +425,10 @@ void LWF::RemoveButtonEventHandler(int instId, int id)
 		return;
 
 	m_buttonEventHandlers[instId].Remove(id);
+
+	Button *b = SearchButtonInstanceByInstanceId(instId);
+	if (b)
+		b->RemoveButtonEventHandler(id);
 }
 
 void LWF::ClearButtonEventHandler(string instanceName)
@@ -416,6 +448,10 @@ void LWF::ClearButtonEventHandler(string instanceName)
 		return;
 
 	it->second.Clear();
+
+	Button *b = SearchButtonInstance(instanceName);
+	if (b)
+		b->ClearButtonEventHandler();
 }
 
 void LWF::ClearButtonEventHandler(int instId)
@@ -424,6 +460,10 @@ void LWF::ClearButtonEventHandler(int instId)
 		return;
 
 	m_buttonEventHandlers[instId].Clear();
+
+	Button *b = SearchButtonInstanceByInstanceId(instId);
+	if (b)
+		b->ClearButtonEventHandler();
 }
 
 void LWF::ClearButtonEventHandler(string instanceName, string type)
@@ -443,6 +483,10 @@ void LWF::ClearButtonEventHandler(string instanceName, string type)
 		return;
 
 	it->second.Clear(type);
+
+	Button *b = SearchButtonInstance(instanceName);
+	if (b)
+		b->ClearEventHandler(type);
 }
 
 void LWF::ClearButtonEventHandler(int instId, string type)
@@ -451,6 +495,10 @@ void LWF::ClearButtonEventHandler(int instId, string type)
 		return;
 
 	m_buttonEventHandlers[instId].Clear(type);
+
+	Button *b = SearchButtonInstanceByInstanceId(instId);
+	if (b)
+		b->ClearEventHandler(type);
 }
 
 void LWF::SetButtonEventHandler(string instanceName,
@@ -467,12 +515,22 @@ void LWF::SetButtonEventHandler(int instId,
 	AddButtonEventHandler(instId, h, kh);
 }
 
+class ClearAllEventHandlersWrapper
+{
+public:
+	void operator()(Object *o, int, int, int)
+	{
+		o->ClearAllEventHandler();
+	}
+};
+
 void LWF::ClearAllEventHandlers()
 {
 	m_eventHandlers.clear();
 	m_movieEventHandlers.clear();
 	m_buttonEventHandlers.clear();
 	InitEvent();
+	Inspect(ClearAllEventHandlersWrapper(), 0, 0, 0);
 }
 
 }	// namespace LWF

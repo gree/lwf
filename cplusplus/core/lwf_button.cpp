@@ -184,7 +184,12 @@ int Button::AddEventHandler(string eventName, ButtonEventHandler eventHandler)
 	return -1;
 }
 
-void Button::RemoveEventHandler(string eventName, int id)
+void Button::RemoveEventHandler(string, int id)
+{
+	m_handler.Remove(id);
+}
+
+void Button::RemoveButtonEventHandler(int id)
 {
 	m_handler.Remove(id);
 }
@@ -192,6 +197,16 @@ void Button::RemoveEventHandler(string eventName, int id)
 void Button::ClearEventHandler(string eventName)
 {
 	m_handler.Clear(eventName);
+}
+
+void Button::ClearButtonEventHandler()
+{
+	m_handler.Clear();
+}
+
+void Button::ClearAllEventHandler()
+{
+	m_handler.Clear();
 }
 
 int Button::SetEventHandler(string eventName, ButtonEventHandler eventHandler)
