@@ -202,7 +202,7 @@ rule ".js" => lambda{|o| DEPENDS[o]} do |t|
   f.puts "// Copyright (c) 2001 Robert Penner - http://goo.gl/Qjqc0"
   f.puts "// Copyright (c) 2011 Gary Linscott"
   f.puts "// Copyright (c) 2011-2012 Juan Mellado"
-  f.puts "// Copyright (c) 2013 C. Scott Ananian - http://git.io/QzutCQ"
+  f.puts "// Copyright (c) 2013 C. Scott Ananian - http://git.io/vUHSG"
   f.puts "// Copyright (c) 2012 imaya - http://git.io/cC8gDw"
   f.write js
   f.close

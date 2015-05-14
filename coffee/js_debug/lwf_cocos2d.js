@@ -3,7 +3,7 @@
 // Copyright (c) 2001 Robert Penner - http://goo.gl/Qjqc0
 // Copyright (c) 2011 Gary Linscott
 // Copyright (c) 2011-2012 Juan Mellado
-// Copyright (c) 2013 C. Scott Ananian - http://git.io/QzutCQ
+// Copyright (c) 2013 C. Scott Ananian - http://git.io/vUHSG
 // Copyright (c) 2012 imaya - http://git.io/cC8gDw
 if (typeof global === "undefined" && typeof window !== "undefined") {
 	/* Browsers */
