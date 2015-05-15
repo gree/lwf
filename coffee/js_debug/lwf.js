@@ -10559,7 +10559,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebGLShader.prototype.use = function(gl, pMatrix) {
       var vertexBufferSize;
       gl.useProgram(this.shaderProgram);
-      gl.uniformMatrix4fv(this.uPMatrix, false, pMatrix);
+      this.setMatrix(gl, pMatrix);
       vertexBufferSize = 4 * this.attributes;
       gl.vertexAttribPointer(this.aVertexPosition, 2, gl.FLOAT, false, vertexBufferSize, 0);
       gl.enableVertexAttribArray(this.aVertexPosition);
@@ -10575,6 +10575,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         gl.enableVertexAttribArray(this.aAdditionalColor);
       }
       return this;
+    };
+
+    WebGLShader.prototype.setMatrix = function(gl, pMatrix) {
+      gl.uniformMatrix4fv(this.uPMatrix, false, pMatrix);
     };
 
     WebGLShader.prototype.disable = function(gl) {
@@ -10679,9 +10683,9 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     };
 
     WebGLRendererFactory.prototype.setViewport = function(gl, lwf) {
-      var bottom, changed, far, left, near, right, top;
-      changed = this.propertyMatrix.setWithComparing(lwf.property.matrix);
-      if ((this.pMatrix == null) || changed || this.w !== this.stage.width || this.h !== this.stage.height) {
+      var bottom, far, left, near, right, top;
+      this.viewportChanged = this.propertyMatrix.setWithComparing(lwf.property.matrix);
+      if ((this.pMatrix == null) || this.viewportChanged || this.w !== this.stage.width || this.h !== this.stage.height) {
         this.w = this.stage.width;
         this.h = this.stage.height;
         gl.viewport(0, 0, this.w, this.h);
@@ -11001,6 +11005,8 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
             this.currentShader.disable(gl);
           }
           this.currentShader = shader.use(gl, this.pMatrix);
+        } else if (this.viewportChanged) {
+          this.currentShader.setMatrix(gl, this.pMatrix);
         }
       }
 

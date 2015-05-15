@@ -199,7 +199,7 @@ class WebGLShader
 
   use:(gl, pMatrix) ->
     gl.useProgram(@shaderProgram)
-    gl.uniformMatrix4fv(@uPMatrix, false, pMatrix)
+    @setMatrix(gl, pMatrix)
     vertexBufferSize = 4 * @attributes
     gl.vertexAttribPointer(
       @aVertexPosition, 2, gl.FLOAT, false, vertexBufferSize, 0)
@@ -220,6 +220,10 @@ class WebGLShader
         @aAdditionalColor, 4, gl.FLOAT, false, vertexBufferSize, 32)
       gl.enableVertexAttribArray(@aAdditionalColor)
     return @
+
+  setMatrix:(gl, pMatrix) ->
+    gl.uniformMatrix4fv(@uPMatrix, false, pMatrix)
+    return
 
   disable:(gl) ->
     gl.disableVertexAttribArray(@aVertexPosition)
@@ -308,8 +312,9 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
     return
 
   setViewport:(gl, lwf) ->
-    changed = @propertyMatrix.setWithComparing(lwf.property.matrix)
-    if !@pMatrix? or changed or @w isnt @stage.width or @h isnt @stage.height
+    @viewportChanged = @propertyMatrix.setWithComparing(lwf.property.matrix)
+    if !@pMatrix? or
+        @viewportChanged or @w isnt @stage.width or @h isnt @stage.height
       @w = @stage.width
       @h = @stage.height
       gl.viewport(0, 0, @w, @h)
@@ -576,6 +581,8 @@ class WebGLRendererFactory extends WebkitCSSRendererFactory
       if shader isnt @currentShader
         @currentShader.disable(gl) if @currentShader?
         @currentShader = shader.use(gl, @pMatrix)
+      else if @viewportChanged
+        @currentShader.setMatrix(gl, @pMatrix)
 
     ###
     alpha = c.multi.alpha
