@@ -42,6 +42,8 @@
 # include <time.h>
 # include <winsock2.h>
 
+#define strncasecmp _strnicmp
+
 // WIN32 implementation for missing stuff
 int gettimeofday(struct timeval *tp, struct timezone *tzp);
 char *strcasestr(const char *strA, const char *strB);
