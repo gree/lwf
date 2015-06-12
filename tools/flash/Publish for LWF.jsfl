@@ -110,8 +110,14 @@ function main()
 			setLinkage(item, name);
 
 			m = name.match(/(_rgb_[0-9a-f]{6}|_rgb_[0-9]+,[0-9]+,[0-9]+|_rgba_[0-9a-f]{8}|_rgba_[0-9]+,[0-9]+,[0-9]+,[0-9]+|_add_[0-9a-f]{6}|_add_[0-9]+,[0-9]+,[0-9]+)\.(gif|jpg|jpeg|png)$/i);
-			if (m === null)
-				item.exportToFile(bitmapDir + name);
+			if (m === null) {
+				if (item.sourceFileExists) {
+					FLfile.copy(item.sourceFilePath, bitmapDir + name);
+				} else {
+					warn("Image \"" + name + "\" recompressed by Flash");
+					item.exportToFile(bitmapDir + name);
+				}
+			}
 			break;
 	
 		case "movie clip":
