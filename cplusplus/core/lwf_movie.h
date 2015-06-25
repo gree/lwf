@@ -40,6 +40,7 @@ typedef map<string, bool> DetachDict;
 typedef map<string, bool> Texts;
 typedef map<int, shared_ptr<BitmapClip> > BitmapClips;
 typedef map<string, MovieEventHandlerList> MovieEventHandlerListDictionary;
+typedef vector<MovieEventHandler> CalculateBoundsCallbacks;
 typedef vector<LabelData> CurrentLabels;
 typedef map<int, string> CurrentLabelCache;
 
@@ -79,7 +80,7 @@ private:
 	AttachedLWFList m_attachedLWFList;
 	DetachDict m_detachedLWFs;
 	BitmapClips m_bitmapClips;
-	MovieEventHandler m_calculateBoundsCallback;
+	CalculateBoundsCallbacks m_calculateBoundsCallbacks;
 	shared_ptr<Texts> m_texts;
 	int m_currentFrameInternal;
 	int m_currentFrameCurrent;
