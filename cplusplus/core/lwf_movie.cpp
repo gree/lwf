@@ -95,7 +95,6 @@ Movie::Movie(LWF *l, Movie *p, int objId, int instId, int mId, int cId,
 	m_attachMoviePostExeced = false;
 	m_isRoot = objId == lwf->data->header.rootMovieId;
 	m_requestedCalculateBounds = false;
-	m_calculateBoundsCallback = nullptr;
 	m_currentLabelsCached = false;
 
 	m_displayList.resize(data->depths);
@@ -650,11 +649,11 @@ void Movie::PostUpdate()
 		}
 
 		m_bounds = m_currentBounds;
-		m_requestedCalculateBounds = false;
-		if (m_calculateBoundsCallback) {
-			m_calculateBoundsCallback(this);
-			m_calculateBoundsCallback = nullptr;
+		for (const auto& callback : m_calculateBoundsCallbacks) {
+			callback(this);
 		}
+		m_requestedCalculateBounds = false;
+		m_calculateBoundsCallbacks.clear();		
 	}
 
 	if (!m_handler.Empty())
@@ -1279,9 +1278,13 @@ void Movie::DispatchEvent(string eventName)
 
 void Movie::RequestCalculateBounds(MovieEventHandler callback)
 {
-	m_requestedCalculateBounds = true;
-	m_calculateBoundsCallback = callback;
-	m_bounds.Clear();
+	if (!m_requestedCalculateBounds) {
+		m_bounds.Clear();
+		m_requestedCalculateBounds = true;
+	}
+	if (callback) {
+		m_calculateBoundsCallbacks.push_back(callback);
+	}
 }
 
 Bounds Movie::GetBounds()
