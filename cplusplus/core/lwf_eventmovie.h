@@ -28,6 +28,7 @@ namespace LWF {
 class Movie;
 
 typedef function<void (Movie *)> MovieEventHandler;
+typedef vector<MovieEventHandler> MovieEventHandlersList;
 typedef vector<pair<int, MovieEventHandler> > MovieEventHandlerList;
 typedef map<string, MovieEventHandler> MovieEventHandlerDictionary;
 

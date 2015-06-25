@@ -79,7 +79,7 @@ private:
 	AttachedLWFList m_attachedLWFList;
 	DetachDict m_detachedLWFs;
 	BitmapClips m_bitmapClips;
-	MovieEventHandler m_calculateBoundsCallback;
+	MovieEventHandlersList m_calculateBoundsCallbacks;
 	shared_ptr<Texts> m_texts;
 	int m_currentFrameInternal;
 	int m_currentFrameCurrent;
