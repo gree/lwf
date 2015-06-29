@@ -37,9 +37,6 @@ protected:
 	Matrix m_matrix;
 	float m_offsetY;
 	float m_scale;
-	float m_red;
-	float m_green;
-	float m_blue;
 	cocos2d::TextVAlignment m_vAlignment;
 
 public:
@@ -94,9 +91,7 @@ public:
 		m_scale = fontHeight / getLineHeight() * 96.0f / 72.0f *
 			visibleSize.height / winSize.height;
 		m_vAlignment = vAlignment;
-		m_red = red;
-		m_green = green;
-		m_blue = blue;
+		setTextColor(cocos2d::Color4B(cocos2d::Color4F(red, green, blue, 1)));
 		setDimensions(width / m_scale / contentScaleFactor,
 			height / m_scale / contentScaleFactor);
 	}
@@ -134,9 +129,9 @@ public:
 		const Color &c = cx->multi;
 		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor({
-			(GLubyte)(c.red * m_red * dc.r),
-			(GLubyte)(c.green * m_green * dc.g),
-			(GLubyte)(c.blue * m_blue * dc.b)});
+			(GLubyte)(c.red * dc.r),
+			(GLubyte)(c.green * dc.g),
+			(GLubyte)(c.blue * dc.b)});
 		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
 	}
 
