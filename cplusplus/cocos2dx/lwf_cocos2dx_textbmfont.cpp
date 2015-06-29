@@ -132,12 +132,18 @@ public:
 		}
 
 		const Color &c = cx->multi;
-		const cocos2d::Color3B &dc = node->getDisplayedColor();
 		setColor({
-			(GLubyte)(c.red * m_red * dc.r),
-			(GLubyte)(c.green * m_green * dc.g),
-			(GLubyte)(c.blue * m_blue * dc.b)});
-		setOpacity((GLubyte)(c.alpha * node->getDisplayedOpacity()));
+            (GLubyte)(c.red * 255),
+            (GLubyte)(c.green * 255),
+            (GLubyte)(c.blue * 255)
+        });
+        setOpacity(c.alpha * 255);
+        setTextColor({
+            (GLubyte)(m_red * 255),
+            (GLubyte)(m_green * 255),
+            (GLubyte)(m_blue * 255),
+            (GLubyte)(255)
+        });
 	}
 
 	void setString(const std::string &label)
