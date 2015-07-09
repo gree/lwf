@@ -176,6 +176,33 @@ Movie *Movie::SearchAttachedMovie(string aName, bool recursive) const
 				return i;
 		}
 	}
+	
+	if (!m_attachedMovies.empty()) {
+		AttachedMovieList::const_iterator it(m_attachedMovieList.begin()),
+		itend(m_attachedMovieList.end());
+		for (; it != itend; ++it) {
+			Movie *movie = it->second->SearchAttachedMovie(aName, recursive);
+			if (movie)
+				return movie;
+		}
+	}
+	
+	if (!m_attachedLWFs.empty()) {
+		AttachedLWFList::const_iterator
+		it(m_attachedLWFList.begin()), itend(m_attachedLWFList.end());
+		for (; it != itend; ++it) {
+			LWF *child = it->second->child.get();
+			if (child->attachName == aName) {
+				return child->rootMovie.get();
+			} else {
+				Movie *movie = child->rootMovie->SearchAttachedMovie(
+					aName, recursive);
+				if (movie)
+					return movie;
+			}
+		}
+	}
+	
 	return nullptr;
 }
 	
