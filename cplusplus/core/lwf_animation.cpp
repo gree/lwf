@@ -102,7 +102,7 @@ void LWF::PlayAnimation(int animationId, Movie *movie, Button *button)
 #if defined(LWF_USE_LUA)
 				CallEventFunctionLua(eventId, movie, button);
 #endif
-				EventHandlerList &v(m_eventHandlers[eventId]);
+				EventHandlerList v(m_eventHandlers[eventId]);
 				EventHandlerList::iterator it(v.begin()), itend(v.end());
 				for (; it != itend; ++it)
 					it->second(movie, button);
