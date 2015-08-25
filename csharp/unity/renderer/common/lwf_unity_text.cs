@@ -144,6 +144,7 @@ public class TextContext
 		s.lineSpacing = lineSpacing;
 		s.horizontalOverflow = HorizontalWrapMode.Wrap;
 		s.verticalOverflow = VerticalWrapMode.Overflow;
+		s.scaleFactor = 1.0f;
 #endif
 		s.color = factory.ConvertColor(data.colors[text.colorId]);
 		s.pivot = new Vector2(-leftMargin, 0);
