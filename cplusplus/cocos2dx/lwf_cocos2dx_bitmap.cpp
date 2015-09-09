@@ -46,10 +46,10 @@ public:
 	static LWFBitmapImpl *create(Bitmap *bitmap, BitmapEx *bitmapEx,
 			const char *filename, const Format::Texture &texture,
 			const Format::TextureFragment &fragment,
-			const Format::BitmapEx &bx) {
+			const Format::BitmapEx &bx, bool flippedX, bool flippedY) {
 		LWFBitmapImpl *ret = new LWFBitmapImpl();
 		if (ret && ret->initWithFileEx(
-				bitmap, bitmapEx, filename, texture, fragment, bx)) {
+				bitmap, bitmapEx, filename, texture, fragment, bx, flippedX, flippedY)) {
 			ret->autorelease();
 			return ret;
 		}
@@ -81,7 +81,7 @@ public:
 
 	bool initWithFileEx(Bitmap *bitmap, BitmapEx *bitmapEx,
 		const char *filename, const Format::Texture &t,
-		const Format::TextureFragment &f, const Format::BitmapEx &bx)
+		const Format::TextureFragment &f, const Format::BitmapEx &bx, bool flippedX, bool flippedY)
 	{
 		cocos2d::LWFResourceCache *cache =
 			cocos2d::LWFResourceCache::sharedLWFResourceCache();
@@ -131,6 +131,12 @@ public:
 			float v0 = v / th;
 			float u1 = (u + w) / tw;
 			float v1 = (v + h) / th;
+			if(flippedX){
+				std::swap(u1, u0);
+			}
+			if(flippedY){
+				std::swap(v1, v0);
+			}
 			m_quad.bl.texCoords.u = u1;
 			m_quad.bl.texCoords.v = v1;
 			m_quad.br.texCoords.u = u0;
@@ -295,7 +301,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			filename, basePath, texturePath);
 	}
 
-	m_sprite = LWFBitmapImpl::create(bitmap, 0, filename.c_str(), t, f, bx);
+	m_sprite = LWFBitmapImpl::create(bitmap, 0, filename.c_str(), t, f, bx, node->isFlippedX(), node->isFlippedY());
 	if (!m_sprite)
 		return;
 
@@ -333,7 +339,7 @@ LWFBitmapRenderer::LWFBitmapRenderer(
 			filename, basePath, texturePath);
 	}
 
-	m_sprite = LWFBitmapImpl::create(0, bitmapEx, filename.c_str(), t, f, bx);
+	m_sprite = LWFBitmapImpl::create(0, bitmapEx, filename.c_str(), t, f, bx, node->isFlippedX(), node->isFlippedY());
 	if (!m_sprite)
 		return;
 
