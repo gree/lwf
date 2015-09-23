@@ -31,6 +31,7 @@ using EventHandlers = Dictionary<string, Dictionary<int, Action>>;
 using EventType = MovieEventHandlers.Type;
 using ClipEvent = Format.MovieClipEvent.ClipEvent;
 using MovieEventHandler = Action<Movie>;
+using CalculateBoundsCallbacks = List<Action<Movie>>;
 using AttachedMovies = Dictionary<string, Movie>;
 using AttachedMovieList = SortedDictionary<int, Movie>;
 using AttachedMovieDescendingList = SortedDictionary<int, int>;
@@ -58,7 +59,7 @@ public partial class Movie : IObject
 	private Object[] m_displayList;
 	private EventHandlers m_eventHandlers;
 	private MovieEventHandlers m_handler;
-	private MovieEventHandler m_calculateBoundsCallback;
+	private CalculateBoundsCallbacks m_calculateBoundsCallbacks;
 	private AttachedMovies m_attachedMovies;
 	private AttachedMovieList m_attachedMovieList;
 	private AttachedMovieDescendingList m_attachedMovieDescendingList;
@@ -146,7 +147,7 @@ public partial class Movie : IObject
 		m_postExecCount = -1;
 		m_blendMode = (int)Constant.BLEND_MODE_NORMAL;
 		m_requestedCalculateBounds = false;
-		m_calculateBoundsCallback = null;
+		m_calculateBoundsCallbacks = new CalculateBoundsCallbacks();
 
 		m_property = new Property(lwf);
 
@@ -729,13 +730,15 @@ public partial class Movie : IObject
 					m_currentBounds.xMax, m_currentBounds.yMax, invert);
 				m_currentBounds.xMax = x;
 				m_currentBounds.yMax = y;
-				m_bounds = m_currentBounds;
-				m_currentBounds = null;
-				m_requestedCalculateBounds = false;
-				if (m_calculateBoundsCallback != null) {
-					m_calculateBoundsCallback(this);
-					m_calculateBoundsCallback = null;
-				}
+			}
+
+			m_bounds = m_currentBounds;
+			m_currentBounds = null;
+			m_requestedCalculateBounds = false;
+			if (m_calculateBoundsCallbacks.Count != 0) {
+				foreach (MovieEventHandler h in m_calculateBoundsCallbacks)
+					h(this);
+				m_calculateBoundsCallbacks.Clear();
 			}
 		}
 
@@ -1388,7 +1391,7 @@ public partial class Movie : IObject
 	public void RequestCalculateBounds(MovieEventHandler callback = null)
 	{
 		m_requestedCalculateBounds = true;
-		m_calculateBoundsCallback = callback;
+		m_calculateBoundsCallbacks.Add(callback);
 		m_bounds = null;
 		return;
 	}
