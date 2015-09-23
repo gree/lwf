@@ -2111,7 +2111,7 @@ def parse_define_font2
 
   fontinfo = nil
   @font_table.each do |t|
-    if Regexp.new(t["regexp"]) =~ name
+    if Regexp.new(t["regexp"], Regexp::IGNORECASE) =~ name
       fontinfo = t
       break
     end
