@@ -166,6 +166,18 @@ public:
 
 		return true;
 	}
+	
+	    
+	virtual void onEnter() override
+	{
+		cocos2d::Mat4 mat = cocos2d::Mat4(
+		                                  1, 0, 0, 0,
+		                                  -0, -1, 0, -0,
+		                                  0, 0, 1, 0,
+		                                  0, 0, 0, 1);
+		setNodeToParentTransform(mat);
+		cocos2d::Sprite::onEnter();
+	}
 
 	virtual void setVisible(bool bVisible) override
 	{
