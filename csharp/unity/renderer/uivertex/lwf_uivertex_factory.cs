@@ -50,10 +50,9 @@ public interface IMeshRenderer
 	void UpdateMesh(UIVertexBuffer buffer);
 }
 
-public class UIVertexComponent : MonoBehaviour
+public class UIVertexComponent : UnityEngine.UI.Graphic
 {
 	public int updateCount;
-	public UnityEngine.CanvasRenderer canvasRenderer;
 	public MaterialPropertyBlock property;
 	public UIVertexBuffer buffer;
 	public UnityEngine.Color additionalColor;
@@ -64,9 +63,10 @@ public class UIVertexComponent : MonoBehaviour
 
 	public void Init(Factory factory)
 	{
+		useLegacyMeshGeneration = false;
+
 		renderers = new List<IMeshRenderer>();
 
-		canvasRenderer = gameObject.AddComponent<UnityEngine.CanvasRenderer>();
 		UpdateSortingLayerAndOrder(factory);
 		UpdateLayer(factory);
 
@@ -107,12 +107,13 @@ public class UIVertexComponent : MonoBehaviour
 		rectangleCount += rc;
 	}
 
-	public void SetMaterial(Material material, UnityEngine.Color ac)
+	public void SetMaterial(Material mat, UnityEngine.Color ac)
 	{
-		if (canvasRenderer.GetMaterial() != material)
-			canvasRenderer.SetMaterial(material, null);
+		gameObject.SetActive(true);
+		material = mat;
 		additionalColor = ac;
 		buffer.modified = true;
+		SetMaterialDirty();
 	}
 
 	public void Disable()
@@ -120,15 +121,11 @@ public class UIVertexComponent : MonoBehaviour
 		updateCount = 0;
 		rendererCount = 0;
 		rectangleCount = 0;
-		canvasRenderer.SetMaterial(null, null);
-		canvasRenderer.Clear();
 		gameObject.SetActive(false);
 	}
 
 	public void UpdateMesh()
 	{
-		gameObject.SetActive(true);
-
 		if (buffer.vertices == null ||
 				buffer.vertices.Length / 4 != rectangleCount) {
 			buffer.Alloc(rectangleCount);
@@ -142,8 +139,8 @@ public class UIVertexComponent : MonoBehaviour
 		buffer.initialized = false;
 
 		if (buffer.modified) {
-			buffer.modified = false;
-			canvasRenderer.SetVertices(buffer.vertices, rectangleCount * 4);
+			gameObject.SetActive(true);
+			SetVerticesDirty();
 		}
 
 		if (property != null) {
@@ -152,10 +149,34 @@ public class UIVertexComponent : MonoBehaviour
 		}
 	}
 
+	public override Texture mainTexture
+	{
+		get {
+			return material.mainTexture;
+		}
+	}
+
+	protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vh)
+	{
+		if (buffer.modified) {
+			buffer.modified = false;
+			vh.Clear();
+			int count = rectangleCount * 4;
+			List<UIVertex> vertices = new List<UIVertex>();
+			for (int i = 0; i < count; i += 4) {
+				vertices.Add(buffer.vertices[i + 0]);
+				vertices.Add(buffer.vertices[i + 1]);
+				vertices.Add(buffer.vertices[i + 2]);
+				vertices.Add(buffer.vertices[i + 2]);
+				vertices.Add(buffer.vertices[i + 3]);
+				vertices.Add(buffer.vertices[i + 0]);
+			}
+			vh.AddUIVertexTriangleStream(vertices);
+		}
+	}
+
 	void OnDestroy()
 	{
-		canvasRenderer.SetMaterial(null, null);
-		UnityEngine.CanvasRenderer.Destroy(canvasRenderer);
 	}
 }
 
@@ -255,7 +276,7 @@ public partial class Factory : UnityRenderer.Factory
 			currentMeshComponent.SetMaterial(material, additionalColor);
 		} else {
 			Material componentMaterial =
-				currentMeshComponent.canvasRenderer.GetMaterial();
+				currentMeshComponent.material;
 			if (componentMaterial != material ||
 					(currentMeshComponent.property != null &&
 					currentMeshComponent.additionalColor != additionalColor)) {
