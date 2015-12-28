@@ -201,6 +201,7 @@ public class CombinedMeshComponent : MonoBehaviour
 public partial class Factory : UnityRenderer.Factory
 {
 	public int updateCount;
+	private bool needsUpdate;
 	private int meshComponentNo;
 	private int usedMeshComponentNo;
 	private List<CombinedMeshComponent> meshComponents;
@@ -268,9 +269,13 @@ public partial class Factory : UnityRenderer.Factory
 		if (parent != null)
 			return;
 
-		updateCount = lwf.updateCount;
-		meshComponentNo = -1;
-		currentMeshComponent = null;
+		needsUpdate = false;
+		if (updateCount != lwf.updateCount) {
+			needsUpdate = true;
+			updateCount = lwf.updateCount;
+			meshComponentNo = -1;
+			currentMeshComponent = null;
+		}
 	}
 
 	public void Render(IMeshRenderer renderer, int rectangleCount,
@@ -280,6 +285,8 @@ public partial class Factory : UnityRenderer.Factory
 			parent.Render(renderer, rectangleCount, material, additionalColor);
 			return;
 		}
+		if (!needsUpdate)
+			return;
 
 		if (currentMeshComponent == null) {
 			meshComponentNo = 0;
@@ -307,6 +314,8 @@ public partial class Factory : UnityRenderer.Factory
 		base.EndRender(lwf);
 
 		if (parent != null)
+			return;
+		if (!needsUpdate)
 			return;
 
 		if (currentMeshComponent == null) {
