@@ -174,10 +174,6 @@ public class UIVertexComponent : UnityEngine.UI.Graphic
 			vh.AddUIVertexTriangleStream(vertices);
 		}
 	}
-
-	void OnDestroy()
-	{
-	}
 }
 
 public partial class Factory : UnityRenderer.Factory
