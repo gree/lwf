@@ -197,9 +197,9 @@ public class BitmapRenderer : Renderer
 			factory.gameObject.transform.localToWorldMatrix, m_matrix);
 
 		m_property.Clear();
-		m_property.AddColor(m_colorId, m_colorMult);
+		m_property.SetColor(m_colorId, m_colorMult);
 		if (factory.useAdditionalColor)
-			m_property.AddColor(m_additionalColorId, m_colorAdd);
+			m_property.SetColor(m_additionalColorId, m_colorAdd);
 
 		if (m_blendMode != factory.blendMode) {
 			m_blendMode = factory.blendMode;
