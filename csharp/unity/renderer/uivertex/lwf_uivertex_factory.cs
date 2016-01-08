@@ -212,7 +212,8 @@ public partial class Factory : UnityRenderer.Factory
 	public override void Destruct()
 	{
 		foreach (UIVertexComponent meshComponent in meshComponents)
-			GameObject.Destroy(meshComponent.gameObject);
+			if (meshComponent != null && meshComponent.gameObject != null)
+				GameObject.Destroy(meshComponent.gameObject);
 
 		DestructBitmapContexts();
 		DestructTextContexts();
