@@ -59,7 +59,6 @@ public class LWFObject : MonoBehaviour
 	};
 	public LWF.LWF lwf;
 	public LWF.UnityRenderer.Factory factory;
-	public LWF.CombinedMeshRenderer.Factory combinedMeshRendererfactory;
 	[HideInInspector] [NonSerialized] public bool isAlive;
 
 	public string sortingLayerName {
@@ -178,12 +177,11 @@ public class LWFObject : MonoBehaviour
 			rt = RendererType.DrawMeshRenderer;
 #endif
 		if (rt == RendererType.CombinedMeshRenderer) {
-			combinedMeshRendererfactory = new LWF.CombinedMeshRenderer.Factory(
+			factory = new LWF.CombinedMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
 				mSortingLayerName, mSortingOrder, useAdditionalColor,
 				renderCamera, inputCamera, texturePrefix, fontPrefix,
 				textureLoader, textureUnloader, shaderName);
-			factory = combinedMeshRendererfactory;
 		} else if (rt == RendererType.DrawMeshRenderer) {
 			factory = new LWF.DrawMeshRenderer.Factory(
 				data, gameObject, zOffset, zRate, renderQueueOffset,
@@ -351,14 +349,7 @@ public class LWFObject : MonoBehaviour
 			mLayer = layer;
 		}
 
-		if (combinedMeshRendererfactory != null) {
-			if (combinedMeshRendererfactory.updateCount != lwf.updateCount) {
-				combinedMeshRendererfactory.updateCount = lwf.updateCount;
-				lwf.Render();
-			}
-		} else {
-			lwf.Render();
-		}
+		lwf.Render();
 	}
 
 	public virtual void Update()
