@@ -144,7 +144,7 @@ public class UIVertexComponent : UnityEngine.UI.Graphic
 		}
 
 		if (property != null) {
-			property.AddColor(additionalColorId, additionalColor);
+			property.SetColor(additionalColorId, additionalColor);
 			//meshRenderer.SetPropertyBlock(property);
 		}
 	}
@@ -179,7 +179,6 @@ public class UIVertexComponent : UnityEngine.UI.Graphic
 public partial class Factory : UnityRenderer.Factory
 {
 	public int updateCount;
-	private bool needsUpdate;
 	private int meshComponentNo;
 	private int usedMeshComponentNo;
 	private List<UIVertexComponent> meshComponents;
@@ -248,13 +247,9 @@ public partial class Factory : UnityRenderer.Factory
 		if (parent != null)
 			return;
 
-		needsUpdate = false;
-		if (updateCount != lwf.updateCount) {
-			needsUpdate = true;
-			updateCount = lwf.updateCount;
-			meshComponentNo = -1;
-			currentMeshComponent = null;
-		}
+		updateCount = lwf.updateCount;
+		meshComponentNo = -1;
+		currentMeshComponent = null;
 	}
 
 	public void Render(IMeshRenderer renderer, int rectangleCount,
@@ -264,8 +259,6 @@ public partial class Factory : UnityRenderer.Factory
 			parent.Render(renderer, rectangleCount, material, additionalColor);
 			return;
 		}
-		if (!needsUpdate)
-			return;
 
 		if (currentMeshComponent == null) {
 			meshComponentNo = 0;
@@ -293,8 +286,6 @@ public partial class Factory : UnityRenderer.Factory
 		base.EndRender(lwf);
 
 		if (parent != null)
-			return;
-		if (!needsUpdate)
 			return;
 
 		if (currentMeshComponent == null) {
