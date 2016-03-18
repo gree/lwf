@@ -39,6 +39,8 @@ function warn(msg)
 
 function main()
 {
+	var enableWarningRecompressed = fl.tools.shiftIsDown;
+
 	message = "";
 	fl.outputPanel.clear();
 	fl.showIdleMessage(false);
@@ -114,7 +116,9 @@ function main()
 				if (item.sourceFileExists) {
 					FLfile.copy(item.sourceFilePath, bitmapDir + name);
 				} else {
-					warn("Image \"" + name + "\" recompressed by Flash");
+					if (enableWarningRecompressed) {
+						warn("Image \"" + name + "\" recompressed by Flash");
+					}
 					item.exportToFile(bitmapDir + name);
 				}
 			}
