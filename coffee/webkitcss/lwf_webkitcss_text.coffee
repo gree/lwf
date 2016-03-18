@@ -65,8 +65,12 @@ class WebkitCSSTextRenderer extends HTML5TextRenderer
       @context.factory.stage.appendChild(@node)
       nodeChanged = true
 
-    if @currentCanvas isnt @canvas
+    if typeof document.getCSSCanvasContext isnt 'undefined' and
+         @currentCanvas isnt @canvas
       @node.style.background = "-webkit-canvas(#{@canvas.name}) transparent"
+      @currentCanvas = @canvas
+    else if @changed or @currentCanvas isnt @canvas
+      @node.style.background = "url(#{@canvas.toDataURL('image/png')}) transparent"
       @currentCanvas = @canvas
 
     maskMode = @context.factory.maskMode

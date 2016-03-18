@@ -47,6 +47,7 @@ class HTML5TextRenderer
     @textRendered = false
     @textScale = @lwf.textScale
     @currentShadowMarginY = 0
+    @changed = false
     @initCanvas()
 
   destruct: ->
@@ -256,8 +257,11 @@ class HTML5TextRenderer
       @initCanvas()
       @textScale = @lwf.textScale
 
-    @renderText(c) if !@textRendered or
-      colorChanged or fontChanged or strChanged or scaleChanged
+    @changed = false
+    if !@textRendered or
+        colorChanged or fontChanged or strChanged or scaleChanged
+      @renderText(c) 
+      @changed = true
     return
 
   initCanvas: ->
