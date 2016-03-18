@@ -8441,7 +8441,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebkitCSSResourceCache.prototype.createCanvas = function(w, h) {
       var canvas, ctx, name;
       name = this.getCanvasName();
-      if (this.constructor === WebkitCSSResourceCache) {
+      if (typeof document.getCSSCanvasContext !== 'undefined' && this.constructor === WebkitCSSResourceCache) {
         ctx = document.getCSSCanvasContext("2d", name, w, h);
         canvas = ctx.canvas;
       } else {

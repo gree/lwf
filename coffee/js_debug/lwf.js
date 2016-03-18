@@ -8267,8 +8267,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.node = document.createElement("div");
       if (image.src != null) {
         this.node.style.background = "url(" + image.src + ") transparent";
-      } else {
+      } else if (typeof document.getCSSCanvasContext !== "undefined") {
         this.node.style.background = "-webkit-canvas(" + image.name + ") transparent";
+      } else {
+        this.node.style.background = "url(" + (image.toDataURL('image/png')) + ") transparent";
       }
       this.node.style.backgroundPosition = "" + (-su) + "px " + (-sv) + "px";
       this.node.style.width = "" + sw + "px";
@@ -8432,6 +8434,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
       this.textRendered = false;
       this.textScale = this.lwf.textScale;
       this.currentShadowMarginY = 0;
+      this.changed = false;
       this.initCanvas();
     }
 
@@ -8704,8 +8707,10 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.initCanvas();
         this.textScale = this.lwf.textScale;
       }
+      this.changed = false;
       if (!this.textRendered || colorChanged || fontChanged || strChanged || scaleChanged) {
         this.renderText(c);
+        this.changed = true;
       }
     };
 
@@ -8855,8 +8860,11 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
         this.context.factory.stage.appendChild(this.node);
         nodeChanged = true;
       }
-      if (this.currentCanvas !== this.canvas) {
+      if (typeof document.getCSSCanvasContext !== 'undefined' && this.currentCanvas !== this.canvas) {
         this.node.style.background = "-webkit-canvas(" + this.canvas.name + ") transparent";
+        this.currentCanvas = this.canvas;
+      } else if (this.changed || this.currentCanvas !== this.canvas) {
+        this.node.style.background = "url(" + (this.canvas.toDataURL('image/png')) + ") transparent";
         this.currentCanvas = this.canvas;
       }
       maskMode = this.context.factory.maskMode;
@@ -9563,7 +9571,7 @@ if (typeof global === "undefined" && typeof window !== "undefined") {
     WebkitCSSResourceCache.prototype.createCanvas = function(w, h) {
       var canvas, ctx, name;
       name = this.getCanvasName();
-      if (this.constructor === WebkitCSSResourceCache) {
+      if (typeof document.getCSSCanvasContext !== 'undefined' && this.constructor === WebkitCSSResourceCache) {
         ctx = document.getCSSCanvasContext("2d", name, w, h);
         canvas = ctx.canvas;
       } else {
