@@ -59,8 +59,10 @@ class WebkitCSSBitmapContext
     @node = document.createElement("div")
     if image.src?
       @node.style.background = "url(#{image.src}) transparent"
-    else
+    else if typeof document.getCSSCanvasContext isnt "undefined"
       @node.style.background = "-webkit-canvas(#{image.name}) transparent"
+    else
+      @node.style.background = "url(#{image.toDataURL('image/png')}) transparent"
     @node.style.backgroundPosition = "#{-su}px #{-sv}px"
     @node.style.width = "#{sw}px"
     @node.style.height = "#{sh}px"

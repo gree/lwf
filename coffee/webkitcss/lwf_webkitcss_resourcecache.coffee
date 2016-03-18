@@ -420,7 +420,8 @@ class WebkitCSSResourceCache
 
   createCanvas:(w, h) ->
     name = @getCanvasName()
-    if @.constructor is WebkitCSSResourceCache
+    if typeof document.getCSSCanvasContext isnt 'undefined' and
+        @.constructor is WebkitCSSResourceCache
       ctx = document.getCSSCanvasContext("2d", name, w, h)
       canvas = ctx.canvas
     else
