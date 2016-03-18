@@ -39,6 +39,8 @@ function warn(msg)
 
 function main()
 {
+	var enableWarningRecompressed = fl.tools.shiftIsDown;
+
 	message = "";
 	fl.outputPanel.clear();
 	fl.showIdleMessage(false);
@@ -87,13 +89,13 @@ function main()
 	var libitems = [];
 	for (var i = 0; i < items.length; ++i) {
 		var item = items[i];
-		if (item.name.match(/__IGNORE__/) !== null)
-			continue;
 		switch (item.itemType) {
 		case "bitmap":
 		case "movie clip":
 		case "button":
 			clearLinkage(item);
+			if (item.name.match(/__IGNORE__/) !== null)
+				continue;
 			libitems.push(item);
 		}
 	}
@@ -114,7 +116,9 @@ function main()
 				if (item.sourceFileExists) {
 					FLfile.copy(item.sourceFilePath, bitmapDir + name);
 				} else {
-					warn("Image \"" + name + "\" recompressed by Flash");
+					if (enableWarningRecompressed) {
+						warn("Image \"" + name + "\" recompressed by Flash");
+					}
 					item.exportToFile(bitmapDir + name);
 				}
 			}
@@ -203,7 +207,6 @@ function correctButtonShapeColor(item)
 			var shape = frame.elements[0];
 			if (shape.vertices.length == 4 && shape.contours.length == 2) {
 				var color = shape.contours[1].fill.color;
-warn(color);
 				if (color !== undefined) {
 					var n = parseInt(color.substring(1), 16);
 					if (buttonColors[n] === undefined) {
