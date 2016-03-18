@@ -87,13 +87,13 @@ function main()
 	var libitems = [];
 	for (var i = 0; i < items.length; ++i) {
 		var item = items[i];
-		if (item.name.match(/__IGNORE__/) !== null)
-			continue;
 		switch (item.itemType) {
 		case "bitmap":
 		case "movie clip":
 		case "button":
 			clearLinkage(item);
+			if (item.name.match(/__IGNORE__/) !== null)
+				continue;
 			libitems.push(item);
 		}
 	}
