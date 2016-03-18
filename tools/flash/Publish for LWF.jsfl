@@ -203,7 +203,6 @@ function correctButtonShapeColor(item)
 			var shape = frame.elements[0];
 			if (shape.vertices.length == 4 && shape.contours.length == 2) {
 				var color = shape.contours[1].fill.color;
-warn(color);
 				if (color !== undefined) {
 					var n = parseInt(color.substring(1), 16);
 					if (buttonColors[n] === undefined) {
