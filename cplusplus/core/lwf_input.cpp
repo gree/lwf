@@ -66,7 +66,8 @@ Button *LWF::InputPoint(int px, int py)
 				if (focus)
 					focus->RollOut();
 				focus = button;
-				focus->RollOver();
+				if (!pressed || pressed == focus)
+					focus->RollOver();
 			}
 			break;
 		}
